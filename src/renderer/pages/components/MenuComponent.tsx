@@ -27,7 +27,7 @@ const items: MenuItem[] = [
     getItem('Accounts', '/overviews/accounts' ),
     getItem('Send', '/overviews/send'),
     getItem('Receive', '/overviews/receive'),
-    getItem('Transactions', '/overviews/receive'),
+    getItem('Transactions', '/overviews/receive2'),
   ]),
   getItem('Tools', 'sub2', <AppstoreOutlined />, [
 
