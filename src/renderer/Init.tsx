@@ -14,28 +14,39 @@ export default () => {
   const rpcUrl = 'http://47.107.47.210:8545'; // 替换为你的 Geth RPC 地址
   const web3 = new Web3(rpcUrl);
 
-  async function doInit(){
+  async function doInit() {
 
     const blockNumber = await web3.eth.getBlockNumber();
     const accounts = await web3.eth.getAccounts();
-    dispatch( Application_Init( {
-      blockNumber : blockNumber.toString(),
+    dispatch(Application_Init({
+      blockNumber: blockNumber.toString(),
       accounts
     }));
 
   }
 
-  async function doLoop(){
-    setInterval( async () => {
+  async function doLoop() {
+    setInterval(async () => {
       const _blockNumber = await web3.eth.getBlockNumber();
-      dispatch( Application_Update_BlockNumber( _blockNumber.toString() ) )
-    } , 10000 )
+      dispatch(Application_Update_BlockNumber(_blockNumber.toString()))
+    }, 10000)
   }
 
-  useEffect( () =>  {
+  useEffect(() => {
+
+    // calling IPC exposed from preload script
+    window.electron.ipcRenderer.once('ipc-example', (arg) => {
+      // eslint-disable-next-line no-console
+      console.log(arg);
+    });
+    window.electron.ipcRenderer.sendMessage('ipc-example', ['test' , 'from init']);
+    
+
     doInit();
     doLoop();
-  } , [] );
+
+  }, []);
 
   return (<></>)
 }
+

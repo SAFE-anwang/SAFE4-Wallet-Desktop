@@ -1,42 +1,40 @@
-import { IpcRendererEvent } from "electron";
-import { IpcRenderer } from "electron/renderer";
-
-export type Channels_Application = 'ipc-application';
+import { ListenSignalHandler } from "./handlers/ListenSignalHandler";
+import { TestSignalHandler } from "./handlers/TestSignalHandler";
 
 export class ApplicationIpcManager {
 
+  listenSignalHandlers: ListenSignalHandler[] = [];
+
   constructor() {
-
+    this.listenSignalHandlers.push(new TestSignalHandler());
   }
 
-  // preload.ts 中注册通道.
-  public registerChannel(ipcRenderer: IpcRenderer): {
-
-  } {
-    return {
-      sendMessage(channel: Channels_Application, ...args: unknown[]) {
-        ipcRenderer.send(channel, ...args);
-      },
-      on(channel: Channels_Application, func: (...args: unknown[]) => void) {
-        const subscription = (_event: IpcRendererEvent, ...args: unknown[]) =>
-          func(...args);
-        ipcRenderer.on(channel, subscription);
-
-        return () => {
-          ipcRenderer.removeListener(channel, subscription);
-        };
-      },
-      once(channel: Channels_Application, func: (...args: unknown[]) => void) {
-        ipcRenderer.once(channel, (_event, ...args) => func(...args));
-      },
-    }
+  public register(ipcMain : Electron.IpcMain) {
+    ipcMain.on('ipc-example', async (event, arg) => {
+      if (arg instanceof Array) {
+        const signal = arg[0];
+        const handlers = this.listenSignalHandlers.filter((handler) => {
+          if (signal == handler.getSingal()) {
+            return handler;
+          }
+        })
+        if (handlers) {
+          const handler = handlers[0];
+          handler.handleOn(
+            event, arg
+          )
+        } 
+      }
+      else {
+        const msgTemplate = (pingPong: string) => `IPC test: ${pingPong}`;
+        console.log(msgTemplate(arg));
+        event.reply('ipc-example', msgTemplate('pong'));
+      }
+    });
   }
-
-  // main.ts 中激活通道监听.
-  public activeChannelListen(ipcMain: Electron.IpcMain): void {
-
-  }
-
 }
 
-export default new ApplicationIpcManager();
+
+export function test(){
+  console.log("run test")
+}
