@@ -1,16 +1,19 @@
 import { ListenSignalHandler } from "./handlers/ListenSignalHandler";
-import { TestSignalHandler } from "./handlers/TestSignalHandler";
+import { SysInfoSignalHandler } from "./handlers/SysInfoSignalHandler";
+import { Channels } from "./preload";
+
+export const Channel : Channels = "ipc-example";
 
 export class ApplicationIpcManager {
 
   listenSignalHandlers: ListenSignalHandler[] = [];
 
   constructor() {
-    this.listenSignalHandlers.push(new TestSignalHandler());
+    this.listenSignalHandlers.push(new SysInfoSignalHandler());
   }
 
   public register(ipcMain : Electron.IpcMain) {
-    ipcMain.on('ipc-example', async (event, arg) => {
+    ipcMain.on(Channel, async (event, arg) => {
       if (arg instanceof Array) {
         const signal = arg[0];
         const handlers = this.listenSignalHandlers.filter((handler) => {
@@ -23,7 +26,7 @@ export class ApplicationIpcManager {
           handler.handleOn(
             event, arg
           )
-        } 
+        }
       }
       else {
         const msgTemplate = (pingPong: string) => `IPC test: ${pingPong}`;
@@ -32,9 +35,4 @@ export class ApplicationIpcManager {
       }
     });
   }
-}
-
-
-export function test(){
-  console.log("run test")
 }

@@ -16,15 +16,7 @@ export default () => {
   const accounts = useAccounts();
 
   useEffect(() => {
-    // calling IPC exposed from preload script
-    window.electron.ipcRenderer.once('ipc-example', (arg) => {
-      // eslint-disable-next-line no-console
-      console.log(arg);
-    });
-    // window.electron.ipc.once('ipc-example', (arg) => {
-    //   // eslint-disable-next-line no-console
-    //   console.log(arg);
-    // });
+
   }, [])
 
   return (<>
