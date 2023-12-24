@@ -1,6 +1,7 @@
 import { Channel } from "../ApplicationIpcManager";
 import { ListenSignalHandler } from "./ListenSignalHandler";
 
+
 export const SysInfoSignal = "sys-info";
 
 export class SysInfoSignalHandler implements ListenSignalHandler {

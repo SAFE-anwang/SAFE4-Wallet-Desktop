@@ -97,14 +97,25 @@
   },
   "dependencies": {
     "@reduxjs/toolkit": "1.9.1",
+    "@types/node": "^20.10.5",
+    "Buffer": "^0.0.0",
     "antd": "^5.12.4",
+    "assert": "^2.1.0",
+    "bip32": "^3.0.1",
+    "bip39": "^3.0.4",
+    "bitcoinjs-lib": "^6.1.0",
+    "crypto-browserify": "^3.12.0",
     "electron-debug": "^3.2.0",
     "electron-log": "^4.4.8",
     "electron-updater": "^6.1.4",
+    "ethereumjs-util": "^7.1.5",
+    "ethereumjs-wallet": "^1.0.2",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-redux": "^8.0.5",
     "react-router-dom": "^6.16.0",
+    "stream-browserify": "^3.0.0",
+    "tiny-secp256k1": "^2.2.1",
     "web3": "^4.3.0"
   },
   "devDependencies": {
@@ -242,7 +253,7 @@
     "url": "https://opencollective.com/electron-react-boilerplate-594"
   },
   "devEngines": {
-    "node": ">=14.x",
+    "node": ">=16.x",
     "npm": ">=7.x"
   },
   "electronmon": {
@@ -251,5 +262,6 @@
       "src/main/**"
     ],
     "logLevel": "quiet"
-  }
+  },
+  "__npminstall_done": false
 }

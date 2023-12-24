@@ -33,7 +33,7 @@ const items: MenuItem[] = [
 
   ]),
   getItem('Settings', 'sub4', <SettingOutlined />, [
-
+    getItem('Sys Info', '/settings/sysInfo'),
   ]),
 ];
 

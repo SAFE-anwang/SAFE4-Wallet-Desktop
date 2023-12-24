@@ -1,5 +1,6 @@
 import { ListenSignalHandler } from "./handlers/ListenSignalHandler";
 import { SysInfoSignalHandler } from "./handlers/SysInfoSignalHandler";
+import { WalletSignalHandler } from "./handlers/WalletSignalHandler";
 import { Channels } from "./preload";
 
 export const Channel : Channels = "ipc-example";
@@ -10,6 +11,7 @@ export class ApplicationIpcManager {
 
   constructor() {
     this.listenSignalHandlers.push(new SysInfoSignalHandler());
+    this.listenSignalHandlers.push(new WalletSignalHandler());
   }
 
   public register(ipcMain : Electron.IpcMain) {

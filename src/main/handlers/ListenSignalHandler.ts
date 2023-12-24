@@ -6,6 +6,6 @@ export interface ListenSignalHandler {
 
     handleOn(
         event: Electron.IpcMainEvent, ...args: any[]
-    ) : void;
+    ) : void; 
 
 }

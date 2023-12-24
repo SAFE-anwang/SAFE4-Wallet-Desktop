@@ -2,7 +2,7 @@
 import { Typography, Button, Card, Divider, Statistic, Row, Col, Modal } from 'antd';
 import { useEffect } from 'react';
 import { doNewAccount } from '../../services/accounts'
-import { useAccounts, useBlockNumber } from '../../state/application/hooks';
+import { useAccounts, useBlockNumber, useSysInfo } from '../../state/application/hooks';
 
 const { Title } = Typography;
 
@@ -14,7 +14,7 @@ export default () => {
   }
   const blockNumber = useBlockNumber();
   const accounts = useAccounts();
-
+  const sysInfo = useSysInfo();
   useEffect(() => {
 
   }, [])
