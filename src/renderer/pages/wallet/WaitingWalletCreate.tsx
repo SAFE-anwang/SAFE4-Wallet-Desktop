@@ -13,14 +13,20 @@ export default () => {
         navigate("/wallet/createMnemonic")
     }
     const newMnemonic = useNewMnemonic();
+    const [address,setAddress] = useState<string>("");
+
     useEffect(() => {
         if (newMnemonic) {
             console.log(newMnemonic)
             window.electron.ipcRenderer.sendMessage(IPC_CHANNEL, [WalletSignal, 'generateWallet', [ newMnemonic , "" ]]);
             window.electron.ipcRenderer.once(IPC_CHANNEL, (arg) => {
                 if (arg instanceof Array && arg[0] == WalletSignal) {
-                    const seed = arg[1];
-                    console.log( "seed :" , seed )
+                    const result = arg[1];
+                    console.log(result)
+                    const {
+                      address
+                    } = result;
+                    setAddress(address)
                 }
             });
         }
@@ -34,6 +40,7 @@ export default () => {
                     type="info"
                     message="创建钱包"
                     description={<>
+                        { address }
                         <Steps
                             direction="vertical"
                             current={1}

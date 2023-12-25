@@ -97,8 +97,6 @@
   },
   "dependencies": {
     "@reduxjs/toolkit": "1.9.1",
-    "@types/node": "^20.10.5",
-    "Buffer": "^0.0.0",
     "antd": "^5.12.4",
     "assert": "^2.1.0",
     "bip32": "^3.0.1",
