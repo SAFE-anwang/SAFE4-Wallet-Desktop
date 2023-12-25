@@ -1,16 +1,24 @@
 import { Col, Row, Typography } from "antd";
 import { PlusCircleTwoTone, VerticalAlignBottomOutlined } from '@ant-design/icons';
 import { useNavigate } from "react-router-dom";
+import { useEffect } from "react";
+import { useDispatch } from "react-redux";
+import { Application_Update_AtCreateWallet } from "../../state/application/action";
 
 const { Text } = Typography;
 
 export default () => {
 
     const navigate = useNavigate();
+    const dispatch = useDispatch();
 
     const createWalletClick = () => {
         navigate("/setPassword")
     }
+
+    useEffect( () => {
+        dispatch(Application_Update_AtCreateWallet(true))
+    } , [] );
 
     return <>
         <Row style={{ marginTop: "5%" }}>

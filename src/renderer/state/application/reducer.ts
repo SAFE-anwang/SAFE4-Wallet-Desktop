@@ -1,5 +1,5 @@
 import { createReducer } from '@reduxjs/toolkit';
-import { Application_Confirmed_Mnemonic, Application_Init, Application_Load_Wallets, Application_New_Wallet, Application_Update_BlockNumber, Application_Update_SysInfo } from './action';
+import { Application_Confirmed_Mnemonic, Application_Init, Application_Load_Wallets, Application_New_Wallet, Application_Update_AtCreateWallet, Application_Update_BlockNumber, Application_Update_SysInfo } from './action';
 
 export interface Wallet {
   mnemonic : string,
@@ -18,7 +18,8 @@ export interface IApplicationState {
     node_serve_path : string
   },
   blockNumber : string,
-  accounts : any[]
+  accounts : any[] , 
+  atCreateWallet : boolean,
 }
 
 const initialState: IApplicationState = {
@@ -30,7 +31,8 @@ const initialState: IApplicationState = {
     node_serve_path : ""
   },
   blockNumber: "0",
-  accounts: []
+  accounts: [] , 
+  atCreateWallet : false
 }
 
 export default createReducer(initialState, (builder) => {
@@ -76,6 +78,10 @@ export default createReducer(initialState, (builder) => {
 
   builder.addCase(Application_Load_Wallets , ( state , {payload} ) => {
     state.wallets.list = payload;
+  }) 
+
+  builder.addCase(Application_Update_AtCreateWallet , (state , {payload}) => {
+    state.atCreateWallet = payload;
   })
 
 })

@@ -2,60 +2,55 @@ import { MemoryRouter as Router, Routes, Route, useNavigate } from 'react-router
 import icon from '../../assets/icon.svg';
 import { Col, Row } from 'antd';
 import MenuComponent from './pages/components/MenuComponent';
-import Accounts from './pages/overviews/Accounts';
-import Send from './pages/overviews/Send';
-import SysInfo from './pages/settings/SysInfo';
+import Accounts from './pages/main/Accounts';
 import Index from './pages/index';
 import SelectCreateWallet from './pages/wallet/SelectCreateWallet';
 import SetPassword from './pages/wallet/SetPassword';
 import CreateMnemonic from './pages/wallet/create/CreateMnemonic';
 import WaitingWalletCreate from './pages/wallet/WaitingWalletCreate';
+import { useAtCreateWallet } from './state/application/hooks';
 
 export default function App() {
 
-  const isCreateWallet = true;
+  const atCreateWallet = useAtCreateWallet();
+  const left = atCreateWallet ? "50px" : "300px";
 
   return (
     <>
-      {
-        isCreateWallet &&
-        <div style={{
-          margin:"auto",
-          paddingTop:"5%",
-          width:"800px"
+      <Router>
+        <Row style={{
         }}>
-          <Router>
+          {
+            !atCreateWallet && <Col span={6} style={{
+              position: "fixed",
+              width: "300px"
+            }}>
+              <MenuComponent />
+            </Col>
+          }
+          <Col span={18} style={{
+            position: "fixed",
+            overflowX: "auto",
+            overflowY: "auto",
+            top: "0",
+            right: "0",
+            bottom: "0",
+            left,
+            paddingLeft: "20px",
+            paddingBottom: "20px"
+          }}>
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/selectCreateWallet" element={<SelectCreateWallet />} />
               <Route path="/setPassword" element={<SetPassword />} />
               <Route path="/wallet/createMnemonic" element={<CreateMnemonic />} />
               <Route path="/waitingCreateWallet" element={<WaitingWalletCreate />} />
-
-              <Route path="/main/" element={<Accounts />} />
-
+              <Route path="/main/wallet" element={<Accounts />} />
             </Routes>
-          </Router>
-        </div>
-      }
-      {
-        !isCreateWallet &&
-        <Router>
-          <Row>
-            <Col span={4}>
-              <MenuComponent />
-            </Col>
-            <Col span={20} style={{ padding: "10px" }}>
-              <Routes>
-                <Route path="/" element={<Accounts />} />
-                <Route path="/overviews/accounts" element={<Accounts />} />
-                <Route path="/overviews/send" element={<Send />} />
-                <Route path="/settings/sysInfo" element={<SysInfo />} />
-              </Routes>
-            </Col>
-          </Row>
-        </Router>
-      }
+          </Col>
+        </Row>
+
+      </Router>
     </>
   );
 }

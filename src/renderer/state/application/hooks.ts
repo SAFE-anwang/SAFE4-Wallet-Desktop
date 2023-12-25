@@ -33,3 +33,9 @@ export function useWalletList() {
     return state.application.wallets.list;
   })
 }
+
+export function useAtCreateWallet() : boolean {
+  return useSelector((state: AppState) => {
+    return state.application.atCreateWallet;
+  })
+}

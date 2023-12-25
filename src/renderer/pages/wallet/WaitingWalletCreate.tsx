@@ -6,7 +6,7 @@ import { useNewMnemonic, useWalletList } from "../../state/application/hooks";
 import { IPC_CHANNEL } from "../../config";
 import { WalletSignal } from "../../../main/handlers/WalletSignalHandler";
 import { useDispatch } from "react-redux";
-import { Application_New_Wallet } from "../../state/application/action";
+import { Application_New_Wallet, Application_Update_AtCreateWallet } from "../../state/application/action";
 import { Wallet } from "../../state/application/reducer";
 
 const method_generateWallet = "generateWallet";
@@ -93,7 +93,8 @@ export default () => {
             setTimeout(() => {
               setStempCurrent(3);
               setSpinning(false);
-              navigate("/main/")
+              navigate("/main/wallet");
+              dispatch(Application_Update_AtCreateWallet(false));
             }, 2000);
           }
         }

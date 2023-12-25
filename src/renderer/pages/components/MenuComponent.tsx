@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
-import { AppstoreOutlined, MailOutlined, SettingOutlined } from '@ant-design/icons';
-import type { MenuProps, MenuTheme } from 'antd';
+import { AppstoreOutlined, WalletOutlined, SettingOutlined, DownOutlined, UserOutlined } from '@ant-design/icons';
+import { Button, Dropdown, MenuProps, MenuTheme, Space, message } from 'antd';
 import { Menu, Switch } from 'antd';
 import { useNavigate } from 'react-router-dom';
+import WalletSwitchComponent from './WalletSwitchComponent';
+
 
 type MenuItem = Required<MenuProps>['items'][number];
 
@@ -23,23 +25,17 @@ function getItem(
 }
 
 const items: MenuItem[] = [
-  getItem('Overviews', 'sub1', <MailOutlined />, [
-    getItem('Accounts', '/overviews/accounts' ),
-    getItem('Send', '/overviews/send'),
-    getItem('Receive', '/overviews/receive'),
-    getItem('Transactions', '/overviews/receive2'),
-  ]),
-  getItem('Tools', 'sub2', <AppstoreOutlined />, [
+  getItem("钱包", '/main/wallet', <WalletOutlined />),
+  getItem('工具', '/main/tools', <AppstoreOutlined />),
+];
 
-  ]),
-  getItem('Settings', 'sub4', <SettingOutlined />, [
-    getItem('Sys Info', '/settings/sysInfo'),
-  ]),
+const bottom_items: MenuItem[] = [
+  getItem("菜单", '/main/menu', <SettingOutlined />),
 ];
 
 const MenuComponent: React.FC = () => {
 
-  const [current, setCurrent] = useState('/overviews/accounts');
+  const [current, setCurrent] = useState('/main/wallet');
   const navigate = useNavigate();
 
   const onClick: MenuProps['onClick'] = (e) => {
@@ -48,18 +44,42 @@ const MenuComponent: React.FC = () => {
   };
 
   return (
-    <>
-      <Menu
-        style={{
-          minHeight:"98vh"
-        }}
-        onClick={onClick}
-        defaultOpenKeys={['sub1']}
-        selectedKeys={[current]}
-        mode="inline"
-        items={items}
-      />
-    </>
+    <div style={{
+      height: "100vh",
+    }}>
+      <div style={{
+        paddingLeft: "5px", paddingRight: "5px", width: "300px"
+      }}>
+        <WalletSwitchComponent />
+        <Menu
+          style={{
+            border: "0px"
+          }}
+          onClick={onClick}
+          defaultOpenKeys={['/main/wallet']}
+          selectedKeys={[current]}
+          mode="inline"
+          items={items}
+        />
+      </div>
+
+      <div style={{
+        paddingLeft: "5px", paddingRight: "5px", width: "300px",
+        position: "absolute",
+        bottom: "0",
+        marginBottom: "50px"
+      }}>
+        <Menu
+          style={{
+            border: "0px"
+          }}
+          onClick={onClick}
+          mode="inline"
+          selectedKeys={[current]}
+          items={bottom_items}
+        />
+      </div>
+    </div>
   );
 };
 

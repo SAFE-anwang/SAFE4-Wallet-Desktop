@@ -27,3 +27,5 @@ export const Application_New_Wallet = createAction<{
 }>("Application_New_Wallet");
 
 export const Application_Load_Wallets = createAction<any[]>("Application_Load_Wallets")
+
+export const Application_Update_AtCreateWallet = createAction<boolean>("Application_Update_AtCreateWallet")

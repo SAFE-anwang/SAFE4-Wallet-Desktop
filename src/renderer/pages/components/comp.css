@@ -1,0 +1,11 @@
+.wallet-switch-selector {
+    background-color: antiquewhite;
+}
+
+.wallet-switch-selector .ant-select-selector {
+    border : 0px
+}
+
+.wallet-switch-selector .ant-select-selection-placeholder {
+    color : black
+}

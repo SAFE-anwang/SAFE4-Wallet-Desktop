@@ -22,7 +22,7 @@ export default () => {
           navigate("/selectCreateWallet")
         }else{
           dispatch(Application_Load_Wallets(data.walletsList));
-          navigate("/main/")
+          navigate("/main/wallet")
         }
       }
     });
