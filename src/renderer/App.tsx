@@ -26,15 +26,18 @@ export default function App() {
         }}>
           <Router>
             <Routes>
-              <Route path="/" element={<SelectCreateWallet />} />
+              <Route path="/" element={<Index />} />
+              <Route path="/selectCreateWallet" element={<SelectCreateWallet />} />
               <Route path="/setPassword" element={<SetPassword />} />
               <Route path="/wallet/createMnemonic" element={<CreateMnemonic />} />
               <Route path="/waitingCreateWallet" element={<WaitingWalletCreate />} />
+
+              <Route path="/main/" element={<Accounts />} />
+
             </Routes>
           </Router>
         </div>
       }
-
       {
         !isCreateWallet &&
         <Router>

@@ -1,5 +1,5 @@
+import { IndexSingalHandler } from "./handlers/IndexSingalHandler";
 import { ListenSignalHandler } from "./handlers/ListenSignalHandler";
-import { SysInfoSignalHandler } from "./handlers/SysInfoSignalHandler";
 import { WalletSignalHandler } from "./handlers/WalletSignalHandler";
 import { Channels } from "./preload";
 
@@ -10,7 +10,7 @@ export class ApplicationIpcManager {
   listenSignalHandlers: ListenSignalHandler[] = [];
 
   constructor() {
-    this.listenSignalHandlers.push(new SysInfoSignalHandler());
+    this.listenSignalHandlers.push(new IndexSingalHandler());
     this.listenSignalHandlers.push(new WalletSignalHandler());
   }
 

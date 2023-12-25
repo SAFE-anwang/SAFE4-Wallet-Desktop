@@ -9,7 +9,6 @@ import { Application_Confirmed_Mnemonic } from "../../../state/application/actio
 
 const { Text } = Typography;
 
-
 export default () => {
 
     const navigate = useNavigate();
@@ -25,16 +24,14 @@ export default () => {
     } , [mnemonic] );
 
     useEffect(() => {
+        const method = 'generateMnemonic';
         window.electron.ipcRenderer.sendMessage(IPC_CHANNEL, [WalletSignal, 'generateMnemonic', [12]]);
         window.electron.ipcRenderer.once(IPC_CHANNEL, (arg) => {
-            if (arg instanceof Array && arg[0] == WalletSignal) {
-                const mnemonic = arg[1];
+            if (arg instanceof Array && arg[0] == WalletSignal && arg[1] == method) {
+                const mnemonic = arg[2][0];
                 setMnemonic(mnemonic);
             }
         });
-        return () => {
-            console.log("finish ....")
-        }
     }, []);
 
     const goBackClick = () => {
@@ -183,4 +180,4 @@ export default () => {
             </Col>
         </Row>
     </>
-}  
+}

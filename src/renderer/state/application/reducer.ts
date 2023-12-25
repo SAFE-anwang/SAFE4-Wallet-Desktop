@@ -1,9 +1,9 @@
 import { createReducer } from '@reduxjs/toolkit';
-import { Application_Confirmed_Mnemonic, Application_Init, Application_New_Wallet, Application_Update_BlockNumber, Application_Update_SysInfo } from './action';
+import { Application_Confirmed_Mnemonic, Application_Init, Application_Load_Wallets, Application_New_Wallet, Application_Update_BlockNumber, Application_Update_SysInfo } from './action';
 
 export interface Wallet {
   mnemonic : string,
-  seed : string,
+  path : string,
   privateKey : string,
   publicKey : string,
   address : string,
@@ -15,7 +15,7 @@ export interface IApplicationState {
     list : Wallet []
   },
   sysInfo : {
-    node_serve_path : string 
+    node_serve_path : string
   },
   blockNumber : string,
   accounts : any[]
@@ -23,7 +23,7 @@ export interface IApplicationState {
 
 const initialState: IApplicationState = {
   wallets : {
-    newMnemonic : undefined , 
+    newMnemonic : undefined ,
     list : [],
   },
   sysInfo : {
@@ -51,7 +51,7 @@ export default createReducer(initialState, (builder) => {
 
   builder.addCase(Application_Update_SysInfo, (state, { payload }) => {
     return {
-      ...state , 
+      ...state ,
       sysInfo : payload
     }
   })
@@ -62,10 +62,20 @@ export default createReducer(initialState, (builder) => {
   })
 
   builder.addCase(Application_New_Wallet , (state , { payload }) => {
-    state.wallets.list.push( payload );
-    return {
-      ...state
+    const { address } = payload;
+    let contains = false;
+    for( let i in state.wallets.list ){
+      if (state.wallets.list[i].address == address){
+        contains = true;
+      }
     }
+    if ( !contains ){
+      state.wallets.list.push( payload );
+    }
+  })
+
+  builder.addCase(Application_Load_Wallets , ( state , {payload} ) => {
+    state.wallets.list = payload;
   })
 
 })

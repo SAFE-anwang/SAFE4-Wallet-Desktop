@@ -1,5 +1,6 @@
 import { createAction } from '@reduxjs/toolkit';
 
+
 export const Application_Init = createAction<{
   blockNumber : string ,
   accounts : string[]
@@ -11,7 +12,7 @@ export const Application_Update_BlockNumber = createAction<string>
 export const Application_Update_SysInfo = createAction<{
   node_serve_path : string
 }>
-("Application_Update_SysInfo") 
+("Application_Update_SysInfo")
 
 export const Application_Confirmed_Mnemonic = createAction<{
   mnemonic : string
@@ -19,8 +20,10 @@ export const Application_Confirmed_Mnemonic = createAction<{
 
 export const Application_New_Wallet = createAction<{
   mnemonic : string,
-  seed : string,
-  address : string,
+  path : string,
   privateKey : string,
-  publicKey : string
+  publicKey : string,
+  address : string,
 }>("Application_New_Wallet");
+
+export const Application_Load_Wallets = createAction<any[]>("Application_Load_Wallets")

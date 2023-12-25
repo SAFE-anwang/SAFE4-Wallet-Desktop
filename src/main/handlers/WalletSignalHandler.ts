@@ -1,13 +1,16 @@
 import { Channel } from "../ApplicationIpcManager";
 import { ListenSignalHandler } from "./ListenSignalHandler";
 import * as bip39 from 'bip39';
+const fs = require('fs');
 
 export const WalletSignal = "wallet";
+
+export const Wallet_Keystore_FileName = "safe4wallet.keystores";
 
 export class WalletSignalHandler implements ListenSignalHandler {
 
   constructor() {
-    
+
   }
 
   getSingal(): string {
@@ -15,21 +18,18 @@ export class WalletSignalHandler implements ListenSignalHandler {
   }
 
   async handleOn(event: Electron.IpcMainEvent, ...args: any[]): Promise<any> {
-    const command: string = args[0][1];
+    const method: string = args[0][1];
     const params: any[] = args[0][2];
     let data = undefined;
-    if ("generateMnemonic" == command) {
+    if ("generateMnemonic" == method) {
       data = bip39.generateMnemonic();
-    } else if ("generateWallet" == command) {
-
+    } else if ("generateWallet" == method) {
       const secp256k1 = require("tiny-secp256k1");
       const { BIP32Factory } = require("bip32");
       const bip32 = BIP32Factory(secp256k1);
       const util = require("ethereumjs-util");
-
       const mnemonic = params[0];
       const password = params[1];
-
       // 使用助记词和密码基于 BIP39 生成种子私钥
       const seed = await bip39.mnemonicToSeedSync(mnemonic, password);
       // 使用种子作为 bip32:HDWallet 根节点
@@ -51,11 +51,18 @@ export class WalletSignalHandler implements ListenSignalHandler {
         publicKey,
         address
       }
-    } else if ("restoreWallet" == command) {
-
+    } else if ("restoreWallet" == method) {
+      const walletList = params[0];
+      const content = JSON.stringify(walletList);
+      await fs.writeFileSync(Wallet_Keystore_FileName, content, 'utf8');
+      data = {
+        success : true ,
+        path : ""
+      }
+      console.log("restoreWallet finished!")
     }
-    event.reply(Channel, [this.getSingal(), data])
-    return null;
+    console.log("data =>" , data)
+    event.reply(Channel, [this.getSingal(), method , [data] ])
   }
 
 

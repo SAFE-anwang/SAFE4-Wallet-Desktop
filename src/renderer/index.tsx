@@ -3,7 +3,7 @@ import App from './App';
 import React from 'react';
 import { Provider } from 'react-redux';
 import store from './state';
-import Init from './Init';
+import LoopUpdate from './LoopUpdate';
 
 const container = document.getElementById('root') as HTMLElement;
 const root = createRoot(container);
@@ -11,7 +11,7 @@ const root = createRoot(container);
 root.render(
   <React.StrictMode>
     <Provider store={store}>
-      <Init />
+      <LoopUpdate />
       <App  />
     </Provider>
   </React.StrictMode>

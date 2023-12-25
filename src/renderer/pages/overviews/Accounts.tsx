@@ -2,25 +2,34 @@
 import { Typography, Button, Card, Divider, Statistic, Row, Col, Modal } from 'antd';
 import { useEffect } from 'react';
 import { doNewAccount } from '../../services/accounts'
-import { useAccounts, useBlockNumber, useSysInfo } from '../../state/application/hooks';
+import { useAccounts, useBlockNumber, useSysInfo, useWalletList } from '../../state/application/hooks';
+import { useNavigate } from 'react-router-dom';
 
 const { Title } = Typography;
 
 export default () => {
 
+  const navigate = useNavigate();
+
   async function callDoNewAccount() {
-    console.log("button click")
-    doNewAccount();
+    navigate("/selectCreateWallet");
   }
   const blockNumber = useBlockNumber();
   const accounts = useAccounts();
   const sysInfo = useSysInfo();
+
+  const walletsList = useWalletList();
+
   useEffect(() => {
 
   }, [])
 
   return (<>
     <Title level={4} style={{ marginTop: "0px" }}>Accounts</Title>
+    <br />
+    {
+      JSON.stringify(walletsList)
+    }
     <Divider />
     <Row>
       <Col span={24}>

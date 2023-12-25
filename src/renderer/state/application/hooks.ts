@@ -15,15 +15,21 @@ export function useAccounts(): string[] {
 }
 
 export function useSysInfo(): {
-  node_serve_path: string 
+  node_serve_path: string
 } {
   return useSelector((state: AppState) => {
     return state.application.sysInfo;
   })
 }
 
-export function useNewMnemonic() : string | undefined {
+export function useNewMnemonic(): string | undefined {
   return useSelector((state: AppState) => {
     return state.application.wallets.newMnemonic;
+  })
+}
+
+export function useWalletList() {
+  return useSelector((state: AppState) => {
+    return state.application.wallets.list;
   })
 }
