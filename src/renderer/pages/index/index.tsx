@@ -23,9 +23,8 @@ export default () => {
         const {
           walletKeystores
         } = data;
-        console.log( "Index load => "  , walletKeystores )
         if ( walletKeystores.length == 0 ){
-          navigate("/selectCreateWallet")
+          navigate("/selectCreateWallet");
         }else{
           dispatch(Wallets_Load_Keystores(walletKeystores));
           navigate("/main/wallet")

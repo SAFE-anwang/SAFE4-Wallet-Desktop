@@ -1,6 +1,5 @@
 import { createReducer } from '@reduxjs/toolkit';
-import { Application_Confirmed_Mnemonic, Application_Init } from './action';
-import { Wallet } from '../wallets/reducer';
+import { Application_Action_Update_AtCreateWallet, Application_Blockchain_Update_ActiveWallet, Application_Confirmed_Mnemonic, Application_Init } from './action';
 
 export interface IApplicationState {
   action:{
@@ -12,7 +11,6 @@ export interface IApplicationState {
   }
   blockchain : {
     networkId : "SAFE4" ,
-    activeWallet : Wallet | undefined ,
     blockNumber : string,
   }
   data : {
@@ -30,7 +28,6 @@ const initialState: IApplicationState = {
   },
   blockchain:{
     networkId : "SAFE4",
-    activeWallet : undefined ,
     blockNumber: "0"
   },
   data:{
@@ -59,5 +56,14 @@ export default createReducer(initialState, (builder) => {
     }
   })
 
+  .addCase(Application_Action_Update_AtCreateWallet , (state , {payload}) => {
+    return {
+      ...state ,
+      action : {
+        ...state.action ,
+        atCreateWallet : payload
+      }
+    }
+  })
 
 })

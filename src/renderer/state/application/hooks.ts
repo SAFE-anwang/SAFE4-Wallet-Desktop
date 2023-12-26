@@ -1,6 +1,7 @@
 
 import { useSelector } from 'react-redux'
 import { AppState } from '../index';
+import { Wallet } from '../wallets/reducer';
 
 export function useBlockNumber(): string {
   return useSelector((state: AppState) => {
@@ -14,9 +15,17 @@ export function useNewMnemonic(): string | undefined {
   })
 }
 
-export function useActionAtCreateWallet(): boolean{
+export function useApplicationActionAtCreateWallet(): boolean{
   return useSelector((state: AppState) => {
     return state.application.action.atCreateWallet;
   })
 }
+
+export function useApplicationBlockchainActiveWallet(): Wallet | undefined{
+  return useSelector((state: AppState) => {
+    return state.application.blockchain.activeWallet;
+  })
+}
+
+
 

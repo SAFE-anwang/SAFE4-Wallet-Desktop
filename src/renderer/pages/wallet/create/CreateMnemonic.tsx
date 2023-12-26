@@ -35,7 +35,7 @@ export default () => {
     }, []);
 
     const goBackClick = () => {
-        navigate("/")
+        navigate("/selectCreateWallet")
     }
     const goNextClick = () => {
         if (mnemonic){
@@ -45,9 +45,9 @@ export default () => {
     }
 
     return <>
-        <Button size="large" shape="circle" icon={<LeftOutlined />} onClick={goBackClick} />
+        <Button style={{marginTop:"12px"}} size="large" shape="circle" icon={<LeftOutlined />} onClick={goBackClick} />
         <Row style={{
-            marginTop: "40px"
+            marginTop: "20px"
         }}>
             <Col span={14}>
                 <Row>

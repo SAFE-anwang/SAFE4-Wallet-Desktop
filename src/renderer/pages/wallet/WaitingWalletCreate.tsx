@@ -6,10 +6,10 @@ import { useNewMnemonic } from "../../state/application/hooks";
 import { IPC_CHANNEL } from "../../config";
 import { WalletSignal } from "../../../main/handlers/WalletSignalHandler";
 import { useDispatch } from "react-redux";
-import { Application_Update_AtCreateWallet } from "../../state/application/action";
 import { useWalletsKeystores, useWalletsList } from "../../state/wallets/hooks";
 import { WalletKeystore } from "../../state/wallets/reducer";
 import { Wallets_Load_Keystores } from "../../state/wallets/action";
+import { Application_Action_Update_AtCreateWallet } from "../../state/application/action";
 
 const method_generateWallet = "generateWallet";
 const method_restoreWallet  = "restoreWallet";
@@ -20,10 +20,6 @@ export default () => {
   const dispatch = useDispatch();
   const newMnemonic = useNewMnemonic();
   const walletsKeystores = useWalletsKeystores();
-
-  const goBackClick = () => {
-    navigate("/wallet/createMnemonic")
-  }
 
   const [newWalletKeystore, setNewWalletKeystore] = useState<WalletKeystore>();
   const [stepItems, setStepItems] = useState<StepProps[]>([]);
@@ -84,16 +80,15 @@ export default () => {
         const result = arg[2][0];
         if ( method == method_generateWallet){
           setNewWalletKeystore(result);
-          dispatch(Wallets_Load_Keystores([result]))
+          dispatch(Wallets_Load_Keystores([result]));
         }else if (method == method_restoreWallet){
-          console.log("restore keystores response" , result)
           const {
             success, path
           } = result;
           if ( success ) {
             setTimeout(() => {
               setStempCurrent(3);
-              dispatch(Application_Update_AtCreateWallet(false));
+              dispatch(Application_Action_Update_AtCreateWallet(false));
               navigate("/main/wallet");
             }, 1500);
           }
@@ -118,12 +113,13 @@ export default () => {
     }
   }, [newWalletKeystore])
 
-
   return (
     <>
-      <Button size="large" shape="circle" icon={<LeftOutlined />} onClick={goBackClick} />
       <Spin spinning={true}>
         <Alert
+          style={{
+            marginTop:"10px"
+          }}
           type="info"
           message="创建钱包"
           description={<>

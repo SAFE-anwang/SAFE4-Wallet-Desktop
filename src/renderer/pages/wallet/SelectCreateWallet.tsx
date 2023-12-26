@@ -1,9 +1,10 @@
-import { Col, Row, Typography } from "antd";
-import { PlusCircleTwoTone, VerticalAlignBottomOutlined } from '@ant-design/icons';
+import { Button, Col, Row, Typography } from "antd";
+import { PlusCircleTwoTone, VerticalAlignBottomOutlined , CloseOutlined  } from '@ant-design/icons';
 import { useNavigate } from "react-router-dom";
 import { useEffect } from "react";
 import { useDispatch } from "react-redux";
-import { Application_Update_AtCreateWallet } from "../../state/application/action";
+import { Application_Action_Update_AtCreateWallet } from "../../state/application/action";
+import { useWalletsList } from "../../state/wallets/hooks";
 
 const { Text } = Typography;
 
@@ -11,17 +12,30 @@ export default () => {
 
     const navigate = useNavigate();
     const dispatch = useDispatch();
+    const walletsList = useWalletsList();
 
     const createWalletClick = () => {
         navigate("/setPassword")
     }
+    const closeClick = () => {
+        navigate("/main/wallet");
+    }
+
 
     useEffect( () => {
-        dispatch(Application_Update_AtCreateWallet(true))
+        dispatch(Application_Action_Update_AtCreateWallet(true))
     },[]);
 
     return <>
-        <Row style={{ marginTop: "5%" }}>
+        <Row>
+            <Col span={24} style={{marginTop:"12px"}}>
+                {
+                    walletsList.length > 0 &&
+                    <Button onClick={closeClick} style={{float:"right"}} size="large" shape="circle" icon={<CloseOutlined />} />
+                }
+            </Col>
+        </Row>
+        <Row style={{ marginTop:"36px" }}>
             <Col span={12}>
                 <div onClick={createWalletClick}
                     style={{

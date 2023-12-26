@@ -70,7 +70,7 @@ new ApplicationIpcManager().register(ipcMain);
      : path.join(__dirname, '../../assets');
 
    const getAssetPath = (...paths: string[]): string => {
-     return path.join(RESOURCES_PATH, ...paths);
+     return path.join(RESOURCES_PATH, ...paths); 
    };
 
    mainWindow = new BrowserWindow({

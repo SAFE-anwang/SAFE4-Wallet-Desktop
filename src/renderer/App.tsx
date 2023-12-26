@@ -7,13 +7,12 @@ import SelectCreateWallet from './pages/wallet/SelectCreateWallet';
 import SetPassword from './pages/wallet/SetPassword';
 import CreateMnemonic from './pages/wallet/create/CreateMnemonic';
 import WaitingWalletCreate from './pages/wallet/WaitingWalletCreate';
-import { useActionAtCreateWallet } from './state/application/hooks';
+import { useApplicationActionAtCreateWallet } from './state/application/hooks';
 
 export default function App() {
 
-  const atCreateWallet = useActionAtCreateWallet();
-  const left = atCreateWallet ? "50px" : "200px";
-
+  const atCreateWallet = useApplicationActionAtCreateWallet();
+  
   return (
     <>
       <Router>
@@ -28,15 +27,16 @@ export default function App() {
             </Col>
           }
           <Col span={18} style={{
+            minWidth:"800px",
             position: "fixed",
             overflowX: "auto",
             overflowY: "auto",
             top: "0",
             right: "0",
             bottom: "0",
-            left,
+            left : "200px",
             paddingLeft: "20px",
-            paddingBottom: "20px"
+            paddingBottom: "20px",
           }}>
             <Routes>
               <Route path="/" element={<Index />} />

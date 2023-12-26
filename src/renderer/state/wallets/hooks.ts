@@ -15,3 +15,9 @@ export function useWalletsKeystores() : WalletKeystore[] {
   });
 }
 
+export function useWalletsActiveWallet() : Wallet | undefined {
+  return useSelector((state: AppState) => {
+    return state.wallets.activeWallet;
+  });
+}
+
