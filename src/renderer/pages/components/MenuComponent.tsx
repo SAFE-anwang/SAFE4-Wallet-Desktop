@@ -46,9 +46,10 @@ const MenuComponent: React.FC = () => {
   return (
     <div style={{
       height: "100vh",
+      width:"100%"
     }}>
       <div style={{
-        paddingLeft: "5px", paddingRight: "5px", width: "300px"
+        paddingLeft: "5px", paddingRight: "5px", width: "100%"
       }}>
         <WalletSwitchComponent />
         <Menu
@@ -64,7 +65,7 @@ const MenuComponent: React.FC = () => {
       </div>
 
       <div style={{
-        paddingLeft: "5px", paddingRight: "5px", width: "300px",
+        paddingLeft: "5px", paddingRight: "5px", width: "100%",
         position: "absolute",
         bottom: "0",
         marginBottom: "50px"

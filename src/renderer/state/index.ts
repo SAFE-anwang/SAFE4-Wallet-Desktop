@@ -1,14 +1,15 @@
 import { configureStore } from '@reduxjs/toolkit'
 import { enableMapSet } from 'immer';
 
-import application from './application/reducer'
+import application from './application/reducer';
+import wallets from './wallets/reducer';
 
 enableMapSet();
 
-const PERSISTED_KEYS: string[] = [ "application.blockNumber" ]
 const store = configureStore({
     reducer: {
         application,
+        wallets
     }
 })
 

@@ -1,13 +1,15 @@
-import { Alert, Spin, Switch, Button, Steps, StepProps } from "antd"
-import { LeftOutlined, LockOutlined } from '@ant-design/icons';
+import { Alert, Spin, Button, Steps, StepProps } from "antd"
+import { LeftOutlined } from '@ant-design/icons';
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useNewMnemonic, useWalletList } from "../../state/application/hooks";
+import { useNewMnemonic } from "../../state/application/hooks";
 import { IPC_CHANNEL } from "../../config";
 import { WalletSignal } from "../../../main/handlers/WalletSignalHandler";
 import { useDispatch } from "react-redux";
-import { Application_New_Wallet, Application_Update_AtCreateWallet } from "../../state/application/action";
-import { Wallet } from "../../state/application/reducer";
+import { Application_Update_AtCreateWallet } from "../../state/application/action";
+import { useWalletsKeystores, useWalletsList } from "../../state/wallets/hooks";
+import { WalletKeystore } from "../../state/wallets/reducer";
+import { Wallets_Load_Keystores } from "../../state/wallets/action";
 
 const method_generateWallet = "generateWallet";
 const method_restoreWallet  = "restoreWallet";
@@ -17,16 +19,15 @@ export default () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const newMnemonic = useNewMnemonic();
-  const walletList = useWalletList();
+  const walletsKeystores = useWalletsKeystores();
+
   const goBackClick = () => {
     navigate("/wallet/createMnemonic")
   }
 
-  const [newWallet, setNewWallet] = useState<Wallet>();
+  const [newWalletKeystore, setNewWalletKeystore] = useState<WalletKeystore>();
   const [stepItems, setStepItems] = useState<StepProps[]>([]);
   const [stepCurrent, setStempCurrent] = useState<number>(0);
-  const [spinning, setSpinning] = useState(true);
-  const [finish, setFinish] = useState(false);
 
   const renderStempItems = () => {
     setTimeout(() => {
@@ -78,32 +79,29 @@ export default () => {
 
   useEffect(() => {
     const remove = window.electron.ipcRenderer.on( IPC_CHANNEL, (arg) => {
-      console.log("effect >> " , arg)
       if (arg instanceof Array && arg[0] == WalletSignal) {
         const method = arg[1];
         const result = arg[2][0];
         if ( method == method_generateWallet){
-          setNewWallet(result)
-          dispatch(Application_New_Wallet(result))
+          setNewWalletKeystore(result);
+          dispatch(Wallets_Load_Keystores([result]))
         }else if (method == method_restoreWallet){
+          console.log("restore keystores response" , result)
           const {
             success, path
           } = result;
-          if (success) {
+          if ( success ) {
             setTimeout(() => {
               setStempCurrent(3);
-              setSpinning(false);
-              navigate("/main/wallet");
               dispatch(Application_Update_AtCreateWallet(false));
-            }, 2000);
+              navigate("/main/wallet");
+            }, 1500);
           }
         }
       }
     });
-
     return () => {
       remove();
-      console.log("finish , " , remove)
     }
   }, []);
 
@@ -115,16 +113,16 @@ export default () => {
   }, [newMnemonic]);
 
   useEffect(() => {
-    if (newWallet?.address) {
-      window.electron.ipcRenderer.sendMessage(IPC_CHANNEL, [WalletSignal, method_restoreWallet, [walletList]]);
+    if (newWalletKeystore?.address) {
+      window.electron.ipcRenderer.sendMessage(IPC_CHANNEL, [WalletSignal, method_restoreWallet, [walletsKeystores]]);
     }
-  }, [newWallet])
+  }, [newWalletKeystore])
 
 
   return (
     <>
       <Button size="large" shape="circle" icon={<LeftOutlined />} onClick={goBackClick} />
-      <Spin spinning={spinning}>
+      <Spin spinning={true}>
         <Alert
           type="info"
           message="创建钱包"

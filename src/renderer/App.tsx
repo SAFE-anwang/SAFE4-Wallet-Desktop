@@ -1,5 +1,4 @@
-import { MemoryRouter as Router, Routes, Route, useNavigate } from 'react-router-dom';
-import icon from '../../assets/icon.svg';
+import { MemoryRouter as Router, Routes, Route } from 'react-router-dom';
 import { Col, Row } from 'antd';
 import MenuComponent from './pages/components/MenuComponent';
 import Accounts from './pages/main/Accounts';
@@ -8,12 +7,12 @@ import SelectCreateWallet from './pages/wallet/SelectCreateWallet';
 import SetPassword from './pages/wallet/SetPassword';
 import CreateMnemonic from './pages/wallet/create/CreateMnemonic';
 import WaitingWalletCreate from './pages/wallet/WaitingWalletCreate';
-import { useAtCreateWallet } from './state/application/hooks';
+import { useActionAtCreateWallet } from './state/application/hooks';
 
 export default function App() {
 
-  const atCreateWallet = useAtCreateWallet();
-  const left = atCreateWallet ? "50px" : "300px";
+  const atCreateWallet = useActionAtCreateWallet();
+  const left = atCreateWallet ? "50px" : "200px";
 
   return (
     <>
@@ -23,7 +22,7 @@ export default function App() {
           {
             !atCreateWallet && <Col span={6} style={{
               position: "fixed",
-              width: "300px"
+              width: "200px"
             }}>
               <MenuComponent />
             </Col>

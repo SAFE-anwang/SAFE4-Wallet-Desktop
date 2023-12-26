@@ -18,7 +18,7 @@ export default () => {
 
     useEffect( () => {
         dispatch(Application_Update_AtCreateWallet(true))
-    } , [] );
+    },[]);
 
     return <>
         <Row style={{ marginTop: "5%" }}>

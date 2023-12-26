@@ -12,7 +12,6 @@ export default () => {
     const goBackClick = () => {
         navigate("/")
     }
-
     const goNextClick = () => {
         navigate("/wallet/createMnemonic")
     }
@@ -38,7 +37,7 @@ export default () => {
                         }} />
                         <br /> <br /> <br />
                         <Button onClick={goNextClick} style={{
-                            width: "100%", height: "56px", fontSize: "18px" , background:"#2bbb2b" , color:"white" 
+                            width: "100%", height: "56px", fontSize: "18px" , background:"#2bbb2b" , color:"white"
                         }}>继续</Button>
                     </Col>
                     <Col span={4}>
@@ -68,4 +67,4 @@ export default () => {
             </Col>
         </Row>
     </>
-}  
+}

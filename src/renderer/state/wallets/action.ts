@@ -1,10 +1,13 @@
 import { ActionCreatorWithPreparedPayload, createAction } from "@reduxjs/toolkit";
+import { WalletKeystore } from "./reducer";
+import Wallet from "ethereumjs-wallet";
 
+export const Wallets_Load_Keystores = createAction<WalletKeystore[]>(
+  "Wallets_Load_Keystores"
+);
 
-export const Wallet_NewMnemonic = createAction<string>("wallets.newMnemonic");
+export const Wallets_Init_List = createAction<Wallet[]>(
+  "Wallets_Init_List"
+);
 
-
-export function FilterWalletsAction( method : string , params : any ) : ActionCreatorWithPreparedPayload<any , string> {
-  return Wallet_NewMnemonic;
-}
 

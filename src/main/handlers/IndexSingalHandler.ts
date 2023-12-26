@@ -27,31 +27,32 @@ export class IndexSingalHandler implements ListenSignalHandler {
   }
 
   private load() : any {
-    const walletsList = this.loadWallet();
+    const walletKeystores = this.loadWalletKeystores();
     return {
-      walletsList
+      walletKeystores
     }
   }
 
-  private loadWallet() : any {
-    let walletsList : any[] = [];
+  private loadWalletKeystores() : any {
+    let walletKeystores : any[] = [];
     let safe4walletKeyStoresContent = undefined;
     try{
-      safe4walletKeyStoresContent =  fs.readFileSync( Wallet_Keystore_FileName  , "utf8");
+      safe4walletKeyStoresContent = fs.readFileSync( Wallet_Keystore_FileName  , "utf8");
     }catch(err){
       console.error(`No ${Wallet_Keystore_FileName} found`)
     }
     try{
       if ( safe4walletKeyStoresContent ){
-        walletsList = JSON.parse(safe4walletKeyStoresContent);
-        if ( ! (walletsList instanceof Array) ){
+        walletKeystores = JSON.parse(safe4walletKeyStoresContent);
+        if ( ! (walletKeystores instanceof Array) ){
           console.error(`${Wallet_Keystore_FileName} 损坏`);
         }
       }
     }catch(err){
       console.error(`${Wallet_Keystore_FileName} 损坏`);
     }
-    return walletsList;
+    console.log(`Finish Load ${Wallet_Keystore_FileName}`)
+    return walletKeystores;
   }
 
 }
