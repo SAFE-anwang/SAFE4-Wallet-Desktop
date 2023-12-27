@@ -18,7 +18,6 @@ export default () => {
   const activeWallet = useWalletsActiveWallet();
   const dispatch = useDispatch();
 
-
   const items = useMemo(() => {
     let items = [];
     for (let i in walletsList) {
@@ -42,8 +41,8 @@ export default () => {
 
   return <>
     <Select
-      defaultValue={activeWallet?.publicKey}
       className='wallet-switch-selector'
+      placeholder={activeWallet?.name}
       onChange={switchActionWallet}
       style={{ textAlign: "center", marginBottom: "15px", height: "50px", width: "190px", marginLeft: "5px", borderRadius: "20px" }}
       dropdownRender={(menu) => (
