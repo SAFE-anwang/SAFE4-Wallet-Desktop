@@ -47,25 +47,6 @@ export default () => {
 
   useEffect(() => {
     dispatch(Application_Action_Update_AtCreateWallet(false));
-    const web3 = new Web3("ws://47.107.47.210:8546");
-    // 订阅新区块事件
-    const subscription = web3.eth.subscribe('newBlockHeaders', (error : any, result : any) => {
-      if (error) {
-        console.error('Error:', error);
-      } else {
-        console.log('New Block Height:', result.number);
-      }
-    });
-    console.log(subscription)
-    // web3.eth.getBlockNumber().then( (data : any) => {
-    //   console.log(data)
-    // } )
-    // console.log(web3.eth)
-    // // 记得处理错误和在适当的时候取消订阅
-    // subscription.on('error', (error : any) => {
-    //   console.error('Subscription Error:', error);
-    // });
-    // console.log(subscription)
 
   }, []);
 

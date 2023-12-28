@@ -26,8 +26,6 @@ function Child() {
 
 export default function ProviderExample() {
   return (
-    <Web3ReactProvider connectors={connectors}>
       <Child />
-    </Web3ReactProvider>
   )
 }

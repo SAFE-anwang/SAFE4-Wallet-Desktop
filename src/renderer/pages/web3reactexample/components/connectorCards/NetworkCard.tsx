@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 
 import { URLS } from '../../chains'
 import { hooks, network } from '../../connectors/network'
@@ -27,18 +27,35 @@ export default function NetworkCard() {
     })
   }, [])
 
+  const blockNumber = useMemo( () => {
+    if (provider){
+      provider.getBlockNumber().then( (blockNumber) => {
+        console.log("finishi")
+        console.log(blockNumber)
+        return blockNumber;
+      } )
+    }
+  } , [provider] )
+  console.log(blockNumber)
+
+  console.log( "provider =>" , provider )
+
   return (
-    <Card
-      connector={network}
-      activeChainId={chainId}
-      chainIds={CHAIN_IDS}
-      isActivating={isActivating}
-      isActive={isActive}
-      error={error}
-      setError={setError}
-      accounts={accounts}
-      provider={provider}
-      ENSNames={ENSNames}
-    />
+    <>
+      { chainId }
+      <Card
+        connector={network}
+        activeChainId={chainId}
+        chainIds={CHAIN_IDS}
+        isActivating={isActivating}
+        isActive={isActive}
+        error={error}
+        setError={() => setError}
+        accounts={accounts}
+        provider={provider}
+        ENSNames={ENSNames}
+      />
+    </>
+
   )
 }

@@ -6,18 +6,14 @@ import store from './state';
 import LoopUpdate from './LoopUpdate';
 
 import type { Network } from '@web3-react/network';
-import { useWeb3React, Web3ReactHooks, Web3ReactProvider } from '@web3-react/core'
+import { Web3ReactHooks, Web3ReactProvider } from '@web3-react/core'
 import { hooks as networkHooks, network } from './connectors/network';
-
 
 const container = document.getElementById('root') as HTMLElement;
 const root = createRoot(container);
 const connectors: [Network, Web3ReactHooks][] = [
   [network, networkHooks]
 ]
-
-
-
 
 root.render(
   <React.StrictMode>
