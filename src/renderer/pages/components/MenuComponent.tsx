@@ -26,7 +26,7 @@ function getItem(
 
 const items: MenuItem[] = [
   getItem("钱包", '/main/wallet', <WalletOutlined />),
-  getItem('工具', '/main/tools', <AppstoreOutlined />),
+  getItem('工具', '/tools/web3', <AppstoreOutlined />),
 ];
 
 const bottom_items: MenuItem[] = [

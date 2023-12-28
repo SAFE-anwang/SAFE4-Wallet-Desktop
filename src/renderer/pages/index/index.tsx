@@ -6,7 +6,8 @@ import { IndexSingal } from "../../../main/handlers/IndexSingalHandler";
 import { useDispatch } from "react-redux";
 import { Wallets_Load_Keystores } from "../../state/wallets/action";
 import { useWalletsList } from "../../state/wallets/hooks";
-
+import { Application_Init } from "../../state/application/action";
+const Web3 = require('web3');
 const { Text } = Typography;
 
 export default () => {
@@ -31,6 +32,11 @@ export default () => {
         }
       }
     });
+
+    dispatch( Application_Init({
+      web3Endpoint : "http://47.107.47.210:8545"
+    }) )
+
   }, [])
   return <Spin spinning={true} />
 }

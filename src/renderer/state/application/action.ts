@@ -2,8 +2,7 @@ import { createAction } from '@reduxjs/toolkit';
 import { Wallet } from '../wallets/reducer';
 
 export const Application_Init = createAction<{
-  blockNumber: string,
-  accounts: string[]
+  web3Endpoint : string
 }>("Application_Init");
 
 export const Application_Update_BlockNumber = createAction<string>

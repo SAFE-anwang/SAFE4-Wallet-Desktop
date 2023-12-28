@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import { useWalletsActiveWallet } from '../../../state/wallets/hooks';
 import { Application_Action_Update_AtCreateWallet } from '../../../state/application/action';
 import { SearchOutlined, SendOutlined, QrcodeOutlined } from '@ant-design/icons';
+const { Web3 } = require('web3');
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -46,6 +47,26 @@ export default () => {
 
   useEffect(() => {
     dispatch(Application_Action_Update_AtCreateWallet(false));
+    const web3 = new Web3("ws://47.107.47.210:8546");
+    // 订阅新区块事件
+    const subscription = web3.eth.subscribe('newBlockHeaders', (error : any, result : any) => {
+      if (error) {
+        console.error('Error:', error);
+      } else {
+        console.log('New Block Height:', result.number);
+      }
+    });
+    console.log(subscription)
+    // web3.eth.getBlockNumber().then( (data : any) => {
+    //   console.log(data)
+    // } )
+    // console.log(web3.eth)
+    // // 记得处理错误和在适当的时候取消订阅
+    // subscription.on('error', (error : any) => {
+    //   console.error('Subscription Error:', error);
+    // });
+    // console.log(subscription)
+
   }, []);
 
   return (<>
@@ -80,7 +101,7 @@ export default () => {
               <Col span={12} style={{ textAlign: "center" }}>
                 <Button style={{
                   height: "45px", width: "45px"
-                }} size='large' shape="circle" icon={<QrcodeOutlined />} onClick={()=>setOpenReceiveModal(true)} /><br />
+                }} size='large' shape="circle" icon={<QrcodeOutlined />} onClick={() => setOpenReceiveModal(true)} /><br />
                 <Text>接收</Text>
               </Col>
             </Row>
@@ -94,21 +115,21 @@ export default () => {
       </div>
     </div>
 
-    <Modal title="接收" open={openReceiveModal} width={"400px"} footer={null} closable onCancel={()=>{setOpenReceiveModal(false)}}>
+    <Modal title="接收" open={openReceiveModal} width={"400px"} footer={null} closable onCancel={() => { setOpenReceiveModal(false) }}>
       <Divider />
       <Row>
         <Text style={{ margin: "auto", marginTop: "20px", marginBottom: "20px" }} type='secondary'>资产只能在相同的网络中发送。</Text>
       </Row>
-      <Row style={{textAlign:"center"}}>
+      <Row style={{ textAlign: "center" }}>
         {
-          activeWallet && <QRCode size={200} style={{margin:"auto" , boxShadow:"5px 5px 10px 2px rgba(0, 0, 0, 0.2)" }} value={activeWallet.address} />
+          activeWallet && <QRCode size={200} style={{ margin: "auto", boxShadow: "5px 5px 10px 2px rgba(0, 0, 0, 0.2)" }} value={activeWallet.address} />
         }
       </Row>
       <Row style={{ width: "200px", textAlign: "center", margin: "auto" }}>
         <Text style={{ margin: "auto", marginTop: "20px", marginBottom: "20px" }} strong>
           {activeWallet?.address}
         </Text>
-        <br/>
+        <br />
       </Row>
     </Modal>
 

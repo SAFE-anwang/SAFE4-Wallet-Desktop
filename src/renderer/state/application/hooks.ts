@@ -2,6 +2,7 @@
 import { useSelector } from 'react-redux'
 import { AppState } from '../index';
 import { Wallet } from '../wallets/reducer';
+import { Web3 } from 'web3';
 
 export function useBlockNumber(): string {
   return useSelector((state: AppState) => {
@@ -20,12 +21,5 @@ export function useApplicationActionAtCreateWallet(): boolean{
     return state.application.action.atCreateWallet;
   })
 }
-
-export function useApplicationBlockchainActiveWallet(): Wallet | undefined{
-  return useSelector((state: AppState) => {
-    return state.application.blockchain.activeWallet;
-  })
-}
-
 
 
