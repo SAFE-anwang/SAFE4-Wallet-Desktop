@@ -1,10 +1,8 @@
 import { configureStore } from '@reduxjs/toolkit'
-import { enableMapSet } from 'immer';
 
 import application from './application/reducer';
 import wallets from './wallets/reducer';
 
-enableMapSet();
 
 const store = configureStore({
     reducer: {

@@ -12,12 +12,9 @@ export default function NetworkCard() {
   const chainId = useChainId()
   const accounts = useAccounts()
   const isActivating = useIsActivating()
-
   const isActive = useIsActive()
-
   const provider = useProvider()
   const ENSNames = useENSNames(provider)
-
   const [error, setError] = useState(undefined)
 
   // attempt to connect eagerly on mount
@@ -25,24 +22,11 @@ export default function NetworkCard() {
     void network.activate().catch(() => {
       console.debug('Failed to connect to network')
     })
-  }, [])
+  }, []);
 
-  const blockNumber = useMemo( () => {
-    if (provider){
-      provider.getBlockNumber().then( (blockNumber) => {
-        console.log("finishi")
-        console.log(blockNumber)
-        return blockNumber;
-      } )
-    }
-  } , [provider] )
-  console.log(blockNumber)
-
-  console.log( "provider =>" , provider )
 
   return (
     <>
-      { chainId }
       <Card
         connector={network}
         activeChainId={chainId}

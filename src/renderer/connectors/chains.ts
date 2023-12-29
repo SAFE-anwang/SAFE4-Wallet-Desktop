@@ -55,35 +55,18 @@ export function getAddChainParameters(chainId: number): AddEthereumChainParamete
   }
 }
 
-const getInfuraUrlFor = (network: string) =>
- undefined
-const getAlchemyUrlFor = (network: string) =>
- undefined
-
 type ChainConfig = { [chainId: number]: BasicChainInformation | ExtendedChainInformation }
 
 export const MAINNET_CHAINS: ChainConfig = {
-  666666: {
-    urls: ['https://forno.celo.org'],
+  6666666: {
+    urls: ['http://47.107.47.210:8545'].filter(Boolean),
     name: 'Safe4',
     nativeCurrency: SAFE4,
-    blockExplorerUrls: ['https://explorer.celo.org'],
-  },
-  42220: {
-    urls: ['https://forno.celo.org'],
-    name: 'Celo',
-    nativeCurrency: CELO,
-    blockExplorerUrls: ['https://explorer.celo.org'],
   },
 }
 
 export const TESTNET_CHAINS: ChainConfig = {
-  44787: {
-    urls: ['https://alfajores-forno.celo-testnet.org'],
-    name: 'Celo Alfajores',
-    nativeCurrency: CELO,
-    blockExplorerUrls: ['https://alfajores-blockscout.celo-testnet.org'],
-  },
+
 }
 
 export const CHAINS: ChainConfig = {
@@ -94,7 +77,6 @@ export const CHAINS: ChainConfig = {
 export const URLS: { [chainId: number]: string[] } = Object.keys(CHAINS).reduce<{ [chainId: number]: string[] }>(
   (accumulator, chainId) => {
     const validURLs: string[] = CHAINS[Number(chainId)].urls
-    console.log("execute about URLS.... >" , validURLs)
     if (validURLs.length) {
       accumulator[Number(chainId)] = validURLs
     }

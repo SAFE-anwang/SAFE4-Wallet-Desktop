@@ -1,6 +1,6 @@
 import type { AddEthereumChainParameter } from '@web3-react/types'
 
-const SAFE: AddEthereumChainParameter['nativeCurrency'] = {
+const SAFE4 : AddEthereumChainParameter['nativeCurrency'] = {
   name: 'Safe4',
   symbol: 'SAFE',
   decimals: 18,
@@ -55,14 +55,41 @@ export function getAddChainParameters(chainId: number): AddEthereumChainParamete
   }
 }
 
-const getInfuraUrlFor = (network: string) =>
-  undefined
-const getAlchemyUrlFor = (network: string) =>
-  undefined
+// const getInfuraUrlFor = (network: string) =>
+//   process.env.infuraKey ? `https://${network}.infura.io/v3/${process.env.infuraKey}` : undefined
+// const getAlchemyUrlFor = (network: string) =>
+//   process.env.alchemyKey ? `https://${network}.alchemyapi.io/v2/${process.env.alchemyKey}` : undefined
 
 type ChainConfig = { [chainId: number]: BasicChainInformation | ExtendedChainInformation }
 
 export const MAINNET_CHAINS: ChainConfig = {
+  6666666: {
+    urls: ['http://47.107.47.210:8545'].filter(Boolean),
+    name: 'Safe4',
+    nativeCurrency: SAFE4,
+  },
+  1: {
+    urls: ['https://cloudflare-eth.com'].filter(Boolean),
+    name: 'Mainnet',
+  },
+  10: {
+    urls: ['https://mainnet.optimism.io'].filter(Boolean),
+    name: 'Optimism',
+    nativeCurrency: ETH,
+    blockExplorerUrls: ['https://optimistic.etherscan.io'],
+  },
+  42161: {
+    urls: ['https://arb1.arbitrum.io/rpc'].filter(Boolean),
+    name: 'Arbitrum One',
+    nativeCurrency: ETH,
+    blockExplorerUrls: ['https://arbiscan.io'],
+  },
+  137: {
+    urls: ['https://polygon-rpc.com'].filter(Boolean),
+    name: 'Polygon Mainnet',
+    nativeCurrency: MATIC,
+    blockExplorerUrls: ['https://polygonscan.com'],
+  },
   42220: {
     urls: ['https://forno.celo.org'],
     name: 'Celo',

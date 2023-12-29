@@ -8,8 +8,8 @@ import CreateMnemonic from './pages/wallet/create/CreateMnemonic';
 import WaitingWalletCreate from './pages/wallet/WaitingWalletCreate';
 import { useApplicationActionAtCreateWallet } from './state/application/hooks';
 import Wallet from './pages/main/wallets/Wallet';
-import Web3PageContainer from './pages/main/tools/Web3PageContainer';
 import Home from './pages/web3reactexample/pages';
+import Test from './pages/main/tools/Test';
 
 export default function App() {
 
@@ -47,7 +47,7 @@ export default function App() {
               <Route path="/wallet/createMnemonic" element={<CreateMnemonic />} />
               <Route path="/waitingCreateWallet" element={<WaitingWalletCreate />} />
               <Route path="/main/wallet" element={<Wallet />} />
-              <Route path="/tools/web3" element={<Home />} />
+              <Route path="/tools/web3" element={<Test />} />
             </Routes>
           </Col>
         </Row>

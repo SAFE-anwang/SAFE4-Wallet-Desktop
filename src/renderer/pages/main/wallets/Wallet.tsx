@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import { useWalletsActiveWallet } from '../../../state/wallets/hooks';
 import { Application_Action_Update_AtCreateWallet } from '../../../state/application/action';
 import { SearchOutlined, SendOutlined, QrcodeOutlined } from '@ant-design/icons';
+import { useWeb3Hooks, useWeb3Network } from '../../../connectors/hooks';
 const { Web3 } = require('web3');
 
 const { Title, Text, Paragraph } = Typography;
@@ -45,15 +46,27 @@ export default () => {
     console.log(key);
   };
 
+  const { useChainId, useAccounts, useIsActivating, useIsActive, useProvider, useENSNames } = useWeb3Hooks();
+  const network = useWeb3Network();
+  const chainId = useChainId();
+  const provider = useProvider();
+
   useEffect(() => {
     dispatch(Application_Action_Update_AtCreateWallet(false));
-
+    void network.activate().catch(() => {
+      console.debug('Failed to connect to network')
+    })
   }, []);
+
+  useEffect(() => {
+    console.log("provider ?? =>" , provider?.getSigner())
+  }, [chainId] );
 
   return (<>
 
     <Row style={{ height: "50px" }}>
       <Col span={12}>
+        {chainId}
         <Title level={4} style={{ lineHeight: "16px" }}>钱包:{activeWallet?.name}</Title>
       </Col>
       <Col span={12} style={{ textAlign: "right" }}>

@@ -7,6 +7,7 @@ import { useDispatch } from "react-redux";
 import { Wallets_Load_Keystores } from "../../state/wallets/action";
 import { useWalletsList } from "../../state/wallets/hooks";
 import { Application_Init } from "../../state/application/action";
+import { useWeb3Network } from "../../connectors/hooks";
 const Web3 = require('web3');
 const { Text } = Typography;
 
@@ -14,8 +15,14 @@ export default () => {
 
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const network = useWeb3Network();
 
   useEffect(() => {
+
+    void network.activate().catch(() => {
+      console.debug('Failed to connect to network')
+    })
+
     const method = "load";
     window.electron.ipcRenderer.sendMessage(IPC_CHANNEL, [IndexSingal, 'load', []]);
     window.electron.ipcRenderer.once(IPC_CHANNEL, (arg) => {
@@ -35,7 +42,7 @@ export default () => {
 
     dispatch( Application_Init({
       web3Endpoint : "http://47.107.47.210:8545"
-    }) )
+    }))
 
   }, [])
   return <Spin spinning={true} />
