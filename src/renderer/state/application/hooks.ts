@@ -1,10 +1,9 @@
 
 import { useSelector } from 'react-redux'
 import { AppState } from '../index';
-import { Wallet } from '../wallets/reducer';
-import { Web3 } from 'web3';
 
-export function useBlockNumber(): string {
+
+export function useBlockNumber(): number {
   return useSelector((state: AppState) => {
     return state.application.blockchain.blockNumber;
   });

@@ -1,6 +1,10 @@
 import { createReducer } from '@reduxjs/toolkit';
-import { Application_Action_Update_AtCreateWallet, Application_Blockchain_Update_ActiveWallet, Application_Confirmed_Mnemonic, Application_Init } from './action';
-const { Web3 } = require("web3");
+import { 
+  Application_Action_Update_AtCreateWallet, 
+  Application_Blockchain_Update_BlockNumber, 
+  Application_Confirmed_Mnemonic, 
+  Application_Init 
+} from './action';
 
 
 export interface IApplicationState {
@@ -13,7 +17,7 @@ export interface IApplicationState {
   }
   blockchain : {
     networkId : "SAFE4" ,
-    blockNumber : string,
+    blockNumber : number,
   }
   data : {
 
@@ -30,7 +34,7 @@ const initialState: IApplicationState = {
   },
   blockchain:{
     networkId : "SAFE4",
-    blockNumber: "0",
+    blockNumber: 0,
   },
   data:{
 
@@ -40,6 +44,16 @@ const initialState: IApplicationState = {
 export default createReducer(initialState, (builder) => {
   builder.addCase(Application_Init, (state, { payload : { web3Endpoint } }) => {
 
+  })
+
+  .addCase(Application_Blockchain_Update_BlockNumber , ( state , {payload}) => {
+    return {
+      ...state ,
+      blockchain:{
+        ...state.blockchain ,
+        blockNumber : payload
+      }
+    }
   })
 
   .addCase(Application_Confirmed_Mnemonic , ( state , {payload}) => {

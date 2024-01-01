@@ -2,12 +2,14 @@ import { configureStore } from '@reduxjs/toolkit'
 
 import application from './application/reducer';
 import wallets from './wallets/reducer';
+import multicall from './multicall/reducer';
 
 
 const store = configureStore({
     reducer: {
         application,
-        wallets
+        wallets,
+        multicall
     }
 })
 

@@ -1,15 +1,14 @@
 import React, { useState, useRef, useMemo } from 'react';
 import { PlusOutlined } from '@ant-design/icons';
-import { Divider, Input, Select, Space, Button } from 'antd';
+import { Divider, Input, Select, Space, Button, Typography, Row, Col } from 'antd';
 import type { InputRef } from 'antd';
 import "./comp.css";
 import { useNavigate } from 'react-router-dom';
-import { useWalletsActiveWallet, useWalletsList } from '../../state/wallets/hooks';
+import { useETHBalances, useWalletsActiveWallet, useWalletsList } from '../../state/wallets/hooks';
 import { useDispatch } from 'react-redux';
 import { Wallets_Update_ActiveWallet } from '../../state/wallets/action';
 
-
-let index = 0;
+const { Text } = Typography;
 
 export default () => {
 
@@ -17,32 +16,41 @@ export default () => {
   const walletsList = useWalletsList();
   const activeWallet = useWalletsActiveWallet();
   const dispatch = useDispatch();
+  const addressesBalances = useETHBalances(walletsList.map(wallet => wallet.address));
 
   const items = useMemo(() => {
     let items = [];
     for (let i in walletsList) {
       const {
-        name, publicKey
+        name, publicKey, address
       } = walletsList[i];
+      const balance = addressesBalances[address];
       items.push({
-        label: name,
+        label: <>
+          <Text style={{ float: "left" }}>{name}</Text>
+          <Text style={{ float: "right", marginLeft: "50px" }}>{balance?.toFixed(2)}</Text>
+          <br />
+          <Text type='secondary'>{address}</Text>
+        </>,
         value: publicKey
       })
     }
     return items;
-  }, [walletsList]);
+  }, [walletsList, addressesBalances]);
+
 
   const createNewWallet = (e: React.MouseEvent<HTMLButtonElement | HTMLAnchorElement>) => {
     navigate("/selectCreateWallet");
   };
-  const switchActionWallet = ( publicKey : string ) => {
+  const switchActionWallet = (publicKey: string , e:any ) => {
     dispatch(Wallets_Update_ActiveWallet(publicKey));
+    console.log("switch for e:" , e)
   }
 
   return <>
     <Select
       className='wallet-switch-selector'
-      placeholder={activeWallet?.name}
+      value={activeWallet?.name}
       onChange={switchActionWallet}
       style={{ textAlign: "center", marginBottom: "15px", height: "50px", width: "190px", marginLeft: "5px", borderRadius: "20px" }}
       dropdownRender={(menu) => (

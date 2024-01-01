@@ -5,8 +5,10 @@ export const Application_Init = createAction<{
   web3Endpoint : string
 }>("Application_Init");
 
-export const Application_Update_BlockNumber = createAction<string>
-  ("Application_Update_BlockNumber")
+
+
+export const Application_Blockchain_Update_BlockNumber = createAction<number>
+  ("Application_Blockchain_Update_BlockNumber")
 
 export const Application_Update_SysInfo = createAction<{
   node_serve_path: string

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react"
 import { useWeb3Hooks } from "../../../connectors/hooks";
 import useDebounce from "../../../hooks/useDebounce";
 import { useDispatch } from "react-redux";
+import { Contract } from "ethers";
 
 
 export default () => {
@@ -13,7 +14,7 @@ export default () => {
   const [state, setState] = useState<{ blockNumber: number | null }>({
     blockNumber: null
   })
-  const debouncedState = useDebounce(state, 20);
+  const debouncedState = useDebounce(state, 100);
 
   const blockNumberCallback = (blockNumber: number) => {
     setState( {blockNumber} );
@@ -33,7 +34,6 @@ export default () => {
 
   useEffect(() => {
     if (!debouncedState.blockNumber) return
-    console.log("send blockNumber update! =>" , debouncedState.blockNumber)
   }, [dispatch, state , debouncedState.blockNumber])
 
   return <>

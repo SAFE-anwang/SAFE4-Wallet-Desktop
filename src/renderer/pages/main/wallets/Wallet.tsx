@@ -1,12 +1,14 @@
 
-import { Typography, Button, Card, Divider, Statistic, Row, Col, Modal, Flex, Tooltip, Tabs, TabsProps, QRCode } from 'antd';
+import { Typography, Button, Card, Divider, Statistic, Row, Col, Modal, Flex, Tooltip, Tabs, TabsProps, QRCode , Badge } from 'antd';
 import { useEffect, useState } from 'react';
 import { useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import { useWalletsActiveWallet } from '../../../state/wallets/hooks';
+import { useETHBalances, useWalletsActiveAccount, useWalletsActiveWallet } from '../../../state/wallets/hooks';
 import { Application_Action_Update_AtCreateWallet } from '../../../state/application/action';
 import { SearchOutlined, SendOutlined, QrcodeOutlined } from '@ant-design/icons';
 import { useWeb3Hooks, useWeb3Network } from '../../../connectors/hooks';
+import { useBlockNumber } from '../../../state/application/hooks';
+import WalletSendModal from './WalletSendModal';
 const { Web3 } = require('web3');
 
 const { Title, Text, Paragraph } = Typography;
@@ -16,8 +18,12 @@ export default () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const activeWallet = useWalletsActiveWallet();
+  const account = useWalletsActiveAccount();
+  const balance = useETHBalances([account])[account];
+  const latestBlockNumber = useBlockNumber();
 
   const [openReceiveModal, setOpenReceiveModal] = useState<boolean>(false);
+  const [openSendModal , setOpenSendModal] =  useState<boolean>(false);
 
   const items: TabsProps['items'] = [
     {
@@ -37,7 +43,6 @@ export default () => {
     },
   ];
 
-
   async function callDoNewAccount() {
     navigate("/selectCreateWallet");
   }
@@ -46,50 +51,39 @@ export default () => {
     console.log(key);
   };
 
-  const { useChainId, useAccounts, useIsActivating, useIsActive, useProvider, useENSNames } = useWeb3Hooks();
-  const network = useWeb3Network();
-  const chainId = useChainId();
-  const provider = useProvider();
-
   useEffect(() => {
     dispatch(Application_Action_Update_AtCreateWallet(false));
-    void network.activate().catch(() => {
-      console.debug('Failed to connect to network')
-    })
   }, []);
-
-  useEffect(() => {
-    console.log("provider ?? =>" , provider?.getSigner())
-  }, [chainId] );
 
   return (<>
 
     <Row style={{ height: "50px" }}>
       <Col span={12}>
-        {chainId}
-        <Title level={4} style={{ lineHeight: "16px" }}>钱包:{activeWallet?.name}</Title>
+        <Title level={4} style={{ lineHeight: "16px" }}>
+          钱包 <Divider type='vertical' style={{ marginLeft: "12px", marginRight: "12px" }} />
+          {activeWallet?.name}
+        </Title>
       </Col>
-      <Col span={12} style={{ textAlign: "right" }}>
-
+      <Col span={12} style={{ textAlign: "right" , lineHeight:"70px" }}>
+        <Badge status="processing"></Badge>
+        <Text style={{marginLeft:"10px"}}>区块高度<Divider type='vertical' style={{ marginLeft: "12px", marginRight: "12px" }} />{latestBlockNumber}</Text>
       </Col>
     </Row>
     <div style={{ width: "100%", paddingTop: "40px" }}>
       <div style={{ margin: "auto", width: "90%" }}>
-
         <Row>
           <Paragraph copyable>{activeWallet?.address}</Paragraph>
         </Row>
-
         <Row>
           <Col span={20}>
-            <Statistic title="余额" value={112893.432135} />
+            <Statistic title="余额" value={balance?.toFixed(6)} />
           </Col>
           <Col span={4}>
             <Row>
               <Col span={12} style={{ textAlign: "center" }}>
                 <Button style={{
                   height: "45px", width: "45px"
-                }} size='large' shape="circle" icon={<SendOutlined />} /><br />
+                }} size='large' shape="circle" icon={<SendOutlined />} onClick={() => setOpenSendModal(true)}/><br />
                 <Text>发送</Text>
               </Col>
               <Col span={12} style={{ textAlign: "center" }}>
@@ -101,11 +95,9 @@ export default () => {
             </Row>
           </Col>
         </Row>
-
         <Row style={{ marginTop: "50px" }}>
           <Tabs style={{ width: "100%" }} defaultActiveKey="1" items={items} onChange={onChange} />
         </Row>
-
       </div>
     </div>
 
@@ -126,6 +118,8 @@ export default () => {
         <br />
       </Row>
     </Modal>
+
+    <WalletSendModal openSendModal={openSendModal} setOpenSendModal={setOpenSendModal} />
 
   </>)
 

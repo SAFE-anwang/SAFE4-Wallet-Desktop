@@ -15,14 +15,8 @@ export default () => {
 
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const network = useWeb3Network();
 
   useEffect(() => {
-
-    void network.activate().catch(() => {
-      console.debug('Failed to connect to network')
-    })
-
     const method = "load";
     window.electron.ipcRenderer.sendMessage(IPC_CHANNEL, [IndexSingal, 'load', []]);
     window.electron.ipcRenderer.once(IPC_CHANNEL, (arg) => {

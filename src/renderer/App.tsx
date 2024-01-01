@@ -10,6 +10,7 @@ import { useApplicationActionAtCreateWallet } from './state/application/hooks';
 import Wallet from './pages/main/wallets/Wallet';
 import Home from './pages/web3reactexample/pages';
 import Test from './pages/main/tools/Test';
+import TestMulticall from './pages/main/tools/TestMulticall';
 
 export default function App() {
 
@@ -47,7 +48,7 @@ export default function App() {
               <Route path="/wallet/createMnemonic" element={<CreateMnemonic />} />
               <Route path="/waitingCreateWallet" element={<WaitingWalletCreate />} />
               <Route path="/main/wallet" element={<Wallet />} />
-              <Route path="/tools/web3" element={<Test />} />
+              <Route path="/tools/web3" element={<TestMulticall />} />
             </Routes>
           </Col>
         </Row>

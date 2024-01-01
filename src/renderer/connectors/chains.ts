@@ -6,6 +6,12 @@ const SAFE4: AddEthereumChainParameter['nativeCurrency'] = {
   decimals: 18,
 }
 
+const BSC: AddEthereumChainParameter['nativeCurrency'] = {
+  name: 'Safe4',
+  symbol: 'SAFE',
+  decimals: 18,
+}
+
 const ETH: AddEthereumChainParameter['nativeCurrency'] = {
   name: 'Ether',
   symbol: 'ETH',
@@ -58,10 +64,10 @@ export function getAddChainParameters(chainId: number): AddEthereumChainParamete
 type ChainConfig = { [chainId: number]: BasicChainInformation | ExtendedChainInformation }
 
 export const MAINNET_CHAINS: ChainConfig = {
-  6666666: {
-    urls: ['http://47.107.47.210:8545'].filter(Boolean),
-    name: 'Safe4',
-    nativeCurrency: SAFE4,
+  56: {
+    urls: ['https://bsc-mainnet.nodereal.io/v1/64a9df0874fb4a93b9d0a3849de012d3'].filter(Boolean),
+    name: 'BNB',
+    nativeCurrency: BSC,
   },
 }
 

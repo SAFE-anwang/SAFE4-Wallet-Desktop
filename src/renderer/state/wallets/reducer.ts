@@ -18,14 +18,14 @@ export interface Wallet {
 
 export interface Wallets {
   networkId: "SAFE4",
-  activeWallet: Wallet | undefined,
+  activeWallet: Wallet | null,
   keystores: WalletKeystore[],
   list: Wallet[],
 }
 
 const initialState: Wallets = {
   networkId: "SAFE4",
-  activeWallet : undefined,
+  activeWallet : null,
   keystores: [],
   list: []
 }
@@ -115,7 +115,7 @@ export default createReducer(initialState, (builder) => {
 
   builder.addCase( Wallets_Update_ActiveWallet , (state , {payload}) => {
     const publicKey = payload;
-    let activeWallet;
+    let activeWallet = null;
     for(let i in state.list){
       if ( state.list[i].publicKey == publicKey ){
         activeWallet = state.list[i]
