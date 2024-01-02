@@ -2,7 +2,6 @@ import { useDispatch } from "react-redux";
 import { IPC_CHANNEL } from "../config";
 import { AppDispatch } from ".";
 import { Application_Init } from "./application/action";
-import { FilterWalletsAction } from "./wallets/action";
 
 
 export class IpcEventReceiveDispatcher {

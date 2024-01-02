@@ -8,8 +8,6 @@ import CreateMnemonic from './pages/wallet/create/CreateMnemonic';
 import WaitingWalletCreate from './pages/wallet/WaitingWalletCreate';
 import { useApplicationActionAtCreateWallet } from './state/application/hooks';
 import Wallet from './pages/main/wallets/Wallet';
-import Home from './pages/web3reactexample/pages';
-import Test from './pages/main/tools/Test';
 import TestMulticall from './pages/main/tools/TestMulticall';
 
 export default function App() {

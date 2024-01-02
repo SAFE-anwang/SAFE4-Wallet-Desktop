@@ -1,5 +1,6 @@
 import { createReducer } from '@reduxjs/toolkit';
 import { Wallets_Init_List, Wallets_Load_Keystores, Wallets_Update_ActiveWallet } from './action';
+import { ethers } from 'ethers';
 
 export interface WalletKeystore {
   mnemonic: string | undefined,
@@ -13,7 +14,7 @@ export interface WalletKeystore {
 export interface Wallet {
   publicKey: string,
   address: string,
-  name: string
+  name: string,
 }
 
 export interface Wallets {
@@ -72,7 +73,7 @@ export default createReducer(initialState, (builder) => {
       list.push({
         publicKey: keystore.publicKey,
         address: keystore.address,
-        name: "Wallet-" + defaultNameTag
+        name: "Wallet-" + defaultNameTag,
       });
     }
 
@@ -122,7 +123,7 @@ export default createReducer(initialState, (builder) => {
       }
     }
     return {
-      ...state , 
+      ...state ,
       activeWallet
     }
   })

@@ -38,6 +38,8 @@ export function useContract(address: string | undefined, ABI: any, withSignerIfP
 }
 
 export function useMulticallContract(): Contract | null | undefined {
-  return useContract("0x1Ee38d535d541c55C9dae27B12edf090C608E6Fb", MulticallABI, false);
+  // bsc : 0x1Ee38d535d541c55C9dae27B12edf090C608E6Fb
+  // safe4 : 0x0000000000000000000000000000000000001100
+  return useContract("0x0000000000000000000000000000000000001100", MulticallABI, false);
 }
 
