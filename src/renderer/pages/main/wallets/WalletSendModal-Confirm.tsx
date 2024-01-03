@@ -7,6 +7,7 @@ import { useBlockNumber } from "../../../state/application/hooks";
 import { ethers } from "ethers";
 import WalletSendModalInput from "./WalletSendModal-Input";
 import { SearchOutlined, SendOutlined, QrcodeOutlined } from '@ant-design/icons';
+import { useTransactionAdder } from "../../../state/transactions/hooks";
 
 const { Text, Link } = Typography;
 
@@ -18,7 +19,8 @@ export default ({
 }) => {
 
   const signer = useWalletsActiveSigner();
-
+  const activeAccount = useWalletsActiveAccount();
+  const addTransaction = useTransactionAdder();
   const [sending, setSending] = useState<boolean>(false);
   const [showErrorDetail, setShowErrorDetail] = useState<boolean>(false);
   const [rpcResponse, setRpcResponse] = useState<{
@@ -28,12 +30,22 @@ export default ({
 
   const doSendTransaction = function (signer: ethers.Signer, tx: any) {
     setSending(true);
-    signer.sendTransaction(tx).then(data => {
+    signer.sendTransaction(tx).then( response => {
       setSending(false);
+      const {
+        hash
+      } = response;
       setRpcResponse({
-        txHash: data.hash,
+        txHash: hash,
         error: null
       })
+      addTransaction(response, {
+        transfer : {
+          from :  activeAccount,
+          to : tx.to,
+          value : tx.value.toString()
+        }
+      });
     }).catch(error => {
       setSending(false);
       setRpcResponse({

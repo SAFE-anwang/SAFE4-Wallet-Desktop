@@ -1,0 +1,8 @@
+
+
+.history-element {
+  cursor: pointer;
+}
+.history-element:hover{
+  background-color: #ececec;
+}

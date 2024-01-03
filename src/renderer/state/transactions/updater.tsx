@@ -40,6 +40,7 @@ export default () => {
   useEffect(() => {
     if (!chainId || !provider || !latestBlockNumber) return
 
+    console.log("Updater[Transactions]: update for txs:" , transactions)
     Object.keys(transactions)
       .filter(hash => shouldCheck(latestBlockNumber, transactions[hash]))
       .forEach(hash => {

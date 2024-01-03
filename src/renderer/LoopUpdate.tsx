@@ -3,6 +3,7 @@ import { useEffect } from "react";
 import { useWeb3Network } from "./connectors/hooks";
 import ApplicationUpdater from "./state/application/updater";
 import MulticallUpdater from "./state/multicall/updater";
+import TransactionUpdater from "./state/transactions/updater";
 
 export default () => {
 
@@ -17,6 +18,7 @@ export default () => {
   return (<>
     <ApplicationUpdater />
     <MulticallUpdater />
+    <TransactionUpdater />
   </>)
 }
 

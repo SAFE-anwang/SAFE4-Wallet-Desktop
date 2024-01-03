@@ -9,7 +9,7 @@ import { SearchOutlined, SendOutlined, QrcodeOutlined } from '@ant-design/icons'
 import { useWeb3Hooks, useWeb3Network } from '../../../connectors/hooks';
 import { useBlockNumber } from '../../../state/application/hooks';
 import WalletSendModal from './WalletSendModal';
-const { Web3 } = require('web3');
+import History from './tabs/History';
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -39,7 +39,7 @@ export default () => {
     {
       key: '3',
       label: '历史',
-      children: '交易记录',
+      children: <History />,
     },
   ];
 

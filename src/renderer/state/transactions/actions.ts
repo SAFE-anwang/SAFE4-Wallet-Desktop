@@ -1,5 +1,5 @@
 import { createAction } from "@reduxjs/toolkit";
-import { SerializableTransactionReceipt } from "./reducer";
+import { SerializableTransactionReceipt, TokenTransfer } from "./reducer";
 
 
 export const addTransaction = createAction<{
@@ -7,6 +7,7 @@ export const addTransaction = createAction<{
   from: string
   approval?: { tokenAddress: string; spender: string }
   summary?: string
+  transfer? : TokenTransfer
 }>('transactions/addTransaction')
 
 export const clearAllTransactions = createAction<"">('transactions/clearAllTransactions')
