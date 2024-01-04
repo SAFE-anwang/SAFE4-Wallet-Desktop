@@ -12,10 +12,11 @@ import { useTransactionAdder } from "../../../state/transactions/hooks";
 const { Text, Link } = Typography;
 
 export default ({
-  to, amount
+  to, amount , close
 }: {
   to: string,
-  amount: string
+  amount: string,
+  close : () => void
 }) => {
 
   const signer = useWalletsActiveSigner();
@@ -39,7 +40,7 @@ export default ({
         txHash: hash,
         error: null
       })
-      addTransaction(response, {
+      addTransaction( tx , response, {
         transfer : {
           from :  activeAccount,
           to : tx.to,
@@ -138,7 +139,7 @@ export default ({
             </Button>
           }
           {
-            rpcResponse && <Button type="primary" style={{ float: "right" }}>
+            rpcResponse && <Button onClick={close} type="primary" style={{ float: "right" }}>
               关闭
             </Button>
           }

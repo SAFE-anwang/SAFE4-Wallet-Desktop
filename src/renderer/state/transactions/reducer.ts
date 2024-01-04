@@ -15,24 +15,35 @@ export interface SerializableTransactionReceipt {
 }
 
 export interface TransactionDetails {
-  hash: string
-  approval?: { tokenAddress: string; spender: string }
-  summary?: string
+  hash: string,
+  from: string,
+  to: string,
+  value: string,
+
+  timestamp?: number,
+  /** 交易的receipt */
   receipt?: SerializableTransactionReceipt
+
+  /**
+   * 自动更新的一些控制参数
+   */
   lastCheckedBlockNumber?: number
   addedTime: number
   confirmedTime?: number
-  from: string,
-  transfer ?: TokenTransfer
+  /**
+   * 自定义携带数据 ...
+   */
+  approval?: { tokenAddress: string; spender: string }
+  summary?: string
+  transfer?: TokenTransfer
 }
 
 export interface TokenTransfer {
-  from : string ,
-  to : string,
-  token ?: string,
-  value : string
+  from: string,
+  to: string,
+  token?: string,
+  value: string
 }
-
 
 export interface TransactionState {
   [txHash: string]: TransactionDetails
@@ -43,12 +54,16 @@ export const initialState: TransactionState = {}
 export default createReducer(initialState, (builder) => {
 
   builder
-    .addCase(addTransaction, (transactions, { payload: { from, hash, approval, summary, transfer } }) => {
+    .addCase(addTransaction, (transactions, { payload: { hash, from, to, value, approval, summary, transfer } }) => {
       if (transactions[hash]) {
         throw Error('Attempted to add existing transaction.')
       }
       const txs = transactions ?? {};
-      txs[hash] = { hash, approval, summary, transfer , from, addedTime: now() }
+      txs[hash] = {
+        hash, from, to, value,
+        addedTime: now(),
+        approval, summary, transfer
+      }
       transactions = txs
     })
 

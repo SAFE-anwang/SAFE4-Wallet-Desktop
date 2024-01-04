@@ -121,6 +121,7 @@
     "bip39": "^3.0.4",
     "bitcoinjs-lib": "^6.1.0",
     "crypto-browserify": "^3.12.0",
+    "date-fns": "^3.0.6",
     "electron-debug": "^3.2.0",
     "electron-log": "^4.4.8",
     "electron-updater": "^6.1.4",

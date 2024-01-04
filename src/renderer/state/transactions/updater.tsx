@@ -39,34 +39,39 @@ export default () => {
 
   useEffect(() => {
     if (!chainId || !provider || !latestBlockNumber) return
-
-    console.log("Updater[Transactions]: update for txs:" , transactions)
     Object.keys(transactions)
       .filter(hash => shouldCheck(latestBlockNumber, transactions[hash]))
       .forEach(hash => {
-        provider
-          .getTransactionReceipt(hash)
-          .then(receipt => {
-            if (receipt) {
-              dispatch(
-                finalizeTransaction({
-                  hash,
-                  receipt: {
-                    blockHash: receipt.blockHash,
-                    blockNumber: receipt.blockNumber,
-                    contractAddress: receipt.contractAddress,
-                    from: receipt.from,
-                    status: receipt.status,
-                    to: receipt.to,
-                    transactionHash: receipt.transactionHash,
-                    transactionIndex: receipt.transactionIndex
-                  }
-                })
-              )
-            } else {
-              dispatch(checkedTransaction({ hash, blockNumber: latestBlockNumber }))
-            }
-          })
+        // 查询交易入块对应的时间.
+        provider.getTransaction(hash).then(transaction => {
+          if (transaction) {
+            const { timestamp } = transaction;
+            provider
+              .getTransactionReceipt(hash)
+              .then(receipt => {
+                if (receipt) {
+                  dispatch(
+                    finalizeTransaction({
+                      hash,
+                      timestamp : timestamp ? timestamp : 0,
+                      receipt: {
+                        blockHash: receipt.blockHash,
+                        blockNumber: receipt.blockNumber,
+                        contractAddress: receipt.contractAddress,
+                        from: receipt.from,
+                        status: receipt.status,
+                        to: receipt.to,
+                        transactionHash: receipt.transactionHash,
+                        transactionIndex: receipt.transactionIndex,
+                      }
+                    })
+                  )
+                } else {
+                  dispatch(checkedTransaction({ hash, blockNumber: latestBlockNumber }))
+                }
+              })
+          }
+        });
       })
   }, [provider, transactions, latestBlockNumber]);
 

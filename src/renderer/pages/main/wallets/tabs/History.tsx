@@ -1,45 +1,47 @@
-import { Col, Row, Avatar, List, Typography, Modal, Button } from "antd";
+import { Col, Row, Avatar, List, Typography, Modal, Button, Divider } from "antd";
 import { useTransactions } from "../../../../state/transactions/hooks";
 import "./index.css"
 import TransactionElement from "./TransactionElement";
 import { useMemo, useState } from "react";
 import { TransactionDetails } from "../../../../state/transactions/reducer";
+import { useWalletsActiveAccount } from "../../../../state/wallets/hooks";
+
+const { Text } = Typography;
 
 export default () => {
 
-  const transactions = useTransactions();
-  const [showTxDetailModal, setShowTxDetailModal] = useState<boolean>(false);
-
-  const dataSource = useMemo(()=>{
-    const dataSource : TransactionDetails[] = [];
-    Object.keys(transactions)
-      .map( hash => {
-        dataSource.push(transactions[hash])
-      })
-    return dataSource;
-  },[transactions]);
+  const activeAccount = useWalletsActiveAccount();
+  const transactions = useTransactions(activeAccount);
+  const [clickTransaction , setClickTransaction] = useState<TransactionDetails>();
 
   return <>
-    History .. <br />
-    <Button onClick={()=>setShowTxDetailModal(true)}>show</Button>
-    <br />
-    {Object.keys(transactions)
-      .map(hash => {
-        return <>{hash}<br />{JSON.stringify(transactions[hash])}<br /></>
-      })}
-    <br /><br />
-    <br /><br />
-    <Modal title="交易详情" closable footer={null} open={showTxDetailModal} onCancel={() => setShowTxDetailModal(false)}>
-      <Button onClick={() => setShowTxDetailModal(false)}>aaa</Button>
+
+    <Modal title="交易详情" closable footer={null} open={clickTransaction != null} onCancel={() => setClickTransaction(undefined)}>
+      <Divider />
+      { clickTransaction?.hash }
     </Modal>
 
-    <List
-      itemLayout="horizontal"
-      dataSource={dataSource}
-      renderItem={(item, index) => (
-        <TransactionElement transaction={item} />
-      )}
-    />
+    {
+      Object.keys(transactions)
+        .map(date => {
+          return (<div key={date}>
+            <Text type="secondary">{date}</Text>
+            <br />
+            <List
+              style={{
+                marginTop: "5px", marginBottom: "5px"
+              }}
+              bordered
+              itemLayout="horizontal"
+              dataSource={transactions[date]}
+              renderItem={(item, index) => (
+                <TransactionElement setClickTransaction={setClickTransaction} transaction={item} />
+              )}
+            />
+          </div>)
+        })
+    }
+
   </>
 
 }

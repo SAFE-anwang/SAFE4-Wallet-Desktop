@@ -12,43 +12,50 @@ const STEP_INPUT = 0;
 const STEP_CONFIRM = 1;
 
 export default ({
-    openSendModal,
-    setOpenSendModal
+  openSendModal,
+  setOpenSendModal
 }: {
-    openSendModal: boolean,
-    setOpenSendModal: (open: boolean) => void
+  openSendModal: boolean,
+  setOpenSendModal: (open: boolean) => void
 }) => {
-    const [step, setStep] = useState(STEP_INPUT);
-    const [inputParams, setInputParams] = useState<{
-        to: string,
-        amount: string 
-    }>({
+  const [step, setStep] = useState(STEP_INPUT);
+  const [inputParams, setInputParams] = useState<{
+    to: string,
+    amount: string
+  }>({
+    to: "",
+    amount: ""
+  });
+
+  return <>
+    <Modal footer={null} destroyOnClose title="发送" style={{ height: "300px" }} open={openSendModal} onCancel={() => {
+      setInputParams({
         to: "",
         amount: ""
-    });
-
-    return <>
-        <Modal footer={null} destroyOnClose title="发送" style={{ height: "300px" }} open={openSendModal} onCancel={() => {
-            setInputParams({
-                to : "" , 
-                amount: ""
-            });
-            setStep(STEP_INPUT);
-            setOpenSendModal(false);
-        }}>
-            <Divider />
-            {
-                step == STEP_INPUT && <WalletSendModalInput finishCallback={( {to , amount} )=>{
-                    setInputParams( {
-                        to , amount
-                    });
-                    setStep(STEP_CONFIRM);
-                }}/>
-            }
-            {
-                step == STEP_CONFIRM && <WalletSendModalConfirm { ...inputParams }  />
-            }
-        </Modal>
-    </>
+      });
+      setStep(STEP_INPUT);
+      setOpenSendModal(false);
+    }}>
+      <Divider />
+      {
+        step == STEP_INPUT && <WalletSendModalInput finishCallback={({ to, amount }) => {
+          setInputParams({
+            to, amount
+          });
+          setStep(STEP_CONFIRM);
+        }} />
+      }
+      {
+        step == STEP_CONFIRM && <WalletSendModalConfirm close={() => {
+          setInputParams({
+            to: "",
+            amount: ""
+          });
+          setStep(STEP_INPUT);
+          setOpenSendModal(false);
+        }} {...inputParams} />
+      }
+    </Modal>
+  </>
 
 }
