@@ -84,13 +84,14 @@ export default createReducer(initialState, (builder) => {
       }
     })
 
-    .addCase(finalizeTransaction, (transactions, { payload: { hash, receipt } }) => {
+    .addCase(finalizeTransaction, (transactions, { payload: { hash, timestamp , receipt } }) => {
       const tx = transactions[hash]
       if (!tx) {
         return
       }
-      tx.receipt = receipt
-      tx.confirmedTime = now()
+      tx.timestamp = timestamp;
+      tx.receipt = receipt;
+      tx.confirmedTime = now();
     })
 
 })

@@ -56,9 +56,6 @@ export function useTransactions( account ?: string ){
       return t1.addedTime - t0.addedTime
     })
   } , [account,transactions] );
-
-
-
   const dateTransactions : {
     [ date : string ] : TransactionDetails[]
   } = {};
@@ -70,4 +67,9 @@ export function useTransactions( account ?: string ){
   });
   console.log("txsgroup ==>" , dateTransactions)
   return dateTransactions;
+}
+
+export function useTransaction( hash : string) : TransactionDetails {
+  const transactions = useSelector((state : AppState) => state.transactions);
+  return transactions[hash];
 }

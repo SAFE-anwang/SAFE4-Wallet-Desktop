@@ -37,7 +37,7 @@ export default () => {
       children: 'NFT 列表',
     },
     {
-      key: '3',
+      key: 'history',
       label: '历史',
       children: <History />,
     },
@@ -96,7 +96,7 @@ export default () => {
           </Col>
         </Row>
         <Row style={{ marginTop: "50px" }}>
-          <Tabs style={{ width: "100%" }} defaultActiveKey="1" items={items} onChange={onChange} />
+          <Tabs style={{ width: "100%" }} defaultActiveKey="history" items={items} onChange={onChange} />
         </Row>
       </div>
     </div>
