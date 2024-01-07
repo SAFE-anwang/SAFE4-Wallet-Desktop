@@ -7,7 +7,7 @@ export const WalletSignal = "wallet";
 
 export const Wallet_Keystore_FileName = "safe4wallet.keystores.json";
 
-export class WalletSignalHandler implements ListenSignalHandler {
+export class WalletSignalHandler implements ListenSignalHandler {  
 
   constructor() {
 
@@ -16,8 +16,6 @@ export class WalletSignalHandler implements ListenSignalHandler {
   getSingal(): string {
     return WalletSignal;
   }
-
-
 
   async handleOn(event: Electron.IpcMainEvent, ...args: any[]): Promise<any> {
     const method: string = args[0][1];
