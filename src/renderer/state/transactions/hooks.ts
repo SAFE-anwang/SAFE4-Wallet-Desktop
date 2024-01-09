@@ -7,6 +7,8 @@ import { useWeb3Hooks } from "../../connectors/hooks";
 import { useWalletsActiveAccount } from "../wallets/hooks";
 import { TokenTransfer, TransactionDetails } from "./reducer";
 import { DateFormat, DateTimeFormat } from "../../utils/DateUtils";
+import { IPC_CHANNEL } from "../../config";
+import { DBSignal } from "../../../main/handlers/DBSignalHandler";
 
 
 export function useTransactionAdder(): (
@@ -14,7 +16,8 @@ export function useTransactionAdder(): (
   response: TransactionResponse,
   customData?: { summary?: string; approval?: { tokenAddress: string; spender: string } ; transfer ?: TokenTransfer }
 ) => void {
-  const dispatch = useDispatch<AppDispatch>()
+  const dispatch = useDispatch<AppDispatch>();
+ 
   return useCallback(
     (
       request: TransactionRequest,
@@ -31,10 +34,12 @@ export function useTransactionAdder(): (
       if (!hash || !to ) {
         throw Error('No transaction hash found.')
       }
-      dispatch(addTransaction({
+      const transaction = {
         hash, from, to , value : value ? value.toString() : "0",
         approval, summary , transfer
-      }))
+      };
+      window.electron.ipcRenderer.sendMessage(IPC_CHANNEL, [ DBSignal, 'saveTransaction', [transaction] ]);
+      dispatch(addTransaction(transaction))
     },
     [dispatch]
   )
@@ -65,7 +70,6 @@ export function useTransactions( account ?: string ){
     dateTransactions[dateKey] = dateTransactions[dateKey] ?? [];
     dateTransactions[dateKey].push(transaction)
   });
-  console.log("txsgroup ==>" , dateTransactions)
   return dateTransactions;
 }
 

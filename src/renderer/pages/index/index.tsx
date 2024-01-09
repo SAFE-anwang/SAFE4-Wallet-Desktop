@@ -3,11 +3,13 @@ import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { IPC_CHANNEL } from "../../config";
 import { IndexSingal } from "../../../main/handlers/IndexSingalHandler";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { Wallets_Load_Keystores } from "../../state/wallets/action";
-import { useWalletsList } from "../../state/wallets/hooks";
+import { useWalletsActiveAccount, useWalletsList } from "../../state/wallets/hooks";
 import { Application_Init } from "../../state/application/action";
 import { useWeb3Network } from "../../connectors/hooks";
+import { useTransactions } from "../../state/transactions/hooks";
+import { AppState } from "../../state";
 const Web3 = require('web3');
 const { Text } = Typography;
 
@@ -15,6 +17,8 @@ export default () => {
 
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const transactions = useSelector( ( state : AppState ) => state.transactions );
+  const activeAccount = useWalletsActiveAccount();
 
   useEffect(() => {
     const method = "load";
@@ -33,11 +37,16 @@ export default () => {
         }
       }
     });
-
     dispatch( Application_Init({
       web3Endpoint : "http://47.107.47.210:8545"
     }))
+  }, []);
 
-  }, [])
+  useEffect( () => {
+    console.log("  do transactions ")
+  } , [transactions,activeAccount] );
+
+
+
   return <Spin spinning={true} />
 }
