@@ -18,12 +18,13 @@ export class DBSignalHandler implements ListenSignalHandler {
                     return console.log(err.message)
                 }
                 console.log('connect database successfully');
-                // db.all('SELECT * FROM transactions', [], function (err : any, rows : any) {
-                //     if (err) {
-                //         return console.log('find txs error: ', err.message)
-                //     }
-                //     console.log('find txs: ', rows)
-                // });
+
+                db.all('SELECT * FROM transactions', [], function (err : any, rows : any) {
+                    if (err) {
+                        return console.log('find txs error: ', err.message)
+                    }
+                    console.log('find txs: ', rows)
+                })
             }
         )
     }
