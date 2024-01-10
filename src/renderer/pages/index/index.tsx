@@ -17,8 +17,6 @@ export default () => {
 
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const transactions = useSelector( ( state : AppState ) => state.transactions );
-  const activeAccount = useWalletsActiveAccount();
 
   useEffect(() => {
     const method = "load";
@@ -37,16 +35,7 @@ export default () => {
         }
       }
     });
-    dispatch( Application_Init({
-      web3Endpoint : "http://47.107.47.210:8545"
-    }))
   }, []);
-
-  useEffect( () => {
-    console.log("  do transactions ")
-  } , [transactions,activeAccount] );
-
-
 
   return <Spin spinning={true} />
 }

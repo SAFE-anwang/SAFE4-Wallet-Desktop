@@ -5,6 +5,8 @@ import ApplicationUpdater from "./state/application/updater";
 import MulticallUpdater from "./state/multicall/updater";
 import TransactionUpdater from "./state/transactions/updater";
 import { useWalletsActiveAccount } from "./state/wallets/hooks";
+import { IPC_CHANNEL } from "./config";
+import { DBSignal } from "../main/handlers/DBSignalHandler";
 
 export default () => {
 
@@ -17,9 +19,7 @@ export default () => {
     })
   }, []);
 
-  useEffect( () => {
-    console.log("active account....")
-  } , [activeAccount] );
+
 
   return (<>
     <ApplicationUpdater />

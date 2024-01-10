@@ -7,9 +7,11 @@ import { checkedTransaction, finalizeTransaction } from "./actions";
 
 export function shouldCheck(
   lastBlockNumber: number,
-  tx: { addedTime: number; receipt?: {}; lastCheckedBlockNumber?: number }
+  tx: { addedTime: number; receipt?: {}; lastCheckedBlockNumber?: number , status?:number }
 ): boolean {
   if (tx.receipt) return false
+  console.log("should check tx >> ?? " , tx.status )
+  if (tx.status != undefined ) return false
   if (!tx.lastCheckedBlockNumber) return true
   const blocksSinceCheck = lastBlockNumber - tx.lastCheckedBlockNumber
   if (blocksSinceCheck < 1) return false
@@ -25,7 +27,6 @@ export function shouldCheck(
     return true
   }
 }
-
 
 export default () => {
 
@@ -43,35 +44,30 @@ export default () => {
       .filter(hash => shouldCheck(latestBlockNumber, transactions[hash]))
       .forEach(hash => {
         // 查询交易入块对应的时间.
-        provider.getTransaction(hash).then(transaction => {
-          if (transaction) {
-            const { timestamp } = transaction;
-            provider
-              .getTransactionReceipt(hash)
-              .then(receipt => {
-                if (receipt) {
-                  dispatch(
-                    finalizeTransaction({
-                      hash,
-                      timestamp : timestamp ? timestamp : 0,
-                      receipt: {
-                        blockHash: receipt.blockHash,
-                        blockNumber: receipt.blockNumber,
-                        contractAddress: receipt.contractAddress,
-                        from: receipt.from,
-                        status: receipt.status,
-                        to: receipt.to,
-                        transactionHash: receipt.transactionHash,
-                        transactionIndex: receipt.transactionIndex,
-                      }
-                    })
-                  )
-                } else {
-                  dispatch(checkedTransaction({ hash, blockNumber: latestBlockNumber }))
-                }
-              })
-          }
-        });
+        provider
+          .getTransactionReceipt(hash)
+          .then(receipt => {
+            console.log("do get transaction receipt >>" , hash)
+            if (receipt) {
+              dispatch(
+                finalizeTransaction({
+                  hash,
+                  receipt: {
+                    blockHash: receipt.blockHash,
+                    blockNumber: receipt.blockNumber,
+                    contractAddress: receipt.contractAddress,
+                    from: receipt.from,
+                    status: receipt.status,
+                    to: receipt.to,
+                    transactionHash: receipt.transactionHash,
+                    transactionIndex: receipt.transactionIndex,
+                  }
+                })
+              )
+            } else {
+              dispatch(checkedTransaction({ hash, blockNumber: latestBlockNumber }))
+            }
+          })
       })
   }, [provider, transactions, latestBlockNumber]);
 

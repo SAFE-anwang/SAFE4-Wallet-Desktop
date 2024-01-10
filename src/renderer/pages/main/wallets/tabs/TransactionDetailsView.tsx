@@ -20,6 +20,7 @@ export default ({
   const tx = useTransaction(transaction.hash);
   const {
     hash,
+    status,
     receipt,
     transfer,
     timestamp,
@@ -32,7 +33,7 @@ export default ({
     <Row>
       <Col span={24}>
         {
-          receipt && receipt.status == 1 && <>
+          status && status == 1 && <>
             <CheckCircleFilled style={{
               color: "#52c41a", fontSize: "50px", float: "left", marginRight: "20px", marginLeft: "20px"
             }} />
@@ -43,7 +44,7 @@ export default ({
           </>
         }
         {
-          !receipt && <>
+          !status && <>
             <Spin style={{ float: "left" }} indicator={
               <LoadingOutlined style={{ fontSize: "50px", marginRight: "20px", marginLeft: "20px" }}
               />} >

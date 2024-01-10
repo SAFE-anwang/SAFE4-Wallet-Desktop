@@ -1,5 +1,7 @@
 import { createReducer } from "@reduxjs/toolkit"
-import { addTransaction, checkedTransaction, clearAllTransactions, finalizeTransaction } from "./actions"
+import { addTransaction, checkedTransaction, clearAllTransactions, finalizeTransaction, reloadTransactions } from "./actions"
+import { IPC_CHANNEL } from "../../config"
+import { DBSignal } from "../../../main/handlers/DBSignalHandler"
 
 const now = () => new Date().getTime()
 
@@ -15,15 +17,13 @@ export interface SerializableTransactionReceipt {
 }
 
 export interface TransactionDetails {
-  hash: string,
-  from: string,
-  to: string,
-  value: string,
-
-  timestamp?: number,
+  hash    : string,
+  refFrom : string,
+  refTo  ?: string,
+  timestamp ?: number,
+  status ?: number,
   /** 交易的receipt */
-  receipt?: SerializableTransactionReceipt
-
+  receipt?: SerializableTransactionReceipt,
   /**
    * 自动更新的一些控制参数
    */
@@ -35,13 +35,19 @@ export interface TransactionDetails {
    */
   approval?: { tokenAddress: string; spender: string }
   summary?: string
-  transfer?: TokenTransfer
+  transfer?: Transfer
 }
 
-export interface TokenTransfer {
+export interface Transfer {
   from: string,
   to: string,
-  token?: string,
+  value: string
+}
+
+export interface ERC20Transfer {
+  from: string,
+  to: string,
+  token: string,
   value: string
 }
 
@@ -54,16 +60,17 @@ export const initialState: TransactionState = {}
 export default createReducer(initialState, (builder) => {
 
   builder
-    .addCase(addTransaction, (transactions, { payload: { hash, from, to, value, approval, summary, transfer } }) => {
+    .addCase(addTransaction, (transactions, { payload: { hash, refFrom, refTo, approval, summary, transfer } }) => {
       if (transactions[hash]) {
         throw Error('Attempted to add existing transaction.')
       }
       const txs = transactions ?? {};
       txs[hash] = {
-        hash, from, to, value,
+        hash, refFrom, refTo,
         addedTime: now(),
         approval, summary, transfer
       }
+      window.electron.ipcRenderer.sendMessage(IPC_CHANNEL, [DBSignal, 'saveTransaction', [txs[hash]]]);
       transactions = txs
     })
 
@@ -84,14 +91,21 @@ export default createReducer(initialState, (builder) => {
       }
     })
 
-    .addCase(finalizeTransaction, (transactions, { payload: { hash, timestamp , receipt } }) => {
+    .addCase(finalizeTransaction, (transactions, { payload: { hash, receipt } }) => {
       const tx = transactions[hash]
       if (!tx) {
         return
       }
-      tx.timestamp = timestamp;
       tx.receipt = receipt;
+      tx.status = receipt.status;
       tx.confirmedTime = now();
+      window.electron.ipcRenderer.sendMessage(IPC_CHANNEL, [DBSignal, 'updateTransaction', [ receipt ]]);
+    })
+
+    .addCase(reloadTransactions , ( transactions , { payload } ) => {
+      return {
+        ...payload
+      }
     })
 
 })

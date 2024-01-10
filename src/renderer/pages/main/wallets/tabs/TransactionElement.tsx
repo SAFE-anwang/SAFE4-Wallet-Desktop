@@ -23,11 +23,12 @@ export default ({ transaction , setClickTransaction }: {
 }) => {
 
   const {
+    status,
     receipt,
     transfer
   } = transaction;
-  const { from, to, value, token } = transfer ? transfer : {
-    from: null, to: null, value: null, token: null
+  const { from, to, value } = transfer ? transfer : {
+    from: null, to: null, value: null
   };
   const activeAccount = useWalletsActiveAccount();
   const txType = useMemo(() => {
@@ -47,12 +48,12 @@ export default ({ transaction , setClickTransaction }: {
           <>
             <span>
               {
-                !receipt && <Spin indicator={<LoadingOutlined style={{ fontSize: "34px", marginLeft: "-17px", marginTop: "-14px" }} />} >
+                !status && <Spin indicator={<LoadingOutlined style={{ fontSize: "34px", marginLeft: "-17px", marginTop: "-14px" }} />} >
                   <Avatar style={{marginTop:"8px"}} src={SAFE_LOGO} />
                 </Spin>
               }
               {
-                receipt && <Avatar style={{marginTop:"8px"}} src={SAFE_LOGO} />
+                status && <Avatar style={{marginTop:"8px"}} src={SAFE_LOGO} />
               }
             </span>
           </>
