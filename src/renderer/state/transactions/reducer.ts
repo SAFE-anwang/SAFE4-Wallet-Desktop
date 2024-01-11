@@ -20,6 +20,7 @@ export interface TransactionDetails {
   hash    : string,
   refFrom : string,
   refTo  ?: string,
+  blockNumber ?: number,
   timestamp ?: number,
   status ?: number,
   /** 交易的receipt */
