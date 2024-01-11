@@ -1,9 +1,5 @@
 import { Button, Col, Divider, Input, Modal, Row, Typography, Space } from "antd"
 import { Children, useEffect, useMemo, useState } from "react";
-import { useETHBalances, useWalletsActiveAccount, useWalletsActiveSigner } from "../../../state/wallets/hooks"
-import { MemoryRouter as Router, Routes, Route, useNavigate } from 'react-router-dom';
-import { useBlockNumber } from "../../../state/application/hooks";
-import { ethers } from "ethers";
 import WalletSendModalInput from "./WalletSendModal-Input";
 import WalletSendModalConfirm from "./WalletSendModal-Confirm";
 const { Text } = Typography;

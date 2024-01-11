@@ -52,6 +52,7 @@ const configuration: webpack.Configuration = {
       "assert": require.resolve("assert/"),
       "stream": require.resolve("stream-browserify"),
       "path": require.resolve("path-browserify"),
+      "console": false,
       "fs": false,
     },
   },

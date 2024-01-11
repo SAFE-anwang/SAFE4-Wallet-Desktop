@@ -1,5 +1,4 @@
 import { Alert, Spin, Button, Steps, StepProps } from "antd"
-import { LeftOutlined } from '@ant-design/icons';
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useNewMnemonic } from "../../state/application/hooks";

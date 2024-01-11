@@ -1,3 +1,4 @@
+import ChecksumAddress from "../utils/ChecksumAddress";
 
 
 export const POST = async function (url: string, params?: any): Promise<ApiResponse<any>> {
@@ -46,3 +47,29 @@ export interface AddressActivityVO {
   action : string,
   data : any
 }
+
+export function AddressActivityFormat( activity : AddressActivityVO ) :AddressActivityVO {
+  const { action , data } = activity;
+  let _data :any ;
+  switch( action ){
+    case "Transfer" :
+      _data = {
+        ...data,
+        from : ChecksumAddress(data.from),
+        to : ChecksumAddress(data.to),
+      }
+      break;
+    default :
+    _data = data
+      break;
+  }
+  return {
+    ...activity,
+    refFrom : ChecksumAddress(activity.refFrom),
+    refTo : ChecksumAddress(activity.refTo),
+    timestamp : activity.timestamp * 1000,
+    data : _data
+  }
+}
+
+

@@ -8,6 +8,7 @@ import EtherAmount from "../../../../utils/EtherAmount";
 import AddressView from "../../../components/AddressView";
 import { DateTimeFormat } from "../../../../utils/DateUtils";
 import { useTransaction } from "../../../../state/transactions/hooks";
+import { useMemo } from "react";
 
 const { Text } = Typography;
 
@@ -16,8 +17,10 @@ export default ({
 }: {
   transaction: TransactionDetails
 }) => {
-
   const tx = useTransaction(transaction.hash);
+
+
+
   const {
     hash,
     status,
@@ -25,7 +28,19 @@ export default ({
     transfer,
     timestamp,
     addedTime
-  } = tx;
+  } = useMemo( () => {
+    if ( tx && tx.hash ){
+      return tx;
+    }
+    return {
+      hash : undefined,
+      status : undefined,
+      receipt : undefined,
+      transfer : undefined,
+      timestamp : undefined,
+      addedTime : undefined
+    }
+  } , [tx])
   const activeAccount = useWalletsActiveAccount();
 
   return <>
@@ -51,7 +66,7 @@ export default ({
             </Spin>
             <div>
               <Text style={{ fontSize: "16px" }}>等待</Text><br />
-              <Text style={{ fontSize: "16px" }} type="secondary">{DateTimeFormat(addedTime)}</Text>
+              <Text style={{ fontSize: "16px" }} type="secondary">{ addedTime && DateTimeFormat(addedTime)}</Text>
             </div>
           </>
         }

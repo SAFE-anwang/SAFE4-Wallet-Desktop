@@ -3,15 +3,18 @@ import { useWeb3Hooks } from "../../connectors/hooks"
 import { useBlockNumber } from "../application/hooks";
 import { AppDispatch, AppState } from "..";
 import { useEffect } from "react";
-import { checkedTransaction, finalizeTransaction } from "./actions";
+import { checkedTransaction, finalizeTransaction, reloadTransactions } from "./actions";
+import { useWalletsActiveAccount } from "../wallets/hooks";
+import { IPC_CHANNEL } from "../../config";
+import { DBSignal } from "../../../main/handlers/DBSignalHandler";
+import { TransactionState } from "./reducer";
 
 export function shouldCheck(
   lastBlockNumber: number,
-  tx: { addedTime: number; receipt?: {}; lastCheckedBlockNumber?: number , status?:number }
+  tx: { addedTime: number; receipt?: {}; lastCheckedBlockNumber?: number, status?: number }
 ): boolean {
   if (tx.receipt) return false
-  console.log("should check tx >> ?? " , tx.status )
-  if (tx.status != undefined ) return false
+  if (tx.status != undefined) return false
   if (!tx.lastCheckedBlockNumber) return true
   const blocksSinceCheck = lastBlockNumber - tx.lastCheckedBlockNumber
   if (blocksSinceCheck < 1) return false
@@ -37,17 +40,27 @@ export default () => {
   const dispatch = useDispatch<AppDispatch>()
   const state = useSelector<AppState, AppState['transactions']>(state => state.transactions)
   const transactions = state ? state : {};
+  const activeAccount = useWalletsActiveAccount();
 
   useEffect(() => {
+
     if (!chainId || !provider || !latestBlockNumber) return
+
+    if ( Object.keys(transactions).length > 0 ){
+      let blockNumberStart = 1;
+      Object.keys(transactions).forEach( hash => {
+        if ( transactions[hash].timestamp ) {
+          blockNumberStart = Math.max( transactions[hash].blockNumber ?? 1 , blockNumberStart )
+        }
+      });
+    }
+
     Object.keys(transactions)
       .filter(hash => shouldCheck(latestBlockNumber, transactions[hash]))
       .forEach(hash => {
-        // 查询交易入块对应的时间.
         provider
           .getTransactionReceipt(hash)
           .then(receipt => {
-            console.log("do get transaction receipt >>" , hash)
             if (receipt) {
               dispatch(
                 finalizeTransaction({
@@ -68,8 +81,13 @@ export default () => {
               dispatch(checkedTransaction({ hash, blockNumber: latestBlockNumber }))
             }
           })
-      })
-  }, [provider, transactions, latestBlockNumber]);
+      });
+
+  }, [provider, transactions, latestBlockNumber,activeAccount]);
+
+
+
+
 
   return (<></>)
 }

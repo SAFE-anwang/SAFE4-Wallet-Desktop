@@ -44,7 +44,6 @@ export default () => {
   };
   const switchActionWallet = (publicKey: string , e:any ) => {
     dispatch(Wallets_Update_ActiveWallet(publicKey));
-    console.log("switch for e:" , e)
   }
 
   return <>

@@ -6,8 +6,8 @@ import SAFE_LOGO from "../../assets/logo/SAFE.png"
 export default ({
   width, height
 }: {
-  width?: number | string,
-  height?: number | string
+  width ?: number | string,
+  height ?: number | string
 }) => {
 
   return <Image preview={false}
