@@ -33,7 +33,10 @@ export default () => {
         if (arg instanceof Array && arg[0] == DBSignal && arg[1] == method) {
           const rows = arg[2][0];
           const transactions: TransactionState = {};
-          let blockNumberStart = 1;
+          let dbStoredRange = {
+            start : 1,
+            end : 1
+          };
           for (let i in rows) {
             const { transaction_hash, ref_from, ref_to, action, data, added_time, timestamp, status , block_number } = rows[i];
             const _data = JSON.parse(data);
@@ -48,45 +51,56 @@ export default () => {
               transfer: action == "Transfer" ? { from: ref_from, to: ref_to, value: _data.value } : undefined,
             };
             if ( timestamp ){
-              blockNumberStart = Math.max(blockNumberStart , block_number);
+              dbStoredRange.start = Math.max(dbStoredRange.start , block_number);
+              dbStoredRange.end = Math.max(dbStoredRange.end , block_number);
             }
           }
-          console.log(`fetch Address[${activeAccount}] Activities,from BlockNumber:${blockNumberStart}`)
-          fetchAddressActivity({
-            address : activeAccount,
-            blockNumberStart: 1,
-            blockNumberEnd: latestBlockNumber,
-            current : 1,
-            pageSize : 1
-          }).then( data => {
-            const { total , current , pageSize } = data;
-            const addressActivities = data.records;
-            console.log(addressActivities)
-            for(let i in addressActivities){
-              const {
-                transactionHash , eventLogIndex , blockNumber , refFrom , refTo, timestamp , action , data , status
-              } = addressActivities[i];
-              if ( transactions[transactionHash] ){
-                transactions[transactionHash].timestamp = timestamp;
-              }else{
-                transactions[transactionHash] = {
-                  hash : transactionHash,
-                  status ,
-                  refFrom,
-                  refTo ,
-                  timestamp,
-                  addedTime:timestamp,
-                  blockNumber : blockNumber,
-                  transfer : action == "Transfer" ? data : undefined
-                }
-              }
+          dispatch(reloadTransactions({
+            transactions,
+            addressActivityFetch : {
+              address : activeAccount,
+              blockNumberStart : dbStoredRange.start,
+              blockNumberEnd : latestBlockNumber,
+              current : 1,
+              pageSize : 2,
+              status : 0,
+              dbStoredRange
             }
-            if ( current * pageSize < total ){
-              console.log("has next page")
-            }
-            window.electron.ipcRenderer.sendMessage(IPC_CHANNEL, [DBSignal, "saveOrUpdateTransactions", [addressActivities]]);
-            dispatch(reloadTransactions(transactions));
-          })
+          }));
+          // fetchAddressActivity({
+          //   address : activeAccount,
+          //   blockNumberStart: 1,
+          //   blockNumberEnd: latestBlockNumber,
+          //   current : 1,
+          //   pageSize : 1
+          // }).then( data => {
+          //   const { total , current , pageSize } = data;
+          //   const addressActivities = data.records;
+          //   console.log(addressActivities)
+          //   for(let i in addressActivities){
+          //     const {
+          //       transactionHash , eventLogIndex , blockNumber , refFrom , refTo, timestamp , action , data , status
+          //     } = addressActivities[i];
+          //     if ( transactions[transactionHash] ){
+          //       // transactions[transactionHash].timestamp = 1222222;
+          //     }else{
+          //       transactions[transactionHash] = {
+          //         hash : transactionHash,
+          //         status ,
+          //         refFrom,
+          //         refTo ,
+          //         timestamp,
+          //         addedTime:timestamp,
+          //         blockNumber : blockNumber,
+          //         transfer : action == "Transfer" ? data : undefined
+          //       }
+          //     }
+          //   }
+          //   if ( current * pageSize < total ){
+          //     console.log("has next page")
+          //   }
+            // window.electron.ipcRenderer.sendMessage(IPC_CHANNEL, [DBSignal, "saveOrUpdateTransactions", [addressActivities]]);
+          // })
         }
       });
     }

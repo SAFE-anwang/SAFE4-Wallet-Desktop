@@ -1,5 +1,5 @@
 import { createReducer } from "@reduxjs/toolkit"
-import { addTransaction, checkedTransaction, clearAllTransactions, finalizeTransaction, reloadTransactions } from "./actions"
+import { addTransaction, checkedTransaction, clearAllTransactions, finalizeTransaction, loadFetchActivities, reloadTransactions } from "./actions"
 import { IPC_CHANNEL } from "../../config"
 import { DBSignal } from "../../../main/handlers/DBSignalHandler"
 
@@ -17,12 +17,12 @@ export interface SerializableTransactionReceipt {
 }
 
 export interface TransactionDetails {
-  hash    : string,
-  refFrom : string,
-  refTo  ?: string,
-  blockNumber ?: number,
-  timestamp ?: number,
-  status ?: number,
+  hash: string,
+  refFrom: string,
+  refTo?: string,
+  blockNumber?: number,
+  timestamp?: number,
+  status?: number,
   /** 交易的receipt */
   receipt?: SerializableTransactionReceipt,
   /**
@@ -52,16 +52,34 @@ export interface ERC20Transfer {
   value: string
 }
 
-export interface TransactionState {
-  [txHash: string]: TransactionDetails
+export interface AddressActivityFetch {
+  address : string,
+  blockNumberStart: number,
+  blockNumberEnd: number,
+  current: number,
+  pageSize: number,
+  status: number,
+  dbStoredRange : {
+    start : number,
+    end : number
+  }
 }
 
-export const initialState: TransactionState = {}
+export interface TransactionState {
+  [txHash: string]: TransactionDetails,
+}
+
+export const initialState: {
+  transactions: TransactionState,
+  addressActivityFetch ?: AddressActivityFetch
+} = {
+  transactions: {},
+}
 
 export default createReducer(initialState, (builder) => {
 
   builder
-    .addCase(addTransaction, (transactions, { payload: { hash, refFrom, refTo, approval, summary, transfer } }) => {
+    .addCase(addTransaction, ({ transactions }, { payload: { hash, refFrom, refTo, approval, summary, transfer } }) => {
       if (transactions[hash]) {
         throw Error('Attempted to add existing transaction.')
       }
@@ -75,12 +93,12 @@ export default createReducer(initialState, (builder) => {
       transactions = txs
     })
 
-    .addCase(clearAllTransactions, (transactions, { payload }) => {
-      if (!transactions) return
-      transactions = {}
-    })
+    // .addCase(clearAllTransactions, (transactions, { payload }) => {
+    //   if (!transactions) return
+    //   transactions = {}
+    // })
 
-    .addCase(checkedTransaction, (transactions, { payload: { hash, blockNumber } }) => {
+    .addCase(checkedTransaction, ({ transactions }, { payload: { hash, blockNumber } }) => {
       const tx = transactions[hash]
       if (!tx) {
         return
@@ -92,7 +110,7 @@ export default createReducer(initialState, (builder) => {
       }
     })
 
-    .addCase(finalizeTransaction, (transactions, { payload: { hash, receipt } }) => {
+    .addCase(finalizeTransaction, ({ transactions }, { payload: { hash, receipt } }) => {
       const tx = transactions[hash]
       if (!tx) {
         return
@@ -100,13 +118,36 @@ export default createReducer(initialState, (builder) => {
       tx.receipt = receipt;
       tx.status = receipt.status;
       tx.confirmedTime = now();
-      window.electron.ipcRenderer.sendMessage(IPC_CHANNEL, [DBSignal, 'updateTransaction', [ receipt ]]);
+      window.electron.ipcRenderer.sendMessage(IPC_CHANNEL, [DBSignal, 'updateTransaction', [receipt]]);
     })
 
-    .addCase(reloadTransactions , ( transactions , { payload } ) => {
-      return {
-        ...payload
+    .addCase(reloadTransactions, ({ transactions }, { payload }) => {
+      transactions = {
+        ...payload.transactions
       }
+      return {
+        transactions,
+        addressActivityFetch : {
+          ...payload.addressActivityFetch
+        }
+      }
+    })
+
+    .addCase(loadFetchActivities, ( state , { payload }) => {
+      const addTxns = payload.transactions;
+      const nextFetch = payload.addressActivityFetch ?? undefined;
+      const txs = state.transactions ?? {};
+
+      if ( addTxns ){
+        Object.keys(addTxns).forEach( hash => {
+          txs[hash] = addTxns[hash];
+        })
+        state.transactions = txs;
+      }
+      if ( nextFetch && state.addressActivityFetch?.address  == nextFetch.address ){
+        state.addressActivityFetch = nextFetch;
+      }
+
     })
 
 })

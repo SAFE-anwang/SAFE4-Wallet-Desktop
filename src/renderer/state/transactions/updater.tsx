@@ -3,11 +3,12 @@ import { useWeb3Hooks } from "../../connectors/hooks"
 import { useBlockNumber } from "../application/hooks";
 import { AppDispatch, AppState } from "..";
 import { useEffect } from "react";
-import { checkedTransaction, finalizeTransaction, reloadTransactions } from "./actions";
+import { checkedTransaction, finalizeTransaction, loadFetchActivities, reloadTransactions } from "./actions";
 import { useWalletsActiveAccount } from "../wallets/hooks";
+import { TransactionState } from "./reducer";
+import { fetchAddressActivity } from "../../services/address";
 import { IPC_CHANNEL } from "../../config";
 import { DBSignal } from "../../../main/handlers/DBSignalHandler";
-import { TransactionState } from "./reducer";
 
 export function shouldCheck(
   lastBlockNumber: number,
@@ -39,22 +40,67 @@ export default () => {
   const latestBlockNumber = useBlockNumber()
   const dispatch = useDispatch<AppDispatch>()
   const state = useSelector<AppState, AppState['transactions']>(state => state.transactions)
-  const transactions = state ? state : {};
+  const transactions = state ? state.transactions : {};
   const activeAccount = useWalletsActiveAccount();
+  const addressActivityFetch = state.addressActivityFetch;
 
   useEffect(() => {
-
-    if (!chainId || !provider || !latestBlockNumber) return
-
-    if ( Object.keys(transactions).length > 0 ){
-      let blockNumberStart = 1;
-      Object.keys(transactions).forEach( hash => {
-        if ( transactions[hash].timestamp ) {
-          blockNumberStart = Math.max( transactions[hash].blockNumber ?? 1 , blockNumberStart )
-        }
-      });
+    if (addressActivityFetch && addressActivityFetch?.address == activeAccount) {
+      if (addressActivityFetch.status == 1) {
+        console.log("finish.....")
+        return;
+      }
+      console.log(`exeucte fetch Address[${addressActivityFetch.address}] activities from Block[${addressActivityFetch.blockNumberStart}] to Block[${addressActivityFetch.blockNumberEnd}]`)
+      fetchAddressActivity(addressActivityFetch)
+        .then(data => {
+          const { total, current, pageSize, totalPages } = data;
+          const addressActivities = data.records;
+          if (data.records.length > 0) {
+            const newTransactions: TransactionState = {};
+            for (let i in addressActivities) {
+              const {
+                transactionHash, eventLogIndex, blockNumber, refFrom, refTo, timestamp, action, data, status
+              } = addressActivities[i];
+              newTransactions[transactionHash] = {
+                hash: transactionHash,
+                status,
+                refFrom,
+                refTo,
+                timestamp,
+                addedTime: timestamp,
+                blockNumber: blockNumber,
+                transfer: action == "Transfer" ? data : undefined
+              }
+            }
+            const newFetch = {
+              ...addressActivityFetch,
+            }
+            if (current < totalPages) {
+              newFetch.current = newFetch.current + 1;
+            } else {
+              if (newFetch.blockNumberStart == 1) {
+                newFetch.status = 1;
+              } else {
+                newFetch.blockNumberStart = 1;
+                newFetch.blockNumberEnd = newFetch.dbStoredRange.start;
+                newFetch.current = 1;
+              }
+            }
+            window.electron.ipcRenderer.sendMessage(IPC_CHANNEL, [DBSignal, "saveOrUpdateTransactions", [addressActivities]]);
+            setTimeout(() => {
+              dispatch(loadFetchActivities({
+                transactions: newTransactions,
+                addressActivityFetch: newFetch
+              }));
+            }, 2000);
+          }
+        })
     }
+  }, [activeAccount, addressActivityFetch]);
 
+
+  useEffect(() => {
+    if (!chainId || !provider || !latestBlockNumber) return
     Object.keys(transactions)
       .filter(hash => shouldCheck(latestBlockNumber, transactions[hash]))
       .forEach(hash => {
@@ -82,11 +128,46 @@ export default () => {
             }
           })
       });
+  }, [provider, transactions, latestBlockNumber, activeAccount]);
 
-  }, [provider, transactions, latestBlockNumber,activeAccount]);
+  useEffect(() => {
+    if (activeAccount && latestBlockNumber > 0) {
+      setTimeout(() => {
+        fetchAddressActivity({
+          address: activeAccount,
+          blockNumberStart: latestBlockNumber,
+          blockNumberEnd: latestBlockNumber,
+          current: 1,
+          pageSize: 500
+        }).then(data => {
+          console.log(`query the latest activies for : ${activeAccount} , blockNumber : ${latestBlockNumber} >>  `, data.records);
+          if (data.records.length > 0) {
+            const newTransactions: TransactionState = {};
+            const addressActivities = data.records;
+            for (let i in addressActivities) {
+              const {
+                transactionHash, eventLogIndex, blockNumber, refFrom, refTo, timestamp, action, data, status
+              } = addressActivities[i];
+              newTransactions[transactionHash] = {
+                hash: transactionHash,
+                status,
+                refFrom,
+                refTo,
+                timestamp,
+                addedTime: timestamp,
+                blockNumber: blockNumber,
+                transfer: action == "Transfer" ? data : undefined
+              }
+            }
+            dispatch(loadFetchActivities({
+              transactions: newTransactions,
+            }));
+          }
+        })
+      }, 5000);
 
-
-
+    }
+  }, [activeAccount, latestBlockNumber]);
 
 
   return (<></>)

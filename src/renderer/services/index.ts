@@ -7,7 +7,8 @@ export const POST = async function (url: string, params?: any): Promise<ApiRespo
     headers: {
       'Content-Type': "application/json"
     },
-    body: JSON.stringify(params)
+    body: JSON.stringify(params),
+
   })
   const json = await response.json();
   return json as ApiResponse<any>;

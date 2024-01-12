@@ -43,7 +43,7 @@ export function useTransactionAdder(): (
 }
 
 export function useTransactions(account?: string) {
-  const transactions = useSelector((state: AppState) => state.transactions);
+  const transactions = useSelector((state: AppState) => state.transactions.transactions);
   const accountTransactions = useMemo(() => {
     return Object.keys(transactions)
       .filter(txHash => {
@@ -71,6 +71,6 @@ export function useTransactions(account?: string) {
 }
 
 export function useTransaction(hash: string): TransactionDetails {
-  const transactions = useSelector((state: AppState) => state.transactions);
+  const transactions = useSelector((state: AppState) => state.transactions.transactions);
   return transactions[hash];
 }
