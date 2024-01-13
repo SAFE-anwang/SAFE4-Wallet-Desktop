@@ -6,7 +6,7 @@ import MulticallUpdater from "./state/multicall/updater";
 import TransactionUpdater from "./state/transactions/updater";
 import { useWalletsActiveAccount } from "./state/wallets/hooks";
 import { IPC_CHANNEL } from "./config";
-import { DBSignal } from "../main/handlers/DBSignalHandler";
+import { DBSignal } from "../main/handlers/DBAddressActivitySingalHandler";
 
 export default () => {
 

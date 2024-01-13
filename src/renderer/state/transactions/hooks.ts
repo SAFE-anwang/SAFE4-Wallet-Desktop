@@ -6,7 +6,7 @@ import { addTransaction } from "./actions";
 import { Transfer, TransactionDetails } from "./reducer";
 import { DateFormat, DateTimeFormat } from "../../utils/DateUtils";
 import { IPC_CHANNEL } from "../../config";
-import { DBSignal } from "../../../main/handlers/DBSignalHandler";
+import { DBSignal } from "../../../main/handlers/DBAddressActivitySingalHandler";
 
 
 export function useTransactionAdder(): (

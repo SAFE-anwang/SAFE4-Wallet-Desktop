@@ -1,38 +1,27 @@
 import { createAction } from "@reduxjs/toolkit";
-import { AddressActivityFetch, SerializableTransactionReceipt, TransactionState, Transfer } from "./reducer";
-
+import { AddressActivityFetch, SerializableTransactionReceipt, TransactionDetails, Transfer } from "./reducer";
 
 export const addTransaction = createAction<{
-
   hash: string
   refFrom: string,
   refTo?: string,
-
+  // 自定义数据 ...
   approval?: { tokenAddress: string; spender: string }
   summary?: string
   transfer?: Transfer
-
 }>('transactions/addTransaction')
 
 export const clearAllTransactions = createAction<"">('transactions/clearAllTransactions')
 
-export const reloadTransactions = createAction<{
-  transactions: TransactionState,
+export const reloadTransactionsAndSetAddressActivityFetch = createAction<{
+  txns: TransactionDetails[],
   addressActivityFetch: AddressActivityFetch
-}>("transactions/reloadTransactions");
+}>("transactions/reloadTransactionsAndSetAddressActivityFetch");
 
-export const loadFetchActivities = createAction<{
-  transactions: TransactionState,
+export const loadTransactionsAndUpdateAddressActivityFetch = createAction<{
+  addTxns: TransactionDetails[],
   addressActivityFetch ?: AddressActivityFetch
-}>("transactions/loadFetchActivities");
-
-export const updateFetchs = createAction<{
-  address: string,
-  blockNumberStart: number,
-  blockNumberEnd: number,
-  current: number,
-  pageSize: number
-}>("transactions/updateFetchs")
+}>("transactions/loadTransactionsAndUpdateAddressActivityFetch");
 
 export const finalizeTransaction = createAction<{
   hash: string,

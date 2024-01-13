@@ -1,4 +1,4 @@
-import { DBSignalHandler } from "./handlers/DBSignalHandler";
+import { DBAddressActivitySingalHandler } from "./handlers/DBAddressActivitySingalHandler";
 import { IndexSingalHandler } from "./handlers/IndexSingalHandler";
 import { ListenSignalHandler } from "./handlers/ListenSignalHandler";
 import { WalletSignalHandler } from "./handlers/WalletSignalHandler";
@@ -13,7 +13,7 @@ export class ApplicationIpcManager {
   constructor() {
     this.listenSignalHandlers.push(new IndexSingalHandler());
     this.listenSignalHandlers.push(new WalletSignalHandler());
-    this.listenSignalHandlers.push(new DBSignalHandler());
+    this.listenSignalHandlers.push(new DBAddressActivitySingalHandler());
   }
 
   public register(ipcMain : Electron.IpcMain) {

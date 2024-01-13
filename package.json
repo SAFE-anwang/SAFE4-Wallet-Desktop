@@ -283,5 +283,6 @@
       "src/main/**"
     ],
     "logLevel": "quiet"
-  }
+  },
+  "__npminstall_done": false
 }

@@ -1,7 +1,7 @@
 import { createReducer } from "@reduxjs/toolkit"
-import { addTransaction, checkedTransaction, clearAllTransactions, finalizeTransaction, loadFetchActivities, reloadTransactions } from "./actions"
+import { addTransaction, checkedTransaction, clearAllTransactions, finalizeTransaction, loadTransactionsAndUpdateAddressActivityFetch, reloadTransactionsAndSetAddressActivityFetch } from "./actions"
 import { IPC_CHANNEL } from "../../config"
-import { DBSignal } from "../../../main/handlers/DBSignalHandler"
+import { DBSignal, DB_AddressActivity_Actions, DB_AddressActivity_Methods } from "../../../main/handlers/DBAddressActivitySingalHandler"
 
 const now = () => new Date().getTime()
 
@@ -53,15 +53,15 @@ export interface ERC20Transfer {
 }
 
 export interface AddressActivityFetch {
-  address : string,
+  address: string,
   blockNumberStart: number,
   blockNumberEnd: number,
   current: number,
   pageSize: number,
   status: number,
-  dbStoredRange : {
-    start : number,
-    end : number
+  dbStoredRange: {
+    start: number,
+    end: number
   }
 }
 
@@ -71,7 +71,7 @@ export interface TransactionState {
 
 export const initialState: {
   transactions: TransactionState,
-  addressActivityFetch ?: AddressActivityFetch
+  addressActivityFetch?: AddressActivityFetch
 } = {
   transactions: {},
 }
@@ -83,13 +83,20 @@ export default createReducer(initialState, (builder) => {
       if (transactions[hash]) {
         throw Error('Attempted to add existing transaction.')
       }
+
       const txs = transactions ?? {};
       txs[hash] = {
         hash, refFrom, refTo,
         addedTime: now(),
         approval, summary, transfer
       }
-      window.electron.ipcRenderer.sendMessage(IPC_CHANNEL, [DBSignal, 'saveTransaction', [txs[hash]]]);
+
+      window.electron.ipcRenderer.sendMessage(IPC_CHANNEL,
+        [DBSignal, DB_AddressActivity_Methods.saveActivity,
+          [Transaction2Activity(txs[hash])]
+        ]
+      );
+
       transactions = txs
     })
 
@@ -118,36 +125,115 @@ export default createReducer(initialState, (builder) => {
       tx.receipt = receipt;
       tx.status = receipt.status;
       tx.confirmedTime = now();
-      window.electron.ipcRenderer.sendMessage(IPC_CHANNEL, [DBSignal, 'updateTransaction', [receipt]]);
+      window.electron.ipcRenderer.sendMessage(IPC_CHANNEL,
+        [DBSignal, DB_AddressActivity_Methods.updateActivity,
+          [receipt]
+        ]
+      );
     })
 
-    .addCase(reloadTransactions, ({ transactions }, { payload }) => {
-      transactions = {
-        ...payload.transactions
-      }
+    .addCase(reloadTransactionsAndSetAddressActivityFetch, ({ transactions }, { payload : { txns , addressActivityFetch } }) => {
+      transactions = TransactionsCombine(undefined , txns );
       return {
         transactions,
-        addressActivityFetch : {
-          ...payload.addressActivityFetch
+        addressActivityFetch: {
+          ...addressActivityFetch
         }
       }
     })
 
-    .addCase(loadFetchActivities, ( state , { payload }) => {
-      const addTxns = payload.transactions;
-      const nextFetch = payload.addressActivityFetch ?? undefined;
-      const txs = state.transactions ?? {};
-
-      if ( addTxns ){
-        Object.keys(addTxns).forEach( hash => {
-          txs[hash] = addTxns[hash];
-        })
-        state.transactions = txs;
+    .addCase(loadTransactionsAndUpdateAddressActivityFetch, (state, { payload: { addTxns, addressActivityFetch } }) => {
+      if (addTxns) {
+        state.transactions = TransactionsCombine(state.transactions, addTxns);
       }
-      if ( nextFetch && state.addressActivityFetch?.address  == nextFetch.address ){
+      const nextFetch = addressActivityFetch ?? undefined;
+      if (nextFetch && state.addressActivityFetch?.address == nextFetch.address) {
         state.addressActivityFetch = nextFetch;
       }
-
     })
 
 })
+
+export function Transaction2Activity(txn: TransactionDetails) {
+  if (txn.transfer) {
+    const { hash, refFrom, refTo, addedTime } = txn;
+    const action = DB_AddressActivity_Actions.Transfer;
+    const data = JSON.stringify(txn.transfer);
+    return {
+      hash,
+      refFrom,
+      refTo,
+      addedTime,
+      action,
+      data
+    }
+  }
+  return undefined;
+}
+
+export function Activity2Transaction(row: any): TransactionDetails {
+
+  const { transactionHash, refFrom, refTo, blockNumber, timestamp, action, addedTime, status, data }
+    = row.transaction_hash ? {
+      transactionHash: row.transaction_hash,
+      refFrom: row.ref_from,
+      refTo: row.ref_to,
+      action: row.action,
+      data: JSON.parse(row.data),
+      addedTime: row.added_time ? row.added_time : row.timestamp,
+      timestamp: row.timestamp,
+      status: row.status,
+      blockNumber: row.block_number
+    } : {
+      transactionHash: row.transactionHash,
+      refFrom: row.refFrom,
+      refTo: row.refTo,
+      action: row.action,
+      data: row.data,
+      addedTime: row.timestamp,
+      timestamp: row.timestamp,
+      status: row.status,
+      blockNumber: row.blockNumber
+    };
+
+  switch (action) {
+    case DB_AddressActivity_Actions.Transfer:
+      return {
+        hash: transactionHash,
+        refFrom,
+        refTo,
+        addedTime,
+        timestamp,
+        status,
+        blockNumber,
+        transfer: { ...data }
+      }
+    default:
+      return {
+        hash: transactionHash,
+        refFrom,
+        refTo,
+        addedTime,
+        timestamp,
+        status,
+        blockNumber,
+      }
+  }
+}
+
+export function TransactionsCombine(transactions: TransactionState | undefined, addTxns: TransactionDetails[]): TransactionState {
+  const txns = transactions ?? {};
+  if (addTxns) {
+    addTxns.forEach(tx => {
+      if (!txns[tx.hash]) {
+        txns[tx.hash] = tx;
+      } else {
+        if (tx.transfer) {
+          txns[tx.hash] = tx;
+        }
+      }
+    });
+  }
+  return txns;
+}
+

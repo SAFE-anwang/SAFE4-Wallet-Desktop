@@ -3,12 +3,12 @@ import { useWeb3Hooks } from "../../connectors/hooks"
 import { useBlockNumber } from "../application/hooks";
 import { AppDispatch, AppState } from "..";
 import { useEffect } from "react";
-import { checkedTransaction, finalizeTransaction, loadFetchActivities, reloadTransactions } from "./actions";
+import { checkedTransaction, finalizeTransaction, loadTransactionsAndUpdateAddressActivityFetch } from "./actions";
 import { useWalletsActiveAccount } from "../wallets/hooks";
-import { TransactionState } from "./reducer";
+import { Activity2Transaction, TransactionDetails, TransactionsCombine, TransactionState } from "./reducer";
 import { fetchAddressActivity } from "../../services/address";
 import { IPC_CHANNEL } from "../../config";
-import { DBSignal } from "../../../main/handlers/DBSignalHandler";
+import { DBSignal, DB_AddressActivity_Methods } from "../../../main/handlers/DBAddressActivitySingalHandler";
 
 export function shouldCheck(
   lastBlockNumber: number,
@@ -47,31 +47,16 @@ export default () => {
   useEffect(() => {
     if (addressActivityFetch && addressActivityFetch?.address == activeAccount) {
       if (addressActivityFetch.status == 1) {
-        console.log("finish.....")
+        console.log(`Finish fetch Address[${addressActivityFetch.address}]`)
         return;
       }
-      console.log(`exeucte fetch Address[${addressActivityFetch.address}] activities from Block[${addressActivityFetch.blockNumberStart}] to Block[${addressActivityFetch.blockNumberEnd}]`)
+      console.log(`Exeucte fetch Address[${addressActivityFetch.address}] activities from 
+                   Block[${addressActivityFetch.blockNumberStart}] to Block[${addressActivityFetch.blockNumberEnd}]`);
       fetchAddressActivity(addressActivityFetch)
         .then(data => {
           const { total, current, pageSize, totalPages } = data;
           const addressActivities = data.records;
           if (data.records.length > 0) {
-            const newTransactions: TransactionState = {};
-            for (let i in addressActivities) {
-              const {
-                transactionHash, eventLogIndex, blockNumber, refFrom, refTo, timestamp, action, data, status
-              } = addressActivities[i];
-              newTransactions[transactionHash] = {
-                hash: transactionHash,
-                status,
-                refFrom,
-                refTo,
-                timestamp,
-                addedTime: timestamp,
-                blockNumber: blockNumber,
-                transfer: action == "Transfer" ? data : undefined
-              }
-            }
             const newFetch = {
               ...addressActivityFetch,
             }
@@ -86,13 +71,16 @@ export default () => {
                 newFetch.current = 1;
               }
             }
-            window.electron.ipcRenderer.sendMessage(IPC_CHANNEL, [DBSignal, "saveOrUpdateTransactions", [addressActivities]]);
+            window.electron.ipcRenderer.sendMessage(IPC_CHANNEL, 
+              [DBSignal, DB_AddressActivity_Methods.saveOrUpdateActivities, 
+              [addressActivities]
+            ]);
             setTimeout(() => {
-              dispatch(loadFetchActivities({
-                transactions: newTransactions,
+              dispatch( loadTransactionsAndUpdateAddressActivityFetch ({
+                addTxns:  data.records.map( Activity2Transaction ),
                 addressActivityFetch: newFetch
               }));
-            }, 2000);
+            }, 1000);
           }
         })
     }
@@ -142,29 +130,12 @@ export default () => {
         }).then(data => {
           console.log(`query the latest activies for : ${activeAccount} , blockNumber : ${latestBlockNumber} >>  `, data.records);
           if (data.records.length > 0) {
-            const newTransactions: TransactionState = {};
-            const addressActivities = data.records;
-            for (let i in addressActivities) {
-              const {
-                transactionHash, eventLogIndex, blockNumber, refFrom, refTo, timestamp, action, data, status
-              } = addressActivities[i];
-              newTransactions[transactionHash] = {
-                hash: transactionHash,
-                status,
-                refFrom,
-                refTo,
-                timestamp,
-                addedTime: timestamp,
-                blockNumber: blockNumber,
-                transfer: action == "Transfer" ? data : undefined
-              }
-            }
-            dispatch(loadFetchActivities({
-              transactions: newTransactions,
+            dispatch(loadTransactionsAndUpdateAddressActivityFetch({
+              addTxns: data.records.map(Activity2Transaction),
             }));
           }
         })
-      }, 5000);
+      }, 3000);
 
     }
   }, [activeAccount, latestBlockNumber]);
