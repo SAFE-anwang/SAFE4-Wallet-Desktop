@@ -1,4 +1,3 @@
-import { ConsoleSqlOutlined } from "@ant-design/icons"
 import { createReducer } from "@reduxjs/toolkit"
 import { addMulticallListeners, fetchingMulticallResults, removeMulticallListeners, updateMulticallResults } from "./actions"
 

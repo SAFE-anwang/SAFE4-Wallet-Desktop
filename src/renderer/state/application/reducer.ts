@@ -1,15 +1,18 @@
 import { createReducer } from '@reduxjs/toolkit';
 import { 
-  Application_Action_Update_AtCreateWallet, 
-  Application_Blockchain_Update_BlockNumber, 
-  Application_Confirmed_Mnemonic, 
-  Application_Init 
+  applicationInit,
+  applicationActionUpdateAtCreateWallet, 
+  applicationBlockchainUpdateBlockNumber, 
+  applicationActionConfirmedMnemonic,
+  applicationDataUpdate, 
 } from './action';
 
 
 export interface IApplicationState {
   action:{
+    // 保存创建的助记词变量
     newMnemonic : string | undefined ,
+    // 标识正在创建钱包的变量
     atCreateWallet : boolean
   }
   control:{
@@ -20,7 +23,7 @@ export interface IApplicationState {
     blockNumber : number,
   }
   data : {
-
+    [key:string]  : any
   }
 }
 
@@ -42,11 +45,15 @@ const initialState: IApplicationState = {
 }
 
 export default createReducer(initialState, (builder) => {
-  builder.addCase(Application_Init, (state, { payload : { web3Endpoint } }) => {
+  builder.addCase(applicationInit, (state, { payload : { web3Endpoint } }) => {
 
   })
 
-  .addCase(Application_Blockchain_Update_BlockNumber , ( state , {payload}) => {
+  .addCase(applicationDataUpdate , ( state , { payload : { nodeServerPath } } ) => {
+    state.data[ "nodeServerPath" ] = nodeServerPath;
+  })
+
+  .addCase(applicationBlockchainUpdateBlockNumber , ( state , {payload}) => {
     return {
       ...state ,
       blockchain:{
@@ -56,7 +63,7 @@ export default createReducer(initialState, (builder) => {
     }
   })
 
-  .addCase(Application_Confirmed_Mnemonic , ( state , {payload}) => {
+  .addCase(applicationActionConfirmedMnemonic , ( state , {payload}) => {
     return {
       ...state ,
       action : {
@@ -66,7 +73,7 @@ export default createReducer(initialState, (builder) => {
     }
   })
 
-  .addCase(Application_Action_Update_AtCreateWallet , (state , {payload}) => {
+  .addCase(applicationActionUpdateAtCreateWallet , (state , {payload}) => {
     return {
       ...state ,
       action : {

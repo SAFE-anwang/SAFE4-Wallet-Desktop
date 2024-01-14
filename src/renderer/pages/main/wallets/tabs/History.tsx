@@ -7,7 +7,7 @@ import { Activity2Transaction, TransactionDetails, TransactionsCombine, Transact
 import { useWalletsActiveAccount } from "../../../../state/wallets/hooks";
 import TransactionDetailsView from "./TransactionDetailsView";
 import { IPC_CHANNEL } from "../../../../config";
-import { DBSignal, DB_AddressActivity_Methods } from "../../../../../main/handlers/DBAddressActivitySingalHandler";
+import { DBAddressActivitySignal, DB_AddressActivity_Methods } from "../../../../../main/handlers/DBAddressActivitySingalHandler";
 import { useDispatch } from "react-redux";
 import { reloadTransactionsAndSetAddressActivityFetch } from "../../../../state/transactions/actions";
 import { useBlockNumber } from "../../../../state/application/hooks";
@@ -25,9 +25,9 @@ export default () => {
   useEffect(() => {
     if (activeAccount) {
       const method = DB_AddressActivity_Methods.loadActivities;
-      window.electron.ipcRenderer.sendMessage(IPC_CHANNEL, [DBSignal, method, [activeAccount]]);
+      window.electron.ipcRenderer.sendMessage(IPC_CHANNEL, [DBAddressActivitySignal, method, [activeAccount]]);
       window.electron.ipcRenderer.once(IPC_CHANNEL, (arg) => {
-        if (arg instanceof Array && arg[0] == DBSignal && arg[1] == method) {
+        if (arg instanceof Array && arg[0] == DBAddressActivitySignal && arg[1] == method) {
           const rows = arg[2][0];
           let dbStoredRange = {
             start: latestBlockNumber,
@@ -46,7 +46,7 @@ export default () => {
             addressActivityFetch: {
               address: activeAccount,
               blockNumberStart: dbStoredRange.end,
-              blockNumberEnd: latestBlockNumber,
+              blockNumberEnd: latestBlockNumber == 0 ? 99999999 : latestBlockNumber,
               current: 1,
               pageSize: 100,
               status: 0,

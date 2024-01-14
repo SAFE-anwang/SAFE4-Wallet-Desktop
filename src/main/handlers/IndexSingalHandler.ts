@@ -5,22 +5,41 @@ const fs = require("fs");
 
 export const IndexSingal = "index";
 
+export enum Index_Methods {
+  load = "load"
+}
+
 export class IndexSingalHandler implements ListenSignalHandler {
-
-
-  constructor(){
-
-  }
-
+  
   getSingal(): string {
     return IndexSingal;
+  }
+
+  private db : any;
+
+  public getSqlite3DB() : any{
+    return this.db;
+  }
+
+  constructor( DBConnectedCallback : () => void ){
+    const sqlite3 = require('sqlite3').verbose()
+    this.db = new sqlite3.Database(
+      './wallet.db',
+      function (err: any) {
+        if (err) {
+          return;
+        }
+        console.log("Connect sqlite3 successed.")
+        DBConnectedCallback();
+      }
+    )
   }
 
   handleOn(event: Electron.IpcMainEvent, ...args: any[]): void {
     const method: string = args[0][1];
     const params: any[] = args[0][2];
     let data = undefined;
-    if ( method == "load" ){
+    if ( method == Index_Methods.load ){
       data = this.load();
     }
     event.reply(Channel, [this.getSingal(), method , [data] ])
@@ -29,6 +48,7 @@ export class IndexSingalHandler implements ListenSignalHandler {
   private load() : any {
     const walletKeystores = this.loadWalletKeystores();
     return {
+      nodeServerPath : process.cwd(),
       walletKeystores
     }
   }

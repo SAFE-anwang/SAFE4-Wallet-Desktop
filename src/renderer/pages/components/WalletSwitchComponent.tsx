@@ -6,7 +6,7 @@ import "./comp.css";
 import { useNavigate } from 'react-router-dom';
 import { useETHBalances, useWalletsActiveWallet, useWalletsList } from '../../state/wallets/hooks';
 import { useDispatch } from 'react-redux';
-import { Wallets_Update_ActiveWallet } from '../../state/wallets/action';
+import { walletsUpdateActiveWallet } from '../../state/wallets/action';
 
 const { Text } = Typography;
 
@@ -43,7 +43,7 @@ export default () => {
     navigate("/selectCreateWallet");
   };
   const switchActionWallet = (publicKey: string , e:any ) => {
-    dispatch(Wallets_Update_ActiveWallet(publicKey));
+    dispatch(walletsUpdateActiveWallet(publicKey));
   }
 
   return <>

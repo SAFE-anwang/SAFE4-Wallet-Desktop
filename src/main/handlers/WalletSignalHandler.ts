@@ -4,28 +4,33 @@ import * as bip39 from 'bip39';
 const fs = require('fs');
 
 export const WalletSignal = "wallet";
-
 export const Wallet_Keystore_FileName = "safe4wallet.keystores.json";
+
+export enum Wallet_Methods {
+  generateMnemonic = "generateMnemonic",
+  generateWallet = "generateWallet",
+  storeWallet = "storeWallet"
+}
 
 export class WalletSignalHandler implements ListenSignalHandler {  
 
-  constructor() {
-
-  }
-
   getSingal(): string {
     return WalletSignal;
+  }
+
+  constructor() {
+
   }
 
   async handleOn(event: Electron.IpcMainEvent, ...args: any[]): Promise<any> {
     const method: string = args[0][1];
     const params: any[] = args[0][2];
     let data = undefined;
-    if ("generateMnemonic" == method) {
+    if (Wallet_Methods.generateMnemonic == method) {
       data = this.generateMnemonic();
-    } else if ("generateWallet" == method) {
+    } else if (Wallet_Methods.generateWallet == method) {
       data = await this.gennerateWallet(params);
-    } else if ("restoreWallet" == method) {
+    } else if (Wallet_Methods.storeWallet == method) {
       data = await this.restoreWallet(params);
     }
     event.reply(Channel, [this.getSingal(), method, [data]])
@@ -46,10 +51,12 @@ export class WalletSignalHandler implements ListenSignalHandler {
   }
 
   private async gennerateWallet( params: any[] ) {
+    
     const secp256k1 = require("tiny-secp256k1");
     const { BIP32Factory } = require("bip32");
     const bip32 = BIP32Factory(secp256k1);
     const util = require("ethereumjs-util");
+
     const mnemonic = params[0];
     const password = params[1];
     // 使用助记词和密码基于 BIP39 生成种子私钥

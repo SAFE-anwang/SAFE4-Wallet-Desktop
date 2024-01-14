@@ -3,9 +3,9 @@ import { LeftOutlined, LockOutlined } from '@ant-design/icons';
 import { useNavigate } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
 import { IPC_CHANNEL } from "../../../config";
-import { WalletSignal } from "../../../../main/handlers/WalletSignalHandler";
+import { WalletSignal, Wallet_Methods } from "../../../../main/handlers/WalletSignalHandler";
 import { useDispatch } from "react-redux";
-import { Application_Confirmed_Mnemonic } from "../../../state/application/action";
+import { applicationActionConfirmedMnemonic } from "../../../state/application/action";
 
 const { Text } = Typography;
 
@@ -24,8 +24,12 @@ export default () => {
     } , [mnemonic] );
 
     useEffect(() => {
-        const method = 'generateMnemonic';
-        window.electron.ipcRenderer.sendMessage(IPC_CHANNEL, [WalletSignal, 'generateMnemonic', [12]]);
+        const method = Wallet_Methods.generateMnemonic;
+        window.electron.ipcRenderer.sendMessage(IPC_CHANNEL, 
+            [WalletSignal, method, 
+            [12]
+            ]
+        );
         window.electron.ipcRenderer.once(IPC_CHANNEL, (arg) => {
             if (arg instanceof Array && arg[0] == WalletSignal && arg[1] == method) {
                 const mnemonic = arg[2][0];
@@ -39,7 +43,7 @@ export default () => {
     }
     const goNextClick = () => {
         if (mnemonic){
-            dispatch(Application_Confirmed_Mnemonic( {mnemonic} ))
+            dispatch(applicationActionConfirmedMnemonic( {mnemonic} ))
             navigate("/waitingCreateWallet")
         }
     }

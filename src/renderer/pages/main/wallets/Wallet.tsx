@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { useETHBalances, useWalletsActiveAccount, useWalletsActiveWallet } from '../../../state/wallets/hooks';
-import { Application_Action_Update_AtCreateWallet } from '../../../state/application/action';
+import { applicationActionUpdateAtCreateWallet } from '../../../state/application/action';
 import { SearchOutlined, SendOutlined, QrcodeOutlined } from '@ant-design/icons';
 import { useWeb3Hooks, useWeb3Network } from '../../../connectors/hooks';
 import { useBlockNumber } from '../../../state/application/hooks';
@@ -52,7 +52,7 @@ export default () => {
   };
 
   useEffect(() => {
-    dispatch(Application_Action_Update_AtCreateWallet(false));
+    dispatch(applicationActionUpdateAtCreateWallet(false));
   }, []);
 
   return (<>

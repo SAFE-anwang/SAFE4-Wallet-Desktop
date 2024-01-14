@@ -9,6 +9,7 @@ import WaitingWalletCreate from './pages/wallet/WaitingWalletCreate';
 import { useApplicationActionAtCreateWallet } from './state/application/hooks';
 import Wallet from './pages/main/wallets/Wallet';
 import TestMulticall from './pages/main/tools/TestMulticall';
+import Menu from './pages/main/menu';
 
 export default function App() {
 
@@ -47,6 +48,7 @@ export default function App() {
               <Route path="/waitingCreateWallet" element={<WaitingWalletCreate />} />
               <Route path="/main/wallet" element={<Wallet />} />
               <Route path="/tools/web3" element={<TestMulticall />} />
+              <Route path="/main/menu" element={<Menu />} />
             </Routes>
           </Col>
         </Row>

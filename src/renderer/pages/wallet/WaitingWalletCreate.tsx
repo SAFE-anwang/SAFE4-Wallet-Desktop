@@ -1,17 +1,14 @@
-import { Alert, Spin, Button, Steps, StepProps } from "antd"
+import { Alert, Spin, Steps, StepProps } from "antd"
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useNewMnemonic } from "../../state/application/hooks";
 import { IPC_CHANNEL } from "../../config";
-import { WalletSignal } from "../../../main/handlers/WalletSignalHandler";
+import { WalletSignal, Wallet_Methods } from "../../../main/handlers/WalletSignalHandler";
 import { useDispatch } from "react-redux";
 import { useWalletsKeystores, useWalletsList } from "../../state/wallets/hooks";
 import { WalletKeystore } from "../../state/wallets/reducer";
-import { Wallets_Load_Keystores } from "../../state/wallets/action";
-import { Application_Action_Update_AtCreateWallet } from "../../state/application/action";
-
-const method_generateWallet = "generateWallet";
-const method_restoreWallet  = "restoreWallet";
+import { walletsLoadKeystores } from "../../state/wallets/action";
+import { applicationActionUpdateAtCreateWallet } from "../../state/application/action";
 
 export default () => {
 
@@ -22,7 +19,7 @@ export default () => {
 
   const [newWalletKeystore, setNewWalletKeystore] = useState<WalletKeystore>();
   const [stepItems, setStepItems] = useState<StepProps[]>([]);
-  const [stepCurrent, setStempCurrent] = useState<number>(0);
+  const [stepCurrent, setStepCurrent] = useState<number>(0);
 
   const renderStempItems = () => {
     setTimeout(() => {
@@ -38,7 +35,7 @@ export default () => {
         title: '本地加密存储钱包数据',
         description: "待执行",
       }]);
-      setStempCurrent(0);
+      setStepCurrent(0);
       setTimeout(() => {
         setStepItems([{
           title: '生成种子密钥',
@@ -52,7 +49,7 @@ export default () => {
           title: '本地加密存储钱包数据',
           description: "待执行",
         }]);
-        setStempCurrent(1);
+        setStepCurrent(1);
         setTimeout(() => {
           setStepItems([{
             title: '生成种子密钥',
@@ -66,7 +63,7 @@ export default () => {
             title: '本地加密存储钱包数据',
             description: "正在执行",
           }]);
-          setStempCurrent(2);
+          setStepCurrent(2);
         }, 300);
       }, 300);
     }, 300);
@@ -77,17 +74,17 @@ export default () => {
       if (arg instanceof Array && arg[0] == WalletSignal) {
         const method = arg[1];
         const result = arg[2][0];
-        if ( method == method_generateWallet){
+        if ( method == Wallet_Methods.generateWallet){
           setNewWalletKeystore(result);
-          dispatch(Wallets_Load_Keystores([result]));
-        }else if (method == method_restoreWallet){
+          dispatch(walletsLoadKeystores([result]));
+        }else if (method == Wallet_Methods.storeWallet){
           const {
             success, path
           } = result;
           if ( success ) {
             setTimeout(() => {
-              setStempCurrent(3);
-              dispatch(Application_Action_Update_AtCreateWallet(false));
+              setStepCurrent(3);
+              dispatch(applicationActionUpdateAtCreateWallet(false));
               navigate("/main/wallet");
             }, 1500);
           }
@@ -102,13 +99,13 @@ export default () => {
   useEffect(() => {
     if (newMnemonic) {
       renderStempItems();
-      window.electron.ipcRenderer.sendMessage(IPC_CHANNEL, [WalletSignal, method_generateWallet, [newMnemonic, ""]]);
+      window.electron.ipcRenderer.sendMessage(IPC_CHANNEL, [WalletSignal, Wallet_Methods.generateWallet, [newMnemonic, ""]]);
     }
   }, [newMnemonic]);
 
   useEffect(() => {
     if (newWalletKeystore?.address) {
-      window.electron.ipcRenderer.sendMessage(IPC_CHANNEL, [WalletSignal, method_restoreWallet, [walletsKeystores]]);
+      window.electron.ipcRenderer.sendMessage(IPC_CHANNEL, [WalletSignal, Wallet_Methods.storeWallet, [walletsKeystores]]);
     }
   }, [newWalletKeystore])
 

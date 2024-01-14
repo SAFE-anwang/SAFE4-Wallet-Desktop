@@ -1,6 +1,5 @@
 import { createReducer } from '@reduxjs/toolkit';
-import { Wallets_Init_List, Wallets_Load_Keystores, Wallets_Update_ActiveWallet } from './action';
-import { ethers } from 'ethers';
+import { walletsInitList, walletsLoadKeystores, walletsUpdateActiveWallet } from './action';
 
 export interface WalletKeystore {
   mnemonic: string | undefined,
@@ -44,7 +43,7 @@ const privateKeyContainsIn = (privateKey: string, keystores: WalletKeystore[]): 
 
 export default createReducer(initialState, (builder) => {
 
-  builder.addCase(Wallets_Load_Keystores, (state, { payload }) => {
+  builder.addCase(walletsLoadKeystores, (state, { payload }) => {
     const _keystores = [];
     for (let i in payload) {
       let privateKey = payload[i].privateKey;
@@ -100,7 +99,7 @@ export default createReducer(initialState, (builder) => {
 
   });
 
-  builder.addCase(Wallets_Init_List, (state, { payload }) => {
+  builder.addCase(walletsInitList, (state, { payload }) => {
     const keystores = state.keystores;
     const list: Wallet[] = [];
     for (let i in keystores) {
@@ -114,7 +113,7 @@ export default createReducer(initialState, (builder) => {
     state.list = list;
   });
 
-  builder.addCase( Wallets_Update_ActiveWallet , (state , {payload}) => {
+  builder.addCase( walletsUpdateActiveWallet , (state , {payload}) => {
     const publicKey = payload;
     let activeWallet = null;
     for(let i in state.list){

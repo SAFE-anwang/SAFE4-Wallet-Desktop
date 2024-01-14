@@ -1,7 +1,7 @@
 import { createReducer } from "@reduxjs/toolkit"
 import { addTransaction, checkedTransaction, clearAllTransactions, finalizeTransaction, loadTransactionsAndUpdateAddressActivityFetch, reloadTransactionsAndSetAddressActivityFetch } from "./actions"
 import { IPC_CHANNEL } from "../../config"
-import { DBSignal, DB_AddressActivity_Actions, DB_AddressActivity_Methods } from "../../../main/handlers/DBAddressActivitySingalHandler"
+import { DBAddressActivitySignal, DB_AddressActivity_Actions, DB_AddressActivity_Methods } from "../../../main/handlers/DBAddressActivitySingalHandler"
 
 const now = () => new Date().getTime()
 
@@ -92,7 +92,7 @@ export default createReducer(initialState, (builder) => {
       }
 
       window.electron.ipcRenderer.sendMessage(IPC_CHANNEL,
-        [DBSignal, DB_AddressActivity_Methods.saveActivity,
+        [DBAddressActivitySignal, DB_AddressActivity_Methods.saveActivity,
           [Transaction2Activity(txs[hash])]
         ]
       );
@@ -126,7 +126,7 @@ export default createReducer(initialState, (builder) => {
       tx.status = receipt.status;
       tx.confirmedTime = now();
       window.electron.ipcRenderer.sendMessage(IPC_CHANNEL,
-        [DBSignal, DB_AddressActivity_Methods.updateActivity,
+        [DBAddressActivitySignal, DB_AddressActivity_Methods.updateActivity,
           [receipt]
         ]
       );

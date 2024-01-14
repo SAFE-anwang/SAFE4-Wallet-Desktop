@@ -4,10 +4,7 @@ import { AppDispatch, AppState } from "..";
 import { useCallback, useMemo } from "react";
 import { addTransaction } from "./actions";
 import { Transfer, TransactionDetails } from "./reducer";
-import { DateFormat, DateTimeFormat } from "../../utils/DateUtils";
-import { IPC_CHANNEL } from "../../config";
-import { DBSignal } from "../../../main/handlers/DBAddressActivitySingalHandler";
-
+import { DateFormat } from "../../utils/DateUtils";
 
 export function useTransactionAdder(): (
   request: TransactionRequest,

@@ -3,7 +3,7 @@ import { PlusCircleTwoTone, VerticalAlignBottomOutlined , CloseOutlined  } from 
 import { useNavigate } from "react-router-dom";
 import { useEffect } from "react";
 import { useDispatch } from "react-redux";
-import { Application_Action_Update_AtCreateWallet } from "../../state/application/action";
+import { applicationActionUpdateAtCreateWallet } from "../../state/application/action";
 import { useWalletsList } from "../../state/wallets/hooks";
 
 const { Text } = Typography;
@@ -23,7 +23,7 @@ export default () => {
 
 
     useEffect( () => {
-        dispatch(Application_Action_Update_AtCreateWallet(true))
+        dispatch(applicationActionUpdateAtCreateWallet(true))
     },[]);
 
     return <>

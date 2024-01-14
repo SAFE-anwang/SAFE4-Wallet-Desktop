@@ -8,7 +8,7 @@ import { useWalletsActiveAccount } from "../wallets/hooks";
 import { Activity2Transaction, TransactionDetails, TransactionsCombine, TransactionState } from "./reducer";
 import { fetchAddressActivity } from "../../services/address";
 import { IPC_CHANNEL } from "../../config";
-import { DBSignal, DB_AddressActivity_Methods } from "../../../main/handlers/DBAddressActivitySingalHandler";
+import { DBAddressActivitySignal, DB_AddressActivity_Methods } from "../../../main/handlers/DBAddressActivitySingalHandler";
 
 export function shouldCheck(
   lastBlockNumber: number,
@@ -72,7 +72,7 @@ export default () => {
               }
             }
             window.electron.ipcRenderer.sendMessage(IPC_CHANNEL, 
-              [DBSignal, DB_AddressActivity_Methods.saveOrUpdateActivities, 
+              [DBAddressActivitySignal, DB_AddressActivity_Methods.saveOrUpdateActivities, 
               [addressActivities]
             ]);
             setTimeout(() => {
@@ -123,12 +123,12 @@ export default () => {
       setTimeout(() => {
         fetchAddressActivity({
           address: activeAccount,
-          blockNumberStart: latestBlockNumber,
+          blockNumberStart: latestBlockNumber - 10,
           blockNumberEnd: latestBlockNumber,
           current: 1,
           pageSize: 500
         }).then(data => {
-          console.log(`query the latest activies for : ${activeAccount} , blockNumber : ${latestBlockNumber} >>  `, data.records);
+          console.log(`query the latest activies for :${activeAccount}, from Block:[${latestBlockNumber-10}] to Block:[${latestBlockNumber}],result:`, data.records);
           if (data.records.length > 0) {
             dispatch(loadTransactionsAndUpdateAddressActivityFetch({
               addTxns: data.records.map(Activity2Transaction),

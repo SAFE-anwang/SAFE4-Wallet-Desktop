@@ -2,7 +2,8 @@ import { AddressActivityVO } from "../../renderer/services";
 import { Channel } from "../ApplicationIpcManager";
 import { ListenSignalHandler } from "./ListenSignalHandler";
 
-export const DBSignal = "DB:sqlite3/addressActivities";
+
+export const DBAddressActivitySignal = "DB:sqlite3/addressActivities";
 
 export enum DB_AddressActivity_Methods {
   saveActivity = "saveActivity",
@@ -27,21 +28,34 @@ export class DBAddressActivitySingalHandler implements ListenSignalHandler {
 
   private db: any;
 
-  constructor() {
-    const sqlite3 = require('sqlite3').verbose()
-    this.db = new sqlite3.Database(
-      './wallet.db',
-      function (err: any) {
-        if (err) {
+  constructor( db : any ) {
+    this.db = db;
+    this.db.run( 
+      "CREATE TABLE IF NOT EXISTS \"address_activities\" ( "
+       + "\"id\" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,"
+       + " \"block_number\" INTEGER,"
+       + " \"transaction_hash\" TEXT,"
+       + " \"event_log_index\" integer,"
+       + " \"timestamp\" integer,"
+       + " \"status\" integer,"
+       + " \"ref_from\" TEXT,"
+       + " \"ref_to\" TEXT,"
+       + " \"action\" TEXT,"
+       + " \"data\" blob,"
+       + " \"added_time\" integer"
+       + ");", 
+      [] , 
+      (err:any) => { 
+        if (err){
+          console.log("[sqlite3] Create Table Address_Activities Error:",err);
           return;
         }
-        console.log('connect database successfully');
-      }
-    )
+        console.log("[sqlite3] Check Address_Activities Exisits.")
+      })
   }
 
   getSingal(): string {
-    return DBSignal;
+    return DBAddressActivitySignal;
   }
 
   async handleOn(event: Electron.IpcMainEvent, ...args: any[]): Promise<any> {

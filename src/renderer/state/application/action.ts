@@ -1,28 +1,23 @@
 import { createAction } from '@reduxjs/toolkit';
 import { Wallet } from '../wallets/reducer';
 
-export const Application_Init = createAction<{
+export const applicationInit = createAction<{
   web3Endpoint : string
-}>("Application_Init");
+}>("application/init");
 
+export const applicationBlockchainUpdateBlockNumber = createAction<number>
+  ("application/blockchainUpdateBlockNumber")
 
-
-export const Application_Blockchain_Update_BlockNumber = createAction<number>
-  ("Application_Blockchain_Update_BlockNumber")
-
-export const Application_Update_SysInfo = createAction<{
-  node_serve_path: string
+export const applicationDataUpdate = createAction<{
+  nodeServerPath : string
 }>
   ("Application_Update_SysInfo")
 
-export const Application_Confirmed_Mnemonic = createAction<{
+export const applicationActionConfirmedMnemonic = createAction<{
   mnemonic: string
-}>("Application_Confirmed_Mnemonic");
+}>("application/actionConfirmedMnemonic");
 
-export const Application_Action_Update_AtCreateWallet = createAction<boolean>(
-  "Application_Action_Update_AtCreateWallet"
-)
 
-export const Application_Blockchain_Update_ActiveWallet = createAction<string>(
-  "Application_Blockchain_Update_ActiveWallet"
+export const applicationActionUpdateAtCreateWallet = createAction<boolean>(
+  "application/actionUpdateAtCreateWallet"
 )

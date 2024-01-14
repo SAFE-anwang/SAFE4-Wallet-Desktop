@@ -11,9 +11,11 @@ export class ApplicationIpcManager {
   listenSignalHandlers: ListenSignalHandler[] = [];
 
   constructor() {
-    this.listenSignalHandlers.push(new IndexSingalHandler());
     this.listenSignalHandlers.push(new WalletSignalHandler());
-    this.listenSignalHandlers.push(new DBAddressActivitySingalHandler());
+    const indexSignalHandler = new IndexSingalHandler( () => {
+      this.listenSignalHandlers.push(new DBAddressActivitySingalHandler(indexSignalHandler.getSqlite3DB()));
+    });
+    this.listenSignalHandlers.push(indexSignalHandler);
   }
 
   public register(ipcMain : Electron.IpcMain) {
