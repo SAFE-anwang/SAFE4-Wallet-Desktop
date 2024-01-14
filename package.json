@@ -207,7 +207,7 @@
     "webpack-merge": "^5.9.0"
   },
   "build": {
-    "productName": "SAFE4-GETH-GUI",
+    "productName": "SAFE4-Wallet-Desktop",
     "appId": "org.anwang",
     "asar": true,
     "asarUnpack": "**\\*.{node,dll}",
