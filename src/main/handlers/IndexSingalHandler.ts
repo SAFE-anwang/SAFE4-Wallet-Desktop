@@ -28,7 +28,7 @@ export class IndexSingalHandler implements ListenSignalHandler {
     this.ctx = ctx;
     const sqlite3 = require('sqlite3').verbose();
     // const dbPath = ctx.resourcePath + "assets/wallet.db";
-    const dbPath = "/Applications/SAFE4-Wallet-Desktop.app/Contents/Resources/assets/wallet.db";
+    const dbPath = "C:\\Users\\Administrator\\AppData\\Local\\Programs\\electron-react-boilerplate\\resources\\assets\\wallet.db";
     console.log("[sqlite3] Connect DB path :" ,dbPath)
     this.db = new sqlite3.Database(
       dbPath,
