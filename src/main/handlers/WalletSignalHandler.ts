@@ -1,4 +1,5 @@
 import { Channel } from "../ApplicationIpcManager";
+import { Context } from "./Context";
 import { ListenSignalHandler } from "./ListenSignalHandler";
 import * as bip39 from 'bip39';
 const fs = require('fs');
@@ -12,14 +13,14 @@ export enum Wallet_Methods {
   storeWallet = "storeWallet"
 }
 
-export class WalletSignalHandler implements ListenSignalHandler {  
+export class WalletSignalHandler implements ListenSignalHandler {
 
   getSingal(): string {
     return WalletSignal;
   }
-
-  constructor() {
-
+  ctx : Context
+  constructor( ctx : Context ) {
+    this.ctx = ctx;
   }
 
   async handleOn(event: Electron.IpcMainEvent, ...args: any[]): Promise<any> {
@@ -31,7 +32,7 @@ export class WalletSignalHandler implements ListenSignalHandler {
     } else if (Wallet_Methods.generateWallet == method) {
       data = await this.gennerateWallet(params);
     } else if (Wallet_Methods.storeWallet == method) {
-      data = await this.restoreWallet(params);
+      data = await this.storeWallet(params);
     }
     event.reply(Channel, [this.getSingal(), method, [data]])
   }
@@ -40,10 +41,10 @@ export class WalletSignalHandler implements ListenSignalHandler {
     return bip39.generateMnemonic();
   }
 
-  private async restoreWallet( params: any[] ){
+  private async storeWallet( params: any[] ){
     const walletList = params[0];
     const content = JSON.stringify(walletList);
-    await fs.writeFileSync(Wallet_Keystore_FileName, content, 'utf8');
+    await fs.writeFileSync( this.ctx.resourcePath + Wallet_Keystore_FileName, content, 'utf8');
     return {
       success: true,
       path: ""
@@ -51,7 +52,7 @@ export class WalletSignalHandler implements ListenSignalHandler {
   }
 
   private async gennerateWallet( params: any[] ) {
-    
+
     const secp256k1 = require("tiny-secp256k1");
     const { BIP32Factory } = require("bip32");
     const bip32 = BIP32Factory(secp256k1);

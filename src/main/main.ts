@@ -33,7 +33,11 @@ let mainWindow: BrowserWindow | null = null;
 //    event.reply('ipc-example', msgTemplate('pong'));
 //  });
 // + 基于通道注册信号处理器
-new ApplicationIpcManager().register(ipcMain);
+new ApplicationIpcManager(
+  app.isPackaged
+    ? path.join(process.resourcesPath, '')
+    : path.join(__dirname, '../../')
+).register(ipcMain);
 
 if (process.env.NODE_ENV === 'production') {
   const sourceMapSupport = require('source-map-support');
@@ -68,6 +72,7 @@ const createWindow = async () => {
   const RESOURCES_PATH = app.isPackaged
     ? path.join(process.resourcesPath, 'assets')
     : path.join(__dirname, '../../assets');
+
 
   const getAssetPath = (...paths: string[]): string => {
     return path.join(RESOURCES_PATH, ...paths);

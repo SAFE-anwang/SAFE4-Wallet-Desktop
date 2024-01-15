@@ -1,6 +1,8 @@
-import { Channel } from "../ApplicationIpcManager";
+import { app } from "electron";
+import { ApplicationIpcManager, Channel } from "../ApplicationIpcManager";
 import { ListenSignalHandler } from "./ListenSignalHandler";
 import { Wallet_Keystore_FileName } from "./WalletSignalHandler";
+import { Context } from "./Context";
 const fs = require("fs");
 
 export const IndexSingal = "index";
@@ -10,21 +12,26 @@ export enum Index_Methods {
 }
 
 export class IndexSingalHandler implements ListenSignalHandler {
-  
+
   getSingal(): string {
     return IndexSingal;
   }
 
   private db : any;
+  private ctx : Context;
 
   public getSqlite3DB() : any{
     return this.db;
   }
 
-  constructor( DBConnectedCallback : () => void ){
-    const sqlite3 = require('sqlite3').verbose()
+  constructor( ctx : Context , DBConnectedCallback : () => void ){
+    this.ctx = ctx;
+    const sqlite3 = require('sqlite3').verbose();
+    // const dbPath = ctx.resourcePath + "assets/wallet.db";
+    const dbPath = "/Applications/SAFE4-Wallet-Desktop.app/Contents/Resources/assets/wallet.db";
+    console.log("[sqlite3] Connect DB path :" ,dbPath)
     this.db = new sqlite3.Database(
-      './wallet.db',
+      dbPath,
       function (err: any) {
         if (err) {
           return;
@@ -49,6 +56,7 @@ export class IndexSingalHandler implements ListenSignalHandler {
     const walletKeystores = this.loadWalletKeystores();
     return {
       nodeServerPath : process.cwd(),
+      resourcePath : this.ctx.resourcePath,
       walletKeystores
     }
   }
@@ -57,7 +65,8 @@ export class IndexSingalHandler implements ListenSignalHandler {
     let walletKeystores : any[] = [];
     let safe4walletKeyStoresContent = undefined;
     try{
-      safe4walletKeyStoresContent = fs.readFileSync( Wallet_Keystore_FileName  , "utf8");
+      safe4walletKeyStoresContent = fs.readFileSync(
+        this.ctx.resourcePath + Wallet_Keystore_FileName  , "utf8");
     }catch(err){
       console.error(`No ${Wallet_Keystore_FileName} found`)
     }

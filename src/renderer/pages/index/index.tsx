@@ -3,7 +3,7 @@ import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { IPC_CHANNEL } from "../../config";
 import { IndexSingal, Index_Methods } from "../../../main/handlers/IndexSingalHandler";
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch } from "react-redux";
 import { walletsLoadKeystores } from "../../state/wallets/action";
 import { applicationDataUpdate } from "../../state/application/action";
 
@@ -19,10 +19,11 @@ export default () => {
       if (arg instanceof Array && arg[0] == IndexSingal && arg[1] == method) {
         const data = arg[2][0];
         const {
-          walletKeystores , 
-          nodeServerPath
+          walletKeystores ,
+          nodeServerPath ,
+          resourcePath,
         } = data;
-        dispatch(applicationDataUpdate({nodeServerPath}));
+        dispatch(applicationDataUpdate({nodeServerPath,resourcePath}));
         if ( walletKeystores.length == 0 ){
           navigate("/selectCreateWallet");
         }else{

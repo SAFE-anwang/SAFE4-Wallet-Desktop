@@ -11,7 +11,7 @@ export default () => {
         {
             Object.keys(data).map( key => {
                 return <>
-                    { key } = { JSON.stringify(data[key]) }
+                    { key } = { JSON.stringify(data[key]) } <br /><br />
                 </>
             })
         }

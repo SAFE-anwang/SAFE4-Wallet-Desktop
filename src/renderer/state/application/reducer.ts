@@ -1,10 +1,10 @@
 import { createReducer } from '@reduxjs/toolkit';
-import { 
+import {
   applicationInit,
-  applicationActionUpdateAtCreateWallet, 
-  applicationBlockchainUpdateBlockNumber, 
+  applicationActionUpdateAtCreateWallet,
+  applicationBlockchainUpdateBlockNumber,
   applicationActionConfirmedMnemonic,
-  applicationDataUpdate, 
+  applicationDataUpdate,
 } from './action';
 
 
@@ -49,8 +49,9 @@ export default createReducer(initialState, (builder) => {
 
   })
 
-  .addCase(applicationDataUpdate , ( state , { payload : { nodeServerPath } } ) => {
+  .addCase(applicationDataUpdate , ( state , { payload : { nodeServerPath , resourcePath } } ) => {
     state.data[ "nodeServerPath" ] = nodeServerPath;
+    state.data[ "resourcePath" ] = resourcePath;
   })
 
   .addCase(applicationBlockchainUpdateBlockNumber , ( state , {payload}) => {

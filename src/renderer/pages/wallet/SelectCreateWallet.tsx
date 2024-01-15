@@ -2,9 +2,10 @@ import { Button, Col, Row, Typography } from "antd";
 import { PlusCircleTwoTone, VerticalAlignBottomOutlined , CloseOutlined  } from '@ant-design/icons';
 import { useNavigate } from "react-router-dom";
 import { useEffect } from "react";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { applicationActionUpdateAtCreateWallet } from "../../state/application/action";
 import { useWalletsList } from "../../state/wallets/hooks";
+import { AppState } from "../../state";
 
 const { Text } = Typography;
 
@@ -20,6 +21,8 @@ export default () => {
     const closeClick = () => {
         navigate("/main/wallet");
     }
+
+    const applicationData = useSelector<AppState , {[key : string] : any}>( state => state.application.data );
 
 
     useEffect( () => {
@@ -68,6 +71,16 @@ export default () => {
                 </div>
             </Col>
         </Row>
+        <br />< br />
+
+        {
+          Object.keys(applicationData).map( key => {
+            return <Row key={key}>
+              {key} = {JSON.stringify(applicationData[key])}
+            </Row>
+          } )
+        }
+
     </>
 
 }

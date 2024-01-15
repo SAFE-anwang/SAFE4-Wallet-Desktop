@@ -50,7 +50,7 @@ export default () => {
         console.log(`Finish fetch Address[${addressActivityFetch.address}]`)
         return;
       }
-      console.log(`Exeucte fetch Address[${addressActivityFetch.address}] activities from 
+      console.log(`Exeucte fetch Address[${addressActivityFetch.address}] activities from
                    Block[${addressActivityFetch.blockNumberStart}] to Block[${addressActivityFetch.blockNumberEnd}]`);
       fetchAddressActivity(addressActivityFetch)
         .then(data => {
@@ -71,8 +71,8 @@ export default () => {
                 newFetch.current = 1;
               }
             }
-            window.electron.ipcRenderer.sendMessage(IPC_CHANNEL, 
-              [DBAddressActivitySignal, DB_AddressActivity_Methods.saveOrUpdateActivities, 
+            window.electron.ipcRenderer.sendMessage(IPC_CHANNEL,
+              [DBAddressActivitySignal, DB_AddressActivity_Methods.saveOrUpdateActivities,
               [addressActivities]
             ]);
             setTimeout(() => {
@@ -80,7 +80,7 @@ export default () => {
                 addTxns:  data.records.map( Activity2Transaction ),
                 addressActivityFetch: newFetch
               }));
-            }, 1000);
+            }, 3000);
           }
         })
     }

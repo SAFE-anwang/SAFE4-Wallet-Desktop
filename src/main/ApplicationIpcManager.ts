@@ -1,8 +1,10 @@
+import { resourcesPath } from "process";
 import { DBAddressActivitySingalHandler } from "./handlers/DBAddressActivitySingalHandler";
 import { IndexSingalHandler } from "./handlers/IndexSingalHandler";
 import { ListenSignalHandler } from "./handlers/ListenSignalHandler";
 import { WalletSignalHandler } from "./handlers/WalletSignalHandler";
 import { Channels } from "./preload";
+import { Context } from "./handlers/Context";
 
 export const Channel : Channels = "ipc-example";
 
@@ -10,9 +12,13 @@ export class ApplicationIpcManager {
 
   listenSignalHandlers: ListenSignalHandler[] = [];
 
-  constructor() {
-    this.listenSignalHandlers.push(new WalletSignalHandler());
-    const indexSignalHandler = new IndexSingalHandler( () => {
+  constructor( resoucePath : string ) {
+
+    const ctx = new Context(resoucePath);
+
+    this.listenSignalHandlers.push(new WalletSignalHandler(ctx));
+
+    const indexSignalHandler = new IndexSingalHandler( ctx , () => {
       this.listenSignalHandlers.push(new DBAddressActivitySingalHandler(indexSignalHandler.getSqlite3DB()));
     });
     this.listenSignalHandlers.push(indexSignalHandler);
@@ -27,7 +33,7 @@ export class ApplicationIpcManager {
             return handler;
           }
         })
-        if (handlers) {
+        if (handlers && handlers.length > 0) {
           const handler = handlers[0];
           handler.handleOn(
             event, arg

@@ -1,3 +1,4 @@
+import { ApplicationIpcManager } from "../ApplicationIpcManager";
 
 
 export interface ListenSignalHandler {

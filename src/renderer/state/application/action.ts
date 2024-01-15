@@ -9,7 +9,8 @@ export const applicationBlockchainUpdateBlockNumber = createAction<number>
   ("application/blockchainUpdateBlockNumber")
 
 export const applicationDataUpdate = createAction<{
-  nodeServerPath : string
+  nodeServerPath : string ,
+  resourcePath : string
 }>
   ("Application_Update_SysInfo")
 
