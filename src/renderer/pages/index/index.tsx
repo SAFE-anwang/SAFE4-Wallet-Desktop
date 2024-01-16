@@ -20,10 +20,10 @@ export default () => {
         const data = arg[2][0];
         const {
           walletKeystores ,
-          nodeServerPath ,
-          resourcePath,
+          path
         } = data;
-        dispatch(applicationDataUpdate({nodeServerPath,resourcePath}));
+        console.log("Path ...>" , path)
+        dispatch(applicationDataUpdate({ ...path }));
         if ( walletKeystores.length == 0 ){
           navigate("/selectCreateWallet");
         }else{

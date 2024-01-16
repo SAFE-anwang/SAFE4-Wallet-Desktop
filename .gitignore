@@ -31,3 +31,4 @@ npm-debug.log.*
 *.lock
 *.db
 wallet.db
+data

@@ -15,6 +15,7 @@ import log from 'electron-log';
 import MenuBuilder from './menu';
 import { resolveHtmlPath } from './util';
 import { ApplicationIpcManager } from './ApplicationIpcManager';
+const fs = require("fs");
 
 
 class AppUpdater {
@@ -33,10 +34,11 @@ let mainWindow: BrowserWindow | null = null;
 //    event.reply('ipc-example', msgTemplate('pong'));
 //  });
 // + 基于通道注册信号处理器
+const resourcePath = app.isPackaged
+  ? path.join(process.resourcesPath, '')
+  : path.join(__dirname, '../../');
 new ApplicationIpcManager(
-  app.isPackaged
-    ? path.join(process.resourcesPath, '')
-    : path.join(__dirname, '../../')
+  resourcePath
 ).register(ipcMain);
 
 if (process.env.NODE_ENV === 'production') {

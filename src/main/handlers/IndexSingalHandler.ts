@@ -3,6 +3,7 @@ import { ApplicationIpcManager, Channel } from "../ApplicationIpcManager";
 import { ListenSignalHandler } from "./ListenSignalHandler";
 import { Wallet_Keystore_FileName } from "./WalletSignalHandler";
 import { Context } from "./Context";
+import path from 'path';
 const fs = require("fs");
 
 export const IndexSingal = "index";
@@ -27,11 +28,10 @@ export class IndexSingalHandler implements ListenSignalHandler {
   constructor( ctx : Context , DBConnectedCallback : () => void ){
     this.ctx = ctx;
     const sqlite3 = require('sqlite3').verbose();
-    // const dbPath = ctx.resourcePath + "assets/wallet.db";
-    const dbPath = "C:\\Users\\Administrator\\AppData\\Local\\Programs\\electron-react-boilerplate\\resources\\assets\\wallet.db";
-    console.log("[sqlite3] Connect DB path :" ,dbPath)
+    const database = ctx.path.database;
+    console.log("[sqlite3] Connect DB path :" ,database)
     this.db = new sqlite3.Database(
-      dbPath,
+      database,
       function (err: any) {
         if (err) {
           return;
@@ -55,8 +55,7 @@ export class IndexSingalHandler implements ListenSignalHandler {
   private load() : any {
     const walletKeystores = this.loadWalletKeystores();
     return {
-      nodeServerPath : process.cwd(),
-      resourcePath : this.ctx.resourcePath,
+      path : this.ctx.path,
       walletKeystores
     }
   }
@@ -66,21 +65,21 @@ export class IndexSingalHandler implements ListenSignalHandler {
     let safe4walletKeyStoresContent = undefined;
     try{
       safe4walletKeyStoresContent = fs.readFileSync(
-        this.ctx.resourcePath + Wallet_Keystore_FileName  , "utf8");
+        this.ctx.path.keystores , "utf8");
     }catch(err){
-      console.error(`No ${Wallet_Keystore_FileName} found`)
+      console.error(`No ${ this.ctx.path.keystores } found`)
     }
     try{
       if ( safe4walletKeyStoresContent ){
         walletKeystores = JSON.parse(safe4walletKeyStoresContent);
         if ( ! (walletKeystores instanceof Array) ){
-          console.error(`${Wallet_Keystore_FileName} 损坏`);
+          console.error(`${this.ctx.path.keystores} 损坏`);
         }
       }
     }catch(err){
-      console.error(`${Wallet_Keystore_FileName} 损坏`);
+      console.error(`${this.ctx.path.keystores} 损坏`);
     }
-    console.log(`Finish Load ${Wallet_Keystore_FileName}`)
+    console.log(`Finish Load ${this.ctx.path.keystores}`)
     return walletKeystores;
   }
 

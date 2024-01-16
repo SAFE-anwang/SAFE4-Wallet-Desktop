@@ -44,7 +44,7 @@ export class WalletSignalHandler implements ListenSignalHandler {
   private async storeWallet( params: any[] ){
     const walletList = params[0];
     const content = JSON.stringify(walletList);
-    await fs.writeFileSync( this.ctx.resourcePath + Wallet_Keystore_FileName, content, 'utf8');
+    await fs.writeFileSync( this.ctx.path.keystores, content, 'utf8');
     return {
       success: true,
       path: ""

@@ -49,9 +49,11 @@ export default createReducer(initialState, (builder) => {
 
   })
 
-  .addCase(applicationDataUpdate , ( state , { payload : { nodeServerPath , resourcePath } } ) => {
-    state.data[ "nodeServerPath" ] = nodeServerPath;
-    state.data[ "resourcePath" ] = resourcePath;
+  .addCase(applicationDataUpdate , ( state , { payload : { resource,data,database,keystores } } ) => {
+    state.data[ "resource" ] = resource;
+    state.data[ "data" ] = data;
+    state.data[ "database" ] = database;
+    state.data[ "keystores" ] = keystores;
   })
 
   .addCase(applicationBlockchainUpdateBlockNumber , ( state , {payload}) => {
