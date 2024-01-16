@@ -6,6 +6,7 @@ import { Contract } from '@ethersproject/contracts'
 import { ethers } from "ethers";
 import { isAddress } from "ethers/lib/utils";
 import { useWalletsActiveWallet } from "../state/wallets/hooks";
+import { SysContractABI, SystemContract } from "../constants/SystemContracts";
 
 // account is not optional
 export function getSigner(library: Web3Provider, account: string): JsonRpcSigner {
@@ -38,8 +39,10 @@ export function useContract(address: string | undefined, ABI: any, withSignerIfP
 }
 
 export function useMulticallContract(): Contract | null | undefined {
-  // bsc : 0x1Ee38d535d541c55C9dae27B12edf090C608E6Fb
-  // safe4 : 0x0000000000000000000000000000000000001100
-  return useContract("0x0000000000000000000000000000000000001100", MulticallABI, false);
+  return useContract( SystemContract.MultiCall , SysContractABI[SystemContract.MultiCall], false);
+}
+
+export function useAccountManagerContract() : Contract | null | undefined {
+  return useContract( SystemContract.AccountManager , SysContractABI[SystemContract.AccountManager], false);
 }
 

@@ -1,9 +1,9 @@
 
-import { Typography, Button, Card, Divider, Statistic, Row, Col, Modal, Flex, Tooltip, Tabs, TabsProps, QRCode , Badge } from 'antd';
+import { Typography, Button, Card, Divider, Statistic, Row, Col, Modal, Flex, Tooltip, Tabs, TabsProps, QRCode, Badge } from 'antd';
 import { useEffect, useState } from 'react';
 import { useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import { useETHBalances, useWalletsActiveAccount, useWalletsActiveWallet } from '../../../state/wallets/hooks';
+import { useETHBalances, useSafe4Balance, useWalletsActiveAccount, useWalletsActiveWallet } from '../../../state/wallets/hooks';
 import { applicationActionUpdateAtCreateWallet } from '../../../state/application/action';
 import { SearchOutlined, SendOutlined, QrcodeOutlined } from '@ant-design/icons';
 import { useWeb3Hooks, useWeb3Network } from '../../../connectors/hooks';
@@ -23,7 +23,9 @@ export default () => {
   const latestBlockNumber = useBlockNumber();
 
   const [openReceiveModal, setOpenReceiveModal] = useState<boolean>(false);
-  const [openSendModal , setOpenSendModal] =  useState<boolean>(false);
+  const [openSendModal, setOpenSendModal] = useState<boolean>(false);
+
+  const safe4balance = useSafe4Balance(["0xa286862918d900847a8bfb6cf0bbd2804bb89e09"])["0xa286862918d900847a8bfb6cf0bbd2804bb89e09"];
 
   const items: TabsProps['items'] = [
     {
@@ -64,9 +66,9 @@ export default () => {
           {activeWallet?.name}
         </Title>
       </Col>
-      <Col span={12} style={{ textAlign: "right" , lineHeight:"70px" }}>
+      <Col span={12} style={{ textAlign: "right", lineHeight: "70px" }}>
         <Badge status="processing"></Badge>
-        <Text style={{marginLeft:"10px"}}>区块高度<Divider type='vertical' style={{ marginLeft: "12px", marginRight: "12px" }} />{latestBlockNumber}</Text>
+        <Text style={{ marginLeft: "10px" }}>区块高度<Divider type='vertical' style={{ marginLeft: "12px", marginRight: "12px" }} />{latestBlockNumber}</Text>
       </Col>
     </Row>
     <div style={{ width: "100%", paddingTop: "40px" }}>
@@ -83,7 +85,7 @@ export default () => {
               <Col span={12} style={{ textAlign: "center" }}>
                 <Button style={{
                   height: "45px", width: "45px"
-                }} size='large' shape="circle" icon={<SendOutlined />} onClick={() => setOpenSendModal(true)}/><br />
+                }} size='large' shape="circle" icon={<SendOutlined />} onClick={() => setOpenSendModal(true)} /><br />
                 <Text>发送</Text>
               </Col>
               <Col span={12} style={{ textAlign: "center" }}>
@@ -95,6 +97,20 @@ export default () => {
             </Row>
           </Col>
         </Row>
+
+        <Row style={{ marginTop: "50px" }}>
+          <Statistic title="Total-Amount:余额" value={safe4balance?.total?.amount?.toFixed(6)} />
+        </Row>
+        <Row style={{ marginTop: "50px" }}>
+          <Statistic title="Available-Amount:余额" value={safe4balance?.avaiable?.amount?.toFixed(6)} />
+        </Row>
+        <Row style={{ marginTop: "50px" }}>
+          <Statistic title="Locked-Amount:余额" value={safe4balance?.locked?.amount?.toFixed(6)} />
+        </Row>
+        <Row style={{ marginTop: "50px" }}>
+          <Statistic title="Used-Amount:余额" value={safe4balance?.used?.amount?.toFixed(6)} />
+        </Row>
+
         <Row style={{ marginTop: "50px" }}>
           <Tabs style={{ width: "100%" }} defaultActiveKey="history" items={items} onChange={onChange} />
         </Row>
