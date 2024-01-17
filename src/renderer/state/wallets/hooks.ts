@@ -34,20 +34,24 @@ export function useWalletsActiveAccount(): string {
   });
 }
 
-export function useWalletsActivePrivateKey(): string {
+export function useWalletsActivePrivateKey(): string | undefined {
   return useSelector((state: AppState) => {
-    const privateKey = state.wallets.keystores.filter(
-      walletKetstore => walletKetstore.publicKey == state.wallets.activeWallet?.publicKey
-    )[0].privateKey;
-    return privateKey;
+    if ( state.wallets.activeWallet ){
+      return state.wallets.keystores.filter(
+        walletKetstore => {
+          return walletKetstore.publicKey == state.wallets.activeWallet?.publicKey
+        }
+      )[0].privateKey
+    }
+    return undefined;
   });
 }
 
-export function useWalletsActiveSigner(): ethers.Wallet {
+export function useWalletsActiveSigner(): ethers.Wallet | undefined {
   const { useProvider } = useWeb3Hooks();
   const provider = useProvider();
   const activePrivateKey = useWalletsActivePrivateKey();
-  return new ethers.Wallet(activePrivateKey, provider);
+  return activePrivateKey ? new ethers.Wallet(activePrivateKey, provider) : undefined;
 }
 
 /**

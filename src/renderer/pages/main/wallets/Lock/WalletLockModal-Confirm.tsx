@@ -1,27 +1,24 @@
-
+import { useCallback, useState } from "react";
 import { Button, Col, Divider, Input, Modal, Row, Typography, Space, Alert } from "antd"
-import { Children, useCallback, useEffect, useMemo, useState } from "react";
-import { useETHBalances, useWalletsActiveAccount, useWalletsActiveSigner } from "../../../state/wallets/hooks"
-import { MemoryRouter as Router, Routes, Route, useNavigate } from 'react-router-dom';
-import { useBlockNumber } from "../../../state/application/hooks";
+import { useETHBalances, useWalletsActiveAccount, useWalletsActiveSigner } from "../../../../state/wallets/hooks";
+import { useTransactionAdder } from "../../../../state/transactions/hooks";
+import { SearchOutlined, SendOutlined, QrcodeOutlined, LockOutlined } from '@ant-design/icons';
 import { ethers } from "ethers";
-import WalletSendModalInput from "./WalletSendModal-Input";
-import { SearchOutlined, SendOutlined, QrcodeOutlined } from '@ant-design/icons';
-import { useTransactionAdder } from "../../../state/transactions/hooks";
-
-const { Text, Link } = Typography;
+import { useAccountManagerContract } from "../../../../hooks/useContracts";
+const { Text , Link } = Typography;
 
 export default ({
-  to, amount , close
+  amount, lockDay, close
 }: {
-  to: string,
   amount: string,
-  close : () => void
+  lockDay: number,
+  close: () => void
 }) => {
 
   const signer = useWalletsActiveSigner();
   const activeAccount = useWalletsActiveAccount();
   const addTransaction = useTransactionAdder();
+  const accountManaggerContract = useAccountManagerContract(true);
   const [sending, setSending] = useState<boolean>(false);
   const [showErrorDetail, setShowErrorDetail] = useState<boolean>(false);
   const [rpcResponse, setRpcResponse] = useState<{
@@ -29,41 +26,37 @@ export default ({
     error: any | null
   }>();
 
-  const doSendTransaction = useCallback( ( {to , amount} : {to : string , amount : string} ) => {
-    if (signer){
-      const value = ethers.utils.parseEther(amount);
-      const tx = {
-        to ,
-        value
-      }
-      setSending(true);
-      signer.sendTransaction(tx).then( response => {
+  const doLockTransaction = useCallback(({
+    to, amount, lockDay
+  }: {
+    to: string,
+    amount: string,
+    lockDay: number
+  }) => {
+    setSending(true);
+    if (accountManaggerContract) {
+      accountManaggerContract.deposit(to, lockDay, {
+        value: ethers.utils.parseEther(amount)
+      }).then((response: any) => {
         setSending(false);
-        const {
-          hash
-        } = response;
+        const { hash } = response;
         setRpcResponse({
           txHash: hash,
           error: null
         })
-        addTransaction( tx , response, {
-          transfer : {
-            from :  activeAccount,
-            to : tx.to,
-            value : tx.value.toString()
-          }
-        });
-      }).catch(error => {
+      }).catch((err: any) => {
         setSending(false);
         setRpcResponse({
           txHash: null,
-          error: error
+          error: err
         });
       })
     }
-  } , [signer] );
+  }, [accountManaggerContract]);
 
-  return (<>
+
+
+  return <>
     <div style={{ minHeight: "300px" }}>
 
       <div style={{ marginBottom: "20px" }}>
@@ -104,34 +97,36 @@ export default ({
         }
       </div>
 
-      <Row >
-        <Col span={24}>
-          <Text style={{ fontSize: "32px" }} strong>{amount} SAFE</Text>
-        </Col>
-      </Row>
+
       <br />
       <Row >
-        <Col span={24}>
-          <Text strong>从</Text>
+        <Col span={14}>
+          <Text strong>数量</Text>
           <br />
-          <Text style={{ marginLeft: "10px", fontSize: "18px" }}>{signer?.address}</Text>
+          {amount}
         </Col>
       </Row>
       <br />
       <Row >
-        <Col span={24}>
-          <Text strong>到</Text>
+        <Col span={14}>
+          <Text strong>锁仓天数</Text>
           <br />
-          <Text style={{ marginLeft: "10px", fontSize: "18px" }}>{to}</Text>
+          {lockDay}
         </Col>
       </Row>
       <br />
-      <Divider />
+      <br />
+      <br />
+      <br />
       <Row style={{ width: "100%", textAlign: "right" }}>
         <Col span={24}>
           {
-            !sending && !rpcResponse && <Button icon={<SendOutlined />} onClick={ () => {
-              doSendTransaction({to,amount});
+            !sending && !rpcResponse && <Button icon={<LockOutlined />} onClick={() => {
+              doLockTransaction({
+                to: activeAccount,
+                amount,
+                lockDay
+              })
             }} disabled={sending} type="primary" style={{ float: "right" }}>
               发送交易
             </Button>
@@ -149,6 +144,6 @@ export default ({
         </Col>
       </Row>
     </div>
-  </>)
+  </>
 
 }

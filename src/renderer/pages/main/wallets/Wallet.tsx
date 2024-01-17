@@ -3,13 +3,15 @@ import { Typography, Button, Card, Divider, Statistic, Row, Col, Modal, Flex, To
 import { useEffect, useState } from 'react';
 import { useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import { useETHBalances, useSafe4Balance, useWalletsActiveAccount, useWalletsActiveWallet } from '../../../state/wallets/hooks';
+import { useETHBalances, useSafe4Balance, useWalletsActiveAccount, useWalletsActiveSigner, useWalletsActiveWallet } from '../../../state/wallets/hooks';
 import { applicationActionUpdateAtCreateWallet } from '../../../state/application/action';
-import { SearchOutlined, SendOutlined, QrcodeOutlined } from '@ant-design/icons';
+import { SearchOutlined, SendOutlined, QrcodeOutlined , LockOutlined } from '@ant-design/icons';
 import { useWeb3Hooks, useWeb3Network } from '../../../connectors/hooks';
 import { useBlockNumber } from '../../../state/application/hooks';
 import WalletSendModal from './WalletSendModal';
 import History from './tabs/History';
+import Locked from './tabs/Locked/Locked';
+import WalletLockModal from './Lock/WalletLockModal';
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -24,14 +26,13 @@ export default () => {
 
   const [openReceiveModal, setOpenReceiveModal] = useState<boolean>(false);
   const [openSendModal, setOpenSendModal] = useState<boolean>(false);
-
-  const safe4balance = useSafe4Balance(["0xa286862918d900847a8bfb6cf0bbd2804bb89e09"])["0xa286862918d900847a8bfb6cf0bbd2804bb89e09"];
+  const [openLockModal, setOpenLockMoal] = useState<boolean>(false);
 
   const items: TabsProps['items'] = [
     {
-      key: '1',
-      label: '代币',
-      children: '代币列表',
+      key: 'locked',
+      label: '锁仓',
+      children: <Locked />,
     },
     {
       key: '2',
@@ -77,18 +78,24 @@ export default () => {
           <Paragraph copyable>{activeWallet?.address}</Paragraph>
         </Row>
         <Row>
-          <Col span={20}>
+          <Col span={18}>
             <Statistic title="余额" value={balance?.toFixed(6)} />
           </Col>
-          <Col span={4}>
+          <Col span={6}>
             <Row>
-              <Col span={12} style={{ textAlign: "center" }}>
+              <Col span={8} style={{ textAlign: "center" }}>
+                <Button style={{
+                  height: "45px", width: "45px"
+                }} size='large' shape="circle" icon={<LockOutlined />}onClick={() => setOpenLockMoal(true)}/><br />
+                <Text>锁仓</Text>
+              </Col>
+              <Col span={8} style={{ textAlign: "center" }}>
                 <Button style={{
                   height: "45px", width: "45px"
                 }} size='large' shape="circle" icon={<SendOutlined />} onClick={() => setOpenSendModal(true)} /><br />
                 <Text>发送</Text>
               </Col>
-              <Col span={12} style={{ textAlign: "center" }}>
+              <Col span={8} style={{ textAlign: "center" }}>
                 <Button style={{
                   height: "45px", width: "45px"
                 }} size='large' shape="circle" icon={<QrcodeOutlined />} onClick={() => setOpenReceiveModal(true)} /><br />
@@ -99,20 +106,7 @@ export default () => {
         </Row>
 
         <Row style={{ marginTop: "50px" }}>
-          <Statistic title="Total-Amount:余额" value={safe4balance?.total?.amount?.toFixed(6)} />
-        </Row>
-        <Row style={{ marginTop: "50px" }}>
-          <Statistic title="Available-Amount:余额" value={safe4balance?.avaiable?.amount?.toFixed(6)} />
-        </Row>
-        <Row style={{ marginTop: "50px" }}>
-          <Statistic title="Locked-Amount:余额" value={safe4balance?.locked?.amount?.toFixed(6)} />
-        </Row>
-        <Row style={{ marginTop: "50px" }}>
-          <Statistic title="Used-Amount:余额" value={safe4balance?.used?.amount?.toFixed(6)} />
-        </Row>
-
-        <Row style={{ marginTop: "50px" }}>
-          <Tabs style={{ width: "100%" }} defaultActiveKey="history" items={items} onChange={onChange} />
+          <Tabs style={{ width: "100%" }} defaultActiveKey="locked" items={items} onChange={onChange} />
         </Row>
       </div>
     </div>
@@ -136,6 +130,7 @@ export default () => {
     </Modal>
 
     <WalletSendModal openSendModal={openSendModal} setOpenSendModal={setOpenSendModal} />
+    <WalletLockModal openLockModal={openLockModal} setOpenLockModal={setOpenLockMoal} />
 
   </>)
 

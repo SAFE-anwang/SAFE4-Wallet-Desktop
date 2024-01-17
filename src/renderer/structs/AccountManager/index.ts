@@ -16,7 +16,8 @@ export interface AccountRecord {
     amount: CurrencyAmount,
     lockDay: number,
     startHeight: number,
-    unlockHeight: number
+    unlockHeight: number,
+    recordUseInfo ?: RecordUseInfo
 }
 
 /*
@@ -42,7 +43,6 @@ export function formatAccountRecord(accountRecord: any): AccountRecord {
     const {
         id, addr, amount, lockDay, startHeight, unlockHeight
     } = accountRecord;
-    console.log("accountRecord ==> ",accountRecord)
     return {
         id: id.toNumber(),
         addr: addr.toString(),
