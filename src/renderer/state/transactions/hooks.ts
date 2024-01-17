@@ -3,13 +3,18 @@ import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, AppState } from "..";
 import { useCallback, useMemo } from "react";
 import { addTransaction } from "./actions";
-import { Transfer, TransactionDetails } from "./reducer";
+import { Transfer, TransactionDetails, ContractCall } from "./reducer";
 import { DateFormat } from "../../utils/DateUtils";
 
 export function useTransactionAdder(): (
   request: TransactionRequest,
   response: TransactionResponse,
-  customData?: { summary?: string; approval?: { tokenAddress: string; spender: string }; transfer?: Transfer }
+  customData?: { 
+    summary?: string; 
+    approval?: { tokenAddress: string; spender: string }; 
+    transfer?: Transfer , 
+    call ?: ContractCall
+  }
 ) => void {
   const dispatch = useDispatch<AppDispatch>();
 
@@ -17,20 +22,28 @@ export function useTransactionAdder(): (
     (
       request: TransactionRequest,
       response: TransactionResponse,
-      { summary, approval, transfer }:
+      { summary, approval, transfer , call }:
         {
           summary?: string;
           approval?: { tokenAddress: string; spender: string },
-          transfer?: Transfer
+          transfer?: Transfer ,
+          call ?: ContractCall,
         } = {}
     ) => {
       // 先做如果是 tranfer 的情况.
+      const { hash } = response;
       if (transfer) {
-        const { hash } = response;
         const { from, to } = transfer;
         const transaction = {
           hash, refFrom: from, refTo: to,
           transfer
+        }
+        dispatch(addTransaction(transaction))
+      }else if (call){
+        const { from , to , value , input } = call;
+        const transaction = {
+          hash, refFrom:from,refTo:to , 
+          call
         }
         dispatch(addTransaction(transaction))
       }

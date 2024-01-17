@@ -18,9 +18,6 @@ export default ({
   transaction: TransactionDetails
 }) => {
   const tx = useTransaction(transaction.hash);
-
-
-
   const {
     hash,
     status,

@@ -28,26 +28,26 @@ export class DBAddressActivitySingalHandler implements ListenSignalHandler {
 
   private db: any;
 
-  constructor( db : any ) {
+  constructor(db: any) {
     this.db = db;
-    this.db.run( 
+    this.db.run(
       "CREATE TABLE IF NOT EXISTS \"address_activities\" ( "
-       + "\"id\" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,"
-       + " \"block_number\" INTEGER,"
-       + " \"transaction_hash\" TEXT,"
-       + " \"event_log_index\" integer,"
-       + " \"timestamp\" integer,"
-       + " \"status\" integer,"
-       + " \"ref_from\" TEXT,"
-       + " \"ref_to\" TEXT,"
-       + " \"action\" TEXT,"
-       + " \"data\" blob,"
-       + " \"added_time\" integer"
-       + ");", 
-      [] , 
-      (err:any) => { 
-        if (err){
-          console.log("[sqlite3] Create Table Address_Activities Error:",err);
+      + "\"id\" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,"
+      + " \"block_number\" INTEGER,"
+      + " \"transaction_hash\" TEXT,"
+      + " \"event_log_index\" integer,"
+      + " \"timestamp\" integer,"
+      + " \"status\" integer,"
+      + " \"ref_from\" TEXT,"
+      + " \"ref_to\" TEXT,"
+      + " \"action\" TEXT,"
+      + " \"data\" blob,"
+      + " \"added_time\" integer"
+      + ");",
+      [],
+      (err: any) => {
+        if (err) {
+          console.log("[sqlite3] Create Table Address_Activities Error:", err);
           return;
         }
         console.log("[sqlite3] Check Address_Activities Exisits.")
@@ -65,15 +65,15 @@ export class DBAddressActivitySingalHandler implements ListenSignalHandler {
     if (DB_AddressActivity_Methods.saveActivity == method) {
       const activity = params[0];
       this.saveActivity(activity);
-    } else if ( DB_AddressActivity_Methods.updateActivity  == method) {
+    } else if (DB_AddressActivity_Methods.updateActivity == method) {
       const receipt = params[0];
       this.updateActivity(receipt);
-    } else if ( DB_AddressActivity_Methods.loadActivities == method) {
+    } else if (DB_AddressActivity_Methods.loadActivities == method) {
       const address = params[0];
       data = this.loadActivities(address, (rows: any) => {
         event.reply(Channel, [this.getSingal(), method, [rows]])
       });
-    } else if ( DB_AddressActivity_Methods.saveOrUpdateActivities  == method) {
+    } else if (DB_AddressActivity_Methods.saveOrUpdateActivities == method) {
       const addressActivities = params[0];
       this.saveOrUpdateActivities(addressActivities)
     }
@@ -86,14 +86,14 @@ export class DBAddressActivitySingalHandler implements ListenSignalHandler {
       [hash, refFrom, refTo, action, data, addedTime],
       (err: any) => {
         if (err) {
-          console.log("Insert into Address_Activities err:", err , activity);
+          console.log("Insert into Address_Activities err:", err, activity);
           return;
         }
         console.log("Insert into Address_Activities successed:", activity)
       });
   }
 
-  private updateActivity( receipt: {
+  private updateActivity(receipt: {
     from: string
     to: string
     contractAddress: string
@@ -101,7 +101,7 @@ export class DBAddressActivitySingalHandler implements ListenSignalHandler {
     blockHash: string
     transactionHash: string
     blockNumber: number
-    status ?: number
+    status?: number
   }) {
     const { transactionHash, blockNumber, status } = receipt;
     this.db.run(
@@ -113,7 +113,7 @@ export class DBAddressActivitySingalHandler implements ListenSignalHandler {
           return;
         }
         console.log("Update Activies successed for tx:", {
-          transactionHash,blockNumber,status
+          transactionHash, blockNumber, status
         })
       }
     )
@@ -125,7 +125,7 @@ export class DBAddressActivitySingalHandler implements ListenSignalHandler {
       [address, address],
       (err: any, rows: any) => {
         if (err) {
-          console.log("load activities error:",err,address)
+          console.log("load activities error:", err, address)
           return;
         }
         console.log(`Load activities for ${address} , size = ${rows.length}`)
@@ -140,43 +140,40 @@ export class DBAddressActivitySingalHandler implements ListenSignalHandler {
       const {
         transactionHash, blockNumber, status, eventLogIndex, action, data, refFrom, refTo, timestamp
       } = addressActivities[i];
-
-      if (action == "Transfer") {
-        this.db.all(
-          "SELECT * FROM Address_Activities WHERE action = ? AND transaction_hash = ?",
-          [action, transactionHash],
-          (err: any, rows: any) => {
-            if (err) {
-              return;
-            }
-            if (rows.length == 0) {
-              console.log("save activity txhash=", transactionHash)
-              // do save
-              this.db.run(
-                "INSERT INTO Address_Activities(block_number,transaction_hash,event_log_index,timestamp,status,ref_from,ref_to,action,data) VALUES(?,?,?,?,?,?,?,?,?)",
-                [blockNumber, transactionHash, eventLogIndex, timestamp, status, refFrom, refTo, action, JSON.stringify(data)],
-                (err: any) => {
-                  if (err) {
-                    console.log("save error:", err)
-                  }
-                }
-              )
-            } else {
-              // do update
-              console.log("update activity txhash=", transactionHash)
-              this.db.run(
-                "UPDATE Address_Activities Set timestamp = ? WHERE action = ? AND transaction_hash = ?",
-                [timestamp, action, transactionHash],
-                (err: any) => {
-                  if (err) {
-                    console.log("update error!!!")
-                  }
-                }
-              )
-            }
+      this.db.all(
+        "SELECT * FROM Address_Activities WHERE action = ? AND transaction_hash = ?",
+        [action, transactionHash],
+        (err: any, rows: any) => {
+          if (err) {
+            return;
           }
-        )
-      }
+          if (rows.length == 0) {
+            console.log("save activity txhash=", transactionHash)
+            // do save
+            this.db.run(
+              "INSERT INTO Address_Activities(block_number,transaction_hash,event_log_index,timestamp,status,ref_from,ref_to,action,data) VALUES(?,?,?,?,?,?,?,?,?)",
+              [blockNumber, transactionHash, eventLogIndex, timestamp, status, refFrom, refTo, action, JSON.stringify(data)],
+              (err: any) => {
+                if (err) { 
+                  console.log("save error:", err)
+                }
+              }
+            )
+          } else {
+            // do update
+            console.log("update activity txhash=", transactionHash)
+            this.db.run(
+              "UPDATE Address_Activities Set timestamp = ? WHERE action = ? AND transaction_hash = ?",
+              [timestamp, action, transactionHash],
+              (err: any) => {
+                if (err) {
+                  console.log("update error!!!")
+                }
+              }
+            )
+          }
+        }
+      )
     }
   }
 

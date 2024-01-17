@@ -1,5 +1,5 @@
 import { createAction } from "@reduxjs/toolkit";
-import { AddressActivityFetch, SerializableTransactionReceipt, TransactionDetails, Transfer } from "./reducer";
+import { AddressActivityFetch, ContractCall, SerializableTransactionReceipt, TransactionDetails, Transfer } from "./reducer";
 
 export const addTransaction = createAction<{
   hash: string
@@ -9,6 +9,7 @@ export const addTransaction = createAction<{
   approval?: { tokenAddress: string; spender: string }
   summary?: string
   transfer?: Transfer
+  call ?: ContractCall
 }>('transactions/addTransaction')
 
 export const clearAllTransactions = createAction<"">('transactions/clearAllTransactions')

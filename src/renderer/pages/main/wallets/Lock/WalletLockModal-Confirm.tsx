@@ -39,11 +39,19 @@ export default ({
         value: ethers.utils.parseEther(amount)
       }).then((response: any) => {
         setSending(false);
-        const { hash } = response;
+        const { hash , data } = response;
         setRpcResponse({
           txHash: hash,
           error: null
-        })
+        });
+        addTransaction( { to } , response, {
+          call : {
+            from : activeAccount,
+            to : to,
+            input : data,
+            value : amount
+          }
+        });
       }).catch((err: any) => {
         setSending(false);
         setRpcResponse({
@@ -52,9 +60,7 @@ export default ({
         });
       })
     }
-  }, [accountManaggerContract]);
-
-
+  }, [activeAccount ,accountManaggerContract]);
 
   return <>
     <div style={{ minHeight: "300px" }}>
