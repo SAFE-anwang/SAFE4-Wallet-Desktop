@@ -12,6 +12,8 @@ import EtherAmount from "../../../../utils/EtherAmount";
 import { useWalletsActiveAccount } from "../../../../state/wallets/hooks";
 import DecodeSupportFunction from "../../../../constants/DecodeSupportFunction";
 import TransactionElementSupport from "./TransactionElementSupport";
+import { DB_AddressActivity_Actions } from "../../../../../main/handlers/DBAddressActivitySingalHandler";
+import AccountManagerSafeDeposit from "./AccountManagerSafeDeposit";
 const { Text } = Typography;
 
 const Lock_To_Self = "1";
@@ -29,6 +31,7 @@ export default ({ transaction, setClickTransaction, support }: {
   const {
     status,
     call,
+    accountManagerDatas
   } = transaction;
   const { from, to, value, input } = useMemo(() => {
     return {
@@ -41,38 +44,16 @@ export default ({ transaction, setClickTransaction, support }: {
 
   return <>
     <List.Item onClick={() => { setClickTransaction(transaction) }} key={transaction.hash} className="history-element" style={{ paddingLeft: "15px", paddingRight: "15px" }}>
-      <List.Item.Meta
-        avatar={
-          <>
-            <span>
-              {
-                !status && <Spin indicator={<LoadingOutlined style={{ fontSize: "34px", marginLeft: "-17px", marginTop: "-14px" }} />} >
-                  <Avatar style={{ marginTop: "8px", background: "#e6e6e6" }} src={<LockOutlined style={{color:"black"}} />} />
-                </Spin>
-              }
-              {
-                status && <Avatar style={{ marginTop: "8px", background: "#e6e6e6" }} src={<LockOutlined style={{color:"black"}} />} />
-              }
-            </span>
-          </>
-        }
-        title={<>
-          <Text strong>
-            锁仓
-          </Text>
-        </>}
-        description={
-          <>
-            {to}
-          </>
-        }
-      />
-      <div>
-        <Text type="secondary" strong>
-          <LockOutlined style={{marginRight:"5px"}} />
-        {value && EtherAmount({ raw: value, fix: 18 })} SAFE
-        </Text>
-      </div>
+      {
+        !call && accountManagerDatas && 
+          accountManagerDatas.filter( accountManagerData => accountManagerData.action == DB_AddressActivity_Actions.AM_Deposit )
+            .map( accountManagerData => {
+              return <AccountManagerSafeDeposit from={from} to={to} value={value} status={1} />
+            })
+      }
+      {
+        call && <AccountManagerSafeDeposit from={from} to={to} value={value} status={status} />
+      }
     </List.Item>
   </>
 

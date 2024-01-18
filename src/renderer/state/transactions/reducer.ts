@@ -38,6 +38,16 @@ export interface TransactionDetails {
   summary?: string
   transfer?: Transfer,
   call?: ContractCall,
+  accountManagerDatas ?:  AccountManagerData[]
+}
+
+export interface AccountManagerData {
+  action : string,
+  from   ?: string,
+  to     ?: string,
+  amount ?: string,
+  id     ?: string,
+  lockDay ?: string
 }
 
 export interface ContractCall {
@@ -203,7 +213,7 @@ export function Activity2Transaction(row: any): TransactionDetails {
       status: row.status,
       blockNumber: row.blockNumber
     };
-
+  console.log(transaction)
   switch (transaction.action) {
     case DB_AddressActivity_Actions.Transfer:
       return {
@@ -214,6 +224,14 @@ export function Activity2Transaction(row: any): TransactionDetails {
       return {
         ...transaction,
         call: { ...transaction.data }
+      }
+    case DB_AddressActivity_Actions.AM_Deposit:
+      return {
+        ...transaction,
+        accountManagerDatas : [{
+          ...transaction.data , 
+          action : transaction.action
+        }]
       }
     default:
       return {
@@ -226,15 +244,16 @@ export function Activity2Transaction(row: any): TransactionDetails {
 export function TransactionsCombine(transactions: TransactionState | undefined, addTxns: TransactionDetails[]): TransactionState {
   const txns = transactions ?? {};
   if (addTxns) {
-    addTxns.forEach(tx => {
-      if (!txns[tx.hash]) {
+    addTxns.forEach( tx => {
+      if (!txns[tx.hash] || tx.transfer ) {
         txns[tx.hash] = tx;
       } else {
-        if (tx.transfer) {
-          txns[tx.hash] = tx;
+        if (tx.call){
+          txns[tx.hash] = {...tx}
         }
-        if (tx.call) {
-          txns[tx.hash] = tx;
+        if ( tx.accountManagerDatas ){
+          txns[tx.hash].accountManagerDatas = txns[tx.hash].accountManagerDatas ?? [];
+          tx.accountManagerDatas.forEach( data => txns[tx.hash].accountManagerDatas?.push(data) )
         }
       }
     });

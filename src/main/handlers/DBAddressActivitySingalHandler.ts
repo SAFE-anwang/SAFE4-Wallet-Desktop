@@ -15,10 +15,10 @@ export enum DB_AddressActivity_Methods {
 export enum DB_AddressActivity_Actions {
   Transfer = "Transfer",
   Call = "Call",
+  AM_Deposit = "AccountManager:SafeDeposit",
   InternalTransfer = "InternalTransfer",
   erc20Transfer = "erc20Transfer",
   nftTransfer = "nftTransfer",
-  AM_Deposit = "AccountManager.deposit",
   AM_Lock = "AccountManager.lock",
   AM_Withdraw = "AccountManager.withdraw",
   AM_Transfer = "AccountManager.transfer"
@@ -141,8 +141,8 @@ export class DBAddressActivitySingalHandler implements ListenSignalHandler {
         transactionHash, blockNumber, status, eventLogIndex, action, data, refFrom, refTo, timestamp
       } = addressActivities[i];
       this.db.all(
-        "SELECT * FROM Address_Activities WHERE action = ? AND transaction_hash = ?",
-        [action, transactionHash],
+        "SELECT * FROM Address_Activities WHERE action = ? AND event_log_index = ? AND transaction_hash = ?",
+        [action,eventLogIndex , transactionHash],
         (err: any, rows: any) => {
           if (err) {
             return;
@@ -154,7 +154,7 @@ export class DBAddressActivitySingalHandler implements ListenSignalHandler {
               "INSERT INTO Address_Activities(block_number,transaction_hash,event_log_index,timestamp,status,ref_from,ref_to,action,data) VALUES(?,?,?,?,?,?,?,?,?)",
               [blockNumber, transactionHash, eventLogIndex, timestamp, status, refFrom, refTo, action, JSON.stringify(data)],
               (err: any) => {
-                if (err) { 
+                if (err) {  
                   console.log("save error:", err)
                 }
               }
@@ -163,8 +163,8 @@ export class DBAddressActivitySingalHandler implements ListenSignalHandler {
             // do update
             console.log("update activity txhash=", transactionHash)
             this.db.run(
-              "UPDATE Address_Activities Set timestamp = ? WHERE action = ? AND transaction_hash = ?",
-              [timestamp, action, transactionHash],
+              "UPDATE Address_Activities Set timestamp = ? , event_log_index = ? WHERE action = ? AND transaction_hash = ?",
+              [timestamp, eventLogIndex , action, transactionHash],
               (err: any) => {
                 if (err) {
                   console.log("update error!!!")
