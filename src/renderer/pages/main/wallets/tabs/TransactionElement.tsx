@@ -21,7 +21,6 @@ export default ({ transaction, setClickTransaction }: {
     const {
       transfer, call
     } = transaction;
-    console.log(transaction)
     if (transfer) {
       return <>
         <TransactionElementTransfer transaction={transaction} setClickTransaction={setClickTransaction} />

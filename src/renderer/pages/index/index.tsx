@@ -22,7 +22,6 @@ export default () => {
           walletKeystores ,
           path
         } = data;
-        console.log("Path ...>" , path)
         dispatch(applicationDataUpdate({ ...path }));
         if ( walletKeystores.length == 0 ){
           navigate("/selectCreateWallet");

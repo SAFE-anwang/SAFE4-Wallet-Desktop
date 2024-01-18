@@ -44,12 +44,12 @@ export default ({
           txHash: hash,
           error: null
         });
-        addTransaction( { to } , response, {
+        addTransaction( { to:accountManaggerContract.address } , response, {
           call : {
             from : activeAccount,
-            to : to,
+            to : accountManaggerContract.address,
             input : data,
-            value : amount
+            value : ethers.utils.parseEther(amount).toString()
           }
         });
       }).catch((err: any) => {
@@ -64,7 +64,6 @@ export default ({
 
   return <>
     <div style={{ minHeight: "300px" }}>
-
       <div style={{ marginBottom: "20px" }}>
         {
           rpcResponse?.error && <Alert
@@ -102,8 +101,6 @@ export default ({
           />
         }
       </div>
-
-
       <br />
       <Row >
         <Col span={14}>

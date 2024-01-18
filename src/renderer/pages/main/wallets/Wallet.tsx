@@ -106,7 +106,7 @@ export default () => {
         </Row>
 
         <Row style={{ marginTop: "50px" }}>
-          <Tabs style={{ width: "100%" }} defaultActiveKey="locked" items={items} onChange={onChange} />
+          <Tabs style={{ width: "100%" }} defaultActiveKey="history" items={items} onChange={onChange} />
         </Row>
       </div>
     </div>

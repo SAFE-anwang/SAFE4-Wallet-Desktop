@@ -9,44 +9,34 @@ import { DateFormat } from "../../utils/DateUtils";
 export function useTransactionAdder(): (
   request: TransactionRequest,
   response: TransactionResponse,
-  customData?: { 
-    summary?: string; 
-    approval?: { tokenAddress: string; spender: string }; 
-    transfer?: Transfer , 
+  customData?: {
+    transfer?: Transfer ,
     call ?: ContractCall
   }
 ) => void {
   const dispatch = useDispatch<AppDispatch>();
-
   return useCallback(
     (
       request: TransactionRequest,
       response: TransactionResponse,
-      { summary, approval, transfer , call }:
+      { transfer , call }:
         {
-          summary?: string;
-          approval?: { tokenAddress: string; spender: string },
-          transfer?: Transfer ,
+          transfer ?: Transfer ,
           call ?: ContractCall,
         } = {}
     ) => {
-      // 先做如果是 tranfer 的情况.
-      const { hash } = response;
-      if (transfer) {
-        const { from, to } = transfer;
-        const transaction = {
-          hash, refFrom: from, refTo: to,
-          transfer
-        }
-        dispatch(addTransaction(transaction))
-      }else if (call){
-        const { from , to , value , input } = call;
-        const transaction = {
-          hash, refFrom:from,refTo:to , 
-          call
-        }
-        dispatch(addTransaction(transaction))
+      const { from , hash } = response;
+      const { to } = transfer ? { ...transfer } :
+                      call ? { ...call }
+                       : { to:undefined } ;
+      const transaction = {
+        hash ,
+        refFrom : from,
+        refTo : to,
+        transfer,
+        call
       }
+      dispatch(addTransaction(transaction));
     },
     [dispatch]
   )

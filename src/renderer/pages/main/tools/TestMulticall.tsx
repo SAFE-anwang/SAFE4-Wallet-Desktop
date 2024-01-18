@@ -6,44 +6,16 @@ import { DateTimeFormat } from "../../../utils/DateUtils";
 import { useBlockNumber } from "../../../state/application/hooks";
 import { useAccountManagerContract, useMulticallContract } from "../../../hooks/useContracts";
 import { AccountRecord, formatAccountRecord, formatRecordUseInfo } from "../../../structs/AccountManager";
+import { SystemContract } from "../../../constants/SystemContracts";
+import DecodeSupportFunction from "../../../constants/DecodeSupportFunction";
 
 export default () => {
-
-  const blockNumber = useBlockNumber();
-  const accountManagerContract = useAccountManagerContract();
-  const multicallContract = useMulticallContract();
-  const [accountRecords, setAccountRecords] = useState<AccountRecord[]>([]);
-
-  useEffect(() => {
-    if (blockNumber && accountManagerContract) {
-      accountManagerContract.callStatic
-        .getRecords("0x3525058AdABF4bc77D10D583A522205e8c624b53")
-        .then(accountRecords => setAccountRecords(accountRecords.map(formatAccountRecord)))
-    }
-  }, [blockNumber, accountManagerContract]);
-
-  useEffect(() => {
-    const fragment = accountManagerContract?.interface?.getFunction("getRecordUseInfo");
-    if (accountRecords.length > 0 && fragment && multicallContract) {
-      const calls = accountRecords.map(accountRecord => {
-        return {
-          address: accountManagerContract?.address,
-          callData: accountManagerContract?.interface.encodeFunctionData(fragment, [accountRecord.id])
-        }
-      });
-      multicallContract.callStatic.aggregate(calls.map(call => [call.address,call.callData])).then( (data) => {
-        // blockNumber
-        console.log(data[0].toNumber())
-        data[1].map( (result : any) => {
-          const recordUserInfo = accountManagerContract?.interface.decodeFunctionResult(fragment ,result)[0];
-          if (recordUserInfo){
-            console.log( formatRecordUseInfo(recordUserInfo) )
-          }
-        })
-      })
-    }
-  }, [accountRecords]);
-
+  const input = "0x47e7ef24000000000000000000000000ff3ebfd9876bcabb0dc98477d6b7c064eb0815570000000000000000000000000000000000000000000000000000000000000001";
+  const result = DecodeSupportFunction(
+    "0x0000000000000000000000000000000000001090",
+    input
+  );
+  console.log( "result >>" , result )
   return <>
 
   </>

@@ -2,7 +2,7 @@
 import { Col, Row, Avatar, List, Typography, Modal, Button } from "antd";
 import { useTransactions } from "../../../../state/transactions/hooks";
 import SAFE_LOGO from "../../../../assets/logo/SAFE.png";
-import { LoadingOutlined, FileDoneOutlined } from '@ant-design/icons';
+import { LoadingOutlined, FileDoneOutlined, LockOutlined } from '@ant-design/icons';
 import { Spin } from 'antd';
 import "./index.css";
 import { useMemo, useState } from "react";
@@ -14,40 +14,32 @@ import DecodeSupportFunction from "../../../../constants/DecodeSupportFunction";
 import TransactionElementSupport from "./TransactionElementSupport";
 const { Text } = Typography;
 
-const TX_TYPE_SEND = "1";
-const TX_TYPE_RECEIVE = "2";
+const Lock_To_Self = "1";
+const Lock_To_Out = "2";
 
-export default ({ transaction, setClickTransaction }: {
+export default ({ transaction, setClickTransaction, support }: {
   transaction: TransactionDetails,
-  setClickTransaction: (transaction: TransactionDetails) => void
+  setClickTransaction: (transaction: TransactionDetails) => void,
+  support: {
+    supportFuncName: string,
+    inputDecodeResult: any
+  }
 }) => {
   const activeAccount = useWalletsActiveAccount();
   const {
     status,
     call,
   } = transaction;
-  const { from, to, value , input } = useMemo(() => {
+  const { from, to, value, input } = useMemo(() => {
     return {
-      from : transaction.refFrom,
-      to : transaction.refTo,
-      value : call?.value,
-      input : call?.input
+      from: transaction.refFrom,
+      to: support.inputDecodeResult._to,
+      value: call?.value,
+      input: call?.input
     }
-  }, [transaction]);
-  const txType = useMemo(() => {
-    if (from == activeAccount) {
-      return TX_TYPE_SEND;
-    }
-    if (to == activeAccount) {
-      return TX_TYPE_RECEIVE;
-    }
-  }, [activeAccount, call]);
-  const support = DecodeSupportFunction( to , input );
+  }, [transaction, call]);
 
   return <>
-    {
-      support && <TransactionElementSupport transaction={transaction} setClickTransaction={setClickTransaction} support={support} />
-    }
     <List.Item onClick={() => { setClickTransaction(transaction) }} key={transaction.hash} className="history-element" style={{ paddingLeft: "15px", paddingRight: "15px" }}>
       <List.Item.Meta
         avatar={
@@ -55,35 +47,33 @@ export default ({ transaction, setClickTransaction }: {
             <span>
               {
                 !status && <Spin indicator={<LoadingOutlined style={{ fontSize: "34px", marginLeft: "-17px", marginTop: "-14px" }} />} >
-                  <Avatar style={{ marginTop: "8px", background: "#e6e6e6" }} src={<FileDoneOutlined />} />
+                  <Avatar style={{ marginTop: "8px", background: "#e6e6e6" }} src={<LockOutlined style={{color:"black"}} />} />
                 </Spin>
               }
               {
-                status && <Avatar style={{ marginTop: "8px", background: "#e6e6e6" }} src={<FileDoneOutlined />} />
+                status && <Avatar style={{ marginTop: "8px", background: "#e6e6e6" }} src={<LockOutlined style={{color:"black"}} />} />
               }
             </span>
           </>
         }
         title={<>
           <Text strong>
-            合约调用
+            锁仓
           </Text>
         </>}
         description={
           <>
-            {txType == TX_TYPE_RECEIVE && from}
-            {txType == TX_TYPE_SEND && to}
+            {to}
           </>
         }
       />
       <div>
-        {txType == TX_TYPE_RECEIVE && <>
-          <Text strong type="success">+{value && EtherAmount({ raw: value, fix: 18 })} SAFE</Text>
-        </>}
-        {txType == TX_TYPE_SEND && <>
-          <Text strong>-{value && EtherAmount({ raw: value, fix: 18 })} SAFE</Text>
-        </>}
+        <Text type="secondary" strong>
+          <LockOutlined style={{marginRight:"5px"}} />
+        {value && EtherAmount({ raw: value, fix: 18 })} SAFE
+        </Text>
       </div>
     </List.Item>
   </>
+
 }

@@ -6,8 +6,6 @@ export const addTransaction = createAction<{
   refFrom: string,
   refTo?: string,
   // 自定义数据 ...
-  approval?: { tokenAddress: string; spender: string }
-  summary?: string
   transfer?: Transfer
   call ?: ContractCall
 }>('transactions/addTransaction')

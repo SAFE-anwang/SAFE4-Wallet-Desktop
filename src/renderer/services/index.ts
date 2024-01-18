@@ -37,39 +37,33 @@ export interface PageQueryDTO {
 }
 
 export interface AddressActivityVO {
-  id : number ,
-  blockNumber : number,
-  transactionHash : string,
-  status : number,
-  eventLogIndex : number,
-  timestamp : number,
-  refFrom : string,
-  refTo : string,
-  action : string,
-  data : any
+  id: number,
+  blockNumber: number,
+  transactionHash: string,
+  status: number,
+  eventLogIndex: number,
+  timestamp: number,
+  refFrom: string,
+  refTo: string,
+  action: string,
+  data: any
 }
 
-export function AddressActivityFormat( activity : AddressActivityVO ) :AddressActivityVO {
-  const { action , data } = activity;
-  let _data :any ;
-  switch( action ){
-    case "Transfer" :
-      _data = {
-        ...data,
-        from : ChecksumAddress(data.from),
-        to : ChecksumAddress(data.to),
-      }
-      break;
-    default :
-    _data = data
-      break;
+export function AddressActivityFormat(activity: AddressActivityVO): AddressActivityVO {
+  const { data } = activity;
+  let _data: any;
+  _data = {
+    ...data ,
+    from : data.from ? ChecksumAddress(data.from) : undefined,
+    to : data.to ? ChecksumAddress(data.to) : undefined
   }
+  console.log("Activity ::" , activity)
   return {
     ...activity,
-    refFrom : ChecksumAddress(activity.refFrom),
-    refTo : ChecksumAddress(activity.refTo),
-    timestamp : activity.timestamp * 1000,
-    data : _data
+    refFrom: activity.refFrom ? ChecksumAddress(activity.refFrom) : "",
+    refTo: activity.refTo ? ChecksumAddress(activity.refTo) : "",
+    timestamp: activity.timestamp * 1000,
+    data: _data
   }
 }
 

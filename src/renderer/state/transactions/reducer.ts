@@ -87,7 +87,7 @@ export const initialState: {
 export default createReducer(initialState, (builder) => {
 
   builder
-    .addCase(addTransaction, ({ transactions }, { payload: { hash, refFrom, refTo, approval, summary, transfer, call } }) => {
+    .addCase(addTransaction, ({ transactions }, { payload: { hash, refFrom, refTo, transfer, call } }) => {
       if (transactions[hash]) {
         throw Error('Attempted to add existing transaction.')
       }
@@ -95,7 +95,7 @@ export default createReducer(initialState, (builder) => {
       txs[hash] = {
         hash, refFrom, refTo,
         addedTime: now(),
-        approval, summary, transfer, call
+        transfer, call
       }
       window.electron.ipcRenderer.sendMessage(IPC_CHANNEL,
         [DBAddressActivitySignal, DB_AddressActivity_Methods.saveActivity,
@@ -161,39 +161,29 @@ export default createReducer(initialState, (builder) => {
 })
 
 export function Transaction2Activity(txn: TransactionDetails) {
-  const { hash, refFrom, refTo, addedTime } = txn;
-  if (txn.transfer) {
-    const action = DB_AddressActivity_Actions.Transfer;
-    const data = JSON.stringify(txn.transfer);
-    return {
-      hash,
-      refFrom,
-      refTo,
-      addedTime,
-      action,
-      data
-    }
+  const { hash, refFrom, refTo, addedTime, transfer , call } = txn;
+  const { action , data } = call ? {
+    action :  DB_AddressActivity_Actions.Call,
+    data : JSON.stringify(call)
+  } : {
+    action :  DB_AddressActivity_Actions.Transfer,
+    data : JSON.stringify(transfer)
   }
-  if (txn.call) {
-    const action = DB_AddressActivity_Actions.Call;
-    const data = JSON.stringify(txn.call);
-    return {
-      hash,
-      refFrom,
-      refTo,
-      addedTime,
-      action,
-      data
-    }
+  return {
+    hash,
+    refFrom,
+    refTo,
+    addedTime,
+    action,
+    data
   }
-  return undefined;
 }
 
 export function Activity2Transaction(row: any): TransactionDetails {
 
-  const { transactionHash, refFrom, refTo, blockNumber, timestamp, action, addedTime, status, data }
+  const transaction
     = row.transaction_hash ? {
-      transactionHash: row.transaction_hash,
+      hash: row.transaction_hash,
       refFrom: row.ref_from,
       refTo: row.ref_to,
       action: row.action,
@@ -203,7 +193,7 @@ export function Activity2Transaction(row: any): TransactionDetails {
       status: row.status,
       blockNumber: row.block_number
     } : {
-      transactionHash: row.transactionHash,
+      hash: row.transactionHash,
       refFrom: row.refFrom,
       refTo: row.refTo,
       action: row.action,
@@ -214,38 +204,21 @@ export function Activity2Transaction(row: any): TransactionDetails {
       blockNumber: row.blockNumber
     };
 
-  switch (action) {
+  switch (transaction.action) {
     case DB_AddressActivity_Actions.Transfer:
       return {
-        hash: transactionHash,
-        refFrom,
-        refTo,
-        addedTime,
-        timestamp,
-        status,
-        blockNumber,
-        transfer: { ...data }
+        ...transaction,
+        transfer: { ...transaction.data }
       }
     case DB_AddressActivity_Actions.Call:
       return {
-        hash: transactionHash,
-        refFrom,
-        refTo,
-        addedTime,
-        timestamp,
-        status,
-        blockNumber,
-        call: { ...data }
+        ...transaction,
+        call: { ...transaction.data }
       }
     default:
       return {
-        hash: transactionHash,
-        refFrom,
-        refTo,
-        addedTime,
-        timestamp,
-        status,
-        blockNumber,
+        ...transaction,
+        transfer: { ...transaction.data }
       }
   }
 }
