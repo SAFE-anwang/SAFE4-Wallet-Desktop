@@ -26,21 +26,23 @@ export default ({ transaction, setClickTransaction, support }: {
       value: call?.value,
       input: call?.input
     }
-  }, [transaction, call]);
+  }, [transaction, call, accountManagerDatas]);
 
   return <>
-    { JSON.stringify(accountManagerDatas) }
     <List.Item onClick={() => { setClickTransaction(transaction) }} key={transaction.hash} className="history-element" style={{ paddingLeft: "15px", paddingRight: "15px" }}>
-      
       {
-        call && accountManagerDatas &&
-          accountManagerDatas.filter( accountManagerData => accountManagerData.action == DB_AddressActivity_Actions.AM_Withdraw )
-            .map( accountManagerData => {
-              return <AccountManagerSafeWithdraw from={from} to={to} value={accountManagerData.amount} status={1} />
-            })
+        call && accountManagerDatas && <>
+          <span style={{ width: "100px" }}>
+            {JSON.stringify(accountManagerDatas)}
+          </span>
+          <AccountManagerSafeWithdraw from={from} to={to} value={undefined} status={status} />
+        </>
       }
       {
-        call && !accountManagerDatas && <AccountManagerSafeWithdraw from={from} to={to} value={undefined} status={status} />
+        call && !accountManagerDatas && <>
+           [as call]
+          <AccountManagerSafeWithdraw from={from} to={to} value={undefined} status={status} />
+        </>
       }
     </List.Item>
   </>

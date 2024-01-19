@@ -1,5 +1,5 @@
 import { createReducer } from "@reduxjs/toolkit"
-import { addTransaction, checkedTransaction, clearAllTransactions, finalizeTransaction, loadTransactionsAndUpdateAddressActivityFetch, reloadTransactionsAndSetAddressActivityFetch } from "./actions"
+import { addTransaction, checkedTransaction, finalizeTransaction, loadTransactionsAndUpdateAddressActivityFetch, reloadTransactionsAndSetAddressActivityFetch } from "./actions"
 import { IPC_CHANNEL } from "../../config"
 import { DBAddressActivitySignal, DB_AddressActivity_Actions, DB_AddressActivity_Methods } from "../../../main/handlers/DBAddressActivitySingalHandler"
 
@@ -38,7 +38,9 @@ export interface TransactionDetails {
   summary?: string
   transfer?: Transfer,
   call?: ContractCall,
-  accountManagerDatas?: AccountManagerData[],
+  accountManagerDatas?: {
+    [eventLogIndex : string] : AccountManagerData
+  },
   withdrawAmount?: string
 }
 
@@ -230,21 +232,25 @@ export function Activity2Transaction(row: any): TransactionDetails {
     case DB_AddressActivity_Actions.AM_Deposit:
       return {
         ...transaction,
-        accountManagerDatas: [{
-          ...transaction.data,
-          action: transaction.action,
-          eventLogIndex: transaction.eventLogIndex
-        }]
+        accountManagerDatas: {
+          [transaction.eventLogIndex] : {
+            ...transaction.data,
+            action: transaction.action,
+            eventLogIndex: transaction.eventLogIndex
+          }
+        }
       }
     case DB_AddressActivity_Actions.AM_Withdraw:
       const _transaction =
       {
         ...transaction,
-        accountManagerDatas: [{
-          ...transaction.data,
-          action: transaction.action,
-          eventLogIndex: transaction.eventLogIndex
-        }]
+        accountManagerDatas: {
+          [transaction.eventLogIndex] : {
+            ...transaction.data,
+            action: transaction.action,
+            eventLogIndex: transaction.eventLogIndex
+          }
+        }
       }
       return _transaction;
     default:
@@ -259,15 +265,23 @@ export function TransactionsCombine(transactions: TransactionState | undefined, 
   const txns = transactions ?? {};
   if (addTxns) {
     addTxns.forEach(tx => {
-      if (!txns[tx.hash] || tx.transfer) {
+      if (!txns[tx.hash]) {
         txns[tx.hash] = tx;
       } else {
+        if (tx.transfer){
+          txns[tx.hash] = tx;
+        }
         if (tx.call) {
           txns[tx.hash].call = tx.call;
         }
         if (tx.accountManagerDatas) {
-          txns[tx.hash].accountManagerDatas = txns[tx.hash].accountManagerDatas ?? [];
-          tx.accountManagerDatas.forEach( data => txns[tx.hash].accountManagerDatas?.push(data) )
+          const _accountManagerDatas = txns[tx.hash].accountManagerDatas ? { ...txns[tx.hash].accountManagerDatas } : {};
+          Object.keys( tx.accountManagerDatas ).forEach( (eventLogIndex) => {
+            if ( tx.accountManagerDatas){
+              _accountManagerDatas[eventLogIndex] = tx.accountManagerDatas[eventLogIndex]
+            }
+          });
+          txns[tx.hash].accountManagerDatas = _accountManagerDatas;
         }
       }
     });

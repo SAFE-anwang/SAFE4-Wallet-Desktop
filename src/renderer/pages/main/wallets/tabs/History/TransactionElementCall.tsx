@@ -50,16 +50,22 @@ export default ({ transaction, setClickTransaction }: {
               title="合约调用" description={call?.to} assetFlow={<Text strong> <>- {value && EtherAmount({ raw: value })} SAFE</> </Text>} />
           </span>
           {
-            accountManagerDatas && accountManagerDatas.filter(accountManagerData => accountManagerData.action == DB_AddressActivity_Actions.AM_Deposit)
-              .map(accountManagerData => {
+            accountManagerDatas && Object
+              .keys( accountManagerDatas )
+              .filter( eventLogIndex => accountManagerDatas[eventLogIndex].action == DB_AddressActivity_Actions.AM_Deposit )
+              .map( eventLogIndex => {
+                const accountManagerData = accountManagerDatas[eventLogIndex];
                 return <span style={{ width: "100%", marginTop: "20px" }}>
                   <AccountManagerSafeDeposit from={accountManagerData.from} to={accountManagerData.to} value={accountManagerData.amount} status={1} />
                 </span>
               })
           }
           {
-            accountManagerDatas && accountManagerDatas.filter(accountManagerData => accountManagerData.action == DB_AddressActivity_Actions.AM_Withdraw)
-              .map(accountManagerData => {
+            accountManagerDatas && Object
+              .keys( accountManagerDatas )
+              .filter( eventLogIndex => accountManagerDatas[eventLogIndex].action == DB_AddressActivity_Actions.AM_Withdraw )
+              .map( eventLogIndex => {
+                const accountManagerData = accountManagerDatas[eventLogIndex];
                 return <span style={{ width: "100%", marginTop: "20px" }}>
                   <AccountManagerSafeWithdraw from={accountManagerData.from} to={accountManagerData.to} value={accountManagerData.amount} status={1} />
                 </span>
