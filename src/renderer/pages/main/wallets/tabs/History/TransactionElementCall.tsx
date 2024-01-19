@@ -59,6 +59,9 @@ export default ({ transaction, setClickTransaction }: {
               title="合约调用" description={to} assetFlow={<Text strong> <>- {value && EtherAmount({ raw: value })} SAFE</> </Text>} />
           </span>
           {
+            <>{JSON.stringify(transaction)}</>
+          }
+          {
             accountManagerDatas && accountManagerDatas.filter(accountManagerData => accountManagerData.action == DB_AddressActivity_Actions.AM_Deposit)
               .map(accountManagerData => {
                 return <span style={{ width: "100%", marginTop: "20px" }}>

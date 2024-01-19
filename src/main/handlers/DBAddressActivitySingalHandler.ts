@@ -15,13 +15,13 @@ export enum DB_AddressActivity_Methods {
 export enum DB_AddressActivity_Actions {
   Transfer = "Transfer",
   Call = "Call",
-  AM_Deposit = "AccountManager:SafeDeposit",
+
   InternalTransfer = "InternalTransfer",
   erc20Transfer = "erc20Transfer",
   nftTransfer = "nftTransfer",
-  AM_Lock = "AccountManager.lock",
-  AM_Withdraw = "AccountManager.withdraw",
-  AM_Transfer = "AccountManager.transfer"
+
+  AM_Deposit = "AccountManager:SafeDeposit",
+  AM_Withdraw = "AccountManager:SafeWithdraw",
 }
 
 export class DBAddressActivitySingalHandler implements ListenSignalHandler {
@@ -154,7 +154,7 @@ export class DBAddressActivitySingalHandler implements ListenSignalHandler {
               "INSERT INTO Address_Activities(block_number,transaction_hash,event_log_index,timestamp,status,ref_from,ref_to,action,data) VALUES(?,?,?,?,?,?,?,?,?)",
               [blockNumber, transactionHash, eventLogIndex, timestamp, status, refFrom, refTo, action, JSON.stringify(data)],
               (err: any) => {
-                if (err) {  
+                if (err) {
                   console.log("save error:", err)
                 }
               }

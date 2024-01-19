@@ -38,16 +38,16 @@ export interface TransactionDetails {
   summary?: string
   transfer?: Transfer,
   call?: ContractCall,
-  accountManagerDatas ?:  AccountManagerData[]
+  accountManagerDatas?: AccountManagerData[]
 }
 
 export interface AccountManagerData {
-  action : string,
-  from   ?: string,
-  to     ?: string,
-  amount ?: string,
-  id     ?: string,
-  lockDay ?: string
+  action: string,
+  from?: string,
+  to?: string,
+  amount?: string,
+  id?: string,
+  lockDay?: string
 }
 
 export interface ContractCall {
@@ -171,13 +171,13 @@ export default createReducer(initialState, (builder) => {
 })
 
 export function Transaction2Activity(txn: TransactionDetails) {
-  const { hash, refFrom, refTo, addedTime, transfer , call } = txn;
-  const { action , data } = call ? {
-    action :  DB_AddressActivity_Actions.Call,
-    data : JSON.stringify(call)
+  const { hash, refFrom, refTo, addedTime, transfer, call } = txn;
+  const { action, data } = call ? {
+    action: DB_AddressActivity_Actions.Call,
+    data: JSON.stringify(call)
   } : {
-    action :  DB_AddressActivity_Actions.Transfer,
-    data : JSON.stringify(transfer)
+    action: DB_AddressActivity_Actions.Transfer,
+    data: JSON.stringify(transfer)
   }
   return {
     hash,
@@ -190,7 +190,6 @@ export function Transaction2Activity(txn: TransactionDetails) {
 }
 
 export function Activity2Transaction(row: any): TransactionDetails {
-
   const transaction
     = row.transaction_hash ? {
       hash: row.transaction_hash,
@@ -213,7 +212,7 @@ export function Activity2Transaction(row: any): TransactionDetails {
       status: row.status,
       blockNumber: row.blockNumber
     };
-  console.log(transaction)
+
   switch (transaction.action) {
     case DB_AddressActivity_Actions.Transfer:
       return {
@@ -228,9 +227,18 @@ export function Activity2Transaction(row: any): TransactionDetails {
     case DB_AddressActivity_Actions.AM_Deposit:
       return {
         ...transaction,
-        accountManagerDatas : [{
-          ...transaction.data , 
-          action : transaction.action
+        accountManagerDatas: [{
+          ...transaction.data,
+          action: transaction.action
+        }]
+      }
+    case DB_AddressActivity_Actions.AM_Withdraw:
+      console.log("got withdraw txn >>" , transaction)
+      return {
+        ...transaction,
+        accountManagerDatas: [{
+          ...transaction.data,
+          action: transaction.action
         }]
       }
     default:
@@ -244,16 +252,17 @@ export function Activity2Transaction(row: any): TransactionDetails {
 export function TransactionsCombine(transactions: TransactionState | undefined, addTxns: TransactionDetails[]): TransactionState {
   const txns = transactions ?? {};
   if (addTxns) {
-    addTxns.forEach( tx => {
-      if (!txns[tx.hash] || tx.transfer ) {
+    addTxns.forEach(tx => {
+      if (!txns[tx.hash] || tx.transfer) {
         txns[tx.hash] = tx;
       } else {
-        if (tx.call){
-          txns[tx.hash] = {...tx}
+        if (tx.call) {
+          txns[tx.hash] = { ...tx }
         }
-        if ( tx.accountManagerDatas ){
+        if (tx.accountManagerDatas) {
           txns[tx.hash].accountManagerDatas = txns[tx.hash].accountManagerDatas ?? [];
-          tx.accountManagerDatas.forEach( data => txns[tx.hash].accountManagerDatas?.push(data) )
+          tx.accountManagerDatas.forEach(data => txns[tx.hash].accountManagerDatas?.push(data))
+          console.log(" >>>> " ,txns[tx.hash])
         }
       }
     });
