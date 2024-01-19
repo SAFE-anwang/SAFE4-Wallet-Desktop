@@ -11,7 +11,8 @@ export function useTransactionAdder(): (
   response: TransactionResponse,
   customData?: {
     transfer?: Transfer ,
-    call ?: ContractCall
+    call ?: ContractCall,
+    withdrawAmount ?: string
   }
 ) => void {
   const dispatch = useDispatch<AppDispatch>();
@@ -19,10 +20,11 @@ export function useTransactionAdder(): (
     (
       request: TransactionRequest,
       response: TransactionResponse,
-      { transfer , call }:
+      { transfer , call , withdrawAmount }:
         {
           transfer ?: Transfer ,
           call ?: ContractCall,
+          withdrawAmount ?: string
         } = {}
     ) => {
       const { from , hash } = response;
@@ -34,7 +36,8 @@ export function useTransactionAdder(): (
         refFrom : from,
         refTo : to,
         transfer,
-        call
+        call,
+        withdrawAmount
       }
       dispatch(addTransaction(transaction));
     },

@@ -38,11 +38,13 @@ export interface TransactionDetails {
   summary?: string
   transfer?: Transfer,
   call?: ContractCall,
-  accountManagerDatas?: AccountManagerData[]
+  accountManagerDatas?: AccountManagerData[],
+  withdrawAmount?: string
 }
 
 export interface AccountManagerData {
   action: string,
+  eventLogIndex: number
   from?: string,
   to?: string,
   amount?: string,
@@ -97,7 +99,7 @@ export const initialState: {
 export default createReducer(initialState, (builder) => {
 
   builder
-    .addCase(addTransaction, ({ transactions }, { payload: { hash, refFrom, refTo, transfer, call } }) => {
+    .addCase(addTransaction, ({ transactions }, { payload: { hash, refFrom, refTo, transfer, call, withdrawAmount } }) => {
       if (transactions[hash]) {
         throw Error('Attempted to add existing transaction.')
       }
@@ -105,14 +107,13 @@ export default createReducer(initialState, (builder) => {
       txs[hash] = {
         hash, refFrom, refTo,
         addedTime: now(),
-        transfer, call
+        transfer, call, withdrawAmount
       }
       window.electron.ipcRenderer.sendMessage(IPC_CHANNEL,
         [DBAddressActivitySignal, DB_AddressActivity_Methods.saveActivity,
           [Transaction2Activity(txs[hash])]
         ]
       );
-
       transactions = txs
     })
 
@@ -151,7 +152,7 @@ export default createReducer(initialState, (builder) => {
     .addCase(reloadTransactionsAndSetAddressActivityFetch, ({ transactions }, { payload: { txns, addressActivityFetch } }) => {
       transactions = TransactionsCombine(undefined, txns);
       return {
-        transactions,
+        transactions: transactions,
         addressActivityFetch: {
           ...addressActivityFetch
         }
@@ -200,7 +201,8 @@ export function Activity2Transaction(row: any): TransactionDetails {
       addedTime: row.added_time ? row.added_time : row.timestamp,
       timestamp: row.timestamp,
       status: row.status,
-      blockNumber: row.block_number
+      blockNumber: row.block_number,
+      eventLogIndex: row.event_log_index
     } : {
       hash: row.transactionHash,
       refFrom: row.refFrom,
@@ -210,7 +212,8 @@ export function Activity2Transaction(row: any): TransactionDetails {
       addedTime: row.timestamp,
       timestamp: row.timestamp,
       status: row.status,
-      blockNumber: row.blockNumber
+      blockNumber: row.blockNumber,
+      eventLogIndex: row.eventLogIndex
     };
 
   switch (transaction.action) {
@@ -229,19 +232,20 @@ export function Activity2Transaction(row: any): TransactionDetails {
         ...transaction,
         accountManagerDatas: [{
           ...transaction.data,
-          action: transaction.action
+          action: transaction.action,
+          eventLogIndex: transaction.eventLogIndex
         }]
       }
     case DB_AddressActivity_Actions.AM_Withdraw:
       const _transaction =
-       {
+      {
         ...transaction,
         accountManagerDatas: [{
           ...transaction.data,
-          action: transaction.action
+          action: transaction.action,
+          eventLogIndex: transaction.eventLogIndex
         }]
       }
-      console.log("got withdraw txn >>" , _transaction)
       return _transaction;
     default:
       return {
@@ -254,18 +258,16 @@ export function Activity2Transaction(row: any): TransactionDetails {
 export function TransactionsCombine(transactions: TransactionState | undefined, addTxns: TransactionDetails[]): TransactionState {
   const txns = transactions ?? {};
   if (addTxns) {
-    console.log("add txns >>" , addTxns)
     addTxns.forEach(tx => {
       if (!txns[tx.hash] || tx.transfer) {
         txns[tx.hash] = tx;
       } else {
         if (tx.call) {
-          txns[tx.hash] = { ...tx }
+          txns[tx.hash].call = tx.call;
         }
         if (tx.accountManagerDatas) {
           txns[tx.hash].accountManagerDatas = txns[tx.hash].accountManagerDatas ?? [];
-          tx.accountManagerDatas.forEach(data => txns[tx.hash].accountManagerDatas?.push(data))
-          console.log(" >>>> " ,txns[tx.hash])
+          tx.accountManagerDatas.forEach( data => txns[tx.hash].accountManagerDatas?.push(data) )
         }
       }
     });

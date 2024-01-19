@@ -1,10 +1,10 @@
 import { Fragment, FunctionFragment, Interface } from "ethers/lib/utils";
 import { SysContractABI, SystemContract } from "./SystemContracts";
-import { DBAddressActivitySingalHandler, DB_AddressActivity_Actions } from "../../main/handlers/DBAddressActivitySingalHandler";
 
 
 export enum SupportAccountManagerFunctions {
-  Deposit = "deposit" , // function deposit(address _to, uint _lockDay) external payable returns (uint);
+  Deposit = "deposit",             // function deposit(address _to, uint _lockDay) external payable returns (uint);
+  WithdrawByID = "withdrawByID",   // function withdrawByID(uint[] memory _ids) external returns(uint);
 }
 
 function decodeAccountManagerFunctionData(
@@ -15,10 +15,16 @@ function decodeAccountManagerFunctionData(
   let formatDecodeResult = undefined;
   switch (fragment.name) {
     case SupportAccountManagerFunctions.Deposit:
-      const decode = IContract.decodeFunctionData(fragment, input);
+      const deposit = IContract.decodeFunctionData(fragment, input);
       formatDecodeResult = {
-        _to: decode[0],
-        _lockDay: decode[1].toNumber()
+        _to: deposit[0],
+        _lockDay: deposit[1].toNumber()
+      }
+      break;
+    case SupportAccountManagerFunctions.WithdrawByID:
+      let withdrawByID = IContract.decodeFunctionData(fragment, input);
+      formatDecodeResult = {
+        _ids: withdrawByID[0],
       }
       break;
     default:
@@ -34,10 +40,10 @@ export default (address: string | undefined, input: string | undefined): {
   supportFuncName: string,
   inputDecodeResult: any
 } | undefined => {
-  if ( !input ){
+  if (!input) {
     return undefined;
   }
-  if (!Object.values(SystemContract).some( addr => addr == address )){
+  if (!Object.values(SystemContract).some(addr => addr == address)) {
     return undefined;
   }
   try {
@@ -53,7 +59,7 @@ export default (address: string | undefined, input: string | undefined): {
           return undefined;
       }
     }
-  }catch( err ){
+  } catch (err) {
     return undefined;
   }
 }

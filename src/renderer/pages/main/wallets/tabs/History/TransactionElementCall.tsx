@@ -1,6 +1,6 @@
 
 import { Col, Row, Avatar, List, Typography, Modal, Button } from "antd";
-import { useTransactions } from "../../../../../state/transactions/hooks";
+import { useTransaction, useTransactions } from "../../../../../state/transactions/hooks";
 import { LoadingOutlined, FileDoneOutlined, LockOutlined } from '@ant-design/icons';
 import { Spin } from 'antd';
 import { useMemo, useState } from "react";
@@ -13,6 +13,7 @@ import TransactionElementTemplate from "./TransactionElementTemplate";
 import AccountManagerSafeDeposit from "./AccountManagerSafeDeposit";
 import { DB_AddressActivity_Actions } from "../../../../../../main/handlers/DBAddressActivitySingalHandler";
 import TransactionElementCallSupport from "./TransactionElementCallSupport";
+import AccountManagerSafeWithdraw from "./AccountManagerSafeWithdraw";
 const { Text } = Typography;
 
 const TX_TYPE_SEND = "1";
@@ -22,8 +23,6 @@ export default ({ transaction, setClickTransaction }: {
   transaction: TransactionDetails,
   setClickTransaction: (transaction: TransactionDetails) => void
 }) => {
-
-  const activeAccount = useWalletsActiveAccount();
   const {
     status,
     call,
@@ -37,15 +36,7 @@ export default ({ transaction, setClickTransaction }: {
       input: call?.input
     }
   }, [transaction]);
-  const txType = useMemo(() => {
-    if (from == activeAccount) {
-      return TX_TYPE_SEND;
-    }
-    if (to == activeAccount) {
-      return TX_TYPE_RECEIVE;
-    }
-  }, [activeAccount, call]);
-  const support = DecodeSupportFunction(to, input);
+  const support = DecodeSupportFunction(call?.to, input);
 
   return <>
     {
@@ -56,16 +47,21 @@ export default ({ transaction, setClickTransaction }: {
         <Row style={{ width: "100%" }}>
           <span style={{ width: "100%" }}>
             <TransactionElementTemplate status={status} icon={<FileDoneOutlined style={{ color: "black" }} />}
-              title="合约调用" description={to} assetFlow={<Text strong> <>- {value && EtherAmount({ raw: value })} SAFE</> </Text>} />
+              title="合约调用" description={call?.to} assetFlow={<Text strong> <>- {value && EtherAmount({ raw: value })} SAFE</> </Text>} />
           </span>
-          {
-            <>{JSON.stringify(transaction.accountManagerDatas)} </>
-          }
           {
             accountManagerDatas && accountManagerDatas.filter(accountManagerData => accountManagerData.action == DB_AddressActivity_Actions.AM_Deposit)
               .map(accountManagerData => {
                 return <span style={{ width: "100%", marginTop: "20px" }}>
                   <AccountManagerSafeDeposit from={accountManagerData.from} to={accountManagerData.to} value={accountManagerData.amount} status={1} />
+                </span>
+              })
+          }
+          {
+            accountManagerDatas && accountManagerDatas.filter(accountManagerData => accountManagerData.action == DB_AddressActivity_Actions.AM_Withdraw)
+              .map(accountManagerData => {
+                return <span style={{ width: "100%", marginTop: "20px" }}>
+                  <AccountManagerSafeWithdraw from={accountManagerData.from} to={accountManagerData.to} value={accountManagerData.amount} status={1} />
                 </span>
               })
           }

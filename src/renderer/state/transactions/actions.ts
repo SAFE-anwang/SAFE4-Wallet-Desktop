@@ -7,7 +7,8 @@ export const addTransaction = createAction<{
   refTo?: string,
   // 自定义数据 ...
   transfer?: Transfer
-  call ?: ContractCall
+  call ?: ContractCall,
+  withdrawAmount ?: string,
 }>('transactions/addTransaction')
 
 export const clearAllTransactions = createAction<"">('transactions/clearAllTransactions')

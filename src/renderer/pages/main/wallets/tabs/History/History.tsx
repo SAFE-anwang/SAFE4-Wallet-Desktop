@@ -48,7 +48,7 @@ export default () => {
               blockNumberStart: dbStoredRange.end,
               blockNumberEnd: latestBlockNumber == 0 ? 99999999 : latestBlockNumber,
               current: 1,
-              pageSize: 100,
+              pageSize: 50,
               status: 0,
               dbStoredRange
             }

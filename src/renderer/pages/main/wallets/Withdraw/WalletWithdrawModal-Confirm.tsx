@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { Button, Col, Divider, Input, Modal, Row, Typography, Space, Alert } from "antd"
 import { useETHBalances, useSafe4Balance, useWalletsActiveAccount, useWalletsActiveSigner } from "../../../../state/wallets/hooks";
 import { useTransactionAdder } from "../../../../state/transactions/hooks";
@@ -25,6 +25,15 @@ export default ({
     error: any | null
   }>();
   const safe4balance = useSafe4Balance([activeAccount])[activeAccount];
+
+  const withdrawAmount = useMemo( () => {
+    if (accountRecord){
+      return accountRecord.amount.toFixed(6);
+    }else{
+      return safe4balance?.avaiable?.amount?.toFixed(6);
+    }
+  } , [accountRecord,safe4balance] );
+
 
   const doWithdrawTransaction = useCallback(() => {
     if (activeAccount && accountManaggerContract) {
@@ -104,7 +113,7 @@ export default ({
         !accountRecord && <>
           <Row >
             <Col span={24}>
-              <Text style={{ fontSize: "32px" }} strong>{safe4balance?.avaiable?.amount?.toFixed(6)} SAFE</Text>
+              <Text style={{ fontSize: "32px" }} strong>{withdrawAmount} SAFE</Text>
             </Col>
           </Row>
           <br />
@@ -129,7 +138,7 @@ export default ({
         accountRecord && <>
           <Row >
             <Col span={24}>
-              <Text style={{ fontSize: "32px" }} strong>{accountRecord.amount.toFixed(6)} SAFE</Text>
+              <Text style={{ fontSize: "32px" }} strong>{withdrawAmount} SAFE</Text>
             </Col>
           </Row>
           <br />

@@ -1,5 +1,5 @@
 import { Typography, } from "antd";
-import { LockOutlined } from '@ant-design/icons';
+import { RetweetOutlined } from '@ant-design/icons';
 import TransactionElementTemplate from "./TransactionElementTemplate";
 import EtherAmount from "../../../../../utils/EtherAmount";
 
@@ -16,17 +16,16 @@ export default ({
 
     return <>
         <TransactionElementTemplate
-            icon={<LockOutlined style={{ color: "black" }} />}
-            title="锁仓"
+            icon={<RetweetOutlined style={{ color: "black" }} />}
+            title="提现"
             status={status}
             description={to}
             assetFlow={<>
                 <Text type="secondary" strong>
-                    <LockOutlined style={{ marginRight: "5px" }} />
+                    <RetweetOutlined style={{ marginRight: "5px" }} />
                     {value && EtherAmount({ raw: value, fix: 18 })} SAFE
                 </Text>
             </>}
         />
-
     </>
 }
