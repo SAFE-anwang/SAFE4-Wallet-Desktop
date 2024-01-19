@@ -233,14 +233,16 @@ export function Activity2Transaction(row: any): TransactionDetails {
         }]
       }
     case DB_AddressActivity_Actions.AM_Withdraw:
-      console.log("got withdraw txn >>" , transaction)
-      return {
+      const _transaction =
+       {
         ...transaction,
         accountManagerDatas: [{
           ...transaction.data,
           action: transaction.action
         }]
       }
+      console.log("got withdraw txn >>" , _transaction)
+      return _transaction;
     default:
       return {
         ...transaction,
@@ -252,6 +254,7 @@ export function Activity2Transaction(row: any): TransactionDetails {
 export function TransactionsCombine(transactions: TransactionState | undefined, addTxns: TransactionDetails[]): TransactionState {
   const txns = transactions ?? {};
   if (addTxns) {
+    console.log("add txns >>" , addTxns)
     addTxns.forEach(tx => {
       if (!txns[tx.hash] || tx.transfer) {
         txns[tx.hash] = tx;

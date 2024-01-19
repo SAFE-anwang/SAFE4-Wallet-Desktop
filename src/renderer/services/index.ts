@@ -57,7 +57,6 @@ export function AddressActivityFormat(activity: AddressActivityVO): AddressActiv
     from : data.from ? ChecksumAddress(data.from) : undefined,
     to : data.to ? ChecksumAddress(data.to) : undefined
   }
-  console.log("Activity ::" , activity)
   return {
     ...activity,
     refFrom: activity.refFrom ? ChecksumAddress(activity.refFrom) : "",

@@ -59,7 +59,7 @@ export default ({ transaction, setClickTransaction }: {
               title="合约调用" description={to} assetFlow={<Text strong> <>- {value && EtherAmount({ raw: value })} SAFE</> </Text>} />
           </span>
           {
-            <>{JSON.stringify(transaction)}</>
+            <>{JSON.stringify(transaction.accountManagerDatas)} </>
           }
           {
             accountManagerDatas && accountManagerDatas.filter(accountManagerData => accountManagerData.action == DB_AddressActivity_Actions.AM_Deposit)
