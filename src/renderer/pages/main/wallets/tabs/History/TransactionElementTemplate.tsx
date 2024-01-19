@@ -2,7 +2,7 @@
 import { Col, Row, Avatar, List, Typography, Modal, Button } from "antd";
 import { LoadingOutlined, FileDoneOutlined, LockOutlined } from '@ant-design/icons';
 import { Spin } from 'antd';
-import SAFE_LOGO from "../../../../assets/logo/SAFE.png";
+import SAFE_LOGO from "../../../../../assets/logo/SAFE.png";
 
 const { Text } = Typography;
 

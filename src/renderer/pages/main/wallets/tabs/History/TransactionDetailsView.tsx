@@ -1,13 +1,12 @@
 import { Row, Alert, Col, Tag, Typography, Divider, Card, Spin } from "antd"
 import { LoadingOutlined, CheckCircleFilled } from '@ant-design/icons';
-import TokenLogo from "../../../components/TokenLogo";
-import { TransactionDetails } from "../../../../state/transactions/reducer";
-import { useWalletsActiveAccount } from "../../../../state/wallets/hooks";
-import { TokenAmount } from "@uniswap/sdk";
-import EtherAmount from "../../../../utils/EtherAmount";
-import AddressView from "../../../components/AddressView";
-import { DateTimeFormat } from "../../../../utils/DateUtils";
-import { useTransaction } from "../../../../state/transactions/hooks";
+import TokenLogo from "../../../../components/TokenLogo";
+import { TransactionDetails } from "../../../../../state/transactions/reducer";
+import { useWalletsActiveAccount } from "../../../../../state/wallets/hooks";
+import EtherAmount from "../../../../../utils/EtherAmount";
+import AddressView from "../../../../components/AddressView";
+import { DateTimeFormat } from "../../../../../utils/DateUtils";
+import { useTransaction } from "../../../../../state/transactions/hooks";
 import { useMemo } from "react";
 
 const { Text } = Typography;

@@ -1,15 +1,14 @@
 
 import { Col, Row, Avatar, List, Typography, Modal, Button } from "antd";
-import { useTransactions } from "../../../../state/transactions/hooks";
-import SAFE_LOGO from "../../../../assets/logo/SAFE.png";
+import { useTransactions } from "../../../../../state/transactions/hooks";
+import SAFE_LOGO from "../../../../../assets/logo/SAFE.png";
 import { LoadingOutlined } from '@ant-design/icons';
 import { Spin } from 'antd';
-import "./index.css";
 import { useMemo, useState } from "react";
-import { TransactionDetails } from "../../../../state/transactions/reducer";
+import { TransactionDetails } from "../../../../../state/transactions/reducer";
 import { ethers } from "ethers";
-import EtherAmount from "../../../../utils/EtherAmount";
-import { useWalletsActiveAccount } from "../../../../state/wallets/hooks";
+import EtherAmount from "../../../../../utils/EtherAmount";
+import { useWalletsActiveAccount } from "../../../../../state/wallets/hooks";
 
 const { Text } = Typography;
 

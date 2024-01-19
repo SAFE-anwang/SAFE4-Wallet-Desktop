@@ -9,9 +9,9 @@ import { SearchOutlined, SendOutlined, QrcodeOutlined , LockOutlined } from '@an
 import { useWeb3Hooks, useWeb3Network } from '../../../connectors/hooks';
 import { useBlockNumber } from '../../../state/application/hooks';
 import WalletSendModal from './WalletSendModal';
-import History from './tabs/History';
 import Locked from './tabs/Locked/Locked';
 import WalletLockModal from './Lock/WalletLockModal';
+import History from './tabs/History/History';
 
 const { Title, Text, Paragraph } = Typography;
 

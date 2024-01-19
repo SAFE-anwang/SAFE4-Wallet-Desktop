@@ -1,16 +1,16 @@
 import { Col, Row, Avatar, List, Typography, Modal, Button, Divider } from "antd";
-import { useTransactions } from "../../../../state/transactions/hooks";
-import "./index.css"
 import TransactionElement from "./TransactionElement";
 import { useEffect, useState } from "react";
-import { Activity2Transaction, TransactionDetails, TransactionsCombine, TransactionState } from "../../../../state/transactions/reducer";
-import { useWalletsActiveAccount } from "../../../../state/wallets/hooks";
 import TransactionDetailsView from "./TransactionDetailsView";
-import { IPC_CHANNEL } from "../../../../config";
-import { DBAddressActivitySignal, DB_AddressActivity_Methods } from "../../../../../main/handlers/DBAddressActivitySingalHandler";
 import { useDispatch } from "react-redux";
-import { reloadTransactionsAndSetAddressActivityFetch } from "../../../../state/transactions/actions";
-import { useBlockNumber } from "../../../../state/application/hooks";
+import { useWalletsActiveAccount } from "../../../../../state/wallets/hooks";
+import { useTransactions } from "../../../../../state/transactions/hooks";
+import { useBlockNumber } from "../../../../../state/application/hooks";
+import { Activity2Transaction, TransactionDetails } from "../../../../../state/transactions/reducer";
+import { DBAddressActivitySignal, DB_AddressActivity_Methods } from "../../../../../../main/handlers/DBAddressActivitySingalHandler";
+import { IPC_CHANNEL } from "../../../../../config";
+import { reloadTransactionsAndSetAddressActivityFetch } from "../../../../../state/transactions/actions";
+import "./index.css"
 
 const { Text } = Typography;
 
@@ -48,7 +48,7 @@ export default () => {
               blockNumberStart: dbStoredRange.end,
               blockNumberEnd: latestBlockNumber == 0 ? 99999999 : latestBlockNumber,
               current: 1,
-              pageSize: 0,
+              pageSize: 100,
               status: 0,
               dbStoredRange
             }

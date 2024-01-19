@@ -1,20 +1,18 @@
 
 import { Col, Row, Avatar, List, Typography, Modal, Button } from "antd";
-import { useTransactions } from "../../../../state/transactions/hooks";
-import SAFE_LOGO from "../../../../assets/logo/SAFE.png";
+import { useTransactions } from "../../../../../state/transactions/hooks";
 import { LoadingOutlined, FileDoneOutlined, LockOutlined } from '@ant-design/icons';
 import { Spin } from 'antd';
-import "./index.css";
 import { useMemo, useState } from "react";
-import { TransactionDetails } from "../../../../state/transactions/reducer";
+import { TransactionDetails } from "../../../../../state/transactions/reducer";
 import { ethers } from "ethers";
-import EtherAmount from "../../../../utils/EtherAmount";
-import { useWalletsActiveAccount } from "../../../../state/wallets/hooks";
-import DecodeSupportFunction from "../../../../constants/DecodeSupportFunction";
-import TransactionElementSupport from "./TransactionElementSupport";
+import EtherAmount from "../../../../../utils/EtherAmount";
+import { useWalletsActiveAccount } from "../../../../../state/wallets/hooks";
+import DecodeSupportFunction from "../../../../../constants/DecodeSupportFunction";
 import TransactionElementTemplate from "./TransactionElementTemplate";
 import AccountManagerSafeDeposit from "./AccountManagerSafeDeposit";
-import { DB_AddressActivity_Actions } from "../../../../../main/handlers/DBAddressActivitySingalHandler";
+import { DB_AddressActivity_Actions } from "../../../../../../main/handlers/DBAddressActivitySingalHandler";
+import TransactionElementCallSupport from "./TransactionElementCallSupport";
 const { Text } = Typography;
 
 const TX_TYPE_SEND = "1";
@@ -24,6 +22,7 @@ export default ({ transaction, setClickTransaction }: {
   transaction: TransactionDetails,
   setClickTransaction: (transaction: TransactionDetails) => void
 }) => {
+
   const activeAccount = useWalletsActiveAccount();
   const {
     status,
@@ -50,7 +49,7 @@ export default ({ transaction, setClickTransaction }: {
 
   return <>
     {
-      support && <TransactionElementSupport transaction={transaction} setClickTransaction={setClickTransaction} support={support} />
+      support && <TransactionElementCallSupport transaction={transaction} setClickTransaction={setClickTransaction} support={support} />
     }
     {
       !support && <List.Item onClick={() => { setClickTransaction(transaction) }} key={transaction.hash} className="history-element" style={{ paddingLeft: "15px", paddingRight: "15px" }}>

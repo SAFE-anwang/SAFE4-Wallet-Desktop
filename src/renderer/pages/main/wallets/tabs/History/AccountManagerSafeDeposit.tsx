@@ -1,9 +1,8 @@
 import { Avatar, List, Typography, } from "antd";
 import { LoadingOutlined, LockOutlined } from '@ant-design/icons';
 import { Spin } from 'antd';
-import "./index.css";
-import EtherAmount from "../../../../utils/EtherAmount";
 import TransactionElementTemplate from "./TransactionElementTemplate";
+import EtherAmount from "../../../../../utils/EtherAmount";
 
 const { Text } = Typography;
 
@@ -29,6 +28,6 @@ export default ({
                 </Text>
             </>}
         />
-        
+
     </>
 }
