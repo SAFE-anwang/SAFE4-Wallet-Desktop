@@ -36,3 +36,7 @@ export function useAccountManagerContract( withSignerIfPossible ?: boolean ) : C
   return useContract( SystemContract.AccountManager , SysContractABI[SystemContract.AccountManager], withSignerIfPossible);
 }
 
+export function useSupernodeStorageContract( withSignerIfPossible ?: boolean ) : Contract | null | undefined {
+  return useContract( SystemContract.SuperNodeStorage , SysContractABI[SystemContract.SuperNodeStorage], withSignerIfPossible);
+}
+

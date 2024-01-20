@@ -2,9 +2,7 @@
 import { Col, Row, Avatar, List, Typography, Modal, Button } from "antd";
 import { useMemo } from "react";
 import { TransactionDetails } from "../../../../../state/transactions/reducer";
-import { DB_AddressActivity_Actions } from "../../../../../../main/handlers/DBAddressActivitySingalHandler";
 import AccountManagerSafeWithdraw from "./AccountManagerSafeWithdraw";
-
 
 export default ({ transaction, setClickTransaction, support }: {
   transaction: TransactionDetails,
@@ -17,7 +15,7 @@ export default ({ transaction, setClickTransaction, support }: {
   const {
     status,
     call,
-    accountManagerDatas
+    accountManagerDatas,withdrawAmount
   } = transaction;
   const { from, to, value, input } = useMemo(() => {
     return {
@@ -32,16 +30,16 @@ export default ({ transaction, setClickTransaction, support }: {
     <List.Item onClick={() => { setClickTransaction(transaction) }} key={transaction.hash} className="history-element" style={{ paddingLeft: "15px", paddingRight: "15px" }}>
       {
         call && accountManagerDatas && <>
-          <span style={{ width: "100px" }}>
+          {/* <span style={{ width: "100px" }}>
             {JSON.stringify(accountManagerDatas)}
-          </span>
-          <AccountManagerSafeWithdraw from={from} to={to} value={undefined} status={status} />
+          </span> */}
+          <AccountManagerSafeWithdraw from={from} to={to} value={accountManagerDatas[0].amount} status={status} />
         </>
       }
       {
         call && !accountManagerDatas && <>
-           [as call]
-          <AccountManagerSafeWithdraw from={from} to={to} value={undefined} status={status} />
+           {/* [as call] */}
+          <AccountManagerSafeWithdraw from={from} to={to} value={withdrawAmount} status={status} />
         </>
       }
     </List.Item>

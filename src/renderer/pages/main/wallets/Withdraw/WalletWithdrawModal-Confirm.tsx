@@ -10,9 +10,10 @@ const { Text, Link } = Typography;
 
 
 export default ({
-  accountRecord
+  accountRecord, finishCallback
 }: {
-  accountRecord?: AccountRecord
+  accountRecord?: AccountRecord,
+  finishCallback: () => void
 }) => {
 
   const activeAccount = useWalletsActiveAccount();
@@ -26,13 +27,13 @@ export default ({
   }>();
   const safe4balance = useSafe4Balance([activeAccount])[activeAccount];
 
-  const withdrawAmount = useMemo( () => {
-    if (accountRecord){
+  const withdrawAmount = useMemo(() => {
+    if (accountRecord) {
       return accountRecord.amount.toFixed(6);
-    }else{
+    } else {
       return safe4balance?.avaiable?.amount?.toFixed(6);
     }
-  } , [accountRecord,safe4balance] );
+  }, [accountRecord, safe4balance]);
 
 
   const doWithdrawTransaction = useCallback(() => {
@@ -52,7 +53,8 @@ export default ({
                 to: accountManaggerContract.address,
                 input: data,
                 value: "0"
-              }
+              },
+              withdrawAmount: withdrawAmount && ethers.utils.parseEther(withdrawAmount).toString()
             });
           }).catch((err: any) => {
             setSending(false);
@@ -62,13 +64,35 @@ export default ({
             });
           })
       } else {
-
+        accountManaggerContract.withdraw({gasLimit:5000000})
+          .then((response: any) => {
+            setSending(false);
+            const { hash, data } = response;
+            setRpcResponse({
+              txHash: hash,
+              error: null
+            });
+            addTransaction({ to: accountManaggerContract.address }, response, {
+              call: {
+                from: activeAccount,
+                to: accountManaggerContract.address,
+                input: data,
+                value: "0"
+              },
+              withdrawAmount: withdrawAmount && ethers.utils.parseEther(withdrawAmount).toString()
+            });
+          }).catch((err: any) => {
+            setSending(false);
+            setRpcResponse({
+              txHash: null,
+              error: err
+            });
+          })
       }
     }
-  }, [activeAccount, accountManaggerContract]);
+  }, [activeAccount, accountManaggerContract, withdrawAmount]);
 
   return <>
-
     <div style={{ minHeight: "300px" }}>
       <div style={{ marginBottom: "20px" }}>
         {
@@ -177,7 +201,7 @@ export default ({
             </Button>
           }
           {
-            rpcResponse && <Button onClick={close} type="primary" style={{ float: "right" }}>
+            rpcResponse && <Button onClick={finishCallback} type="primary" style={{ float: "right" }}>
               关闭
             </Button>
           }

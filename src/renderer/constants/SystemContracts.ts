@@ -1,5 +1,8 @@
 import SystemContractAbiConfig from "./SystemContractAbiConfig";
 
+export enum EmptyContract {
+  EMPTY = "0x0000000000000000000000000000000000000000"
+}
 
 export enum SystemContract {
   SystemProperty      = "0x0000000000000000000000000000000000001000",

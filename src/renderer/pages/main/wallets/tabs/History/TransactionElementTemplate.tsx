@@ -1,6 +1,6 @@
 
-import { Col, Row, Avatar, List, Typography, Modal, Button } from "antd";
-import { LoadingOutlined, FileDoneOutlined, LockOutlined } from '@ant-design/icons';
+import { Col, Row, Avatar, List, Typography, Modal, Button, Badge } from "antd";
+import { LoadingOutlined, FileDoneOutlined, LockOutlined , ClockCircleOutlined, CloseCircleFilled } from '@ant-design/icons';
 import { Spin } from 'antd';
 import SAFE_LOGO from "../../../../../assets/logo/SAFE.png";
 
@@ -21,15 +21,24 @@ export default ({
             <Row>
                 <Col span={18}>
                     <Row style={{ width: "50px", float: "left" }}>
+
                         {
-                            !status && <Spin indicator={<LoadingOutlined style={{ fontSize: "34px", float: "left", marginLeft: "-18px", marginTop: "-14px" }} />} >
+                            !status && status != 0 && <Spin indicator={<LoadingOutlined style={{ fontSize: "34px", float: "left", marginLeft: "-18px", marginTop: "-14px" }} />} >
                                 <Avatar style={{ marginTop: "8px", background: icon ? "#e6e6e6" : "" }}
                                     src={icon ? icon : SAFE_LOGO} />
                             </Spin>
                         }
+
                         {
                             status == 1 && <Avatar style={{ marginTop: "8px", background: icon ? "#e6e6e6" : "" }}
                                 src={icon ? icon : SAFE_LOGO} />
+                        }
+                        {
+                            status == 0 &&
+                            <Badge title="失败" size="default" count={<CloseCircleFilled style={{ color: '#f5222d' , top:"12px" }}  />}>
+                                <Avatar style={{ marginTop: "8px", background: icon ? "#e6e6e6" : "" }}
+                                    src={icon ? icon : SAFE_LOGO} />
+                            </Badge>
                         }
                     </Row>
                     <div>

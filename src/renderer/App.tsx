@@ -10,6 +10,8 @@ import { useApplicationActionAtCreateWallet } from './state/application/hooks';
 import Wallet from './pages/main/wallets/Wallet';
 import TestMulticall from './pages/main/tools/TestMulticall';
 import Menu from './pages/main/menu';
+import Supernodes from './pages/main/supernodes/Supernodes';
+import Masternodes from './pages/main/masternodes/Masternodes';
 
 export default function App() {
 
@@ -47,6 +49,8 @@ export default function App() {
               <Route path="/wallet/createMnemonic" element={<CreateMnemonic />} />
               <Route path="/waitingCreateWallet" element={<WaitingWalletCreate />} />
               <Route path="/main/wallet" element={<Wallet />} />
+              <Route path="/main/supernodes" element={<Supernodes />} />
+              <Route path="/main/masternodes" element={<Masternodes />} />
               <Route path="/tools/web3" element={<TestMulticall />} />
               <Route path="/main/menu" element={<Menu />} />
             </Routes>

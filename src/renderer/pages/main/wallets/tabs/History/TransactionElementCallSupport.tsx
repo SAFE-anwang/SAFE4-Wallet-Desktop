@@ -13,18 +13,18 @@ export default ({ transaction, setClickTransaction, support }: {
     inputDecodeResult: any
   }
 }) => {
-  const SelectCallRender = useCallback( () => {
+  const SelectCallRender = useCallback(() => {
     const to = transaction.call?.to;
     switch (to) {
       case SystemContract.AccountManager:
-        return CallAccountManagerFuncRender( support.supportFuncName , transaction, setClickTransaction,support)
+        return CallAccountManagerFuncRender(support.supportFuncName, transaction, setClickTransaction, support)
       default:
         return <></>
     }
     return <></>
   }, [transaction, setClickTransaction, support]);
 
-  const CallAccountManagerFuncRender = (funcName: string,transaction:TransactionDetails,setClickTransaction:(transaction: TransactionDetails)=>void,support:any) => {
+  const CallAccountManagerFuncRender = (funcName: string, transaction: TransactionDetails, setClickTransaction: (transaction: TransactionDetails) => void, support: any) => {
     switch (funcName) {
       case SupportAccountManagerFunctions.Deposit:
         return <TransactionElementCallAMDeposit
@@ -33,6 +33,12 @@ export default ({ transaction, setClickTransaction, support }: {
           support={support}
         />
       case SupportAccountManagerFunctions.WithdrawByID:
+        return <TransactionElementCallAMWithdraw
+          transaction={transaction}
+          setClickTransaction={setClickTransaction}
+          support={support}
+        />
+      case SupportAccountManagerFunctions.Withdraw:
         return <TransactionElementCallAMWithdraw
           transaction={transaction}
           setClickTransaction={setClickTransaction}

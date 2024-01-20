@@ -19,7 +19,6 @@ export interface AccountRecord {
     unlockHeight: number,
     recordUseInfo ?: RecordUseInfo
 }
-
 /*
     struct RecordUseInfo {
         address frozenAddr; // created target address(mn or sn)

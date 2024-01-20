@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { AppstoreOutlined, WalletOutlined, SettingOutlined, DownOutlined, UserOutlined } from '@ant-design/icons';
+import { AppstoreOutlined, WalletOutlined, SettingOutlined, ClusterOutlined, ApartmentOutlined } from '@ant-design/icons';
 import { Button, Dropdown, MenuProps, MenuTheme, Space, message } from 'antd';
 import { Menu, Switch } from 'antd';
 import { useNavigate } from 'react-router-dom';
@@ -26,6 +26,8 @@ function getItem(
 
 const items: MenuItem[] = [
   getItem("钱包", '/main/wallet', <WalletOutlined />),
+  getItem("超级节点", '/main/supernodes', <ClusterOutlined />),
+  getItem("主节点", '/main/masternodes', <ApartmentOutlined />),
   getItem('工具', '/tools/web3', <AppstoreOutlined />),
 ];
 

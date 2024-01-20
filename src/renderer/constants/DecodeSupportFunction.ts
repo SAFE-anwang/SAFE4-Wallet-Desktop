@@ -3,8 +3,9 @@ import { SysContractABI, SystemContract } from "./SystemContracts";
 
 
 export enum SupportAccountManagerFunctions {
-  Deposit = "deposit",             // function deposit(address _to, uint _lockDay) external payable returns (uint);
-  WithdrawByID = "withdrawByID",   // function withdrawByID(uint[] memory _ids) external returns(uint);
+  Deposit = "deposit",              // function deposit(address _to, uint _lockDay) external payable returns (uint);
+  WithdrawByID = "withdrawByID",    // function withdrawByID(uint[] memory _ids) external returns(uint);
+  Withdraw = "withdraw",            // function withdraw() external returns (uint);
 }
 
 function decodeAccountManagerFunctionData(
@@ -25,6 +26,11 @@ function decodeAccountManagerFunctionData(
       let withdrawByID = IContract.decodeFunctionData(fragment, input);
       formatDecodeResult = {
         _ids: withdrawByID[0],
+      }
+      break;
+    case SupportAccountManagerFunctions.Withdraw:
+      formatDecodeResult = {
+        
       }
       break;
     default:

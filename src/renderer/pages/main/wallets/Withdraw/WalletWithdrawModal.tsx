@@ -31,7 +31,9 @@ export default ({
         }}/>
       }
       {
-        STEP_CONFIRM == step && <WalletWithdrawModalConfirm accountRecord={selectedAccountRecord} />
+        STEP_CONFIRM == step && <WalletWithdrawModalConfirm accountRecord={selectedAccountRecord} finishCallback={() => {
+          cancel();
+        }}/>
       }
     </Modal>
   </>

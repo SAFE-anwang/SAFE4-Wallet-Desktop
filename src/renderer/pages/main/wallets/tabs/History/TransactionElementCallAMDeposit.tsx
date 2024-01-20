@@ -32,15 +32,15 @@ export default ({ transaction, setClickTransaction, support }: {
     <List.Item onClick={() => { setClickTransaction(transaction) }} key={transaction.hash} className="history-element" style={{ paddingLeft: "15px", paddingRight: "15px" }}>
       {
         call && accountManagerDatas && <>
-          <span style={{ width: "100px" }}>
+          {/* <span style={{ width: "100px" }}>
             {JSON.stringify(accountManagerDatas)}
-          </span>
+          </span> */}
           <AccountManagerSafeDeposit from={from} to={to} value={value} status={status} />
         </>
       }
       {
         call && !accountManagerDatas && <>
-          [as call]
+          {/* [as call] */}
           <AccountManagerSafeDeposit from={from} to={to} value={value} status={status} />
         </>
       }
