@@ -4,21 +4,33 @@ import { useETHBalances, useWalletsActiveAccount } from "../../../state/wallets/
 import { useWeb3Hooks } from "../../../connectors/hooks";
 import { DateTimeFormat } from "../../../utils/DateUtils";
 import { useBlockNumber } from "../../../state/application/hooks";
-import { useAccountManagerContract, useMulticallContract } from "../../../hooks/useContracts";
+import { useAccountManagerContract, useMulticallContract, useSupernodeStorageContract, useSupernodeVoteContract } from "../../../hooks/useContracts";
 import { AccountRecord, formatAccountRecord, formatRecordUseInfo } from "../../../structs/AccountManager";
 import { SystemContract } from "../../../constants/SystemContracts";
 import DecodeSupportFunction from "../../../constants/DecodeSupportFunction";
 
 export default () => {
 
-  const arr = [];
+  const supernodeVoteContract = useSupernodeVoteContract(true);
 
-  arr[0] = 0;
-  arr[2] = 2;
+  useEffect( () => {
+    if ( supernodeVoteContract ){
+      // function voteOrApproval(bool _isVote, address _dstAddr, uint[] memory _recordIDs) external;
+      // supernodeVoteContract.voteOrApproval(
+      //   true , 
+      //   "0x131191CfB9aFb4C3F776d6CeCEe1921e8c3EAb0F",
+      //   [40]
+      // ).then( (response:any) => {
+      //   console.log("vote success >>" , response)
+      // }).catch( (err : any) => {
+      //   console.log("Error :" , err)
+      // });
+    }
+  } , [ supernodeVoteContract ] )
 
   return <>
     {
-      <>{JSON.stringify(arr)}</>
+      
     }
   </>
 }

@@ -40,3 +40,7 @@ export function useSupernodeStorageContract( withSignerIfPossible ?: boolean ) :
   return useContract( SystemContract.SuperNodeStorage , SysContractABI[SystemContract.SuperNodeStorage], withSignerIfPossible);
 }
 
+export function useSupernodeVoteContract( withSignerIfPossible ?: boolean ) : Contract | null | undefined {
+  return useContract( SystemContract.SNVote , SysContractABI[SystemContract.SNVote], withSignerIfPossible);
+}
+

@@ -81,10 +81,10 @@ export interface VoteInfo {
 export function formatVoteInfo( voteInfo : any ) : VoteInfo {
     const { voters , totalAmount , totalNum , height } = voteInfo;
     return {
-        totalNum : totalNum.toNumber(),
-        height : height.toNumber(),
+        voters : voters.map(formatMemberInfo),
         totalAmount : CurrencyAmount.ether(JSBI.BigInt(totalAmount.toString())),
-        voters : voters.map(formatMemberInfo)
+        totalNum : 0,
+        height : height.toNumber(),
     }
 }
 
