@@ -1,5 +1,6 @@
 import { createAction } from '@reduxjs/toolkit';
 import { Wallet } from '../wallets/reducer';
+import { SupernodeInfo } from '../../structs/Supernode';
 
 export const applicationInit = createAction<{
   web3Endpoint: string
@@ -23,4 +24,8 @@ export const applicationActionConfirmedMnemonic = createAction<{
 
 export const applicationActionUpdateAtCreateWallet = createAction<boolean>(
   "application/actionUpdateAtCreateWallet"
+)
+
+export const applicationControlVoteSupernode = createAction<string | undefined>(
+  "application/controlVoteSupernode"
 )

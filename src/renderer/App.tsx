@@ -13,6 +13,7 @@ import Menu from './pages/main/menu';
 import Supernodes from './pages/main/supernodes/Supernodes';
 import Masternodes from './pages/main/masternodes/Masternodes';
 import SupernodeDetail from './pages/main/supernodes/SupernodeDetail';
+import SupernodeVote from './pages/main/supernodes/SupernodeVote';
 
 export default function App() {
 
@@ -32,7 +33,7 @@ export default function App() {
             </Col>
           }
           <Col span={18} style={{
-            minWidth:"1400px",
+            minWidth:"1000px",
             position: "fixed",
             overflowX: "auto",
             overflowY: "auto",
@@ -51,7 +52,7 @@ export default function App() {
               <Route path="/waitingCreateWallet" element={<WaitingWalletCreate />} />
               <Route path="/main/wallet" element={<Wallet />} />
               <Route path="/main/supernodes" element={<Supernodes />} />
-              <Route path="/main/supernodes/vote" element={<SupernodeDetail />} />
+              <Route path="/main/supernodes/vote" element={<SupernodeVote />} />
               <Route path="/main/masternodes" element={<Masternodes />} />
               <Route path="/tools/web3" element={<TestMulticall />} />
               <Route path="/main/menu" element={<Menu />} />

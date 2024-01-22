@@ -7,11 +7,14 @@ import { useNavigate } from 'react-router-dom';
 import { useSupernodeStorageContract } from '../../../hooks/useContracts';
 import { formatSupernodeInfo, SupernodeInfo } from '../../../structs/Supernode';
 import AddressView from '../../components/AddressView';
+import { useDispatch } from 'react-redux';
+import { applicationControlVoteSupernode } from '../../../state/application/action';
 
 const { Title, Text, Paragraph } = Typography;
 
 export default () => {
     const navigate = useNavigate();
+    const dispatch = useDispatch();
     const supernodeStorageContract = useSupernodeStorageContract();
     const [supernodeInfos, setSupernodeInfos] = useState<(SupernodeInfo)[]>([]);
     const [totalVotedAmount, setTotalVotedAmount] = useState<CurrencyAmount>();
@@ -45,6 +48,7 @@ export default () => {
                     </Row>
                 </>
             },
+            width:"50px"
         },
         {
             title: '得票数',
@@ -75,6 +79,7 @@ export default () => {
                     </Row>
                 </>
             },
+            width: "180px"
         },
 
         {
@@ -98,7 +103,8 @@ export default () => {
                         </Col>
                     </Row>
                 </>
-            }
+            },
+            width:"180px"
         },
         {
             title: '超级节点',
@@ -113,7 +119,7 @@ export default () => {
                         </Col>
                         <Col span={20}>
                             <Text strong>
-                                <AddressView address={addr}></AddressView>
+                                <AddressView address={_addr}></AddressView>
                             </Text>
                         </Col>
                     </Row>
@@ -124,12 +130,14 @@ export default () => {
                         <Col span={20}>
                             <Text>{supernodeInfo.id}</Text>
                             <Button size='small' type='primary' style={{ float: "right" }} onClick={() => {
+                                dispatch(applicationControlVoteSupernode(supernodeInfo.addr));
                                 navigate("/main/supernodes/vote");
                             }}>投票</Button>
                         </Col>
                     </Row>
                 </>
             },
+            width:"200px"
         },
     ];
 
@@ -169,7 +177,7 @@ export default () => {
                 </Title>
             </Col>
         </Row>
-        <div style={{ width: "100%", paddingTop: "40px", minWidth: "1200px" }}>
+        <div style={{ width: "100%", paddingTop: "40px", minWidth: "1000px" }}>
             <div style={{ margin: "auto", width: "90%" }}>
                 <Table dataSource={supernodeInfos} columns={columns} size="large" pagination={{ total: supernodeInfos.length, pageSize: 10 }} />
             </div>

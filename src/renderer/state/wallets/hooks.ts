@@ -1,7 +1,7 @@
 
 import { CurrencyAmount, JSBI } from '@uniswap/sdk';
 import { ethers } from 'ethers';
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useSelector } from 'react-redux'
 import { useWeb3Hooks } from '../../connectors/hooks';
 import { useAccountManagerContract, useMulticallContract } from '../../hooks/useContracts';
@@ -9,6 +9,8 @@ import { isAddress } from '../../utils';
 import { AppState } from '../index';
 import { useSingleContractMultipleData } from '../multicall/hooks';
 import { Wallet, WalletKeystore } from './reducer';
+import { useBlockNumber } from '../application/hooks';
+import { AccountRecord, formatAccountRecord, formatRecordUseInfo } from '../../structs/AccountManager';
 
 export function useWalletsList(): Wallet[] {
   return useSelector((state: AppState) => {
@@ -36,7 +38,7 @@ export function useWalletsActiveAccount(): string {
 
 export function useWalletsActivePrivateKey(): string | undefined {
   return useSelector((state: AppState) => {
-    if ( state.wallets.activeWallet ){
+    if (state.wallets.activeWallet) {
       return state.wallets.keystores.filter(
         walletKetstore => {
           return walletKetstore.publicKey == state.wallets.activeWallet?.publicKey
@@ -203,3 +205,41 @@ export function useSafe4Balance(
     [addresses, balanceResults, availableAmountResults, lockedAmountResults, uesdAmountResults]
   )
 }
+
+export function useActiveAccountAccountRecords() {
+  const activeAccount = useWalletsActiveAccount();
+  const accountManagerContract = useAccountManagerContract();
+  const multicallContract = useMulticallContract();
+  const [accountRecords, setAccountRecords] = useState<AccountRecord[]>([]);
+  useEffect(() => {
+    if (accountManagerContract) {
+      accountManagerContract.callStatic
+        .getRecords(activeAccount)
+        .then(_accountRecords => {
+          const accountRecords: AccountRecord[] = _accountRecords.map(formatAccountRecord);
+          const fragment = accountManagerContract?.interface?.getFunction("getRecordUseInfo");
+          if (accountRecords.length > 0 && fragment && multicallContract) {
+            const calls = accountRecords.map(accountRecord => {
+              return {
+                address: accountManagerContract?.address,
+                callData: accountManagerContract?.interface.encodeFunctionData(fragment, [accountRecord.id])
+              }
+            });
+            multicallContract.callStatic.aggregate(calls.map(call => [call.address, call.callData]))
+              .then((data) => {
+                const _blockNumber = data[0].toNumber();
+                for (let i = 0; i < data[1].length; i++) {
+                  const _recordUserInfo = accountManagerContract?.interface.decodeFunctionResult(fragment, data[1][i])[0];
+                  accountRecords[i].recordUseInfo = formatRecordUseInfo(_recordUserInfo);
+                }
+                setAccountRecords(accountRecords.filter(accountRecord => accountRecord.id != 0));
+              })
+          } else {
+            setAccountRecords([]);
+          }
+        })
+    }
+  }, [activeAccount, accountManagerContract]);
+  return accountRecords;
+}
+

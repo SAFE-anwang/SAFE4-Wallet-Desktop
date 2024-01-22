@@ -1,0 +1,138 @@
+
+import { Typography, Row, Col, Progress, Table, Badge, Button, Card, Checkbox, CheckboxProps, Divider } from 'antd';
+import { useEffect, useMemo, useState } from 'react';
+import { CheckboxOptionType, CheckboxValueType } from 'antd/es/checkbox/Group';
+import type { GetProp } from 'antd';
+import { useActiveAccountAccountRecords, useSafe4Balance, useWalletsActiveAccount } from '../../../state/wallets/hooks';
+import { EmptyContract } from '../../../constants/SystemContracts';
+import { useSelector } from 'react-redux';
+import { AppState } from '../../../state';
+import { useSupernodeStorageContract } from '../../../hooks/useContracts';
+import { SupernodeInfo, formatSupernodeInfo } from '../../../structs/Supernode';
+import VoteModalConfirm from './Vote/VoteModal-Confirm';
+import { AccountRecord } from '../../../structs/AccountManager';
+
+const { Title, Text } = Typography;
+
+export default () => {
+
+  const supernodeAddr = useSelector<AppState, string | undefined>(state => state.application.control.vote);
+  const activeAccountAccountRecords = useActiveAccountAccountRecords();
+  const supernodeStorageContract = useSupernodeStorageContract();
+
+  const [supernodeInfo,setSupernodeInfo] = useState<SupernodeInfo>();
+  useEffect( () => {
+    if ( supernodeAddr && supernodeStorageContract ){
+      // function getInfo(address _addr) external view returns (SuperNodeInfo memory);
+      supernodeStorageContract.callStatic.getInfo(supernodeAddr)
+        .then( _supernodeInfo => setSupernodeInfo(formatSupernodeInfo(_supernodeInfo)) )
+        .catch( err => {
+
+        })
+    }
+  } , [supernodeAddr] );
+
+  const {
+    optionsAllAccountRecords, votableAccountRecordIds
+  } = useMemo(() => {
+    if (activeAccountAccountRecords && activeAccountAccountRecords.length > 0) {
+      activeAccountAccountRecords.sort((ar1, ar2) => ar2.id - ar1.id)
+      const optionsAllAccountRecords = activeAccountAccountRecords.filter(accountRecord => accountRecord.recordUseInfo)
+        .map(accountRecord => {
+          const disabled = !(accountRecord.recordUseInfo?.votedAddr == EmptyContract.EMPTY);
+          return {
+            label: <>
+              <div key={accountRecord.id} style={{ margin: "15px 15px" }}>
+                <Row>
+                  <Col>锁仓记录ID:</Col>
+                  <Col>{accountRecord.id}</Col>
+                </Row>
+                <Row style={{ fontSize: "12px" }}>{accountRecord.amount.toFixed(2)} SAFE</Row>
+              </div>
+            </>,
+            value: accountRecord.id,
+            disabled
+          }
+        });
+      const votableAccountRecordIds = optionsAllAccountRecords.filter(option => !option.disabled).map(option => option.value);
+      return {
+        optionsAllAccountRecords,
+        votableAccountRecordIds
+      }
+    }
+    return {
+      optionsAllAccountRecords: [],
+      votableAccountRecordIds: []
+    }
+  }, [activeAccountAccountRecords]);
+
+  const [checkedAccountRecordIds, setCheckedAccountRecordIds] = useState<CheckboxValueType[]>([]);
+
+  const checkAll = votableAccountRecordIds.length === checkedAccountRecordIds.length;
+  const indeterminate = checkedAccountRecordIds.length > 0 && checkedAccountRecordIds.length < votableAccountRecordIds.length;
+
+  // 勾选全部
+  const onAccountRecordCheckAllChange: CheckboxProps['onChange'] = (e) => {
+    setCheckedAccountRecordIds(e.target.checked ? votableAccountRecordIds : []);
+  };
+  // 勾选单个记录时触发
+  const onAccountRecordCheckChange: GetProp<typeof Checkbox.Group, 'onChange'> = (checkedValues) => {
+    setCheckedAccountRecordIds(checkedValues);
+  };
+
+  const [openVoteModal , setOpenVoteModal] = useState<boolean>(false);
+  const [checkedAccountRecords , setCheckedAccountRecords] = useState<AccountRecord[]>([]);
+
+  return <>
+    <Row style={{ height: "50px" }}>
+      <Col span={2}>
+        <Title level={4} style={{ lineHeight: "16px" }}>
+          超级节点
+        </Title>
+      </Col>
+      <Col span={14}>
+        <Text style={{ lineHeight: "70px" }} type='secondary'>
+          {supernodeAddr}
+        </Text>
+      </Col>
+    </Row>
+
+    <div style={{ width: "100%", paddingTop: "40px", minWidth: "1000px" }}>
+      <div style={{ margin: "auto", width: "90%" }}>
+        <Row>
+          <Card title="选择锁仓记录对超级节点进行投票" style={{ width: "100%" }}>
+            <>
+              <Checkbox indeterminate={indeterminate} checked={checkAll} onChange={onAccountRecordCheckAllChange}>
+                选择全部可用锁仓记录
+              </Checkbox>
+              <Divider />
+              <Checkbox.Group
+                options={optionsAllAccountRecords}
+                onChange={onAccountRecordCheckChange}
+                value={checkedAccountRecordIds}
+              />
+              <Divider />
+              <Button type='primary' disabled={checkedAccountRecordIds.length == 0} onClick={()=>{
+                const checkedAccountRecords = activeAccountAccountRecords.filter(accountRecord=>checkedAccountRecordIds.indexOf(accountRecord.id)>= 0);
+                setOpenVoteModal(true)
+                setCheckedAccountRecords(checkedAccountRecords);
+              }}>
+                投票
+              </Button>
+            </>
+          </Card>
+        </Row>
+        <Row>
+          <Card title="超级节点详情" style={{ width: "100%", marginTop: "50px" }}>
+            {supernodeInfo?.addr}
+          </Card>
+        </Row>
+      </div>
+    </div>
+
+    {
+      supernodeInfo &&  <VoteModalConfirm openVoteModal={openVoteModal} setOpenVoteModal={setOpenVoteModal} supernodeInfo={supernodeInfo} accountRecords={checkedAccountRecords} />
+    }
+  </>
+
+}

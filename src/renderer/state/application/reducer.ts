@@ -5,7 +5,9 @@ import {
   applicationBlockchainUpdateBlockNumber,
   applicationActionConfirmedMnemonic,
   applicationDataUpdate,
+  applicationControlVoteSupernode,
 } from './action';
+import { SupernodeInfo } from '../../structs/Supernode';
 
 
 export interface IApplicationState {
@@ -16,7 +18,7 @@ export interface IApplicationState {
     atCreateWallet : boolean
   }
   control:{
-
+    vote ?: string
   }
   blockchain : {
     networkId : "SAFE4" ,
@@ -82,6 +84,16 @@ export default createReducer(initialState, (builder) => {
       action : {
         ...state.action ,
         atCreateWallet : payload
+      }
+    }
+  })
+
+  .addCase(applicationControlVoteSupernode , ( state , { payload } ) => {
+    return {
+      ...state ,
+      control : {
+        ...state.control,
+        vote : payload
       }
     }
   })
