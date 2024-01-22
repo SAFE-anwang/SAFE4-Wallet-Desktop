@@ -14,6 +14,7 @@ import Supernodes from './pages/main/supernodes/Supernodes';
 import Masternodes from './pages/main/masternodes/Masternodes';
 import SupernodeDetail from './pages/main/supernodes/SupernodeDetail';
 import SupernodeVote from './pages/main/supernodes/SupernodeVote';
+import SupernodeCreate from './pages/main/supernodes/SupernodeCreate';
 
 export default function App() {
 
@@ -53,6 +54,7 @@ export default function App() {
               <Route path="/main/wallet" element={<Wallet />} />
               <Route path="/main/supernodes" element={<Supernodes />} />
               <Route path="/main/supernodes/vote" element={<SupernodeVote />} />
+              <Route path="/main/supernodes/create" element={<SupernodeCreate />} />
               <Route path="/main/masternodes" element={<Masternodes />} />
               <Route path="/tools/web3" element={<TestMulticall />} />
               <Route path="/main/menu" element={<Menu />} />

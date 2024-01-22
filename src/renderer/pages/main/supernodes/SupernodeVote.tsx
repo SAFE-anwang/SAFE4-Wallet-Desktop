@@ -1,9 +1,9 @@
 
-import { Typography, Row, Col, Progress, Table, Badge, Button, Card, Checkbox, CheckboxProps, Divider } from 'antd';
+import { Typography, Row, Col, Button, Card, Checkbox, CheckboxProps, Divider } from 'antd';
 import { useEffect, useMemo, useState } from 'react';
-import { CheckboxOptionType, CheckboxValueType } from 'antd/es/checkbox/Group';
+import { CheckboxValueType } from 'antd/es/checkbox/Group';
 import type { GetProp } from 'antd';
-import { useActiveAccountAccountRecords, useSafe4Balance, useWalletsActiveAccount } from '../../../state/wallets/hooks';
+import { useActiveAccountAccountRecords } from '../../../state/wallets/hooks';
 import { EmptyContract } from '../../../constants/SystemContracts';
 import { useSelector } from 'react-redux';
 import { AppState } from '../../../state';
@@ -11,26 +11,29 @@ import { useSupernodeStorageContract } from '../../../hooks/useContracts';
 import { SupernodeInfo, formatSupernodeInfo } from '../../../structs/Supernode';
 import VoteModalConfirm from './Vote/VoteModal-Confirm';
 import { AccountRecord } from '../../../structs/AccountManager';
+import { LeftOutlined, LockOutlined } from '@ant-design/icons';
+import { useNavigate } from 'react-router-dom';
 
-const { Title, Text } = Typography;
+const { Title } = Typography;
 
 export default () => {
 
   const supernodeAddr = useSelector<AppState, string | undefined>(state => state.application.control.vote);
   const activeAccountAccountRecords = useActiveAccountAccountRecords();
   const supernodeStorageContract = useSupernodeStorageContract();
+  const navigate = useNavigate();
 
-  const [supernodeInfo,setSupernodeInfo] = useState<SupernodeInfo>();
-  useEffect( () => {
-    if ( supernodeAddr && supernodeStorageContract ){
+  const [supernodeInfo, setSupernodeInfo] = useState<SupernodeInfo>();
+  useEffect(() => {
+    if (supernodeAddr && supernodeStorageContract) {
       // function getInfo(address _addr) external view returns (SuperNodeInfo memory);
       supernodeStorageContract.callStatic.getInfo(supernodeAddr)
-        .then( _supernodeInfo => setSupernodeInfo(formatSupernodeInfo(_supernodeInfo)) )
-        .catch( err => {
+        .then(_supernodeInfo => setSupernodeInfo(formatSupernodeInfo(_supernodeInfo)))
+        .catch(err => {
 
         })
     }
-  } , [supernodeAddr] );
+  }, [supernodeAddr]);
 
   const {
     optionsAllAccountRecords, votableAccountRecordIds
@@ -80,20 +83,18 @@ export default () => {
     setCheckedAccountRecordIds(checkedValues);
   };
 
-  const [openVoteModal , setOpenVoteModal] = useState<boolean>(false);
-  const [checkedAccountRecords , setCheckedAccountRecords] = useState<AccountRecord[]>([]);
+  const [openVoteModal, setOpenVoteModal] = useState<boolean>(false);
+  const [checkedAccountRecords, setCheckedAccountRecords] = useState<AccountRecord[]>([]);
 
   return <>
     <Row style={{ height: "50px" }}>
-      <Col span={2}>
-        <Title level={4} style={{ lineHeight: "16px" }}>
-          超级节点
+      <Col span={8}>
+        <Button style={{ marginTop: "18px" , marginRight:"12px" , float:"left"  }} size="large" shape="circle" icon={<LeftOutlined />} onClick={ () => {
+          navigate("/main/supernodes")
+        }}/>
+        <Title level={4} style={{ lineHeight: "16px" , float:"left" }}>
+          超级节点投票
         </Title>
-      </Col>
-      <Col span={14}>
-        <Text style={{ lineHeight: "70px" }} type='secondary'>
-          {supernodeAddr}
-        </Text>
       </Col>
     </Row>
 
@@ -112,8 +113,8 @@ export default () => {
                 value={checkedAccountRecordIds}
               />
               <Divider />
-              <Button type='primary' disabled={checkedAccountRecordIds.length == 0} onClick={()=>{
-                const checkedAccountRecords = activeAccountAccountRecords.filter(accountRecord=>checkedAccountRecordIds.indexOf(accountRecord.id)>= 0);
+              <Button type='primary' disabled={checkedAccountRecordIds.length == 0} onClick={() => {
+                const checkedAccountRecords = activeAccountAccountRecords.filter(accountRecord => checkedAccountRecordIds.indexOf(accountRecord.id) >= 0);
                 setOpenVoteModal(true)
                 setCheckedAccountRecords(checkedAccountRecords);
               }}>
@@ -131,7 +132,7 @@ export default () => {
     </div>
 
     {
-      supernodeInfo &&  <VoteModalConfirm openVoteModal={openVoteModal} setOpenVoteModal={setOpenVoteModal} supernodeInfo={supernodeInfo} accountRecords={checkedAccountRecords} />
+      supernodeInfo && <VoteModalConfirm openVoteModal={openVoteModal} setOpenVoteModal={setOpenVoteModal} supernodeInfo={supernodeInfo} accountRecords={checkedAccountRecords} />
     }
   </>
 

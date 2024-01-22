@@ -13,6 +13,7 @@ import { applicationControlVoteSupernode } from '../../../state/application/acti
 const { Title, Text, Paragraph } = Typography;
 
 export default () => {
+
     const navigate = useNavigate();
     const dispatch = useDispatch();
     const supernodeStorageContract = useSupernodeStorageContract();
@@ -169,6 +170,8 @@ export default () => {
         }
     }, [supernodeStorageContract])
 
+    const [openCreateModal , setOpenCreateModal] = useState<boolean>(false)
+
     return <>
         <Row style={{ height: "50px" }}>
             <Col span={12}>
@@ -179,6 +182,8 @@ export default () => {
         </Row>
         <div style={{ width: "100%", paddingTop: "40px", minWidth: "1000px" }}>
             <div style={{ margin: "auto", width: "90%" }}>
+                <Button onClick={() => navigate("/main/supernodes/create")}>成为超级节点</Button>
+                <br /><br />
                 <Table dataSource={supernodeInfos} columns={columns} size="large" pagination={{ total: supernodeInfos.length, pageSize: 10 }} />
             </div>
         </div>

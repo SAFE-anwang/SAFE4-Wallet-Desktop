@@ -27,7 +27,6 @@ function getItem(
 const items: MenuItem[] = [
   getItem("钱包", '/main/wallet', <WalletOutlined />),
   getItem("超级节点", '/main/supernodes', <ClusterOutlined />),
-  getItem("超级节点投票", '/main/supernodes/vote', <ClusterOutlined />),
   getItem("主节点", '/main/masternodes', <ApartmentOutlined />),
   getItem('工具', '/tools/web3', <AppstoreOutlined />),
 ];
