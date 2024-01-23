@@ -44,3 +44,6 @@ export function useSupernodeVoteContract( withSignerIfPossible ?: boolean ) : Co
   return useContract( SystemContract.SNVote , SysContractABI[SystemContract.SNVote], withSignerIfPossible);
 }
 
+export function useSupernodeLogicContract( withSignerIfPossible ?: boolean ) : Contract | null | undefined {
+  return useContract( SystemContract.SuperNodeLogic , SysContractABI[SystemContract.SuperNodeLogic], withSignerIfPossible);
+}

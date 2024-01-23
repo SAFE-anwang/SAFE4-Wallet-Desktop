@@ -5,6 +5,8 @@ import { useTransactionAdder } from "../../../../state/transactions/hooks";
 import { SearchOutlined, SendOutlined, QrcodeOutlined, LockOutlined } from '@ant-design/icons';
 import { ethers } from "ethers";
 import { useAccountManagerContract } from "../../../../hooks/useContracts";
+import useTransactionResponseRender from "../../../components/useTransactionResponseRender";
+import { TransactionResponse } from "@ethersproject/providers";
 const { Text , Link } = Typography;
 
 export default ({
@@ -14,17 +16,16 @@ export default ({
   lockDay: number,
   close: () => void
 }) => {
-
-  const signer = useWalletsActiveSigner();
   const activeAccount = useWalletsActiveAccount();
   const addTransaction = useTransactionAdder();
   const accountManaggerContract = useAccountManagerContract(true);
   const [sending, setSending] = useState<boolean>(false);
-  const [showErrorDetail, setShowErrorDetail] = useState<boolean>(false);
-  const [rpcResponse, setRpcResponse] = useState<{
-    txHash: string | null,
-    error: any | null
-  }>();
+
+  const {
+    render,
+    setTransactionResponse,
+    setErr
+  } = useTransactionResponseRender();
 
   const doLockTransaction = useCallback(({
     to, amount, lockDay
@@ -40,10 +41,7 @@ export default ({
       }).then((response: any) => {
         setSending(false);
         const { hash , data } = response;
-        setRpcResponse({
-          txHash: hash,
-          error: null
-        });
+        setTransactionResponse(response);
         addTransaction( { to:accountManaggerContract.address } , response, {
           call : {
             from : activeAccount,
@@ -54,53 +52,16 @@ export default ({
         });
       }).catch((err: any) => {
         setSending(false);
-        setRpcResponse({
-          txHash: null,
-          error: err
-        });
+        setErr(err)
       })
     }
   }, [activeAccount ,accountManaggerContract]);
 
   return <>
     <div style={{ minHeight: "300px" }}>
-      <div style={{ marginBottom: "20px" }}>
-        {
-          rpcResponse?.error && <Alert
-            message="错误"
-            description={
-              <>
-                <Text>{rpcResponse.error.reason}</Text>
-                <br />
-                {
-                  !showErrorDetail && <Link onClick={() => {
-                    setShowErrorDetail(true)
-                  }}>[查看错误信息]</Link>
-                }
-                {
-                  showErrorDetail && <>
-                    {JSON.stringify(rpcResponse.error)}
-                  </>
-                }
-              </>
-            }
-            type="error"
-            showIcon
-          />
-        }
-        {
-          rpcResponse?.txHash && <Alert
-            message="交易哈希"
-            description={
-              <>
-                <Text>{rpcResponse.txHash}</Text>
-              </>
-            }
-            type="success"
-            showIcon
-          />
-        }
-      </div>
+      {
+        render
+      }
       <br />
       <Row >
         <Col span={14}>
@@ -124,7 +85,7 @@ export default ({
       <Row style={{ width: "100%", textAlign: "right" }}>
         <Col span={24}>
           {
-            !sending && !rpcResponse && <Button icon={<LockOutlined />} onClick={() => {
+            !sending && !render && <Button icon={<LockOutlined />} onClick={() => {
               doLockTransaction({
                 to: activeAccount,
                 amount,
@@ -135,12 +96,12 @@ export default ({
             </Button>
           }
           {
-            sending && !rpcResponse && <Button loading disabled type="primary" style={{ float: "right" }}>
+            sending && !render && <Button loading disabled type="primary" style={{ float: "right" }}>
               发送中....
             </Button>
           }
           {
-            rpcResponse && <Button onClick={close} type="primary" style={{ float: "right" }}>
+            render && <Button onClick={close} type="primary" style={{ float: "right" }}>
               关闭
             </Button>
           }

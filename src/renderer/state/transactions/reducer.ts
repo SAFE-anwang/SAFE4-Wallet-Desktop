@@ -39,7 +39,7 @@ export interface TransactionDetails {
   transfer?: Transfer,
   call?: ContractCall,
   accountManagerDatas?: {
-    [eventLogIndex : string] : AccountManagerData
+    [eventLogIndex: string]: AccountManagerData
   },
   withdrawAmount?: string
 }
@@ -233,7 +233,7 @@ export function Activity2Transaction(row: any): TransactionDetails {
       return {
         ...transaction,
         accountManagerDatas: {
-          [transaction.eventLogIndex] : {
+          [transaction.eventLogIndex]: {
             ...transaction.data,
             action: transaction.action,
             eventLogIndex: transaction.eventLogIndex
@@ -245,7 +245,7 @@ export function Activity2Transaction(row: any): TransactionDetails {
       {
         ...transaction,
         accountManagerDatas: {
-          [transaction.eventLogIndex] : {
+          [transaction.eventLogIndex]: {
             ...transaction.data,
             action: transaction.action,
             eventLogIndex: transaction.eventLogIndex
@@ -256,7 +256,7 @@ export function Activity2Transaction(row: any): TransactionDetails {
     default:
       return {
         ...transaction,
-        transfer: { ...transaction.data }
+        call: { ...transaction.data }
       }
   }
 }
@@ -268,7 +268,7 @@ export function TransactionsCombine(transactions: TransactionState | undefined, 
       if (!txns[tx.hash]) {
         txns[tx.hash] = tx;
       } else {
-        if (tx.transfer){
+        if (tx.transfer) {
           txns[tx.hash] = tx;
         }
         if (tx.call) {
@@ -276,8 +276,8 @@ export function TransactionsCombine(transactions: TransactionState | undefined, 
         }
         if (tx.accountManagerDatas) {
           const _accountManagerDatas = txns[tx.hash].accountManagerDatas ? { ...txns[tx.hash].accountManagerDatas } : {};
-          Object.keys( tx.accountManagerDatas ).forEach( (eventLogIndex) => {
-            if ( tx.accountManagerDatas){
+          Object.keys(tx.accountManagerDatas).forEach((eventLogIndex) => {
+            if (tx.accountManagerDatas) {
               _accountManagerDatas[eventLogIndex] = tx.accountManagerDatas[eventLogIndex]
             }
           });
