@@ -120,7 +120,7 @@ export interface SupernodeInfo {
     voteInfo : VoteInfo,
     lastRewardHeight: number,
     createHeight: number,
-    updateHeight: number
+    updateHeight: number,
 }
 
 export function formatSupernodeInfo(supernodeInfo: any) : SupernodeInfo {

@@ -1,6 +1,6 @@
 import { Fragment, FunctionFragment, Interface } from "ethers/lib/utils";
 import { SysContractABI, SystemContract } from "./SystemContracts";
-import SupernodeVote from "../pages/main/supernodes/SupernodeVote";
+import SupernodeVote from "../pages/main/supernodes/Vote/SupernodeVote";
 
 
 export enum SupportAccountManagerFunctions {

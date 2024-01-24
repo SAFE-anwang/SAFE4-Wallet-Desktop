@@ -3,16 +3,17 @@ import { Typography, Row, Col, Button, Card, Checkbox, CheckboxProps, Divider } 
 import { useEffect, useMemo, useState } from 'react';
 import { CheckboxValueType } from 'antd/es/checkbox/Group';
 import type { GetProp } from 'antd';
-import { useActiveAccountAccountRecords } from '../../../state/wallets/hooks';
-import { EmptyContract } from '../../../constants/SystemContracts';
+import { useActiveAccountAccountRecords } from '../../../../state/wallets/hooks';
+import { EmptyContract } from '../../../../constants/SystemContracts';
 import { useSelector } from 'react-redux';
-import { AppState } from '../../../state';
-import { useSupernodeStorageContract } from '../../../hooks/useContracts';
-import { SupernodeInfo, formatSupernodeInfo } from '../../../structs/Supernode';
-import VoteModalConfirm from './Vote/VoteModal-Confirm';
-import { AccountRecord } from '../../../structs/AccountManager';
+import { AppState } from '../../../../state';
+import { useSupernodeStorageContract } from '../../../../hooks/useContracts';
+import { SupernodeInfo, formatSupernodeInfo } from '../../../../structs/Supernode';
+import VoteModalConfirm from './VoteModal-Confirm';
+import { AccountRecord } from '../../../../structs/AccountManager';
 import { LeftOutlined, LockOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
+import Supernode from '../Supernode';
 
 const { Title } = Typography;
 
@@ -126,11 +127,13 @@ export default () => {
             </>
           </Card>
         </Row>
+
         <Row>
-          <Card title="超级节点详情" style={{ width: "100%", marginTop: "50px" }}>
-            {supernodeInfo?.addr}
-          </Card>
+          {
+            supernodeInfo && <Supernode supernodeInfo={supernodeInfo} />
+          }
         </Row>
+        
       </div>
     </div>
 

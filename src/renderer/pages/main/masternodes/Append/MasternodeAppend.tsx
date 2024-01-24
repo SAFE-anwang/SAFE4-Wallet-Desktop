@@ -11,6 +11,7 @@ import { useMasternodeStorageContract } from '../../../../hooks/useContracts';
 import { useETHBalances, useWalletsActiveAccount } from '../../../../state/wallets/hooks';
 import { MasternodeInfo, formatMasternode } from '../../../../structs/Masternode';
 import AppendModalConfirm from './AppendModal-Confirm';
+import Masternode from '../Masternode';
 
 const { Text, Title } = Typography;
 
@@ -153,9 +154,9 @@ export default () => {
         </Row>
 
         <Row>
-          <Card title="超级节点详情" style={{ width: "100%", marginTop: "50px" }}>
-            {masternodeInfo?.addr}
-          </Card>
+          {
+            masternodeInfo && <Masternode masternodeInfo={masternodeInfo} />
+          }
         </Row>
 
       </div>

@@ -1,6 +1,6 @@
 import { LockOutlined } from "@ant-design/icons";
 import { Button, Card, Col, Divider, Modal, Row, Typography } from "antd"
-import { Supernode_Create_Type_NoUnion, Supernode_create_type_Union } from "../SupernodeCreate";
+import { Supernode_Create_Type_NoUnion, Supernode_create_type_Union } from "./SupernodeRegister";
 import { useCallback, useState } from "react";
 import { useTransactionAdder } from "../../../../state/transactions/hooks";
 import useTransactionResponseRender from "../../../components/useTransactionResponseRender";

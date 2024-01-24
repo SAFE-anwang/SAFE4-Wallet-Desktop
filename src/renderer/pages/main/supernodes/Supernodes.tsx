@@ -13,6 +13,15 @@ import { ethers } from 'ethers';
 
 const { Title, Text, Paragraph } = Typography;
 
+export const RenderNodeState = (state: number) => {
+  switch (state) {
+    case 1:
+      return <Badge status="processing" text="在线" />
+    default:
+      return <Badge status="default" text="未知" />
+  }
+}
+
 export default () => {
 
   const navigate = useNavigate();
@@ -20,15 +29,6 @@ export default () => {
   const supernodeStorageContract = useSupernodeStorageContract();
   const [supernodeInfos, setSupernodeInfos] = useState<(SupernodeInfo)[]>([]);
   const [totalVotedAmount, setTotalVotedAmount] = useState<CurrencyAmount>();
-
-  const RenderNodeState = (state: number) => {
-    switch (state) {
-      case 1:
-        return <Badge status="processing" text="在线" />
-      default:
-        return <Badge status="default" text="未知" />
-    }
-  }
 
   const columns: ColumnsType<SupernodeInfo> = [
     {
@@ -117,8 +117,8 @@ export default () => {
           (amount, memberInfo) => amount.add(memberInfo.amount),
           CurrencyAmount.ether(JSBI.BigInt(0))
         )
-        const supernodeTarget = CurrencyAmount.ether( ethers.utils.parseEther("5000").toBigInt() );
-        const couldAddPartner = supernodeTarget.greaterThan  ( amount );
+        const supernodeTarget = CurrencyAmount.ether(ethers.utils.parseEther("5000").toBigInt());
+        const couldAddPartner = supernodeTarget.greaterThan(amount);
         const _addr = addr.substring(0, 8) + "...." + addr.substring(addr.length - 6);
         return <>
           <Row>
@@ -180,7 +180,7 @@ export default () => {
           );
 
           // 更新超级节点地址集合到state
-          dispatch(applicationUpdateSupernodeAddresses( supernodeInfos.map( supernodeInfo => supernodeInfo.addr )));
+          dispatch(applicationUpdateSupernodeAddresses(supernodeInfos.map(supernodeInfo => supernodeInfo.addr)));
 
           setTotalVotedAmount(totalVotedAmount);
           setSupernodeInfos(supernodeInfos);

@@ -1,16 +1,17 @@
 
 import { Typography, Row, Col, Button, Card, Checkbox, CheckboxProps, Divider, Space, Input, Slider, InputNumber, Alert } from 'antd';
 import { useEffect, useMemo, useState } from 'react';
-import { useActiveAccountAccountRecords, useETHBalances, useWalletsActiveAccount } from '../../../state/wallets/hooks';
+import { useActiveAccountAccountRecords, useETHBalances, useWalletsActiveAccount } from '../../../../state/wallets/hooks';
 import { useSelector } from 'react-redux';
-import { AppState } from '../../../state';
-import { useSupernodeStorageContract } from '../../../hooks/useContracts';
-import { SupernodeInfo, formatSupernodeInfo } from '../../../structs/Supernode';
+import { AppState } from '../../../../state';
+import { useSupernodeStorageContract } from '../../../../hooks/useContracts';
+import { SupernodeInfo, formatSupernodeInfo } from '../../../../structs/Supernode';
 import { LeftOutlined, LockOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { CurrencyAmount, JSBI } from '@uniswap/sdk';
 import { ethers } from 'ethers';
-import AppendModalConfirm from './Append/AppendModal-Confirm';
+import AppendModalConfirm from './AppendModal-Confirm';
+import Supernode from '../Supernode';
 
 const { Text, Title } = Typography;
 
@@ -149,11 +150,13 @@ export default () => {
             </>
           </Card>
         </Row>
+
         <Row>
-          <Card title="超级节点详情" style={{ width: "100%", marginTop: "50px" }}>
-            {supernodeInfo?.addr}
-          </Card>
+          {
+            supernodeInfo && <Supernode supernodeInfo={supernodeInfo} />
+          }
         </Row>
+
       </div>
     </div>
 

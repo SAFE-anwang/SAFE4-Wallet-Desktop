@@ -2,19 +2,19 @@ import { Typography, Row, Col, Button, Card, Checkbox, CheckboxProps, Divider, I
 import { useEffect, useMemo, useState } from 'react';
 import { CheckboxValueType } from 'antd/es/checkbox/Group';
 import type { GetProp } from 'antd';
-import { useActiveAccountAccountRecords, useETHBalances, useWalletsActiveAccount } from '../../../state/wallets/hooks';
-import { EmptyContract } from '../../../constants/SystemContracts';
+import { useActiveAccountAccountRecords, useETHBalances, useWalletsActiveAccount } from '../../../../state/wallets/hooks';
+import { EmptyContract } from '../../../../constants/SystemContracts';
 import { useSelector } from 'react-redux';
-import { AppState } from '../../../state';
-import { useSupernodeStorageContract } from '../../../hooks/useContracts';
-import { SupernodeInfo, formatSupernodeInfo } from '../../../structs/Supernode';
-import VoteModalConfirm from './Vote/VoteModal-Confirm';
-import { AccountRecord } from '../../../structs/AccountManager';
+import { AppState } from '../../../../state';
+import { useSupernodeStorageContract } from '../../../../hooks/useContracts';
+import { SupernodeInfo, formatSupernodeInfo } from '../../../../structs/Supernode';
+import VoteModalConfirm from '../Vote/VoteModal-Confirm';
+import { AccountRecord } from '../../../../structs/AccountManager';
 import { LeftOutlined, LockOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { Currency, CurrencyAmount, JSBI } from '@uniswap/sdk';
 import { ethers } from 'ethers';
-import CreateModalConfirm from './Create/CreateModal-Confirm';
+import CreateModalConfirm from './CreateModal-Confirm';
 import type { RadioChangeEvent } from 'antd';
 const { Text, Title } = Typography;
 
@@ -145,6 +145,31 @@ export default () => {
               </Radio.Group>
             </Col>
           </Row>
+          <br />
+          <Row>
+            <Col span={12} style={{ textAlign: "left" }}>
+              <Text type='secondary'>锁仓</Text><br />
+              {
+                createParams.createType == Supernode_Create_Type_NoUnion &&
+                <Text strong>5,000 SAFE</Text>
+              }
+               {
+                createParams.createType == Supernode_create_type_Union &&
+                <Text strong>1,000 SAFE</Text>
+              }
+              <br />
+            </Col>
+            <Col span={12} style={{ textAlign: "right" }}>
+              <Text type='secondary'>账户当前余额</Text><br />
+              <Text type='secondary'>{balance?.toFixed(6)} SAFE</Text><br />
+            </Col>
+            <Col span={24}>
+              {
+                inputErrors && inputErrors.balance &&
+                <Alert style={{ marginTop: "5px" }} type='error' message={inputErrors.balance} showIcon></Alert>
+              }
+            </Col>
+          </Row>
           <Divider />
           <Row>
             <Col span={24}>
@@ -239,31 +264,7 @@ export default () => {
             </Row>
           </Row>
           <Divider />
-          <Row>
-            <Col span={12} style={{ textAlign: "left" }}>
-              <Text type='secondary'>锁仓</Text><br />
-              {
-                createParams.createType == Supernode_Create_Type_NoUnion &&
-                <Text strong>5,000 SAFE</Text>
-              }
-               {
-                createParams.createType == Supernode_create_type_Union &&
-                <Text strong>1,000 SAFE</Text>
-              }
-              <br />
-            </Col>
-            <Col span={12} style={{ textAlign: "right" }}>
-              <Text type='secondary'>账户当前余额</Text><br />
-              <Text type='secondary'>{balance?.toFixed(6)} SAFE</Text><br />
-            </Col>
-            <Col span={24}>
-              {
-                inputErrors && inputErrors.balance &&
-                <Alert style={{ marginTop: "5px" }} type='error' message={inputErrors.balance} showIcon></Alert>
-              }
-            </Col>
-          </Row>
-          <Divider />
+          
           <Row style={{ width: "100%", textAlign: "right" }}>
             <Col span={24}>
               <Button type="primary" onClick={() => {
