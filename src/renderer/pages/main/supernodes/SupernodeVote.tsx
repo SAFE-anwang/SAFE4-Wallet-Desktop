@@ -19,6 +19,7 @@ const { Title } = Typography;
 export default () => {
 
   const supernodeAddr = useSelector<AppState, string | undefined>(state => state.application.control.vote);
+  const supernodeAddresses = useSelector<AppState, string[]>(state => state.application.supernodeAddresses);
   const activeAccountAccountRecords = useActiveAccountAccountRecords();
   const supernodeStorageContract = useSupernodeStorageContract();
   const navigate = useNavigate();
@@ -42,7 +43,9 @@ export default () => {
       activeAccountAccountRecords.sort((ar1, ar2) => ar2.id - ar1.id)
       const optionsAllAccountRecords = activeAccountAccountRecords.filter(accountRecord => accountRecord.recordUseInfo)
         .map(accountRecord => {
-          const disabled = !(accountRecord.recordUseInfo?.votedAddr == EmptyContract.EMPTY);
+          // 已经投过的不能再投，另外如果已经关联到超级节点的，也不能再参与投票了.
+          const disabled = !(accountRecord.recordUseInfo?.votedAddr == EmptyContract.EMPTY)
+                              || supernodeAddresses.indexOf(accountRecord.recordUseInfo?.frozenAddr) >= 0;
           return {
             label: <>
               <div key={accountRecord.id} style={{ margin: "15px 15px" }}>
@@ -67,7 +70,7 @@ export default () => {
       optionsAllAccountRecords: [],
       votableAccountRecordIds: []
     }
-  }, [activeAccountAccountRecords]);
+  }, [activeAccountAccountRecords,supernodeAddresses]);
 
   const [checkedAccountRecordIds, setCheckedAccountRecordIds] = useState<CheckboxValueType[]>([]);
 
@@ -132,7 +135,8 @@ export default () => {
     </div>
 
     {
-      supernodeInfo && <VoteModalConfirm openVoteModal={openVoteModal} setOpenVoteModal={setOpenVoteModal} supernodeInfo={supernodeInfo} accountRecords={checkedAccountRecords} />
+      supernodeInfo && <VoteModalConfirm openVoteModal={openVoteModal} setOpenVoteModal={setOpenVoteModal}
+        supernodeInfo={supernodeInfo} accountRecords={checkedAccountRecords} />
     }
   </>
 

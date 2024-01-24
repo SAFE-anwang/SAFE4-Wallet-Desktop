@@ -6,6 +6,8 @@ import {
   applicationActionConfirmedMnemonic,
   applicationDataUpdate,
   applicationControlVoteSupernode,
+  applicationUpdateSupernodeAddresses,
+  applicationControlAppendMasternode,
 } from './action';
 import { SupernodeInfo } from '../../structs/Supernode';
 
@@ -18,8 +20,11 @@ export interface IApplicationState {
     atCreateWallet : boolean
   }
   control:{
-    vote ?: string
+    vote ?: string ,
+    supernodeAppend ?: string
+    masternodeAppend ?: string
   }
+  supernodeAddresses : string[],
   blockchain : {
     networkId : "SAFE4" ,
     blockNumber : number,
@@ -37,6 +42,7 @@ const initialState: IApplicationState = {
   control:{
 
   },
+  supernodeAddresses : [],
   blockchain:{
     networkId : "SAFE4",
     blockNumber: 0,
@@ -96,6 +102,21 @@ export default createReducer(initialState, (builder) => {
         vote : payload
       }
     }
+  })
+
+  .addCase(applicationControlAppendMasternode , ( state , { payload } ) => {
+    return {
+      ...state ,
+      control : {
+        ...state.control,
+        masternodeAppend : payload
+      }
+    }
+  })
+
+
+  .addCase(applicationUpdateSupernodeAddresses , (state , {payload}) => {
+    state.supernodeAddresses = payload;
   })
 
 })

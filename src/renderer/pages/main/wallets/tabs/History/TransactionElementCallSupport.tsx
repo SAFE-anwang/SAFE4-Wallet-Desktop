@@ -1,9 +1,12 @@
 import React, { useCallback, useMemo } from "react";
-import { SupportAccountManagerFunctions } from "../../../../../constants/DecodeSupportFunction";
+import { SupportAccountManagerFunctions, SupportSupernodeLogicFunctions, SupportSupernodeVoteFunctions } from "../../../../../constants/DecodeSupportFunction";
 import { SystemContract } from "../../../../../constants/SystemContracts";
 import { TransactionDetails } from "../../../../../state/transactions/reducer";
 import TransactionElementCallAMDeposit from "./TransactionElementCallAMDeposit";
 import TransactionElementCallAMWithdraw from "./TransactionElementCallAMWithdraw";
+import TransactionElementCallSNRegister from "./TransactionElementCallSNRegister";
+import TransactionElementCallSNAppend from "./TransactionElementCallSNAppend";
+import TransactionElementCallSNVote from "./TransactionElementCallSNVote";
 
 export default ({ transaction, setClickTransaction, support }: {
   transaction: TransactionDetails,
@@ -18,11 +21,47 @@ export default ({ transaction, setClickTransaction, support }: {
     switch (to) {
       case SystemContract.AccountManager:
         return CallAccountManagerFuncRender(support.supportFuncName, transaction, setClickTransaction, support)
+      case SystemContract.SuperNodeLogic:
+        return CallSupernodeLogicFuncRender(support.supportFuncName, transaction, setClickTransaction, support)
+      case SystemContract.SNVote:
+        return CallSupernodeVoteFuncRender(support.supportFuncName, transaction, setClickTransaction, support)
       default:
         return <></>
     }
     return <></>
   }, [transaction, setClickTransaction, support]);
+
+  const CallSupernodeVoteFuncRender = (funcName: string, transaction: TransactionDetails, setClickTransaction: (transaction: TransactionDetails) => void, support: any) => {
+    switch (funcName) {
+      case SupportSupernodeVoteFunctions.VoteOrApproval:
+        return <TransactionElementCallSNVote
+          transaction={transaction}
+          setClickTransaction={setClickTransaction}
+          support={support}
+        />
+      default:
+        return <></>
+    }
+  }
+
+  const CallSupernodeLogicFuncRender = (funcName: string, transaction: TransactionDetails, setClickTransaction: (transaction: TransactionDetails) => void, support: any) => {
+    switch (funcName) {
+      case SupportSupernodeLogicFunctions.Register:
+        return <TransactionElementCallSNRegister
+          transaction={transaction}
+          setClickTransaction={setClickTransaction}
+          support={support}
+        />
+      case SupportSupernodeLogicFunctions.AppendRegister:
+        return <TransactionElementCallSNAppend
+          transaction={transaction}
+          setClickTransaction={setClickTransaction}
+          support={support}
+        />
+      default:
+        return <></>
+    }
+  }
 
   const CallAccountManagerFuncRender = (funcName: string, transaction: TransactionDetails, setClickTransaction: (transaction: TransactionDetails) => void, support: any) => {
     switch (funcName) {
@@ -48,6 +87,5 @@ export default ({ transaction, setClickTransaction, support }: {
         return <></>
     }
   }
-
   return <>{SelectCallRender()}</>
 }

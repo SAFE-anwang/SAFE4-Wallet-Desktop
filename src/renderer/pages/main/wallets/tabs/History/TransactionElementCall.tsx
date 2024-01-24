@@ -16,8 +16,6 @@ import TransactionElementCallSupport from "./TransactionElementCallSupport";
 import AccountManagerSafeWithdraw from "./AccountManagerSafeWithdraw";
 const { Text } = Typography;
 
-const TX_TYPE_SEND = "1";
-const TX_TYPE_RECEIVE = "2";
 
 export default ({ transaction, setClickTransaction }: {
   transaction: TransactionDetails,

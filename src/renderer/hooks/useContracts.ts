@@ -3,8 +3,6 @@ import { useMemo } from "react";
 import { useWeb3Hooks } from "../connectors/hooks";
 import MulticallABI from "../abis/Multicall.json";
 import { Contract } from '@ethersproject/contracts'
-import { Wallet, ethers } from "ethers";
-import { isAddress } from "ethers/lib/utils";
 import { useWalletsActivePrivateKey, useWalletsActiveSigner, useWalletsActiveWallet } from "../state/wallets/hooks";
 import { SysContractABI, SystemContract } from "../constants/SystemContracts";
 
@@ -46,4 +44,12 @@ export function useSupernodeVoteContract( withSignerIfPossible ?: boolean ) : Co
 
 export function useSupernodeLogicContract( withSignerIfPossible ?: boolean ) : Contract | null | undefined {
   return useContract( SystemContract.SuperNodeLogic , SysContractABI[SystemContract.SuperNodeLogic], withSignerIfPossible);
+}
+
+export function useMasternodeStorageContract( withSignerIfPossible ?: boolean ) : Contract | null | undefined {
+  return useContract( SystemContract.MasterNodeStorage , SysContractABI[SystemContract.MasterNodeStorage], withSignerIfPossible);
+}
+
+export function useMasternodeLogicContract( withSignerIfPossible ?: boolean ) : Contract | null | undefined {
+  return useContract( SystemContract.MasterNodeLogic , SysContractABI[SystemContract.MasterNodeLogic], withSignerIfPossible);
 }

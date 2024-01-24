@@ -16,7 +16,6 @@ import { Currency, CurrencyAmount, JSBI } from '@uniswap/sdk';
 import { ethers } from 'ethers';
 import CreateModalConfirm from './Create/CreateModal-Confirm';
 import type { RadioChangeEvent } from 'antd';
-
 const { Text, Title } = Typography;
 
 export const Supernode_Create_Type_NoUnion = 1;

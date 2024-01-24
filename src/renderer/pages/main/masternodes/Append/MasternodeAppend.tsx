@@ -1,37 +1,39 @@
 
 import { Typography, Row, Col, Button, Card, Checkbox, CheckboxProps, Divider, Space, Input, Slider, InputNumber, Alert } from 'antd';
 import { useEffect, useMemo, useState } from 'react';
-import { useActiveAccountAccountRecords, useETHBalances, useWalletsActiveAccount } from '../../../state/wallets/hooks';
 import { useSelector } from 'react-redux';
-import { AppState } from '../../../state';
-import { useSupernodeStorageContract } from '../../../hooks/useContracts';
-import { SupernodeInfo, formatSupernodeInfo } from '../../../structs/Supernode';
 import { LeftOutlined, LockOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { CurrencyAmount, JSBI } from '@uniswap/sdk';
 import { ethers } from 'ethers';
-import AppendModalConfirm from './Append/AppendModal-Confirm';
+import { AppState } from '../../../../state';
+import { useMasternodeStorageContract } from '../../../../hooks/useContracts';
+import { useETHBalances, useWalletsActiveAccount } from '../../../../state/wallets/hooks';
+import { MasternodeInfo, formatMasternode } from '../../../../structs/Masternode';
+import AppendModalConfirm from './AppendModal-Confirm';
 
 const { Text, Title } = Typography;
 
 export default () => {
+
   const navigate = useNavigate();
-  const supernodeAddr = useSelector<AppState, string | undefined>(state => state.application.control.vote);
-  const supernodeStorageContract = useSupernodeStorageContract();
+  const masternodeAppend = useSelector<AppState, string | undefined>(state => state.application.control.masternodeAppend);
+  const masternodeStorageContract = useMasternodeStorageContract();
   const activeAccount = useWalletsActiveAccount();
   const balance = useETHBalances([activeAccount])[activeAccount];
-  const [supernodeInfo, setSupernodeInfo] = useState<SupernodeInfo>();
+  const [masternodeInfo, setMasternodeInfo] = useState<MasternodeInfo>();
 
   useEffect(() => {
-    if (supernodeAddr && supernodeStorageContract) {
-      // function getInfo(address _addr) external view returns (SuperNodeInfo memory);
-      supernodeStorageContract.callStatic.getInfo(supernodeAddr)
-        .then(_supernodeInfo => setSupernodeInfo(formatSupernodeInfo(_supernodeInfo)))
+    if (masternodeAppend && masternodeStorageContract) {
+      // function getInfo(address _addr) external view returns (MasterNodeInfo memory);
+      masternodeStorageContract.callStatic.getInfo(masternodeAppend)
+        .then(_masternodeInfo => setMasternodeInfo(formatMasternode(_masternodeInfo)))
         .catch(err => {
 
         })
     }
-  }, [supernodeAddr]);
+  }, [masternodeAppend, masternodeStorageContract]);
+
   useEffect(() => {
     setNotEnoughError(undefined);
   }, [activeAccount])
@@ -46,13 +48,13 @@ export default () => {
   const [openAppendModal, setOpenAppendModal] = useState<boolean>(false);
 
   useEffect(() => {
-    if (supernodeInfo) {
-      const totalAmount = supernodeInfo.founders.reduce<CurrencyAmount>(
+    if (masternodeInfo) {
+      const totalAmount = masternodeInfo.founders.reduce<CurrencyAmount>(
         (totalAmount, founder) => totalAmount = totalAmount.add(founder.amount),
         CurrencyAmount.ether(JSBI.BigInt(0))
       )
-      const left = 5000 - Number(totalAmount.toFixed(0));
-      if (left < 500) {
+      const left = 1000 - Number(totalAmount.toFixed(0));
+      if (left < 200) {
         setParams({
           step: 0,
           min: left,
@@ -61,14 +63,14 @@ export default () => {
         })
       } else {
         setParams({
-          step: 100,
-          min: 500,
+          step: 50,
+          min: 200,
           left,
-          value: 500
+          value: 200
         })
       }
     }
-  }, [supernodeInfo]);
+  }, [masternodeInfo]);
 
   const nextClick = () => {
     if (params && params.value) {
@@ -85,10 +87,10 @@ export default () => {
     <Row style={{ height: "50px" }}>
       <Col span={8}>
         <Button style={{ marginTop: "18px", marginRight: "12px", float: "left" }} size="large" shape="circle" icon={<LeftOutlined />} onClick={() => {
-          navigate("/main/supernodes")
+          navigate("/main/masternodes")
         }} />
         <Title level={4} style={{ lineHeight: "16px", float: "left" }}>
-          超级节点联合创立
+          主节点联合创建
         </Title>
       </Col>
     </Row>
@@ -96,11 +98,11 @@ export default () => {
     <div style={{ width: "100%", paddingTop: "40px", minWidth: "1000px" }}>
       <div style={{ margin: "auto", width: "90%" }}>
         <Row>
-          <Card title="通过锁仓SAFE来成为这个超级节点的股东" style={{ width: "100%" }}>
+          <Card title="通过锁仓SAFE来成为这个主节点的股东" style={{ width: "100%" }}>
             <>
               <Row>
                 <Col span={24}>
-                  <Text type="secondary">超级节点剩余份额</Text>
+                  <Text type="secondary">主节点剩余份额</Text>
                 </Col>
                 <Col span={24}>
                   <Text style={{ fontSize: "20px" }} strong>{params?.left} SAFE</Text>
@@ -149,17 +151,19 @@ export default () => {
             </>
           </Card>
         </Row>
+
         <Row>
           <Card title="超级节点详情" style={{ width: "100%", marginTop: "50px" }}>
-            {supernodeInfo?.addr}
+            {masternodeInfo?.addr}
           </Card>
         </Row>
+
       </div>
     </div>
 
     {
-      supernodeInfo && params?.value && <AppendModalConfirm openAppendModal={openAppendModal} setOpenAppendModal={setOpenAppendModal}
-        supernodeInfo={supernodeInfo}
+      masternodeInfo && params?.value && <AppendModalConfirm openAppendModal={openAppendModal} setOpenAppendModal={setOpenAppendModal}
+        masternodeInfo={masternodeInfo}
         valueAmount={params?.value}
       />
     }

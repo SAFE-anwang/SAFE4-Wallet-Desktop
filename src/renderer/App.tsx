@@ -12,10 +12,11 @@ import TestMulticall from './pages/main/tools/TestMulticall';
 import Menu from './pages/main/menu';
 import Supernodes from './pages/main/supernodes/Supernodes';
 import Masternodes from './pages/main/masternodes/Masternodes';
-import SupernodeDetail from './pages/main/supernodes/SupernodeDetail';
 import SupernodeVote from './pages/main/supernodes/SupernodeVote';
 import SupernodeCreate from './pages/main/supernodes/SupernodeCreate';
 import SupernodeAppend from './pages/main/supernodes/SupernodeAppend';
+import MasternodeRegister from './pages/main/masternodes/Register/MasternodeRegister';
+import MasternodeAppend from './pages/main/masternodes/Append/MasternodeAppend';
 
 export default function App() {
 
@@ -58,6 +59,8 @@ export default function App() {
               <Route path="/main/supernodes/append" element={<SupernodeAppend />} />
               <Route path="/main/supernodes/create" element={<SupernodeCreate />} />
               <Route path="/main/masternodes" element={<Masternodes />} />
+              <Route path="/main/masternodes/register" element={<MasternodeRegister />} />
+              <Route path="/main/masternodes/append" element={<MasternodeAppend />} />
               <Route path="/tools/web3" element={<TestMulticall />} />
               <Route path="/main/menu" element={<Menu />} />
             </Routes>

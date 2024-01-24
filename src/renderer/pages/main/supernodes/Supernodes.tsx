@@ -8,7 +8,7 @@ import { useSupernodeStorageContract } from '../../../hooks/useContracts';
 import { formatSupernodeInfo, SupernodeInfo } from '../../../structs/Supernode';
 import AddressView from '../../components/AddressView';
 import { useDispatch } from 'react-redux';
-import { applicationControlVoteSupernode } from '../../../state/application/action';
+import { applicationControlVoteSupernode, applicationUpdateSupernodeAddresses } from '../../../state/application/action';
 import { ethers } from 'ethers';
 
 const { Title, Text, Paragraph } = Typography;
@@ -178,7 +178,10 @@ export default () => {
             (totalVotedAmount, supernodeInfo) => totalVotedAmount.add(supernodeInfo.voteInfo.totalAmount),
             CurrencyAmount.ether(JSBI.BigInt("0"))
           );
-          console.log("totalVotedAmount ==>", totalVotedAmount.toFixed(2));
+
+          // 更新超级节点地址集合到state
+          dispatch(applicationUpdateSupernodeAddresses( supernodeInfos.map( supernodeInfo => supernodeInfo.addr )));
+
           setTotalVotedAmount(totalVotedAmount);
           setSupernodeInfos(supernodeInfos);
         }).catch(err => {
