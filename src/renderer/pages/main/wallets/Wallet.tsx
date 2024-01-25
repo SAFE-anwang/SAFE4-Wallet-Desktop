@@ -1,17 +1,18 @@
 
 import { Typography, Button, Card, Divider, Statistic, Row, Col, Modal, Flex, Tooltip, Tabs, TabsProps, QRCode, Badge } from 'antd';
 import { useEffect, useState } from 'react';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { useETHBalances, useSafe4Balance, useWalletsActiveAccount, useWalletsActiveSigner, useWalletsActiveWallet } from '../../../state/wallets/hooks';
-import { applicationActionUpdateAtCreateWallet } from '../../../state/application/action';
+import { applicationActionUpdateAtCreateWallet, applicationUpdateWalletTab } from '../../../state/application/action';
 import { SearchOutlined, SendOutlined, QrcodeOutlined , LockOutlined } from '@ant-design/icons';
 import { useWeb3Hooks, useWeb3Network } from '../../../connectors/hooks';
 import { useBlockNumber } from '../../../state/application/hooks';
-import WalletSendModal from './WalletSendModal';
 import Locked from './tabs/Locked/Locked';
 import WalletLockModal from './Lock/WalletLockModal';
 import History from './tabs/History/History';
+import WalletSendModal from './Send/WalletSendModal';
+import { AppState } from '../../../state';
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -23,6 +24,7 @@ export default () => {
   const account = useWalletsActiveAccount();
   const balance = useETHBalances([account])[account];
   const latestBlockNumber = useBlockNumber();
+  const walletTab = useSelector<AppState , string|undefined>( state => state.application.control.walletTab );
 
   const [openReceiveModal, setOpenReceiveModal] = useState<boolean>(false);
   const [openSendModal, setOpenSendModal] = useState<boolean>(false);
@@ -33,11 +35,6 @@ export default () => {
       key: 'locked',
       label: '锁仓',
       children: <Locked />,
-    },
-    {
-      key: '2',
-      label: 'NFT',
-      children: 'NFT 列表',
     },
     {
       key: 'history',
@@ -51,7 +48,7 @@ export default () => {
   }
 
   const onChange = (key: string) => {
-    console.log(key);
+    dispatch(applicationUpdateWalletTab(key))
   };
 
   useEffect(() => {
@@ -104,9 +101,8 @@ export default () => {
             </Row>
           </Col>
         </Row>
-
         <Row style={{ marginTop: "50px" }}>
-          <Tabs style={{ width: "100%" }} defaultActiveKey="locked" items={items} onChange={onChange} />
+          <Tabs style={{ width: "100%" }} activeKey={walletTab} defaultActiveKey={walletTab} items={items} onChange={onChange} />
         </Row>
       </div>
     </div>

@@ -11,6 +11,8 @@ import { DBAddressActivitySignal, DB_AddressActivity_Methods } from "../../../..
 import { IPC_CHANNEL } from "../../../../../config";
 import { reloadTransactionsAndSetAddressActivityFetch } from "../../../../../state/transactions/actions";
 import "./index.css"
+import { Checkbox } from 'antd';
+import type { CheckboxProps } from 'antd';
 
 const { Text } = Typography;
 
@@ -34,7 +36,7 @@ export default () => {
             end: 1
           };
           const txns = rows.map((row: any) => {
-            const { timestamp , block_number } = row;
+            const { timestamp, block_number } = row;
             if (timestamp) {
               dbStoredRange.start = Math.min(dbStoredRange.start, block_number);
               dbStoredRange.end = Math.max(dbStoredRange.end, block_number);
@@ -58,12 +60,16 @@ export default () => {
     }
   }, [activeAccount])
 
+  const onChange: CheckboxProps['onChange'] = (e) => {
+    setShowSystemReward(e.target.checked);
+  };
+  const [showSystemReward, setShowSystemReward] = useState<boolean>(false);
+
   return <>
 
-    <Modal title="交易明细" closable footer={null} open={clickTransaction != null} onCancel={() => setClickTransaction(undefined)}>
-      <Divider />
-      {clickTransaction && <TransactionDetailsView transaction={clickTransaction} />}
-    </Modal>
+    <Checkbox defaultChecked={showSystemReward} onChange={onChange} value={showSystemReward}>显示挖矿奖励</Checkbox>
+
+    <Divider />
     {
       Object.keys(transactions)
         .map(date => {
@@ -77,13 +83,21 @@ export default () => {
               bordered
               itemLayout="horizontal"
               dataSource={transactions[date]}
-              renderItem={(item, index) => (
-                <TransactionElement setClickTransaction={setClickTransaction} transaction={item} />
-              )}
+              renderItem={(item, index) => {
+                if (!showSystemReward && item.systemRewardDatas) {
+                  return <></>
+                }
+                return <TransactionElement setClickTransaction={setClickTransaction} transaction={item} />
+              }}
             />
           </div>)
         })
     }
+
+    <Modal title="交易明细" closable footer={null} open={clickTransaction != null} onCancel={() => setClickTransaction(undefined)}>
+      <Divider />
+      {clickTransaction && <TransactionDetailsView transaction={clickTransaction} />}
+    </Modal>
 
   </>
 

@@ -17,10 +17,14 @@ export default ({
     return <>
         <TransactionElementTemplate
             icon={<LockOutlined style={{ color: "black" }} />}
-            title= { "投票超级节点" }
+            title= { "加入主节点合伙人" }
             status={status}
             description={to}
             assetFlow={<>
+                <Text type="secondary" strong>
+                    <LockOutlined style={{ marginRight: "5px" }} />
+                    {value && EtherAmount({ raw: value, fix: 18 })} SAFE
+                </Text>
             </>}
         />
 

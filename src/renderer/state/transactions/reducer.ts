@@ -41,7 +41,19 @@ export interface TransactionDetails {
   accountManagerDatas?: {
     [eventLogIndex: string]: AccountManagerData
   },
+  systemRewardDatas ?: {
+    [eventLogIndex: string]: SystemRewardData
+  }
   withdrawAmount?: string
+}
+
+export interface SystemRewardData {
+  action : string ,
+  eventLogIndex: number,
+  from : string,
+  to : string,
+  type : number,
+  amount : string
 }
 
 export interface AccountManagerData {
@@ -241,10 +253,21 @@ export function Activity2Transaction(row: any): TransactionDetails {
         }
       }
     case DB_AddressActivity_Actions.AM_Withdraw:
+      return {
+        ...transaction,
+        accountManagerDatas: {
+          [transaction.eventLogIndex]: {
+            ...transaction.data,
+            action: transaction.action,
+            eventLogIndex: transaction.eventLogIndex
+          }
+        }
+      }
+    case DB_AddressActivity_Actions.SystemReward:
       const _transaction =
       {
         ...transaction,
-        accountManagerDatas: {
+        systemRewardDatas: {
           [transaction.eventLogIndex]: {
             ...transaction.data,
             action: transaction.action,
@@ -256,7 +279,6 @@ export function Activity2Transaction(row: any): TransactionDetails {
     default:
       return {
         ...transaction,
-        call: { ...transaction.data }
       }
   }
 }
@@ -282,6 +304,15 @@ export function TransactionsCombine(transactions: TransactionState | undefined, 
             }
           });
           txns[tx.hash].accountManagerDatas = _accountManagerDatas;
+        }
+        if (tx.systemRewardDatas) {
+          const _systemRewardDatas = txns[tx.hash].systemRewardDatas ? { ...txns[tx.hash].systemRewardDatas } : {};
+          Object.keys(tx.systemRewardDatas).forEach((eventLogIndex) => {
+            if (tx.systemRewardDatas) {
+              _systemRewardDatas[eventLogIndex] = tx.systemRewardDatas[eventLogIndex]
+            }
+          });
+          txns[tx.hash].systemRewardDatas = _systemRewardDatas;
         }
       }
     });

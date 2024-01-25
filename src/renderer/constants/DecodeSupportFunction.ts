@@ -1,6 +1,5 @@
-import { Fragment, FunctionFragment, Interface } from "ethers/lib/utils";
+import { FunctionFragment, Interface } from "ethers/lib/utils";
 import { SysContractABI, SystemContract } from "./SystemContracts";
-import SupernodeVote from "../pages/main/supernodes/Vote/SupernodeVote";
 
 
 export enum SupportAccountManagerFunctions {
@@ -14,6 +13,39 @@ export enum SupportSupernodeLogicFunctions {
 }
 export enum SupportSupernodeVoteFunctions {
   VoteOrApproval = "voteOrApproval" // function voteOrApproval(bool _isVote, address _dstAddr, uint[] memory _recordIDs)
+}
+export enum SupportMasternodeLogicFunctions {
+  Register = "register",            // function register(bool _isUnion, address _addr, uint _lockDay, string memory _enode, string memory _description, uint _creatorIncentive, uint _partnerIncentive) external payable;
+  AppendRegister = "appendRegister" // function appendRegister(address _addr, uint _lockDay) external payable;
+}
+
+function decodeMasternodeLogicFunctionData(IContract: Interface, fragment: FunctionFragment, input: string): {
+  supportFuncName: string,
+  inputDecodeResult: any
+} | undefined {
+  let formatDecodeResult = undefined;
+  switch (fragment.name) {
+    case SupportMasternodeLogicFunctions.Register:
+      const register = IContract.decodeFunctionData(fragment, input);
+      formatDecodeResult = {
+        _isUnion: register[0],
+        _addr: register[1],
+      }
+      break;
+    case SupportMasternodeLogicFunctions.AppendRegister:
+      let appendRegister = IContract.decodeFunctionData(fragment, input);
+      formatDecodeResult = {
+        _addr: appendRegister[0],
+        _lockDay: appendRegister[1]
+      }
+      break;
+    default:
+      break;
+  }
+  return formatDecodeResult ? {
+    supportFuncName: fragment.name,
+    inputDecodeResult: formatDecodeResult
+  } : undefined;
 }
 
 function decodeSupernodeLogicFunctionData(IContract: Interface, fragment: FunctionFragment, input: string): {
@@ -126,6 +158,8 @@ export default (address: string | undefined, input: string | undefined): {
           return decodeSupernodeLogicFunctionData(IContract, fragment, input);
         case SystemContract.SNVote:
           return decodeSupernodeVoteFunctionData(IContract, fragment, input);
+        case SystemContract.MasterNodeLogic:
+          return decodeMasternodeLogicFunctionData(IContract, fragment, input);
         default:
           return undefined;
       }

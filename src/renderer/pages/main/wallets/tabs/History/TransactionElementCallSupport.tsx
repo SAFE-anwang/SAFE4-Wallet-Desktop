@@ -1,5 +1,5 @@
 import React, { useCallback, useMemo } from "react";
-import { SupportAccountManagerFunctions, SupportSupernodeLogicFunctions, SupportSupernodeVoteFunctions } from "../../../../../constants/DecodeSupportFunction";
+import { SupportAccountManagerFunctions, SupportMasternodeLogicFunctions, SupportSupernodeLogicFunctions, SupportSupernodeVoteFunctions } from "../../../../../constants/DecodeSupportFunction";
 import { SystemContract } from "../../../../../constants/SystemContracts";
 import { TransactionDetails } from "../../../../../state/transactions/reducer";
 import TransactionElementCallAMDeposit from "./TransactionElementCallAMDeposit";
@@ -7,6 +7,8 @@ import TransactionElementCallAMWithdraw from "./TransactionElementCallAMWithdraw
 import TransactionElementCallSNRegister from "./TransactionElementCallSNRegister";
 import TransactionElementCallSNAppend from "./TransactionElementCallSNAppend";
 import TransactionElementCallSNVote from "./TransactionElementCallSNVote";
+import TransactionElementCallMNRegister from "./TransactionElementCallMNRegister";
+import TransactionElementCallMNAppend from "./TransactionElementCallMNAppend";
 
 export default ({ transaction, setClickTransaction, support }: {
   transaction: TransactionDetails,
@@ -25,6 +27,8 @@ export default ({ transaction, setClickTransaction, support }: {
         return CallSupernodeLogicFuncRender(support.supportFuncName, transaction, setClickTransaction, support)
       case SystemContract.SNVote:
         return CallSupernodeVoteFuncRender(support.supportFuncName, transaction, setClickTransaction, support)
+      case SystemContract.MasterNodeLogic:
+        return CallMasternodeLogicFuncRender(support.supportFuncName, transaction, setClickTransaction, support)
       default:
         return <></>
     }
@@ -54,6 +58,25 @@ export default ({ transaction, setClickTransaction, support }: {
         />
       case SupportSupernodeLogicFunctions.AppendRegister:
         return <TransactionElementCallSNAppend
+          transaction={transaction}
+          setClickTransaction={setClickTransaction}
+          support={support}
+        />
+      default:
+        return <></>
+    }
+  }
+
+  const CallMasternodeLogicFuncRender = (funcName: string, transaction: TransactionDetails, setClickTransaction: (transaction: TransactionDetails) => void, support: any) => {
+    switch (funcName) {
+      case SupportMasternodeLogicFunctions.Register:
+        return <TransactionElementCallMNRegister
+          transaction={transaction}
+          setClickTransaction={setClickTransaction}
+          support={support}
+        />
+      case SupportMasternodeLogicFunctions.AppendRegister:
+        return <TransactionElementCallMNAppend
           transaction={transaction}
           setClickTransaction={setClickTransaction}
           support={support}

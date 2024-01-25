@@ -22,6 +22,8 @@ export enum DB_AddressActivity_Actions {
 
   AM_Deposit = "AccountManager:SafeDeposit",
   AM_Withdraw = "AccountManager:SafeWithdraw",
+
+  SystemReward = "SystemReward:"
 }
 
 export class DBAddressActivitySingalHandler implements ListenSignalHandler {

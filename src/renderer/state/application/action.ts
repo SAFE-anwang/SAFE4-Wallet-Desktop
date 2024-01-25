@@ -35,3 +35,7 @@ export const applicationControlAppendMasternode = createAction<string | undefine
 export const applicationUpdateSupernodeAddresses = createAction<string[]>(
   "application/updateSupernodeAddresses"
 );
+
+export const applicationUpdateWalletTab = createAction<string>(
+  "application/updateWalletTab"
+)
