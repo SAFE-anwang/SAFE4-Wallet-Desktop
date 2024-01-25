@@ -10,6 +10,9 @@ import { TransactionResponse } from "@ethersproject/providers";
 import { SupernodeInfo } from "../../../../structs/Supernode";
 import AddressView from "../../../components/AddressView";
 import { MasternodeInfo } from "../../../../structs/Masternode";
+import { useDispatch } from "react-redux";
+import { useNavigate } from "react-router-dom";
+import { applicationUpdateWalletTab } from "../../../../state/application/action";
 
 const { Text } = Typography;
 
@@ -23,10 +26,9 @@ export default ({
   masternodeInfo: MasternodeInfo,
   valueAmount: number
 }) => {
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
 
-  const cancel = () => {
-    setOpenAppendModal(false);
-  }
   const [sending, setSending] = useState<boolean>(false);
   const {
     render,
@@ -48,11 +50,11 @@ export default ({
         masternodeInfo.addr,
         360,
         {
-          value: value
+          value: value,
+          gasLimit : 1000000
         }
       ).then((response: TransactionResponse) => {
-        setSending(false);
-        const { data } = response;
+        const { hash , data } = response;
         addTransaction({ to: masternodeLogicContract.address }, response, {
           call: {
             from: activeAccount,
@@ -61,7 +63,9 @@ export default ({
             value: value.toString()
           }
         });
+        setTxHash(hash);
         setTransactionResponse(response);
+        setSending(false);
       }).catch((err: any) => {
         setSending(false);
         setErr(err)
@@ -69,6 +73,16 @@ export default ({
 
     }
   }, [activeAccount, masternodeLogicContract, valueAmount]);
+
+  const [txHash,setTxHash] = useState<string>();
+  const cancel = useCallback(() => {
+    setOpenAppendModal(false);
+    if (txHash){
+      setTxHash(undefined);
+      dispatch(applicationUpdateWalletTab("history"));
+      navigate("/main/wallet");
+    }
+  }, [txHash] );
 
   return <Modal title="联合创建超级节点" open={openAppendModal} footer={null} destroyOnClose onCancel={cancel}>
     <Divider />
@@ -135,7 +149,7 @@ export default ({
           </Button>
         }
         {
-          render && <Button onClick={close} type="primary" style={{ float: "right" }}>
+          render && <Button onClick={cancel} type="primary" style={{ float: "right" }}>
             关闭
           </Button>
         }

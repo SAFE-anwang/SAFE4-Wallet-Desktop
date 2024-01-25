@@ -8,6 +8,9 @@ import { useWalletsActiveAccount } from "../../../../state/wallets/hooks";
 import { useSupernodeLogicContract } from "../../../../hooks/useContracts";
 import { ethers } from "ethers";
 import { TransactionResponse } from "@ethersproject/providers";
+import { useDispatch } from "react-redux";
+import { useNavigate } from "react-router-dom";
+import { applicationUpdateWalletTab } from "../../../../state/application/action";
 
 const { Text } = Typography;
 
@@ -29,11 +32,9 @@ export default ({
     }
   }
 }) => {
-
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
   const { createType } = createParams;
-  const cancel = () => {
-    setOpenCreateModal(false);
-  }
   const [sending, setSending] = useState<boolean>(false);
   const {
     render,
@@ -61,11 +62,10 @@ export default ({
         incentivePlan.creator, incentivePlan.partner, incentivePlan.voter,
         {
           value,
-          gasLimit : 1000000
+          gasLimit: 1000000
         }
       ).then((response: TransactionResponse) => {
-        setSending(false);
-        const { data } = response;
+        const { hash, data } = response;
         addTransaction({ to: supernodeLogicContract.address }, response, {
           call: {
             from: activeAccount,
@@ -74,6 +74,8 @@ export default ({
             value: value.toString()
           }
         });
+        setTxHash(hash);
+        setSending(false);
         setTransactionResponse(response);
       }).catch((err: any) => {
         setSending(false);
@@ -82,6 +84,16 @@ export default ({
 
     }
   }, [activeAccount, supernodeLogicContract, createParams]);
+
+  const [txHash, setTxHash] = useState<string>();
+  const cancel = useCallback(() => {
+    setOpenCreateModal(false);
+    if (txHash) {
+      setTxHash(undefined);
+      dispatch(applicationUpdateWalletTab("history"));
+      navigate("/main/wallet");
+    }
+  }, [txHash])
 
   return <Modal title="创建超级节点" open={openCreateModal} footer={null} destroyOnClose onCancel={cancel}>
     <Divider />
@@ -164,7 +176,7 @@ export default ({
           </Button>
         }
         {
-          render && <Button onClick={close} type="primary" style={{ float: "right" }}>
+          render && <Button onClick={cancel} type="primary" style={{ float: "right" }}>
             关闭
           </Button>
         }

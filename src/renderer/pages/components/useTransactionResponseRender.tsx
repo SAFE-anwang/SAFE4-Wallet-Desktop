@@ -7,7 +7,9 @@ const { Text, Link } = Typography;
 export default (): {
   render: React.ReactNode
   setTransactionResponse: (response: TransactionResponse) => void,
-  setErr: (err: any) => void
+  setErr: (err: any) => void,
+  response : TransactionResponse | undefined ,
+  err : any
 } => {
   const [showErrorDetail, setShowErrorDetail] = useState(false);
   const [response, setTransactionResponse] = useState<TransactionResponse>();
@@ -63,6 +65,8 @@ export default (): {
   return {
     render,
     setTransactionResponse,
-    setErr
+    setErr,
+    response,
+    err
   }
 }

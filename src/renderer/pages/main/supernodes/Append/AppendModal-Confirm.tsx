@@ -9,6 +9,9 @@ import { ethers } from "ethers";
 import { TransactionResponse } from "@ethersproject/providers";
 import { SupernodeInfo } from "../../../../structs/Supernode";
 import AddressView from "../../../components/AddressView";
+import { useDispatch } from "react-redux";
+import { useNavigate } from "react-router-dom";
+import { applicationUpdateWalletTab } from "../../../../state/application/action";
 
 const { Text } = Typography;
 
@@ -20,11 +23,11 @@ export default ({
   openAppendModal: boolean,
   setOpenAppendModal: (openCreateModal: boolean) => void,
   supernodeInfo: SupernodeInfo,
-  valueAmount: number
+  valueAmount: number,
+
 }) => {
-  const cancel = () => {
-    setOpenAppendModal(false);
-  }
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
   const [sending, setSending] = useState<boolean>(false);
   const {
     render,
@@ -41,16 +44,16 @@ export default ({
       /**
        *  function appendRegister(address _addr, uint _lockDay) external payable;
        */
-      const value = ethers.utils.parseEther(valueAmount+"");
+      const value = ethers.utils.parseEther(valueAmount + "");
       supernodeLogicContract.appendRegister(
         supernodeInfo.addr,
         360,
         {
-          value : value
+          value: value
         }
       ).then((response: TransactionResponse) => {
         setSending(false);
-        const { data } = response;
+        const { hash,data } = response;
         addTransaction({ to: supernodeLogicContract.address }, response, {
           call: {
             from: activeAccount,
@@ -60,13 +63,25 @@ export default ({
           }
         });
         setTransactionResponse(response);
+        setTxHash(hash)
       }).catch((err: any) => {
         setSending(false);
         setErr(err)
       });
 
     }
-  }, [activeAccount, supernodeLogicContract , valueAmount]);
+  }, [activeAccount, supernodeLogicContract, valueAmount]);
+
+  const [txHash,setTxHash] = useState<string>();
+  const cancel = useCallback(() => {
+    setOpenAppendModal(false);
+    if (txHash){
+      setTxHash(undefined);
+      dispatch(applicationUpdateWalletTab("history"));
+      navigate("/main/wallet");
+    }
+  }, [txHash]);
+  
 
   return <Modal title="联合创建超级节点" open={openAppendModal} footer={null} destroyOnClose onCancel={cancel}>
     <Divider />
@@ -104,7 +119,7 @@ export default ({
           <Text type="secondary">超级节点地址</Text>
         </Col>
         <Col span={24}>
-          <Text><AddressView address={supernodeInfo.addr}/></Text>
+          <Text><AddressView address={supernodeInfo.addr} /></Text>
         </Col>
         <Divider style={{ margin: "8px 0px" }} />
       </Row>
@@ -142,7 +157,7 @@ export default ({
           </Button>
         }
         {
-          render && <Button onClick={close} type="primary" style={{ float: "right" }}>
+          render && <Button onClick={cancel} type="primary" style={{ float: "right" }}>
             关闭
           </Button>
         }

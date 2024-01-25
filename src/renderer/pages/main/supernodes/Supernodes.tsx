@@ -143,7 +143,7 @@ export default () => {
                   <Button size='small' type='default' style={{ float: "right" }} onClick={() => {
                     dispatch(applicationControlVoteSupernode(supernodeInfo.addr));
                     navigate("/main/supernodes/append");
-                  }}>加入股东</Button>
+                  }}>加入合伙人</Button>
                 }
                 <Button size='small' type='primary' style={{ float: "right" }} onClick={() => {
                   dispatch(applicationControlVoteSupernode(supernodeInfo.addr));

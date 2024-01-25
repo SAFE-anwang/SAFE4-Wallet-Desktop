@@ -8,6 +8,9 @@ import { useMasternodeLogicContract } from "../../../../hooks/useContracts"
 import { Masternode_Create_Type_NoUnion, Masternode_create_type_Union } from "./MasternodeRegister";
 import { ethers } from "ethers";
 import { TransactionResponse } from "@ethersproject/providers";
+import { useDispatch } from "react-redux";
+import { useNavigate } from "react-router-dom";
+import { applicationUpdateWalletTab } from "../../../../state/application/action";
 
 const { Text } = Typography;
 
@@ -26,10 +29,9 @@ export default ({
     }
   }
 }) => {
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
   const { registerType } = registerParams;
-  const cancel = () => {
-    setOpenRegisterModal(false);
-  }
   const [sending, setSending] = useState<boolean>(false);
   const {
     render,
@@ -42,7 +44,7 @@ export default ({
 
   const doRegisterMasternode = useCallback(() => {
     if (activeAccount && masternodeLogicContract) {
-      const { registerType ,enode, description, incentivePlan } = registerParams;
+      const { registerType, enode, description, incentivePlan } = registerParams;
       // function register(bool _isUnion, address _addr, uint _lockDay, string memory _enode, string memory _description,
       //  uint _creatorIncentive, uint _partnerIncentive) external payable;
       //
@@ -58,11 +60,10 @@ export default ({
         incentivePlan.creator, incentivePlan.partner,
         {
           value,
-          gasLimit : 1000000
+          gasLimit: 1000000
         }
       ).then((response: TransactionResponse) => {
-        setSending(false);
-        const { data } = response;
+        const { hash,data } = response;
         addTransaction({ to: masternodeLogicContract.address }, response, {
           call: {
             from: activeAccount,
@@ -71,6 +72,8 @@ export default ({
             value: value.toString()
           }
         });
+        setTxHash(hash);
+        setSending(false);
         setTransactionResponse(response);
       }).catch((err: any) => {
         setSending(false);
@@ -78,6 +81,16 @@ export default ({
       });
     }
   }, [activeAccount, masternodeLogicContract, registerParams]);
+
+  const [txHash, setTxHash] = useState<string>();
+  const cancel = useCallback(() => {
+    setOpenRegisterModal(false);
+    if (txHash) {
+      setTxHash(undefined);
+      dispatch(applicationUpdateWalletTab("history"));
+      navigate("/main/wallet");
+    }
+  }, [txHash]);
 
   return <Modal title="创建主节点" open={openRegisterModal} footer={null} destroyOnClose onCancel={cancel}>
     <Divider />
@@ -151,7 +164,7 @@ export default ({
           </Button>
         }
         {
-          render && <Button onClick={close} type="primary" style={{ float: "right" }}>
+          render && <Button onClick={cancel} type="primary" style={{ float: "right" }}>
             关闭
           </Button>
         }

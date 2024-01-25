@@ -109,7 +109,7 @@ export default () => {
                   <Button size='small' type='default' style={{ float: "right" }} onClick={() => {
                     dispatch(applicationControlAppendMasternode(masternodeInfo.addr))
                     navigate("/main/masternodes/append")
-                  }}>加入股东</Button>
+                  }}>加入合伙人</Button>
                 }
               </Space>
             </Col>

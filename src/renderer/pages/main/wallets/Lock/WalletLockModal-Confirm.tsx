@@ -7,14 +7,17 @@ import { ethers } from "ethers";
 import { useAccountManagerContract } from "../../../../hooks/useContracts";
 import useTransactionResponseRender from "../../../components/useTransactionResponseRender";
 import { TransactionResponse } from "@ethersproject/providers";
-const { Text , Link } = Typography;
+import AddressView from "../../../components/AddressView";
+const { Text, Link } = Typography;
 
 export default ({
-  amount, lockDay, close
+  amount, lockDay,
+  close, setTxHash
 }: {
   amount: string,
   lockDay: number,
-  close: () => void
+  close: () => void,
+  setTxHash: (txHash: string) => void
 }) => {
   const activeAccount = useWalletsActiveAccount();
   const addTransaction = useTransactionAdder();
@@ -37,62 +40,79 @@ export default ({
     setSending(true);
     if (accountManaggerContract) {
       accountManaggerContract.deposit(to, lockDay, {
-        value: ethers.utils.parseEther(amount)
+        value: ethers.utils.parseEther(amount),
       }).then((response: any) => {
-        setSending(false);
-        const { hash , data } = response;
+        const { hash, data } = response;
         setTransactionResponse(response);
-        addTransaction( { to:accountManaggerContract.address } , response, {
-          call : {
-            from : activeAccount,
-            to : accountManaggerContract.address,
-            input : data,
-            value : ethers.utils.parseEther(amount).toString()
+        addTransaction({ to: accountManaggerContract.address }, response, {
+          call: {
+            from: activeAccount,
+            to: accountManaggerContract.address,
+            input: data,
+            value: ethers.utils.parseEther(amount).toString()
           }
         });
+        setTxHash(hash);
+        setSending(false);
       }).catch((err: any) => {
         setSending(false);
         setErr(err)
       })
     }
-  }, [activeAccount ,accountManaggerContract]);
+  }, [activeAccount, accountManaggerContract]);
 
   return <>
     <div style={{ minHeight: "300px" }}>
       {
         render
       }
-      <br />
       <Row >
-        <Col span={14}>
-          <Text strong>数量</Text>
-          <br />
-          {amount}
-        </Col>
-      </Row>
-      <br />
-      <Row >
-        <Col span={14}>
-          <Text strong>锁仓天数</Text>
-          <br />
-          {lockDay}
+        <Col span={24}>
+          <LockOutlined style={{ fontSize: "32px" }} />
+          <Text style={{ fontSize: "32px" }} strong>{amount} SAFE</Text>
         </Col>
       </Row>
       <br />
       <br />
+      <Row>
+        <Col span={24}>
+          <Text type="secondary">从</Text>
+        </Col>
+        <Col span={24} style={{ paddingLeft: "5px" }} >
+          <Text>普通账户</Text>
+        </Col>
+      </Row>
       <br />
-      <br />
+      <Row>
+        <Col span={24}>
+          <Text type="secondary">到</Text>
+        </Col>
+        <Col span={24} style={{ paddingLeft: "5px" }} >
+          <Text>锁仓账户</Text>
+        </Col>
+      </Row>
+      <Divider />
+      <Row >
+        <Col span={24}>
+          <Text type="secondary">锁仓天数</Text>
+          <br />
+          <Text style={{ fontSize: "18px" }}>
+            {lockDay} 天
+          </Text>
+        </Col>
+      </Row>
+      <Divider />
       <Row style={{ width: "100%", textAlign: "right" }}>
         <Col span={24}>
           {
-            !sending && !render && <Button icon={<LockOutlined />} onClick={() => {
+            !sending && !render && <Button onClick={() => {
               doLockTransaction({
                 to: activeAccount,
                 amount,
                 lockDay
               })
             }} disabled={sending} type="primary" style={{ float: "right" }}>
-              发送交易
+              执行
             </Button>
           }
           {

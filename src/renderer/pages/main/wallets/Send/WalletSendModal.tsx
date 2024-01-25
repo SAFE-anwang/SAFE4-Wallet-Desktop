@@ -1,5 +1,5 @@
 import { Button, Col, Divider, Input, Modal, Row, Typography, Space } from "antd"
-import { Children, useEffect, useMemo, useState } from "react";
+import { Children, useCallback, useEffect, useMemo, useState } from "react";
 import WalletSendModalInput from "./WalletSendModal-Input";
 import WalletSendModalConfirm from "./WalletSendModal-Confirm";
 import { useDispatch } from "react-redux";
@@ -14,13 +14,14 @@ export default ({
   openSendModal,
   setOpenSendModal
 }: {
+
   openSendModal: boolean,
   setOpenSendModal: (open: boolean) => void
+
 }) => {
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
-
   const [step, setStep] = useState(STEP_INPUT);
   const [inputParams, setInputParams] = useState<{
     to: string,
@@ -29,36 +30,34 @@ export default ({
     to: "",
     amount: ""
   });
+  const [txHash , setTxHash] = useState<string>();
+  const cancel = useCallback(() => {
+    setInputParams({
+      to: "",
+      amount: ""
+    });
+    setStep(STEP_INPUT);
+    setOpenSendModal(false);
+    if (txHash) {
+      setTxHash(undefined);
+      dispatch(applicationUpdateWalletTab("history"));
+      navigate("/main/wallet");
+    }
+  }, [txHash]);
 
   return <>
-    <Modal footer={null} destroyOnClose title="发送" style={{ height: "300px" }} open={openSendModal} onCancel={() => {
-      setInputParams({
-        to: "",
-        amount: ""
-      });
-      setStep(STEP_INPUT);
-      setOpenSendModal(false);
-    }}>
+    <Modal footer={null} destroyOnClose title="发送" style={{height: "300px"}} open={openSendModal} onCancel={cancel}>
       <Divider />
       {
-        step == STEP_INPUT && <WalletSendModalInput finishCallback={({ to, amount }) => {
+        step == STEP_INPUT && <WalletSendModalInput goNextCallback={({to,amount}) => {
           setInputParams({
             to, amount
           });
           setStep(STEP_CONFIRM);
-        }} />
+        }}/>
       }
       {
-        step == STEP_CONFIRM && <WalletSendModalConfirm close={() => {
-          setInputParams({
-            to: "",
-            amount: ""
-          });
-          setStep(STEP_INPUT);
-          setOpenSendModal(false);
-          dispatch(applicationUpdateWalletTab("history"));
-          navigate("/main/wallet");
-        }} {...inputParams} />
+        step == STEP_CONFIRM && <WalletSendModalConfirm close={cancel} {...inputParams} setTxHash={setTxHash} />
       }
     </Modal>
   </>

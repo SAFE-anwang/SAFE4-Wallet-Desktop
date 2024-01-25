@@ -250,7 +250,7 @@ export default () => {
             <br />
             <Row style={{ width: "100%" }}>
               <Col span={8} style={{ textAlign: "left" }}>
-                <Text strong>股东</Text><br />
+                <Text strong>合伙人</Text><br />
                 <Text>{sliderVal[0]} %</Text>
               </Col>
               <Col span={8} style={{ textAlign: "center" }}>

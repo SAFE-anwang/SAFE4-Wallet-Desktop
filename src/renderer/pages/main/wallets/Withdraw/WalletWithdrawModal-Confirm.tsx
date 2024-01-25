@@ -1,31 +1,33 @@
 import { useCallback, useMemo, useState } from "react";
-import { Button, Col, Divider, Input, Modal, Row, Typography, Space, Alert } from "antd"
-import { useETHBalances, useSafe4Balance, useWalletsActiveAccount, useWalletsActiveSigner } from "../../../../state/wallets/hooks";
+import { Button, Col, Divider, Row, Typography, Alert } from "antd"
+import { useSafe4Balance, useWalletsActiveAccount } from "../../../../state/wallets/hooks";
 import { useTransactionAdder } from "../../../../state/transactions/hooks";
-import { SearchOutlined, SendOutlined, QrcodeOutlined, LockOutlined } from '@ant-design/icons';
 import { ethers } from "ethers";
 import { useAccountManagerContract } from "../../../../hooks/useContracts";
 import { AccountRecord } from "../../../../structs/AccountManager";
+import { RetweetOutlined } from '@ant-design/icons';
+import useTransactionResponseRender from "../../../components/useTransactionResponseRender";
 const { Text, Link } = Typography;
 
 
 export default ({
-  accountRecord, finishCallback
+  accountRecord, cancel,
+  setTxHash
 }: {
   accountRecord?: AccountRecord,
-  finishCallback: () => void
+  cancel: () => void,
+  setTxHash: (txHash: string) => void
 }) => {
-
   const activeAccount = useWalletsActiveAccount();
   const addTransaction = useTransactionAdder();
   const accountManaggerContract = useAccountManagerContract(true);
   const [sending, setSending] = useState<boolean>(false);
-  const [showErrorDetail, setShowErrorDetail] = useState<boolean>(false);
-  const [rpcResponse, setRpcResponse] = useState<{
-    txHash: string | null,
-    error: any | null
-  }>();
   const safe4balance = useSafe4Balance([activeAccount])[activeAccount];
+  const {
+    render,
+    setTransactionResponse,
+    setErr
+  } = useTransactionResponseRender();
 
   const withdrawAmount = useMemo(() => {
     if (accountRecord) {
@@ -35,7 +37,6 @@ export default ({
     }
   }, [accountRecord, safe4balance]);
 
-
   const doWithdrawTransaction = useCallback(() => {
     if (activeAccount && accountManaggerContract) {
       if (accountRecord) {
@@ -43,10 +44,7 @@ export default ({
           .then((response: any) => {
             setSending(false);
             const { hash, data } = response;
-            setRpcResponse({
-              txHash: hash,
-              error: null
-            });
+            setTransactionResponse(response);
             addTransaction({ to: accountManaggerContract.address }, response, {
               call: {
                 from: activeAccount,
@@ -56,22 +54,17 @@ export default ({
               },
               withdrawAmount: withdrawAmount && ethers.utils.parseEther(withdrawAmount).toString()
             });
+            setTxHash(hash);
           }).catch((err: any) => {
             setSending(false);
-            setRpcResponse({
-              txHash: null,
-              error: err
-            });
+            setErr(err)
           })
       } else {
-        accountManaggerContract.withdraw({gasLimit:5000000})
+        accountManaggerContract.withdraw({ gasLimit: 5000000 })
           .then((response: any) => {
             setSending(false);
             const { hash, data } = response;
-            setRpcResponse({
-              txHash: hash,
-              error: null
-            });
+            setTransactionResponse(response);
             addTransaction({ to: accountManaggerContract.address }, response, {
               call: {
                 from: activeAccount,
@@ -81,12 +74,10 @@ export default ({
               },
               withdrawAmount: withdrawAmount && ethers.utils.parseEther(withdrawAmount).toString()
             });
+            setTxHash(hash)
           }).catch((err: any) => {
             setSending(false);
-            setRpcResponse({
-              txHash: null,
-              error: err
-            });
+            setErr(err)
           })
       }
     }
@@ -94,66 +85,33 @@ export default ({
 
   return <>
     <div style={{ minHeight: "300px" }}>
-      <div style={{ marginBottom: "20px" }}>
-        {
-          rpcResponse?.error && <Alert
-            message="错误"
-            description={
-              <>
-                <Text>{rpcResponse.error.reason}</Text>
-                <br />
-                {
-                  !showErrorDetail && <Link onClick={() => {
-                    setShowErrorDetail(true)
-                  }}>[查看错误信息]</Link>
-                }
-                {
-                  showErrorDetail && <>
-                    {JSON.stringify(rpcResponse.error)}
-                  </>
-                }
-              </>
-            }
-            type="error"
-            showIcon
-          />
-        }
-        {
-          rpcResponse?.txHash && <Alert
-            message="交易哈希"
-            description={
-              <>
-                <Text>{rpcResponse.txHash}</Text>
-              </>
-            }
-            type="success"
-            showIcon
-          />
-        }
-      </div>
-      <br />
-
+      {
+        render
+      }
       {
         !accountRecord && <>
           <Row >
             <Col span={24}>
+              <RetweetOutlined style={{ fontSize: "32px" }} />
               <Text style={{ fontSize: "32px" }} strong>{withdrawAmount} SAFE</Text>
             </Col>
           </Row>
           <br />
-          <Row >
+          <Row>
             <Col span={24}>
-              <Text strong>从</Text>
-              <br />
-              <Text style={{ marginLeft: "10px", fontSize: "18px" }}>锁仓账户</Text>
+              <Text type="secondary">从</Text>
+            </Col>
+            <Col span={24} style={{ paddingLeft: "5px" }} >
+              <Text>锁仓账户</Text>
             </Col>
           </Row>
           <br />
-          <Row >
+          <Row>
             <Col span={24}>
-              <Text strong>到</Text>
-              <br />
-              <Text style={{ marginLeft: "10px", fontSize: "18px" }}>普通账户</Text>
+              <Text type="secondary">到</Text>
+            </Col>
+            <Col span={24} style={{ paddingLeft: "5px" }} >
+              <Text>普通账户</Text>
             </Col>
           </Row>
         </>
@@ -162,46 +120,47 @@ export default ({
         accountRecord && <>
           <Row >
             <Col span={24}>
+              <RetweetOutlined style={{ fontSize: "32px" }} />
               <Text style={{ fontSize: "32px" }} strong>{withdrawAmount} SAFE</Text>
             </Col>
           </Row>
           <br />
-          <Row >
+          <Row>
             <Col span={24}>
-              <Text strong>从</Text>
-              <br />
-              <Text style={{ marginLeft: "10px", fontSize: "18px" }}>锁仓账户:[ID={accountRecord.id}]</Text>
+              <Text type="secondary">从</Text>
+            </Col>
+            <Col span={24} style={{ paddingLeft: "5px" }} >
+              <Text>锁仓账户</Text>
             </Col>
           </Row>
           <br />
-          <Row >
+          <Row>
             <Col span={24}>
-              <Text strong>到</Text>
-              <br />
-              <Text style={{ marginLeft: "10px", fontSize: "18px" }}>普通账户</Text>
+              <Text type="secondary">到</Text>
+            </Col>
+            <Col span={24} style={{ paddingLeft: "5px" }} >
+              <Text>普通账户</Text>
             </Col>
           </Row>
         </>
       }
-
       <Divider />
-
       <Row style={{ width: "100%", textAlign: "right" }}>
         <Col span={24}>
           {
-            !sending && !rpcResponse && <Button onClick={() => {
+            !sending && !render && <Button onClick={() => {
               doWithdrawTransaction()
             }} disabled={sending} type="primary" style={{ float: "right" }}>
               执行
             </Button>
           }
           {
-            sending && !rpcResponse && <Button loading disabled type="primary" style={{ float: "right" }}>
+            sending && !render && <Button loading disabled type="primary" style={{ float: "right" }}>
               广播交易..
             </Button>
           }
           {
-            rpcResponse && <Button onClick={finishCallback} type="primary" style={{ float: "right" }}>
+            render && <Button onClick={cancel} type="primary" style={{ float: "right" }}>
               关闭
             </Button>
           }

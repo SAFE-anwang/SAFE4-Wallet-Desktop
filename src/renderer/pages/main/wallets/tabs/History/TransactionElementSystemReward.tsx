@@ -19,7 +19,7 @@ export default ({ transaction, setClickTransaction }: {
             .keys(systemRewardDatas)
             .map(eventLogIndex => {
               const systemReward = systemRewardDatas[eventLogIndex];
-              return <span style={{ width: "100%" }}>
+              return <span key={systemReward.eventLogIndex} style={{ width: "100%" }}>
                 <TransactionElementTemplate title="挖矿奖励" description={systemReward.from} status={1} assetFlow={
                   <>
                     <Text type="success">

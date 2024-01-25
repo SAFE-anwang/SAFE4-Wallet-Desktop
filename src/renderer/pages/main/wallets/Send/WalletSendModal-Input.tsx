@@ -8,10 +8,11 @@ import { CurrencyAmount, JSBI } from "@uniswap/sdk";
 
 const { Text } = Typography;
 
+const ZERO = CurrencyAmount.ether(JSBI.BigInt(0));
 export default ({
-  finishCallback
+  goNextCallback
 }: {
-  finishCallback: (inputParams: {
+  goNextCallback: (inputParams: {
     to: string,
     amount: string
   }) => void
@@ -26,8 +27,7 @@ export default ({
     const gasPay = CurrencyAmount.ether(
       JSBI.multiply(gasPrice, JSBI.BigInt(gasLimit))
     );
-    const ZERO = CurrencyAmount.ether(JSBI.BigInt(0));
-    return (activeAccountETHBalance && activeAccountETHBalance.greaterThan(ZERO))
+    return (activeAccountETHBalance && activeAccountETHBalance.greaterThan(ZERO) && activeAccountETHBalance.greaterThan(gasPay))
       ? activeAccountETHBalance.subtract(gasPay) : ZERO;
   }, [activeAccountETHBalance]);
 
@@ -69,7 +69,7 @@ export default ({
       setInputErrors({ ...inputErrors })
       return;
     }
-    finishCallback(params);
+    goNextCallback(params);
   }, [activeAccount, maxBalance, params]);
 
   return <>

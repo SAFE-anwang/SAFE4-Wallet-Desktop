@@ -11,11 +11,13 @@ import useTransactionResponseRender from "../../../components/useTransactionResp
 const { Text } = Typography;
 
 export default ({
-  to, amount, close
+  to, amount,
+  setTxHash,close
 }: {
   to: string,
   amount: string,
-  close: () => void
+  setTxHash : (txHash : string) => void
+  close: () => void , 
 }) => {
 
   const signer = useWalletsActiveSigner();
@@ -25,7 +27,9 @@ export default ({
   const {
     render,
     setTransactionResponse,
-    setErr
+    setErr,
+    response,
+    err
   } = useTransactionResponseRender();
   const [sending, setSending] = useState<boolean>(false);
 
@@ -42,6 +46,7 @@ export default ({
         const {
           hash
         } = response;
+        setTxHash(hash);
         setTransactionResponse(response);
         addTransaction(tx, response, {
           transfer: {

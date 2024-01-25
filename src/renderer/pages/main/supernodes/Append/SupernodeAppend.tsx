@@ -35,7 +35,7 @@ export default () => {
   }, [supernodeAddr]);
   useEffect(() => {
     setNotEnoughError(undefined);
-  }, [activeAccount])
+  }, [activeAccount]);
 
   const [params, setParams] = useState<{
     min: number,
@@ -97,7 +97,7 @@ export default () => {
     <div style={{ width: "100%", paddingTop: "40px", minWidth: "1000px" }}>
       <div style={{ margin: "auto", width: "90%" }}>
         <Row>
-          <Card title="通过锁仓SAFE来成为这个超级节点的股东" style={{ width: "100%" }}>
+          <Card title="通过锁仓SAFE来成为这个超级节点的合伙人" style={{ width: "100%" }}>
             <>
               <Row>
                 <Col span={24}>
@@ -145,7 +145,7 @@ export default () => {
               </Row>
               <Divider />
               <Button type='primary' onClick={nextClick}>
-                成为股东
+                成为合伙人
               </Button>
             </>
           </Card>
