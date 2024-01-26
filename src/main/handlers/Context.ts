@@ -17,7 +17,7 @@ export class Context {
 
   constructor(resourcePath: string) {
     this.path.resource = resourcePath;
-    this.path.resource = path.join(this.path.resource, "../");
+    this.path.resource = path.join(this.path.resource, "../../");
     this.path.data = path.join(this.path.resource, this.path.data);
     // 使用 fs.existsSync() 同步地检查文件夹是否存在
     if (!fs.existsSync(this.path.data)) {
