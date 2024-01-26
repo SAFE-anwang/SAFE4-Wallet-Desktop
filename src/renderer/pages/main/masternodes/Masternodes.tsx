@@ -1,7 +1,7 @@
 
-import { Typography, Button, Card, Divider, Statistic, Row, Col, Modal, Flex, Tooltip, Tabs, TabsProps, QRCode, Badge, Space } from 'antd';
-import { useMasternodeStorageContract } from '../../../hooks/useContracts';
-import { useEffect, useState } from 'react';
+import { Typography, Button, Card, Divider, Statistic, Row, Col, Modal, Flex, Tooltip, Tabs, TabsProps, QRCode, Badge, Space, Alert } from 'antd';
+import { useMasternodeStorageContract, useSupernodeStorageContract } from '../../../hooks/useContracts';
+import { useEffect, useMemo, useState } from 'react';
 import { MasternodeInfo, formatMasternode } from '../../../structs/Masternode';
 import Table, { ColumnsType } from 'antd/es/table';
 import AddressView from '../../components/AddressView';
@@ -10,15 +10,22 @@ import { ethers } from 'ethers';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { applicationControlAppendMasternode } from '../../../state/application/action';
+import { useWalletsActiveAccount } from '../../../state/wallets/hooks';
+import { SupernodeInfo, formatSupernodeInfo } from '../../../structs/Supernode';
 
 
-const { Title, Text, Paragraph } = Typography;
+const { Title, Text } = Typography;
 
 export default () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const masternodeStorageContract = useMasternodeStorageContract();
+  const supernodeStorageContract = useSupernodeStorageContract();
   const [masternodes, setMasternodes] = useState<MasternodeInfo[]>();
+  const activeAccount = useWalletsActiveAccount();
+  const [currentMasternodeInfo, setCurrentMasternodeInfo] = useState<MasternodeInfo>();
+  const [currentSupernodeInfo, setCurrentSupernodeInfo] = useState<SupernodeInfo>();
+
   useEffect(() => {
     if (masternodeStorageContract) {
       // function getAll() external view returns (MasterNodeInfo[] memory);
@@ -26,11 +33,28 @@ export default () => {
         .then((_masternodes: any) => {
           const masternodes: MasternodeInfo[] = _masternodes.map(formatMasternode);
           masternodes.sort((m1, m2) => m2.id - m1.id)
-          console.log("load masternodes >>", masternodes)
           setMasternodes(masternodes);
         });
     }
   }, [masternodeStorageContract]);
+
+  useEffect(() => {
+    if (masternodeStorageContract && activeAccount) {
+      setCurrentMasternodeInfo(undefined);
+      // function getInfo(address _addr) external view returns (MasterNodeInfo memory);
+      masternodeStorageContract.callStatic.getInfo(activeAccount)
+        .then((_masternode: any) => setCurrentMasternodeInfo(formatMasternode(_masternode)))
+    }
+  }, [masternodeStorageContract, activeAccount])
+
+  useEffect(() => {
+    if (supernodeStorageContract && activeAccount) {
+      setCurrentSupernodeInfo(undefined);
+      // function getInfo(address _addr) external view returns (MasterNodeInfo memory);
+      supernodeStorageContract.callStatic.getInfo(activeAccount)
+        .then((_masternode: any) => setCurrentSupernodeInfo(formatSupernodeInfo(_masternode)))
+    }
+  }, [supernodeStorageContract, activeAccount]);
 
   const RenderNodeState = (state: number) => {
     switch (state) {
@@ -57,7 +81,7 @@ export default () => {
       },
     },
     {
-      title: '主节点ID',
+      title: '节点ID',
       dataIndex: 'id',
       key: '_id',
       render: (id, supernodeInfo: MasternodeInfo) => {
@@ -106,7 +130,7 @@ export default () => {
               <Space direction='horizontal' style={{ float: "right" }}>
                 {
                   couldAddPartner &&
-                  <Button size='small' type='default' style={{ float: "right" }} onClick={() => {
+                  <Button size='small' type='primary' style={{ float: "right" }} onClick={() => {
                     dispatch(applicationControlAppendMasternode(masternodeInfo.addr))
                     navigate("/main/masternodes/append")
                   }}>加入合伙人</Button>
@@ -130,7 +154,32 @@ export default () => {
     </Row>
     <div style={{ width: "100%", paddingTop: "40px" }}>
       <div style={{ margin: "auto", width: "90%" }}>
-        <Button style={{marginBottom:"20px"}} onClick={()=>{navigate("/main/masternodes/register")}}>成为主节点</Button>
+        <Card style={{marginBottom:"20px"}}>
+          <Alert showIcon type="info" message={<>
+            注册成为主节点，则不能再注册成为超级节点
+          </>} />
+          <Divider />
+          {
+            currentMasternodeInfo && currentMasternodeInfo.id != 0 && <>
+              <Alert showIcon type='warning' message={<>
+                已经是主节点
+              </>} />
+            </>
+          }
+          {
+            currentSupernodeInfo && currentSupernodeInfo.id != 0 && <>
+              <Alert showIcon type='warning' message={<>
+                已经是超级节点
+              </>} />
+            </>
+          }
+          {
+            currentMasternodeInfo && currentMasternodeInfo.id == 0 &&
+            currentSupernodeInfo && currentSupernodeInfo.id == 0 && <>
+              <Button onClick={() => { navigate("/main/masternodes/register") }}>成为主节点</Button>
+            </>
+          }
+        </Card>
         <Table dataSource={masternodes} columns={columns} size="large" pagination={{ total: masternodes?.length, pageSize: 10 }} />
       </div>
     </div>
