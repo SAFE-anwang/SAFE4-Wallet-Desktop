@@ -8,6 +8,7 @@ import { ColumnsType } from "antd/es/table";
 import { RetweetOutlined } from '@ant-design/icons';
 import WalletWithdrawModal from "../../Withdraw/WalletWithdrawModal";
 import { EmptyContract } from "../../../../../constants/SystemContracts";
+import AddressView from "../../../../components/AddressView";
 
 const { Text } = Typography;
 
@@ -132,37 +133,49 @@ export default () => {
         </Col>
         <Col span={16}>
           <Divider orientation="center" style={{ fontSize: "14px", marginTop: "-23px" }}>使用信息</Divider>
-          <Text strong type="secondary">关联主节点</Text>
-          <Text strong type="secondary" style={{ float: "right" }}>抵押释放</Text><br />
-          {
-            frozenAddr == EmptyContract.EMPTY && <>
-              <Tag>未关联</Tag>
-            </>
-          }
-          {
-            frozenAddr != EmptyContract.EMPTY && <>
-              <Text>{frozenAddr}</Text>
-            </>
-          }
-          <Text strong type="secondary" style={{ float: "right" }}>
-            {unfreezeHeight == 0 ? "-" : ""}
-          </Text>
+          <Row>
+            <Col span={16}>
+              <Text strong type="secondary">关联节点</Text><br />
+              {
+                frozenAddr == EmptyContract.EMPTY && <>
+                  <Tag>未关联</Tag>
+                </>
+              }
+              {
+                frozenAddr != EmptyContract.EMPTY && <>
+                  <Text><AddressView address={frozenAddr} /></Text>
+                </>
+              }
+            </Col>
+            <Col span={8}>
+              <Text strong type="secondary" style={{ float: "right" }}>质押释放</Text><br />
+              <Text strong type="secondary" style={{ float: "right" }}>
+                {unfreezeHeight == 0 ? "-" : unfreezeHeight}
+              </Text>
+            </Col>
+          </Row>
           <Divider style={{ margin: "4px 0" }} />
-          <Text strong type="secondary">投票超级节点</Text>
-          <Text strong type="secondary" style={{ float: "right" }}>抵押释放</Text><br />
-          {
-            votedAddr == EmptyContract.EMPTY && <>
-              <Tag>未投票</Tag>
-            </>
-          }
-          {
-            votedAddr != EmptyContract.EMPTY && <>
-              <Text>{votedAddr}</Text>
-            </>
-          }
-          <Text strong type="secondary" style={{ float: "right" }}>
-            {releaseHeight == 0 ? "-" : ""}
-          </Text>
+          <Row>
+            <Col span={16}>
+              <Text strong type="secondary">投票超级节点</Text><br />
+              {
+                votedAddr == EmptyContract.EMPTY && <>
+                  <Tag>未投票</Tag>
+                </>
+              }
+              {
+                votedAddr != EmptyContract.EMPTY && <>
+                  <Text>{votedAddr}</Text>
+                </>
+              }
+            </Col>
+            <Col span={8}>
+              <Text strong type="secondary" style={{ float: "right" }}>质押释放</Text><br />
+              <Text strong type="secondary" style={{ float: "right" }}>
+                {releaseHeight == 0 ? "-" : releaseHeight}
+              </Text>
+            </Col>
+          </Row>
           <Divider style={{ margin: "4px 0" }} />
           <div style={{ lineHeight: "42px" }}>
             <Space style={{ float: "right", marginTop: "2px" }}>
@@ -170,7 +183,7 @@ export default () => {
                 setSelectedAccountRecord(accountRecord);
                 setOpenWithdrawModal(true)
               }}>提现</Button>
-              <Button size="small" style={{ float: "right" }}>追加锁仓</Button>
+              <Button size="small" style={{ float: "right" }}>追加锁仓天数</Button>
             </Space>
           </div>
         </Col>

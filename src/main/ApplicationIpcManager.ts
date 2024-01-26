@@ -12,9 +12,8 @@ export class ApplicationIpcManager {
 
   listenSignalHandlers: ListenSignalHandler[] = [];
 
-  constructor( resoucePath : string ) {
-
-    const ctx = new Context(resoucePath);
+  constructor( resoucePath : string , appIsPackaged : boolean ) {
+    const ctx = new Context(resoucePath,appIsPackaged);
     this.listenSignalHandlers.push(new WalletSignalHandler(ctx));
     const indexSignalHandler = new IndexSingalHandler( ctx , () => {
       this.listenSignalHandlers.push(new DBAddressActivitySingalHandler(indexSignalHandler.getSqlite3DB()));

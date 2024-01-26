@@ -1,9 +1,6 @@
-import { app } from "electron";
-import { ApplicationIpcManager, Channel } from "../ApplicationIpcManager";
+import {  Channel } from "../ApplicationIpcManager";
 import { ListenSignalHandler } from "./ListenSignalHandler";
-import { Wallet_Keystore_FileName } from "./WalletSignalHandler";
 import { Context } from "./Context";
-import path from 'path';
 const fs = require("fs");
 
 export const IndexSingal = "index";

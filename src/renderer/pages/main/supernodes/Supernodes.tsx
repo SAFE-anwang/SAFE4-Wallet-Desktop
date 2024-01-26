@@ -17,8 +17,12 @@ const { Title, Text, Paragraph } = Typography;
 
 export const RenderNodeState = (state: number) => {
   switch (state) {
+    case 0:
+      return <Badge status="success" text="初始化" />
     case 1:
       return <Badge status="processing" text="在线" />
+    case 2:
+      return <Badge status="error" text="异常" />
     default:
       return <Badge status="default" text="未知" />
   }
@@ -28,13 +32,26 @@ export default () => {
 
   const navigate = useNavigate();
   const dispatch = useDispatch();
+
   const supernodeStorageContract = useSupernodeStorageContract();
-  const [supernodeInfos, setSupernodeInfos] = useState<(SupernodeInfo)[]>([]);
-  const [totalVotedAmount, setTotalVotedAmount] = useState<CurrencyAmount>();
+  const masternodeStorageContract = useMasternodeStorageContract();
   const activeAccount = useWalletsActiveAccount();
   const [currentSupernodeInfo, setCurrentSupernodeInfo] = useState<SupernodeInfo>();
   const [currentMasternodeInfo, setCurrentMasternodeInfo] = useState<MasternodeInfo>();
-  const masternodeStorageContract = useMasternodeStorageContract();
+
+  const [supernodeInfos, setSupernodeInfos] = useState<(SupernodeInfo)[]>([]);
+  const [totalVotedAmount, setTotalVotedAmount] = useState<CurrencyAmount>();
+
+  useEffect(() => {
+    if (activeAccount && supernodeStorageContract) {
+      if (supernodeStorageContract && activeAccount) {
+        setCurrentSupernodeInfo(undefined);
+        // function getInfo(address _addr) external view returns (MasterNodeInfo memory);
+        supernodeStorageContract.callStatic.getInfo(activeAccount)
+          .then((_supernode: any) => setCurrentSupernodeInfo(formatSupernodeInfo(_supernode)))
+      }
+    }
+  }, [supernodeStorageContract, activeAccount]);
 
   useEffect(() => {
     if (activeAccount && masternodeStorageContract) {
@@ -48,9 +65,8 @@ export default () => {
   }, [masternodeStorageContract, activeAccount]);
 
   const couldVote = useMemo(() => {
-    console.log("current :" , currentSupernodeInfo)
-    return currentSupernodeInfo == undefined;
-  }, [currentSupernodeInfo , activeAccount]);
+    return (currentSupernodeInfo && currentSupernodeInfo.id == 0);
+  }, [currentSupernodeInfo, activeAccount]);
 
   const columns: ColumnsType<SupernodeInfo> = [
     {
@@ -72,7 +88,7 @@ export default () => {
           </Row>
         </>
       },
-      width: "50px"
+      width: "70px"
     },
     {
       title: '得票数',
@@ -161,13 +177,13 @@ export default () => {
               <Space direction='horizontal' style={{ float: "right" }}>
                 {
                   couldAddPartner &&
-                  <Button size='small' type='default' style={{ float: "right" }} onClick={() => {
+                  <Button size='small' type='primary' style={{ float: "right" }} onClick={() => {
                     dispatch(applicationControlVoteSupernode(supernodeInfo.addr));
                     navigate("/main/supernodes/append");
                   }}>加入合伙人</Button>
                 }
                 {
-                  couldVote && <Button size='small' type='primary' style={{ float: "right" }} onClick={() => {
+                  couldVote && !couldAddPartner && <Button size='small' type='default' style={{ float: "right" }} onClick={() => {
                     dispatch(applicationControlVoteSupernode(supernodeInfo.addr));
                     navigate("/main/supernodes/vote");
                   }}>投票</Button>
@@ -189,15 +205,12 @@ export default () => {
           const supernodeInfos: SupernodeInfo[] = _supernodeInfos.map(formatSupernodeInfo);
           supernodeInfos.sort((s1, s2) => s2.voteInfo.totalAmount.greaterThan(s1.voteInfo.totalAmount) ? 1 : -1)
           // 计算每个超级节点内创建时抵押的 SAFE 数量.
-          setCurrentSupernodeInfo(undefined);
           supernodeInfos.forEach((supernode: SupernodeInfo) => {
             const totalFoundersAmount = supernode.founders.reduce<CurrencyAmount>(
               (totalFoundersAmount, founder) => totalFoundersAmount.add(founder.amount),
               CurrencyAmount.ether(JSBI.BigInt("0"))
             );
-            if (activeAccount == supernode.addr) {
-              setCurrentSupernodeInfo(supernode);
-            }
+            
           });
           // 计算当前网络投票的所有投票价值.
           const totalVotedAmount = supernodeInfos.reduce<CurrencyAmount>(
@@ -231,12 +244,12 @@ export default () => {
           </>} />
           <Divider />
           {
-            !currentSupernodeInfo && currentMasternodeInfo && currentMasternodeInfo.id == 0 && <>
+            (currentSupernodeInfo && currentSupernodeInfo.id == 0 &&  currentMasternodeInfo && currentMasternodeInfo.id == 0) && <>
               <Button onClick={() => navigate("/main/supernodes/create")}>注册超级节点</Button>
             </>
           }
           {
-            currentSupernodeInfo && <>
+            currentSupernodeInfo && currentSupernodeInfo.id != 0 && <>
               <Alert showIcon type='warning' message={<>
                 已经是超级节点
               </>} />

@@ -267,8 +267,8 @@
     ],
     "publish": {
       "provider": "github",
-      "owner": "electron-react-boilerplate",
-      "repo": "electron-react-boilerplate"
+      "owner": "org.anwang",
+      "repo": "org.anwang"
     }
   },
   "collective": {

@@ -38,7 +38,7 @@ const resourcePath = app.isPackaged
   ? path.join(process.resourcesPath, '')
   : path.join(__dirname, '../../');
 new ApplicationIpcManager(
-  resourcePath
+  resourcePath , app.isPackaged
 ).register(ipcMain);
 
 if (process.env.NODE_ENV === 'production') {
@@ -82,8 +82,8 @@ const createWindow = async () => {
 
   mainWindow = new BrowserWindow({
     show: false,
-    width: 1024,
-    height: 728,
+    width: 1400,
+    height: 800,
     icon: getAssetPath('icon.png'),
     webPreferences: {
       preload: app.isPackaged

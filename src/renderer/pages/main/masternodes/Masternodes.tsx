@@ -12,6 +12,7 @@ import { useDispatch } from 'react-redux';
 import { applicationControlAppendMasternode } from '../../../state/application/action';
 import { useWalletsActiveAccount } from '../../../state/wallets/hooks';
 import { SupernodeInfo, formatSupernodeInfo } from '../../../structs/Supernode';
+import { RenderNodeState } from '../supernodes/Supernodes';
 
 
 const { Title, Text } = Typography;
@@ -56,15 +57,6 @@ export default () => {
     }
   }, [supernodeStorageContract, activeAccount]);
 
-  const RenderNodeState = (state: number) => {
-    switch (state) {
-      case 1:
-        return <Badge status="processing" text="在线" />
-      default:
-        return <Badge status="default" text="未知" />
-    }
-  }
-
   const columns: ColumnsType<MasternodeInfo> = [
     {
       title: '状态',
@@ -74,7 +66,7 @@ export default () => {
         return <>
           <Row>
             <Col span={20}>
-              {RenderNodeState(state)}
+              {RenderNodeState(supernodeInfo.stateInfo.state)}
             </Col>
           </Row>
         </>

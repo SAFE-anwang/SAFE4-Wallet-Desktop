@@ -62,7 +62,7 @@ export default () => {
         })
       } else {
         setParams({
-          step: 100,
+          step: 500,
           min: 500,
           left,
           value: 500
