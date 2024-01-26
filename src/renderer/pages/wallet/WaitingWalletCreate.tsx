@@ -1,4 +1,4 @@
-import { Alert, Spin, Steps, StepProps } from "antd"
+import { Alert, Spin, Steps, StepProps, Card, Divider } from "antd"
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useNewMnemonic } from "../../state/application/hooks";
@@ -79,14 +79,17 @@ export default () => {
           dispatch(walletsLoadKeystores([result]));
         }else if (method == Wallet_Methods.storeWallet){
           const {
-            success, path
+            success, path , error
           } = result;
+          setErr(result)
           if ( success ) {
             setTimeout(() => {
               setStepCurrent(3);
               dispatch(applicationActionUpdateAtCreateWallet(false));
               navigate("/main/wallet");
             }, 1500);
+          }else{
+            setErr(err)
           }
         }
       }
@@ -95,6 +98,8 @@ export default () => {
       remove();
     }
   }, []);
+
+  const [err , setErr] = useState();
 
   useEffect(() => {
     if (newMnemonic) {
@@ -111,6 +116,13 @@ export default () => {
 
   return (
     <>
+      <Card title="keystore">
+        {JSON.stringify(newWalletKeystore)}
+      </Card>
+      <Card title="err">
+        {JSON.stringify(err)}
+      </Card>
+
       <Spin spinning={true}>
         <Alert
           style={{
