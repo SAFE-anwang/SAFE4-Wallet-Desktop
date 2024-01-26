@@ -30,7 +30,11 @@ export class WalletSignalHandler implements ListenSignalHandler {
     if (Wallet_Methods.generateMnemonic == method) {
       data = this.generateMnemonic();
     } else if (Wallet_Methods.generateWallet == method) {
-      data = await this.gennerateWallet(params);
+      try{
+        data = await this.gennerateWallet(params);
+      }catch( err : any ){
+        data = err;
+      }
     } else if (Wallet_Methods.storeWallet == method) {
       data = await this.storeWallet(params);
     }

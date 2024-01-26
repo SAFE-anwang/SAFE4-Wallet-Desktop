@@ -84,9 +84,9 @@ export default () => {
           setErr(result)
           if ( success ) {
             setTimeout(() => {
-              setStepCurrent(3);
-              dispatch(applicationActionUpdateAtCreateWallet(false));
-              navigate("/main/wallet");
+              // setStepCurrent(3);
+              // dispatch(applicationActionUpdateAtCreateWallet(false));
+              // navigate("/main/wallet");
             }, 1500);
           }else{
             setErr(err)
