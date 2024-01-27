@@ -17,6 +17,7 @@ import SupernodeRegister from './pages/main/supernodes/Register/SupernodeRegiste
 import SupernodeAppend from './pages/main/supernodes/Append/SupernodeAppend';
 import MasternodeRegister from './pages/main/masternodes/Register/MasternodeRegister';
 import MasternodeAppend from './pages/main/masternodes/Append/MasternodeAppend';
+import GetTestCoin from './pages/gettestcoin/GetTestCoin';
 
 export default function App() {
 
@@ -35,7 +36,7 @@ export default function App() {
               <MenuComponent />
             </Col>
           }
-          <Col span={18} style={{
+          <Col id='appContainer' span={18} style={{
             minWidth:"1000px",
             position: "fixed",
             overflowX: "auto",
@@ -61,6 +62,7 @@ export default function App() {
               <Route path="/main/masternodes" element={<Masternodes />} />
               <Route path="/main/masternodes/register" element={<MasternodeRegister />} />
               <Route path="/main/masternodes/append" element={<MasternodeAppend />} />
+              <Route path="/main/gettestcoin" element={<GetTestCoin />} />
               <Route path="/tools/web3" element={<TestMulticall />} />
               <Route path="/main/menu" element={<Menu />} />
             </Routes>

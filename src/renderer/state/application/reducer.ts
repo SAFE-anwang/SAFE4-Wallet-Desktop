@@ -30,6 +30,7 @@ export interface IApplicationState {
   blockchain : {
     networkId : "SAFE4" ,
     blockNumber : number,
+    timestamp : number
   }
   data : {
     [key:string]  : any
@@ -48,6 +49,7 @@ const initialState: IApplicationState = {
   blockchain:{
     networkId : "SAFE4",
     blockNumber: 0,
+    timestamp : 0
   },
   data:{
 
@@ -67,11 +69,13 @@ export default createReducer(initialState, (builder) => {
   })
 
   .addCase(applicationBlockchainUpdateBlockNumber , ( state , {payload}) => {
+    const {blockNumber , timestamp} = payload;
     return {
       ...state ,
       blockchain:{
         ...state.blockchain ,
-        blockNumber : payload
+        blockNumber,
+        timestamp
       }
     }
   })

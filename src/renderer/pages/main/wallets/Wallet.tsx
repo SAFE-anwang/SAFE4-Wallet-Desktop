@@ -43,10 +43,6 @@ export default () => {
     },
   ];
 
-  async function callDoNewAccount() {
-    navigate("/selectCreateWallet");
-  }
-
   const onChange = (key: string) => {
     dispatch(applicationUpdateWalletTab(key))
   };

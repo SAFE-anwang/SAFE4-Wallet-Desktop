@@ -1,14 +1,16 @@
 import { Row, Statistic, Card, Col, Table, Typography, Button, Divider, Space, Tag } from "antd";
 import { useSafe4Balance, useWalletsActiveAccount } from "../../../../../state/wallets/hooks";
-import { useCallback, useEffect, useState } from "react";
-import { useBlockNumber } from "../../../../../state/application/hooks";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { useBlockNumber, useTimestamp } from "../../../../../state/application/hooks";
 import { useAccountManagerContract, useMulticallContract } from "../../../../../hooks/useContracts";
 import { AccountRecord, formatAccountRecord, formatRecordUseInfo } from "../../../../../structs/AccountManager";
 import { ColumnsType } from "antd/es/table";
-import { RetweetOutlined } from '@ant-design/icons';
+import { LockOutlined, RetweetOutlined, UnlockFilled, UnlockOutlined, UnlockTwoTone } from '@ant-design/icons';
 import WalletWithdrawModal from "../../Withdraw/WalletWithdrawModal";
 import { EmptyContract } from "../../../../../constants/SystemContracts";
 import AddressView from "../../../../components/AddressView";
+import BlockNumberDateTime from "../../../../components/BlockNumberDateTime";
+import { DateTimeFormat } from "../../../../../utils/DateUtils";
 
 const { Text } = Typography;
 
@@ -54,50 +56,9 @@ export default () => {
     }
   }, [activeAccount, blockNumber, accountManagerContract]);
 
-  const columns: ColumnsType<AccountRecord> = [
-    {
-      title: '基本信息',
-      dataIndex: 'id',
-      key: 'id',
-      width: 200,
-      render: (id, accountRecord) => {
-        const couldWithdraw = blockNumber >= accountRecord.unlockHeight;
-        return <>
-          <Text strong type="secondary">记录ID</Text><br />
-          <Text strong>{id}</Text>
-          {
-            couldWithdraw && <Button style={{ float: "right" }} onClick={() => {
-              setSelectedAccountRecord(accountRecord);
-              setOpenWithdrawModal(true);
-            }}>提现</Button>
-          }
-          <Divider style={{ margin: "4px 0" }} />
-          <Text strong type="secondary">锁仓数量</Text><br />
-          <Text strong>{accountRecord.amount.toFixed(6)} SAFE</Text>
-          <Divider style={{ margin: "4px 0" }} />
-          <Text strong type="secondary">解锁高度</Text><br />
-          <Text>{accountRecord.unlockHeight}</Text>
-          <Text style={{ float: "right" }}>2023-02-02 12:12:12</Text>
-        </>
-      }
-    },
-    {
-      title: '使用信息',
-      dataIndex: 'amount',
-      key: 'amount',
-      width: 400,
-      render: (amount, accountRecord) => {
-        const couldWithdraw = blockNumber >= accountRecord.unlockHeight;
-        return <>
-          <Text>{amount.toFixed(6)}</Text><br />
-          <Text>{accountRecord.unlockHeight}</Text>
+  const timestamp = useTimestamp();
 
-        </>
-      }
-    }
-  ];
-
-  const RenderAccountRecord = function (accountRecord: AccountRecord) {
+  const RenderAccountRecord = useCallback((accountRecord: AccountRecord) => {
     const {
       id, amount, unlockHeight, recordUseInfo
     } = accountRecord;
@@ -113,25 +74,36 @@ export default () => {
       releaseHeight: 0
     }
     const locked = unlockHeight > blockNumber;
+    const couldWithdraw = (!locked && blockNumber > unfreezeHeight && blockNumber > releaseHeight);
+    const unlockDateTime = unlockHeight - blockNumber > 0 ? DateTimeFormat(((unlockHeight - blockNumber) * 30 + timestamp) * 1000) : undefined;
+    const unfreezeDateTime = unfreezeHeight - blockNumber > 0 ? DateTimeFormat(((unfreezeHeight - blockNumber) * 30 + timestamp) * 1000) : undefined;
+    const releaseDateTime = releaseHeight - blockNumber > 0 ? DateTimeFormat(((releaseHeight - blockNumber) * 30 + timestamp) * 1000) : undefined;
 
     return <Card key={id} size="small" style={{ marginBottom: "60px" }}>
       <Row>
-        <Col span={7}>
+        <Col span={6}>
           <Divider orientation="center" style={{ fontSize: "14px", marginTop: "-23px", fontWeight: "600" }}>锁仓信息</Divider>
           <Text strong type="secondary">记录ID</Text><br />
-          <Text strong>{id}</Text>
+          <Text strong>
+            {
+              locked && <LockOutlined />
+            }
+            {id}
+          </Text>
           <Divider style={{ margin: "4px 0" }} />
           <Text strong type="secondary">锁仓数量</Text><br />
-          <Text strong>{amount.toFixed(6)} SAFE</Text>
+          <Text strong>{amount.toFixed(2)} SAFE</Text>
           <Divider style={{ margin: "4px 0" }} />
           <Text strong type="secondary">解锁高度</Text><br />
           <Text strong type={locked ? "secondary" : "success"}>{unlockHeight}</Text>
-          <Text style={{ float: "right" }}></Text>
+          {
+            unlockDateTime && <Text strong style={{ float: "right" }} type="secondary">[{unlockDateTime}]</Text>
+          }
         </Col>
         <Col>
           <Divider type="vertical" style={{ height: "100%" }} />
         </Col>
-        <Col span={16}>
+        <Col span={17}>
           <Divider orientation="center" style={{ fontSize: "14px", marginTop: "-23px" }}>使用信息</Divider>
           <Row>
             <Col span={16}>
@@ -149,8 +121,14 @@ export default () => {
             </Col>
             <Col span={8}>
               <Text strong type="secondary" style={{ float: "right" }}>质押释放</Text><br />
-              <Text strong type="secondary" style={{ float: "right" }}>
+              <Text strong style={{ float: "right", color: unfreezeHeight > blockNumber ? "#104499" : "#27c92d" }}>
                 {unfreezeHeight == 0 ? "-" : unfreezeHeight}
+                {
+                  unfreezeDateTime && <>
+                    <Divider type="vertical" style={{ margin: "0px 4px" }} ></Divider>
+                    <Text strong style={{ color: "#104499" }}>{unfreezeDateTime}</Text>
+                  </>
+                }
               </Text>
             </Col>
           </Row>
@@ -171,25 +149,30 @@ export default () => {
             </Col>
             <Col span={8}>
               <Text strong type="secondary" style={{ float: "right" }}>质押释放</Text><br />
-              <Text strong type="secondary" style={{ float: "right" }}>
+              <Text strong style={{ float: "right", color: releaseHeight > blockNumber ? "#104499" : "#27c92d" }}>
                 {releaseHeight == 0 ? "-" : releaseHeight}
+                {
+                  releaseDateTime && <>
+                    <Divider type="vertical" style={{ margin: "0px 4px" }} ></Divider>
+                    <Text strong style={{ color: "#104499" }}>{releaseDateTime}</Text>
+                  </>
+                }
               </Text>
             </Col>
           </Row>
           <Divider style={{ margin: "4px 0" }} />
           <div style={{ lineHeight: "42px" }}>
             <Space style={{ float: "right", marginTop: "2px" }}>
-              <Button title="提现" disabled={locked} size="small" type="primary" onClick={() => {
+              <Button title="提现" disabled={!couldWithdraw} size="small" type="primary" onClick={() => {
                 setSelectedAccountRecord(accountRecord);
                 setOpenWithdrawModal(true)
               }}>提现</Button>
-              <Button size="small" style={{ float: "right" }}>追加锁仓天数</Button>
             </Space>
           </div>
         </Col>
       </Row>
     </Card>
-  }
+  }, [blockNumber, timestamp]);
 
   return <>
     <Row>

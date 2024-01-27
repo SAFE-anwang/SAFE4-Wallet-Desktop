@@ -16,6 +16,7 @@ export default () => {
     })
     const debouncedState = useDebounce(state, 100);
     const blockNumberCallback = (blockNumber: number) => {
+        
         setState({ blockNumber });
     }
 
@@ -33,7 +34,16 @@ export default () => {
 
     useEffect(() => {
         if (!debouncedState.blockNumber) return
-        dispatch(applicationBlockchainUpdateBlockNumber(debouncedState.blockNumber));
+        provider?.getBlock(debouncedState.blockNumber)
+            .then( response => {
+                const { timestamp } = response;
+                dispatch(applicationBlockchainUpdateBlockNumber({
+                    blockNumber : debouncedState.blockNumber ?? 0,
+                    timestamp
+                }));
+            }).catch(err => {
+
+            })
     }, [dispatch, state, debouncedState.blockNumber])
 
 

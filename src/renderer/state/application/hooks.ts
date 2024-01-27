@@ -9,6 +9,12 @@ export function useBlockNumber(): number {
   });
 }
 
+export function useTimestamp(): number {
+  return useSelector((state: AppState) => {
+    return state.application.blockchain.timestamp;
+  });
+}
+
 export function useNewMnemonic(): string | undefined {
   return useSelector((state: AppState) => {
     return state.application.action.newMnemonic;

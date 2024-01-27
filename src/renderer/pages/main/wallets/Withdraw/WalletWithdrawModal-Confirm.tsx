@@ -40,7 +40,9 @@ export default ({
   const doWithdrawTransaction = useCallback(() => {
     if (activeAccount && accountManaggerContract) {
       if (accountRecord) {
-        accountManaggerContract.withdrawByID([accountRecord.id])
+        accountManaggerContract.withdrawByID([accountRecord.id] , {
+          gasLimit : 300000
+        })
           .then((response: any) => {
             setSending(false);
             const { hash, data } = response;

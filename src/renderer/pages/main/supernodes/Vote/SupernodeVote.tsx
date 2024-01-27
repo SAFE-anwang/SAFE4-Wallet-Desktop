@@ -1,5 +1,5 @@
 
-import { Typography, Row, Col, Button, Card, Checkbox, CheckboxProps, Divider } from 'antd';
+import { Typography, Row, Col, Button, Card, Checkbox, CheckboxProps, Divider, Alert } from 'antd';
 import { useEffect, useMemo, useState } from 'react';
 import { CheckboxValueType } from 'antd/es/checkbox/Group';
 import type { GetProp } from 'antd';
@@ -14,8 +14,10 @@ import { AccountRecord } from '../../../../structs/AccountManager';
 import { LeftOutlined, LockOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import Supernode from '../Supernode';
+import { CurrencyAmount } from '@uniswap/sdk';
+import { ethers } from 'ethers';
 
-const { Title } = Typography;
+const { Text , Title } = Typography;
 
 export default () => {
 
@@ -37,6 +39,7 @@ export default () => {
     }
   }, [supernodeAddr]);
 
+  const ONE = CurrencyAmount.ether(ethers.utils.parseEther("1").toBigInt());
   const {
     optionsAllAccountRecords, votableAccountRecordIds
   } = useMemo(() => {
@@ -46,7 +49,8 @@ export default () => {
         .map(accountRecord => {
           // 已经投过的不能再投，另外如果已经关联到超级节点的，也不能再参与投票了.
           const disabled = !(accountRecord.recordUseInfo?.votedAddr == EmptyContract.EMPTY)
-                              || supernodeAddresses.indexOf(accountRecord.recordUseInfo?.frozenAddr) >= 0;
+                            || supernodeAddresses.indexOf(accountRecord.recordUseInfo?.frozenAddr) >= 0
+                              ||  ONE.greaterThan(accountRecord.amount) ;
           return {
             label: <>
               <div key={accountRecord.id} style={{ margin: "15px 15px" }}>
@@ -71,7 +75,7 @@ export default () => {
       optionsAllAccountRecords: [],
       votableAccountRecordIds: []
     }
-  }, [activeAccountAccountRecords,supernodeAddresses]);
+  }, [activeAccountAccountRecords, supernodeAddresses]);
 
   const [checkedAccountRecordIds, setCheckedAccountRecordIds] = useState<CheckboxValueType[]>([]);
 
@@ -93,10 +97,10 @@ export default () => {
   return <>
     <Row style={{ height: "50px" }}>
       <Col span={8}>
-        <Button style={{ marginTop: "18px" , marginRight:"12px" , float:"left"  }} size="large" shape="circle" icon={<LeftOutlined />} onClick={ () => {
+        <Button style={{ marginTop: "18px", marginRight: "12px", float: "left" }} size="large" shape="circle" icon={<LeftOutlined />} onClick={() => {
           navigate("/main/supernodes")
-        }}/>
-        <Title level={4} style={{ lineHeight: "16px" , float:"left" }}>
+        }} />
+        <Title level={4} style={{ lineHeight: "16px", float: "left" }}>
           超级节点投票
         </Title>
       </Col>
@@ -110,6 +114,14 @@ export default () => {
               <Checkbox indeterminate={indeterminate} checked={checkAll} onChange={onAccountRecordCheckAllChange}>
                 选择全部可用锁仓记录
               </Checkbox>
+              <Alert style={{marginTop:"20px"}} type='info' showIcon message={
+                <>
+                  <Text>必须同时满足如下条件的锁仓记录才可以进行投票</Text><br />
+                  <Text>1. 未关联超级节点的锁仓记录</Text><br />
+                  <Text>2. 未投票的锁仓记录</Text><br />
+                  <Text>3. 锁仓数量大于 <Text strong>1 SAFE</Text></Text><br />
+                </>
+              } />
               <Divider />
               <Checkbox.Group
                 options={optionsAllAccountRecords}
@@ -133,7 +145,7 @@ export default () => {
             supernodeInfo && <Supernode supernodeInfo={supernodeInfo} />
           }
         </Row>
-        
+
       </div>
     </div>
 

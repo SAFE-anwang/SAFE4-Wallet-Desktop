@@ -24,7 +24,6 @@ export default () => {
 
     const applicationData = useSelector<AppState , {[key : string] : any}>( state => state.application.data );
 
-
     useEffect( () => {
         dispatch(applicationActionUpdateAtCreateWallet(true))
     },[]);
@@ -72,15 +71,6 @@ export default () => {
             </Col>
         </Row>
         <br />< br />
-
-        {
-          Object.keys(applicationData).map( key => {
-            return <Row key={key}>
-              {key} = {JSON.stringify(applicationData[key])}
-            </Row>
-          } )
-        }
-
     </>
 
 }

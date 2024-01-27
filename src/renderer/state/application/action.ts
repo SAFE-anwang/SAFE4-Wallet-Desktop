@@ -4,7 +4,7 @@ export const applicationInit = createAction<{
   web3Endpoint: string
 }>("application/init");
 
-export const applicationBlockchainUpdateBlockNumber = createAction<number>
+export const applicationBlockchainUpdateBlockNumber = createAction<{blockNumber:number,timestamp:number}>
   ("application/blockchainUpdateBlockNumber")
 
 export const applicationDataUpdate = createAction<{
