@@ -1,4 +1,7 @@
 import type { AddEthereumChainParameter } from '@web3-react/types'
+import config from '../config'
+
+const {Default_Web3_Endpoint} = config;
 
 const SAFE4: AddEthereumChainParameter['nativeCurrency'] = {
   name: 'Safe4',
@@ -70,7 +73,7 @@ export const MAINNET_CHAINS: ChainConfig = {
   //   nativeCurrency: BSC,
   // },
   6666666: {
-    urls: ['http://47.107.47.210:8545'].filter(Boolean),
+    urls: [Default_Web3_Endpoint].filter(Boolean),
     name: 'Safe4',
     nativeCurrency: SAFE4,
   },
@@ -91,7 +94,6 @@ export const URLS: { [chainId: number]: string[] } = Object.keys(CHAINS).reduce<
     if (validURLs.length) {
       accumulator[Number(chainId)] = validURLs
     }
-    console.log()
     return accumulator
   },
   {}

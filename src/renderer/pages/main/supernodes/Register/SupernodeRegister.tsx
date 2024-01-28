@@ -6,7 +6,7 @@ import { useActiveAccountAccountRecords, useETHBalances, useWalletsActiveAccount
 import { EmptyContract } from '../../../../constants/SystemContracts';
 import { useSelector } from 'react-redux';
 import { AppState } from '../../../../state';
-import { useSupernodeStorageContract } from '../../../../hooks/useContracts';
+import { useMasternodeStorageContract, useSupernodeStorageContract } from '../../../../hooks/useContracts';
 import { SupernodeInfo, formatSupernodeInfo } from '../../../../structs/Supernode';
 import VoteModalConfirm from '../Vote/VoteModal-Confirm';
 import { AccountRecord } from '../../../../structs/AccountManager';
@@ -25,6 +25,7 @@ export default () => {
 
   const navigate = useNavigate();
   const supernodeStorageContract = useSupernodeStorageContract();
+  const masternodeStorageContract = useMasternodeStorageContract();
   const activeAccount = useWalletsActiveAccount();
   const balance = useETHBalances([activeAccount])[activeAccount];
 
@@ -72,7 +73,13 @@ export default () => {
     };
     if (!enode) {
       inputErrors.enode = "请输入超级节点ENODE!";
-    };
+    }else{
+      const enodeRegex = /^enode:\/\/[0-9a-fA-F]{128}@(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}):(\d+)$/;
+      const isMatch = enodeRegex.test(enode);
+      if (!isMatch){
+        inputErrors.enode = "超级节点ENODE格式不正确!";
+      }
+    }
     if (!description) {
       inputErrors.description = "请输入超级节点简介信息!"
     };
@@ -88,20 +95,21 @@ export default () => {
       setInputErrors({ ...inputErrors });
       return;
     }
-    if (supernodeStorageContract) {
+    if (supernodeStorageContract && masternodeStorageContract) {
       /**
        * function existName(string memory _name) external view returns (bool);
        * function existEnode(string memory _enode) external view returns (bool);
        */
       const nameExists = await supernodeStorageContract.callStatic.existName(name);
       const enodeExists = await supernodeStorageContract.callStatic.existEnode(enode);
+      const enodeExistsInMasternodes = await masternodeStorageContract.callStatic.existEnode(enode);
       if (nameExists) {
         inputErrors.name = "该名称已被使用";
       }
-      if (enodeExists) {
+      if (enodeExists || enodeExistsInMasternodes) {
         inputErrors.enode = "该ENODE已被使用";
       }
-      if (nameExists || enodeExists) {
+      if (nameExists || enodeExists || enodeExistsInMasternodes) {
         setInputErrors({ ...inputErrors });
         return;
       }

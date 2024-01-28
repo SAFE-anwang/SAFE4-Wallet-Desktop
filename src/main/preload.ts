@@ -1,10 +1,15 @@
 // Disable no-unused-vars, broken for spread args
 /* eslint no-unused-vars: off */
-import { contextBridge, ipcRenderer, IpcRendererEvent } from 'electron';
+import { contextBridge, ipcRenderer, IpcRendererEvent , OpenExternalOptions, shell } from 'electron';
 
 export type Channels = 'ipc-example';
 
 const electronHandler = {
+  shell : {
+    openExternal(url: string, options?: OpenExternalOptions){
+      shell.openExternal(url , options)
+    }
+  },
   ipcRenderer: {
     /**
      *

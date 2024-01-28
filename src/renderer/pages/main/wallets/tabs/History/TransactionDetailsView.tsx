@@ -1,5 +1,5 @@
-import { Row, Alert, Col, Tag, Typography, Divider, Card, Spin } from "antd"
-import { LoadingOutlined, CheckCircleFilled , CloseCircleFilled } from '@ant-design/icons';
+import { Row, Alert, Col, Tag, Typography, Divider, Card, Spin, Button } from "antd"
+import { LoadingOutlined, CheckCircleFilled , CloseCircleFilled , ExportOutlined } from '@ant-design/icons';
 import TokenLogo from "../../../../components/TokenLogo";
 import { TransactionDetails } from "../../../../../state/transactions/reducer";
 import { useWalletsActiveAccount } from "../../../../../state/wallets/hooks";
@@ -8,7 +8,9 @@ import AddressView from "../../../../components/AddressView";
 import { DateTimeFormat } from "../../../../../utils/DateUtils";
 import { useTransaction } from "../../../../../state/transactions/hooks";
 import { useMemo } from "react";
+import config from "../../../../../config";
 
+const { Safescan_URL } = config;
 const { Text } = Typography;
 
 export default ({
@@ -84,7 +86,11 @@ export default ({
 
     <Text type="secondary" style={{ fontSize: "12px" }}>详情</Text><br />
     <Card style={{ marginTop: "8px" }}>
-      <Text type="secondary">交易哈希</Text><br />
+      <Text type="secondary">交易哈希</Text>
+      <Button onClick={() => {
+         window.open(`${Safescan_URL}/tx/${hash}`)
+      }} size="small" icon={<ExportOutlined />} style={{float:"right"}} />
+      <br />
       <Text>{hash}</Text>
       <Divider style={{ marginTop: "10px", marginBottom: "10px" }} />
     </Card>
