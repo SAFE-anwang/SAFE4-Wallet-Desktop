@@ -9,12 +9,14 @@ import { Currency, CurrencyAmount, JSBI } from '@uniswap/sdk';
 import { ethers } from 'ethers';
 import type { RadioChangeEvent } from 'antd';
 import { useETHBalances, useWalletsActiveAccount } from '../../../../state/wallets/hooks';
-import { useMasternodeStorageContract } from '../../../../hooks/useContracts';
+import { useMasternodeStorageContract, useSupernodeStorageContract } from '../../../../hooks/useContracts';
 import RegisterModalConfirm from './RegisterModal-Confirm';
 const { Text, Title } = Typography;
 
 export const Masternode_Create_Type_NoUnion = 1;
 export const Masternode_create_type_Union = 2;
+
+
 
 export default () => {
 
@@ -22,6 +24,7 @@ export default () => {
   const activeAccount = useWalletsActiveAccount();
   const balance = useETHBalances([activeAccount])[activeAccount];
   const masternodeStorageContract = useMasternodeStorageContract();
+  const supernodeStorageContract = useSupernodeStorageContract();
   const [openRegisterModal, setOpenRegsterModal] = useState<boolean>(false);
 
   const [registerParams, setRegisterParams] = useState<{
@@ -58,32 +61,37 @@ export default () => {
     incentivePlan.creator = sliderVal;
     incentivePlan.partner = 100 - sliderVal;
     if (!enode) {
-      inputErrors.enode = "请输入超级节点ENODE!";
-    };
+      inputErrors.enode = "请输入主节点ENODE!";
+    }else{
+      const enodeRegex = /^enode:\/\/[0-9a-fA-F]{128}@(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}):(\d+)$/;
+      const isMatch = enodeRegex.test(enode);
+      if (!isMatch){
+        inputErrors.enode = "主节点ENODE格式不正确!";
+      }
+    }
     if (!description) {
-      inputErrors.description = "请输入超级节点简介信息!"
+      inputErrors.description = "请输入主节点简介信息!"
     };
     if (registerParams.registerType == Masternode_Create_Type_NoUnion
       && !balance?.greaterThan(CurrencyAmount.ether(JSBI.BigInt(ethers.utils.parseEther("1000"))))) {
-      inputErrors.balance = "账户余额不足以锁仓创建主节点";
+      inputErrors.balance = "账户余额不足以锁仓来创建主节点";
     }
     if (registerParams.registerType == Masternode_create_type_Union
       && !balance?.greaterThan(CurrencyAmount.ether(JSBI.BigInt(ethers.utils.parseEther("200"))))) {
-      inputErrors.balance = "账户余额不足以锁仓创建主节点";
+      inputErrors.balance = "账户余额不足以锁仓来创建主节点";
     }
     if (inputErrors.enode || inputErrors.description || inputErrors.balance) {
       setInputErrors({ ...inputErrors });
       return;
     }
-    if (masternodeStorageContract) {
+    if (masternodeStorageContract && supernodeStorageContract) {
       /**
        * function existEnode(string memory _enode) external view returns (bool);
        */
-      const enodeExists = await masternodeStorageContract.callStatic.existEnode(enode);
-      if (enodeExists) {
+      const enodeExistsInMasternodes = await masternodeStorageContract.callStatic.existEnode(enode);
+      const enodeExistsInSupernodes = await supernodeStorageContract.callStatic.existEnode(enode);
+      if (enodeExistsInMasternodes || enodeExistsInSupernodes) {
         inputErrors.enode = "该ENODE已被使用";
-      }
-      if (enodeExists) {
         setInputErrors({ ...inputErrors });
         return;
       }
