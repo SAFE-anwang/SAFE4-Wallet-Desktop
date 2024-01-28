@@ -1,5 +1,5 @@
 import { Row, Alert, Col, Tag, Typography, Divider, Card, Spin } from "antd"
-import { LoadingOutlined, CheckCircleFilled } from '@ant-design/icons';
+import { LoadingOutlined, CheckCircleFilled , CloseCircleFilled } from '@ant-design/icons';
 import TokenLogo from "../../../../components/TokenLogo";
 import { TransactionDetails } from "../../../../../state/transactions/reducer";
 import { useWalletsActiveAccount } from "../../../../../state/wallets/hooks";
@@ -44,7 +44,7 @@ export default ({
     <Row>
       <Col span={24}>
         {
-          status && status == 1 && <>
+          status == 1 && <>
             <CheckCircleFilled style={{
               color: "#52c41a", fontSize: "50px", float: "left", marginRight: "20px", marginLeft: "20px"
             }} />
@@ -55,7 +55,7 @@ export default ({
           </>
         }
         {
-          !status && <>
+          status == undefined && <>
             <Spin style={{ float: "left" }} indicator={
               <LoadingOutlined style={{ fontSize: "50px", marginRight: "20px", marginLeft: "20px" }}
               />} >
@@ -66,6 +66,17 @@ export default ({
             </div>
           </>
         }
+        { 
+          status == 0 && <> 
+            <CloseCircleFilled style={{
+              color: "#e53d3d", fontSize: "50px", float: "left", marginRight: "20px", marginLeft: "20px"
+            }} />
+            <div>
+              <Text style={{ fontSize: "16px" }}>失败</Text><br />
+              <Text style={{ fontSize: "16px" }} type="secondary">{DateTimeFormat(addedTime)}</Text>
+            </div>
+          </>
+        }
       </Col>
     </Row>
 
@@ -73,15 +84,9 @@ export default ({
 
     <Text type="secondary" style={{ fontSize: "12px" }}>详情</Text><br />
     <Card style={{ marginTop: "8px" }}>
-
       <Text type="secondary">交易哈希</Text><br />
       <Text>{hash}</Text>
-
       <Divider style={{ marginTop: "10px", marginBottom: "10px" }} />
-
-      <Text type="secondary">手续费</Text><br />
-      <Text>0x1231244314321</Text>
-
     </Card>
     <br />
     {

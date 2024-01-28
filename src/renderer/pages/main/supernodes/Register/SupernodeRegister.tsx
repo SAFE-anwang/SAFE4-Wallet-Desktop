@@ -77,11 +77,11 @@ export default () => {
       inputErrors.description = "请输入超级节点简介信息!"
     };
     if ( createParams.createType == Supernode_Create_Type_NoUnion
-        && !balance?.greaterThan(CurrencyAmount.ether(JSBI.BigInt(ethers.utils.parseEther("2"))))) {
+        && !balance?.greaterThan(CurrencyAmount.ether(JSBI.BigInt(ethers.utils.parseEther("5000"))))) {
       inputErrors.balance = "账户余额不足以支付超级节点创建费用";
     }
     if ( createParams.createType == Supernode_create_type_Union
-        && !balance?.greaterThan(CurrencyAmount.ether(JSBI.BigInt(ethers.utils.parseEther("1"))))) {
+        && !balance?.greaterThan(CurrencyAmount.ether(JSBI.BigInt(ethers.utils.parseEther("1000"))))) {
       inputErrors.balance = "账户余额不足以支付超级节点创建费用";
     }
     if (inputErrors.name || inputErrors.enode || inputErrors.description || inputErrors.balance) {

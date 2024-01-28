@@ -6,8 +6,54 @@ import { addTransaction } from "./actions";
 import { Transfer, TransactionDetails, ContractCall } from "./reducer";
 import { DateFormat } from "../../utils/DateUtils";
 
+
+export function useTransactionAdder2(): (
+  response: {
+    from : string,
+    to :   string,
+    hash:  string
+  },
+  customData?: {
+    transfer?: Transfer ,
+    call ?: ContractCall,
+    withdrawAmount ?: string
+  }
+) => void {
+  const dispatch = useDispatch<AppDispatch>();
+  return useCallback(
+    (
+      response: {
+        from : string,
+        to:string,
+        hash : string
+      },
+      { transfer , call , withdrawAmount }:
+        {
+          transfer ?: Transfer ,
+          call ?: ContractCall,
+          withdrawAmount ?: string
+        } = {}
+    ) => {
+      const { from , hash } = response;
+      const { to } = transfer ? { ...transfer } :
+                      call ? { ...call }
+                       : { to:undefined } ;
+      const transaction = {
+        hash ,
+        refFrom : from,
+        refTo : to,
+        transfer,
+        call,
+        withdrawAmount
+      }
+      dispatch(addTransaction(transaction));
+    },
+    [dispatch]
+  )
+}
+
 export function useTransactionAdder(): (
-  request: TransactionRequest,
+  request : TransactionRequest,
   response: TransactionResponse,
   customData?: {
     transfer?: Transfer ,
@@ -18,7 +64,7 @@ export function useTransactionAdder(): (
   const dispatch = useDispatch<AppDispatch>();
   return useCallback(
     (
-      request: TransactionRequest,
+      request : TransactionRequest,
       response: TransactionResponse,
       { transfer , call , withdrawAmount }:
         {

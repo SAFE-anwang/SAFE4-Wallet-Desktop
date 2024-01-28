@@ -8,7 +8,6 @@ export const POST = async function (url: string, params?: any): Promise<ApiRespo
       'Content-Type': "application/json"
     },
     body: JSON.stringify(params),
-
   })
   const json = await response.json();
   return json as ApiResponse<any>;
@@ -16,7 +15,7 @@ export const POST = async function (url: string, params?: any): Promise<ApiRespo
 
 export interface ApiResponse<VO> {
   code: string,
-  msg: string,
+  message: string,
   data: VO
 }
 
@@ -47,6 +46,13 @@ export interface AddressActivityVO {
   refTo: string,
   action: string,
   data: any
+}
+
+export interface GetTestCoinVO {
+  address : string,
+  dateTimestamp : number,
+  amount : string,
+  from : string
 }
 
 export function AddressActivityFormat(activity: AddressActivityVO): AddressActivityVO {

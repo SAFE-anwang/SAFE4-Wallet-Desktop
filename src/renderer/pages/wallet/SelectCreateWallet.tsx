@@ -16,7 +16,7 @@ export default () => {
     const walletsList = useWalletsList();
 
     const createWalletClick = () => {
-        navigate("/setPassword")
+        navigate("/wallet/createMnemonic")
     }
     const closeClick = () => {
         navigate("/main/wallet");
@@ -54,7 +54,7 @@ export default () => {
                     }} type="secondary">通过创建一套基于BIP39标准的助记词</Text>
                 </div>
             </Col>
-            <Col span={12}>
+            {/* <Col span={12}>
                 <div style={{
                     width: "300px", backgroundColor: "#f9f9f9", cursor: "pointer", margin: "auto", padding: "25px", borderRadius: "12px", border: "1px solid #dddddd",
                 }}>
@@ -68,7 +68,7 @@ export default () => {
                         fontSize: "18px"
                     }} type="secondary">通过助记词,私钥来导入这个钱包</Text>
                 </div>
-            </Col>
+            </Col> */}
         </Row>
         <br />< br />
     </>
