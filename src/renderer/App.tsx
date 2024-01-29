@@ -37,7 +37,7 @@ export default function App() {
             </Col>
           }
           <Col id='appContainer' span={18} style={{
-            minWidth:"1000px",
+            minWidth:"1200px",
             position: "fixed",
             overflowX: "auto",
             overflowY: "auto",

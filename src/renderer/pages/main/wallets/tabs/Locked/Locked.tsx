@@ -9,7 +9,6 @@ import { LockOutlined, RetweetOutlined, UnlockFilled, UnlockOutlined, UnlockTwoT
 import WalletWithdrawModal from "../../Withdraw/WalletWithdrawModal";
 import { EmptyContract } from "../../../../../constants/SystemContracts";
 import AddressView from "../../../../components/AddressView";
-import BlockNumberDateTime from "../../../../components/BlockNumberDateTime";
 import { DateTimeFormat } from "../../../../../utils/DateUtils";
 
 const { Text } = Typography;
