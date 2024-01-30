@@ -27,31 +27,31 @@ export default () => {
 
   useEffect(() => {
     if (blockNumber && accountManagerContract) {
-      accountManagerContract.callStatic
-        .getRecords(activeAccount)
-        .then(_accountRecords => {
-          const accountRecords: AccountRecord[] = _accountRecords.map(formatAccountRecord);
-          const fragment = accountManagerContract?.interface?.getFunction("getRecordUseInfo");
-          if (accountRecords.length > 0 && fragment && multicallContract) {
-            const calls = accountRecords.map(accountRecord => {
-              return {
-                address: accountManagerContract?.address,
-                callData: accountManagerContract?.interface.encodeFunctionData(fragment, [accountRecord.id])
-              }
-            });
-            multicallContract.callStatic.aggregate(calls.map(call => [call.address, call.callData]))
-              .then((data) => {
-                const _blockNumber = data[0].toNumber();
-                for (let i = 0; i < data[1].length; i++) {
-                  const _recordUserInfo = accountManagerContract?.interface.decodeFunctionResult(fragment, data[1][i])[0];
-                  accountRecords[i].recordUseInfo = formatRecordUseInfo(_recordUserInfo);
-                }
-                setAccountRecords(accountRecords.filter(accountRecord => accountRecord.id != 0));
-              })
-          } else {
-            setAccountRecords([]);
-          }
-        })
+      // accountManagerContract.callStatic
+      //   .getRecords(activeAccount)
+      //   .then(_accountRecords => {
+      //     const accountRecords: AccountRecord[] = _accountRecords.map(formatAccountRecord);
+      //     const fragment = accountManagerContract?.interface?.getFunction("getRecordUseInfo");
+      //     if (accountRecords.length > 0 && fragment && multicallContract) {
+      //       const calls = accountRecords.map(accountRecord => {
+      //         return {
+      //           address: accountManagerContract?.address,
+      //           callData: accountManagerContract?.interface.encodeFunctionData(fragment, [accountRecord.id])
+      //         }
+      //       });
+      //       multicallContract.callStatic.aggregate(calls.map(call => [call.address, call.callData]))
+      //         .then((data) => {
+      //           const _blockNumber = data[0].toNumber();
+      //           for (let i = 0; i < data[1].length; i++) {
+      //             const _recordUserInfo = accountManagerContract?.interface.decodeFunctionResult(fragment, data[1][i])[0];
+      //             accountRecords[i].recordUseInfo = formatRecordUseInfo(_recordUserInfo);
+      //           }
+      //           setAccountRecords(accountRecords.filter(accountRecord => accountRecord.id != 0));
+      //         })
+      //     } else {
+      //       setAccountRecords([]);
+      //     }
+      //   })
     }
   }, [activeAccount, blockNumber, accountManagerContract]);
 

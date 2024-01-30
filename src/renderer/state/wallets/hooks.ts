@@ -100,10 +100,10 @@ export function useSafe4Balance(
 ): {
   [address: string]: {
     balance: CurrencyAmount,
-    total: { amount: CurrencyAmount, ids: string[] },
-    avaiable: { amount: CurrencyAmount, ids: string[] },
-    locked: { amount: CurrencyAmount, ids: string[] },
-    used: { amount: CurrencyAmount, ids: string[] }
+    total: { amount: CurrencyAmount, count: number },
+    avaiable: { amount: CurrencyAmount, count: number  },
+    locked: { amount: CurrencyAmount,count: number  },
+    used: { amount: CurrencyAmount,count: number  }
   } | undefined
 } {
 
@@ -155,19 +155,19 @@ export function useSafe4Balance(
           balance: CurrencyAmount,
           total: {
             amount: CurrencyAmount,
-            ids: string[]
+            count: number
           },
           avaiable: {
             amount: CurrencyAmount,
-            ids: string[]
+            count: number
           },
           locked: {
             amount: CurrencyAmount,
-            ids: string[]
+            count: number
           },
           used: {
             amount: CurrencyAmount,
-            ids: string[]
+            count: number
           },
         }
       }>((memo, address, i) => {
@@ -178,28 +178,26 @@ export function useSafe4Balance(
 
         memo[address].total = memo[address].total ?? {};
         const totalAmount = totalAmountResults?.[i]?.result?.[0];
-        const totalIds = totalAmountResults?.[i]?.result?.[1];
+        const totalCount = totalAmountResults?.[i]?.result?.[1];
         if (totalAmount) memo[address].total.amount = CurrencyAmount.ether(JSBI.BigInt(totalAmount.toString()))
-        if (totalIds) memo[address].total.ids = totalIds.map((id: any) => JSBI.BigInt(id).toString());
+        if (totalCount) memo[address].total.count = totalCount;
 
         memo[address].avaiable = memo[address].avaiable ?? {};
         const avaiableAmount = availableAmountResults?.[i]?.result?.[0];
-        const avaiableIds = availableAmountResults?.[i]?.result?.[1];
+        const avaiableCount = availableAmountResults?.[i]?.result?.[1];
         if (avaiableAmount) memo[address].avaiable.amount = CurrencyAmount.ether(JSBI.BigInt(avaiableAmount.toString()));
-        if (avaiableIds) memo[address].avaiable.ids = avaiableIds.map((id: any) => JSBI.BigInt(id).toString());
+        if (avaiableCount) memo[address].avaiable.count = avaiableCount;
 
         memo[address].locked = memo[address].locked ?? {};
         const lockedAmount = lockedAmountResults?.[i]?.result?.[0];
-        const lockedIds = lockedAmountResults?.[i]?.result?.[1];
+        const lockedCount = lockedAmountResults?.[i]?.result?.[1];
         if (lockedAmount) memo[address].locked.amount = CurrencyAmount.ether(JSBI.BigInt(lockedAmount.toString()));
-        if (lockedIds) memo[address].locked.ids = lockedIds.map((id: any) => JSBI.BigInt(id).toString());
-
+        if (lockedCount) memo[address].locked.count = lockedCount;
         memo[address].used = memo[address].used ?? {};
         const usedAmount = uesdAmountResults?.[i]?.result?.[0];
-        const usedIds = uesdAmountResults?.[i]?.result?.[1];
+        const usedCount = uesdAmountResults?.[i]?.result?.[1];
         if (usedAmount) memo[address].used.amount = CurrencyAmount.ether(JSBI.BigInt(usedAmount.toString()));
-        if (usedIds) memo[address].used.ids = usedIds.map((id: any) => JSBI.BigInt(id).toString());
-
+        if (usedCount) memo[address].used.count = usedCount;
         return memo
       }, {}),
     [addresses, balanceResults, availableAmountResults, lockedAmountResults, uesdAmountResults]

@@ -21,7 +21,7 @@ export class Context {
       // 将数据目录定位到不同系统下的安装应用的根目录
       // 然后就相当于在与应用同级的目录下创建数据目录,避免重新安装应用时,会覆盖掉数据.
       const _appsDir = path.join(this.path.resource, "../../")
-      this.path.data = path.join(_appsDir, this.path.data);
+      this.path.data = path.join(_appsDir, "testnet_"+this.path.data);
     }else{
       // 如果实在开发环境下,那就在源码目录内生成data文件
       this.path.data = path.join(this.path.resource,this.path.data);
