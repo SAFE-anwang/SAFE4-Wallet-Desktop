@@ -180,24 +180,24 @@ export function useSafe4Balance(
         const totalAmount = totalAmountResults?.[i]?.result?.[0];
         const totalCount = totalAmountResults?.[i]?.result?.[1];
         if (totalAmount) memo[address].total.amount = CurrencyAmount.ether(JSBI.BigInt(totalAmount.toString()))
-        if (totalCount) memo[address].total.count = totalCount;
+        if (totalCount) memo[address].total.count = totalCount.toNumber();
 
         memo[address].avaiable = memo[address].avaiable ?? {};
         const avaiableAmount = availableAmountResults?.[i]?.result?.[0];
         const avaiableCount = availableAmountResults?.[i]?.result?.[1];
         if (avaiableAmount) memo[address].avaiable.amount = CurrencyAmount.ether(JSBI.BigInt(avaiableAmount.toString()));
-        if (avaiableCount) memo[address].avaiable.count = avaiableCount;
+        if (avaiableCount) memo[address].avaiable.count = avaiableCount.toNumber();
 
         memo[address].locked = memo[address].locked ?? {};
         const lockedAmount = lockedAmountResults?.[i]?.result?.[0];
         const lockedCount = lockedAmountResults?.[i]?.result?.[1];
         if (lockedAmount) memo[address].locked.amount = CurrencyAmount.ether(JSBI.BigInt(lockedAmount.toString()));
-        if (lockedCount) memo[address].locked.count = lockedCount;
+        if (lockedCount) memo[address].locked.count = lockedCount.toNumber();
         memo[address].used = memo[address].used ?? {};
         const usedAmount = uesdAmountResults?.[i]?.result?.[0];
         const usedCount = uesdAmountResults?.[i]?.result?.[1];
         if (usedAmount) memo[address].used.amount = CurrencyAmount.ether(JSBI.BigInt(usedAmount.toString()));
-        if (usedCount) memo[address].used.count = usedCount;
+        if (usedCount) memo[address].used.count = usedCount.toNumber();
         return memo
       }, {}),
     [addresses, balanceResults, availableAmountResults, lockedAmountResults, uesdAmountResults]

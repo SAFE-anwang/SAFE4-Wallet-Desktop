@@ -65,3 +65,11 @@ export function formatRecordUseInfo(recordUseInfo: any): RecordUseInfo {
         releaseHeight: releaseHeight.toNumber()
     }
 }
+
+
+export interface IdPageQuery {
+    position : number,
+    offset : number,
+    ids ?: number[],
+    result ?: any[],
+}
