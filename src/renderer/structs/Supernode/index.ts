@@ -139,7 +139,7 @@ export function formatSupernodeInfo(supernodeInfo: any) : SupernodeInfo {
         lastRewardHeight: lastRewardHeight.toNumber(),
         createHeight: createHeight.toNumber(),
         updateHeight: updateHeight.toNumber(),
-        state: state,
+        state: state.toNumber(),
         founders: founders.map(formatMemberInfo),
         incentivePlan: formatIncentivePlan(incentivePlan),
     };

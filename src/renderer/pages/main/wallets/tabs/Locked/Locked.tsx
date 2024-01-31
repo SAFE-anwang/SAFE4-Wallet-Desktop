@@ -1,5 +1,5 @@
 import { Row, Statistic, Card, Col, Table, Typography, Button, Divider, Space, Tag } from "antd";
-import { useSafe4Balance, useWalletsActiveAccount } from "../../../../../state/wallets/hooks";
+import { useActiveAccountAccountRecords, useSafe4Balance, useWalletsActiveAccount } from "../../../../../state/wallets/hooks";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useBlockNumber, useTimestamp } from "../../../../../state/application/hooks";
 import { useAccountManagerContract, useMulticallContract } from "../../../../../hooks/useContracts";
@@ -19,133 +19,9 @@ export default () => {
   const activeAccount = useWalletsActiveAccount();
   const safe4balance = useSafe4Balance([activeAccount])[activeAccount];
   const blockNumber = useBlockNumber();
-
-  const accountManagerContract = useAccountManagerContract();
-  const multicallContract = useMulticallContract();
   const [openWithdrawModal, setOpenWithdrawModal] = useState<boolean>(false);
   const [selectedAccountRecord, setSelectedAccountRecord] = useState<AccountRecord>();
-
-  const [idPageQuery, setIdPageQuery] = useState<IdPageQuery[]>();
-  const [accountRecordMap, setAccountRecordMap] = useState<{
-    [id: string]: AccountRecord
-  }>({});
-  const [executeIdPageQuery, setExecuteIdPageQuery] = useState<IdPageQuery>();
-
-  useEffect(() => {
-    if (executeIdPageQuery && !executeIdPageQuery.result && accountManagerContract && multicallContract) {
-      const getRecordByIDFragment = accountManagerContract?.interface?.getFunction("getRecordByID");
-      const getRecordUseInfoFragment = accountManagerContract?.interface?.getFunction("getRecordUseInfo");
-      const ids: number[] | undefined = executeIdPageQuery.ids;
-      if (ids) {
-        const getRecordByIDCalls = [];
-        const getRecordUseInfoCalls = [];
-        for (let i = 0; i < ids.length; i++) {
-          getRecordByIDCalls.push([
-            accountManagerContract.address,
-            accountManagerContract?.interface.encodeFunctionData(getRecordByIDFragment, [ids[i]])
-          ]);
-          getRecordUseInfoCalls.push([
-            accountManagerContract.address,
-            accountManagerContract?.interface.encodeFunctionData(getRecordUseInfoFragment, [ids[i]])
-          ]);
-        }
-
-        multicallContract.callStatic.aggregate(getRecordByIDCalls.concat(getRecordUseInfoCalls))
-          .then(data => {
-            const raws = data[1];
-            const half = raws.length / 2;
-            const accountRecords: AccountRecord[] = [];
-            for (let i = half - 1; i >= 0; i--) {
-              const _accountRecord = accountManagerContract?.interface.decodeFunctionResult(getRecordByIDFragment, raws[i])[0];
-              const _recordUseInfo = accountManagerContract?.interface.decodeFunctionResult(getRecordUseInfoFragment, raws[half + i])[0];
-              const accountRecord = formatAccountRecord(_accountRecord);
-              accountRecord.recordUseInfo = formatRecordUseInfo(_recordUseInfo);
-              accountRecords.push(accountRecord);
-            }
-            setExecuteIdPageQuery({
-              ...executeIdPageQuery,
-              result: accountRecords
-            });
-            accountRecords.forEach(accountRecord => {
-              accountRecordMap[accountRecord.id] = accountRecord;
-            });
-            setAccountRecordMap({
-              ...accountRecordMap
-            })
-          })
-
-      } else {
-        setExecuteIdPageQuery({
-          ...executeIdPageQuery,
-          result: []
-        })
-      }
-    }
-  }, [executeIdPageQuery]);
-
-  useEffect(() => {
-    if (idPageQuery && accountManagerContract) {
-      for (let i in idPageQuery) {
-        if (!idPageQuery[i].ids) return;
-      }
-      if (executeIdPageQuery) {
-        if (executeIdPageQuery.result && executeIdPageQuery.position != 0) {
-          const next = idPageQuery.filter(query => query.position == executeIdPageQuery.position - Get_Record_Account_ID_Page_Size)[0];
-          setExecuteIdPageQuery(next);
-        } else {
-          return;
-        }
-      } else {
-        console.log("setExecuteIdPageQuery ::", idPageQuery)
-        setExecuteIdPageQuery(idPageQuery[idPageQuery.length - 1])
-      }
-    }
-  }, [idPageQuery, executeIdPageQuery]);
-
-  useEffect(() => {
-    if (accountManagerContract) {
-      // function getTotalAmount(address _addr) external view returns (uint, uint);
-      accountManagerContract.callStatic.getTotalAmount(activeAccount)
-        .then(data => {
-          const totalCount = data[1].toNumber();
-          if (totalCount == 0) return
-          setIdPageQuery(undefined);
-          setExecuteIdPageQuery(undefined);
-          const idPages = Math.ceil(totalCount / Get_Record_Account_ID_Page_Size);
-          const idPageQuery: { position: number, offset: number, ids?: number[] }[] = [];
-          for (let i = 0; i < idPages; i++) {
-            idPageQuery.push({
-              position: i * Get_Record_Account_ID_Page_Size,
-              offset: Get_Record_Account_ID_Page_Size
-            })
-          }
-          const getTotalIDsFragment = accountManagerContract?.interface?.getFunction("getTotalIDs");
-          const getTotalIds_calls = idPageQuery.map(({ position, offset }) => {
-            return {
-              address: accountManagerContract?.address,
-              callData: accountManagerContract?.interface.encodeFunctionData(getTotalIDsFragment, [activeAccount, position, offset])
-            }
-          });
-          if (multicallContract) {
-            multicallContract.callStatic.aggregate(getTotalIds_calls.map(call => [call.address, call.callData]))
-              .then((data) => {
-                const _blockNumber = data[0].toNumber();
-                for (let i = 0; i < data[1].length; i++) {
-                  const _ids = accountManagerContract?.interface.decodeFunctionResult(getTotalIDsFragment, data[1][i])[0];
-                  const ids: number[] = [];
-                  for (let j in _ids) {
-                    ids.push(_ids[j].toNumber());
-                  }
-                  idPageQuery[i].ids = ids;
-                }
-                console.log("first count idPageQuery >>", totalCount, idPageQuery)
-                setIdPageQuery(idPageQuery);
-              })
-          }
-        })
-    }
-  }, [blockNumber, activeAccount]);
-
+  const accountRecords = useActiveAccountAccountRecords();
   const timestamp = useTimestamp();
 
   const RenderAccountRecord = useCallback((accountRecord: AccountRecord) => {
@@ -298,10 +174,7 @@ export default () => {
 
     <Card title="锁仓列表" style={{ marginTop: "40px" }}>
       {
-        accountRecordMap && Object.keys(accountRecordMap)
-          .sort((id0, id1) => Number(id1) - Number(id0))
-          .filter(id => id != "0" && accountRecordMap[id].addr == activeAccount)
-          .map(id => RenderAccountRecord(accountRecordMap[id]))
+        accountRecords && accountRecords.map(RenderAccountRecord)
       }
     </Card>
 
