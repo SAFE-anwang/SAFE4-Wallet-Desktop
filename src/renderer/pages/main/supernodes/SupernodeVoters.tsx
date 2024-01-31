@@ -46,8 +46,8 @@ export default ({
 
   useEffect(() => {
     if (pagination && supernodeVoteContract) {
-      const { current, pageSize } = pagination;
-      if (current && pageSize) {
+      const { current, pageSize , total } = pagination;
+      if (current && pageSize && total && total > 0) {
         // function getVoters(address _addr, uint _start, uint _count) external view returns (address[] memory, uint[] memory);
         supernodeVoteContract.callStatic.getVoters(supernodeAddr, (current - 1) * pageSize, pageSize)
           .then((data) => {
