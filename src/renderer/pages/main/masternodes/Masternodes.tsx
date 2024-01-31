@@ -1,7 +1,7 @@
 
 import { Typography, Button, Card, Divider, Statistic, Row, Col, Modal, Flex, Tooltip, Tabs, TabsProps, QRCode, Badge, Space, Alert } from 'antd';
-import { useMasternodeStorageContract, useSupernodeStorageContract } from '../../../hooks/useContracts';
-import { useEffect, useMemo, useState } from 'react';
+import { useMasternodeStorageContract, useMulticallContract, useSupernodeStorageContract } from '../../../hooks/useContracts';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { MasternodeInfo, formatMasternode } from '../../../structs/Masternode';
 import Table, { ColumnsType } from 'antd/es/table';
 import AddressView from '../../components/AddressView';
@@ -14,30 +14,71 @@ import { useWalletsActiveAccount } from '../../../state/wallets/hooks';
 import { SupernodeInfo, formatSupernodeInfo } from '../../../structs/Supernode';
 import { RenderNodeState } from '../supernodes/Supernodes';
 
-
 const { Title, Text } = Typography;
+const Masternodes_Page_Size = 10;
 
 export default () => {
+
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const masternodeStorageContract = useMasternodeStorageContract();
   const supernodeStorageContract = useSupernodeStorageContract();
+  const multicallContract = useMulticallContract();
   const [masternodes, setMasternodes] = useState<MasternodeInfo[]>();
   const activeAccount = useWalletsActiveAccount();
   const [currentMasternodeInfo, setCurrentMasternodeInfo] = useState<MasternodeInfo>();
   const [currentSupernodeInfo, setCurrentSupernodeInfo] = useState<SupernodeInfo>();
+  const [loading, setLoading] = useState<boolean>(false);
+
+  const [pagination, setPagination] = useState<{
+    total: number | undefined
+    pageSize: number | undefined,
+    current: number | undefined,
+  }>();
 
   useEffect(() => {
     if (masternodeStorageContract) {
-      // function getAll() external view returns (MasterNodeInfo[] memory);
-      masternodeStorageContract.callStatic.getAll()
-        .then((_masternodes: any) => {
-          const masternodes: MasternodeInfo[] = _masternodes.map(formatMasternode);
-          masternodes.sort((m1, m2) => m2.id - m1.id)
-          setMasternodes(masternodes);
-        });
+      // function getNum() external view returns (uint);
+      masternodeStorageContract.callStatic.getNum()
+        .then(data => {
+          setPagination({
+            total: data.toNumber(),
+            pageSize: Masternodes_Page_Size,
+            current: 1,
+          })
+        })
     }
   }, [masternodeStorageContract]);
+
+
+  useEffect(() => {
+    if (pagination && masternodeStorageContract && multicallContract) {
+      const { pageSize, current } = pagination;
+      if (current && pageSize) {
+        setLoading(true);
+        masternodeStorageContract.callStatic.getAll((current - 1) * pageSize, pageSize)
+          .then((addresses: any) => {
+            // function getInfo(address _addr) external view returns (MasterNodeInfo memory);
+            const fragment = masternodeStorageContract.interface.getFunction("getInfo")
+            const calls = addresses.map((address: string) => [
+              masternodeStorageContract.address,
+              masternodeStorageContract.interface.encodeFunctionData(fragment, [address])
+            ])
+            multicallContract.callStatic.aggregate(calls)
+              .then(data => {
+                const masternodes = data[1].map((raw: string) => {
+                  const _masternode = masternodeStorageContract.interface.decodeFunctionResult(fragment, raw)[0];
+                  return formatMasternode(_masternode);
+                })
+                // then set masternodes ...
+                setMasternodes(masternodes);
+                setLoading(false);
+              })
+          });
+      }
+    }
+  }, [pagination])
+
 
   useEffect(() => {
     if (masternodeStorageContract && activeAccount) {
@@ -62,11 +103,11 @@ export default () => {
       title: '状态',
       dataIndex: 'state',
       key: 'state',
-      render: (state, supernodeInfo: MasternodeInfo) => {
+      render: (state) => {
         return <>
           <Row>
             <Col span={20}>
-              {RenderNodeState(supernodeInfo.stateInfo.state)}
+              {RenderNodeState(state)}
             </Col>
           </Row>
         </>
@@ -76,7 +117,7 @@ export default () => {
       title: '节点ID',
       dataIndex: 'id',
       key: '_id',
-      render: (id, supernodeInfo: MasternodeInfo) => {
+      render: (id) => {
         return <>
           <Row>
             <Col>
@@ -90,7 +131,7 @@ export default () => {
       title: '主节点地址',
       dataIndex: 'addr',
       key: 'addr',
-      render: (addr, supernodeInfo: MasternodeInfo) => {
+      render: (addr) => {
         return <>
           <Row>
             <Col span={20}>
@@ -106,6 +147,7 @@ export default () => {
       title: '质押SAFE',
       dataIndex: 'id',
       key: '_id2',
+      width:"300px",
       render: (id, masternodeInfo: MasternodeInfo) => {
         const amount = masternodeInfo.founders.reduce<CurrencyAmount>(
           (amount, memberInfo) => amount.add(memberInfo.amount),
@@ -146,7 +188,7 @@ export default () => {
     </Row>
     <div style={{ width: "100%", paddingTop: "40px" }}>
       <div style={{ margin: "auto", width: "90%" }}>
-        <Card style={{marginBottom:"20px"}}>
+        <Card style={{ marginBottom: "20px" }}>
           <Alert showIcon type="info" message={<>
             注册成为主节点，则不能再注册成为超级节点
           </>} />
@@ -172,7 +214,13 @@ export default () => {
             </>
           }
         </Card>
-        <Table dataSource={masternodes} columns={columns} size="large" pagination={{ total: masternodes?.length, pageSize: 10 }} />
+
+        <Table loading={loading} onChange={(pagination) => {
+          const { current, pageSize, total } = pagination;
+          setPagination({
+            current, pageSize, total
+          })
+        }} dataSource={masternodes} columns={columns} size="large" pagination={pagination} />
       </div>
     </div>
   </>

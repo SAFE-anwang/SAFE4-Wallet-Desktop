@@ -64,7 +64,7 @@ export function formatIncentivePlan(incentivePlan: any): IncentivePlan {
 }
 
 /**
- * 
+ *
     struct VoteInfo {
         MemberInfo[] voters; // all voters
         uint totalAmount; // total voter's amount
@@ -114,10 +114,10 @@ export interface SupernodeInfo {
     enode: string,
     description: string,
     isOfficial: boolean,
-    stateInfo : StateInfo,
+    state : number,
     founders : MemberInfo[],
     incentivePlan : IncentivePlan,
-    voteInfo : VoteInfo,
+    voteInfo ?: VoteInfo,
     lastRewardHeight: number,
     createHeight: number,
     updateHeight: number,
@@ -126,7 +126,7 @@ export interface SupernodeInfo {
 export function formatSupernodeInfo(supernodeInfo: any) : SupernodeInfo {
     const {
         id, name, addr, creator, enode, description, isOfficial, lastRewardHeight, createHeight, updateHeight,
-        stateInfo, founders, incentivePlan , voteInfo
+        state, founders, incentivePlan ,
     } = supernodeInfo;
     return {
         id: id.toNumber(),
@@ -139,9 +139,8 @@ export function formatSupernodeInfo(supernodeInfo: any) : SupernodeInfo {
         lastRewardHeight: lastRewardHeight.toNumber(),
         createHeight: createHeight.toNumber(),
         updateHeight: updateHeight.toNumber(),
-        stateInfo: formatStateInfo(stateInfo),
+        state: state,
         founders: founders.map(formatMemberInfo),
         incentivePlan: formatIncentivePlan(incentivePlan),
-        voteInfo : formatVoteInfo(voteInfo)
     };
 }

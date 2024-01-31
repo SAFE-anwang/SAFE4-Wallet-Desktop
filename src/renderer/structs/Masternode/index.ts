@@ -8,7 +8,7 @@ import { IncentivePlan, MemberInfo, StateInfo, formatIncentivePlan, formatMember
         string enode; // masternode enode, contain node id & node ip & node port
         string description; // masternode description
         bool isOfficial; // official or not
-        StateInfo stateInfo; // masternode state information
+        uint state; // masternode state information
         MemberInfo[] founders; // masternode founders
         IncentivePlan incentivePlan; // incentive plan
         uint lastRewardHeight; // last reward height
@@ -23,7 +23,7 @@ export interface MasternodeInfo {
   enode: string,
   description: string,
   isOfficial: boolean,
-  stateInfo: StateInfo,
+  state: number,
   founders: MemberInfo[],
   incentivePlan: IncentivePlan,
   lastRewardHeight: number,
@@ -33,7 +33,7 @@ export interface MasternodeInfo {
 export function formatMasternode( masternode : any) : MasternodeInfo {
   const {
     id, name, addr, creator, enode, description, isOfficial, lastRewardHeight, createHeight, updateHeight,
-    stateInfo, founders, incentivePlan
+    state, founders, incentivePlan
   } = masternode;
   return {
     id: id.toNumber(),
@@ -45,7 +45,7 @@ export function formatMasternode( masternode : any) : MasternodeInfo {
     lastRewardHeight: lastRewardHeight.toNumber(),
     createHeight: createHeight.toNumber(),
     updateHeight: updateHeight.toNumber(),
-    stateInfo: formatStateInfo(stateInfo),
+    state: state.toNumber(),
     founders: founders.map(formatMemberInfo),
     incentivePlan: formatIncentivePlan(incentivePlan)
   };

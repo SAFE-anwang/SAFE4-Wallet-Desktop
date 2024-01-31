@@ -12,8 +12,11 @@ import { applicationControlVoteSupernode, applicationUpdateSupernodeAddresses } 
 import { ethers } from 'ethers';
 import { useWalletsActiveAccount } from '../../../state/wallets/hooks';
 import { MasternodeInfo, formatMasternode } from '../../../structs/Masternode';
+import { fetchSuperNodes } from '../../../services/supernode';
+import { SuperNodeVO } from '../../../services';
+import { useBlockNumber } from '../../../state/application/hooks';
 
-const { Title, Text, Paragraph } = Typography;
+const { Title, Text } = Typography;
 
 export const RenderNodeState = (state: number) => {
   switch (state) {
@@ -28,19 +31,40 @@ export const RenderNodeState = (state: number) => {
   }
 }
 
-export default () => {
+const Supernode_Page_Size = 10;
 
+export default () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
-
+  const blockNumber = useBlockNumber();
   const supernodeStorageContract = useSupernodeStorageContract();
   const masternodeStorageContract = useMasternodeStorageContract();
   const activeAccount = useWalletsActiveAccount();
   const [currentSupernodeInfo, setCurrentSupernodeInfo] = useState<SupernodeInfo>();
   const [currentMasternodeInfo, setCurrentMasternodeInfo] = useState<MasternodeInfo>();
+  const [supernodeVOs , setSupernodeVOs] = useState<SuperNodeVO[]>([]);
+  const [pagination, setPagination] = useState<{
+    current ?: number,
+    pageSize ?: number,
+    total?: number
+  }>();
 
-  const [supernodeInfos, setSupernodeInfos] = useState<(SupernodeInfo)[]>([]);
-  const [totalVotedAmount, setTotalVotedAmount] = useState<CurrencyAmount>();
+  useEffect(() => {
+    if (pagination) {
+      const { current, pageSize } = pagination;
+      fetchSuperNodes({ current, pageSize })
+        .then(data => {
+          setSupernodeVOs(data.records);
+        })
+    }
+  }, [pagination])
+  useEffect(() => {
+    fetchSuperNodes({ current : 1, pageSize:Supernode_Page_Size })
+      .then(data => {
+        const {current , pageSize , total} = data;
+        setPagination({current , pageSize , total})
+      })
+  }, [blockNumber]);
 
   useEffect(() => {
     if (activeAccount && supernodeStorageContract) {
@@ -68,17 +92,17 @@ export default () => {
     return (currentSupernodeInfo && currentSupernodeInfo.id == 0);
   }, [currentSupernodeInfo, activeAccount]);
 
-  const columns: ColumnsType<SupernodeInfo> = [
+  const columns: ColumnsType<SuperNodeVO> = [
     {
       title: '排名',
       dataIndex: 'id',
       key: '_id',
-      render: (id, supernodeInfo: SupernodeInfo) => {
-        const { state } = supernodeInfo.stateInfo;
+      render: (id, supernodeVO: SuperNodeVO) => {
+        const { state , rank } = supernodeVO;
         return <>
           <Row>
             <Col>
-              <Text strong>{supernodeInfos.indexOf(supernodeInfo) + 1}</Text>
+              <Text strong>{rank}</Text>
             </Col>
           </Row>
           <Row>
@@ -94,28 +118,20 @@ export default () => {
       title: '得票数',
       dataIndex: 'id',
       key: '_id',
-      render: (_, supernodeInfo: SupernodeInfo) => {
-        let percent = 0;
-        const totalVotedSafeAmount = supernodeInfo.voteInfo.voters.reduce<CurrencyAmount>(
-          (totalVotedSafeAmount, memberInfo) => totalVotedSafeAmount.add(memberInfo.amount),
-          CurrencyAmount.ether(JSBI.BigInt(0))
-        );
-        if (totalVotedAmount && totalVotedAmount.greaterThan(JSBI.BigInt(0))) {
-          percent = Number(
-            supernodeInfo.voteInfo.totalAmount.divide(totalVotedAmount).multiply(JSBI.BigInt(100)).toFixed(1)
-          )
-        }
+      render: (_, supernodeVO: SuperNodeVO) => {
+        const totalVoteNum = CurrencyAmount.ether(JSBI.BigInt(supernodeVO.totalVoteNum));
+        const totalVoteAmount = CurrencyAmount.ether(JSBI.BigInt(supernodeVO.totalVoteAmount));
         return <>
           <Row>
             <Col span={12} style={{ textAlign: "left" }}>
-              <Text strong>{supernodeInfo.voteInfo.totalAmount.toFixed(2)}</Text>
+              <Text strong>{totalVoteNum.toFixed(2)}</Text>
             </Col>
             <Col span={12} style={{ textAlign: "right" }}>
-              <Text type='secondary'>[{totalVotedSafeAmount.toFixed(2)} SAFE]</Text>
+              <Text type='secondary'>[{totalVoteAmount.toFixed(2)} SAFE]</Text>
             </Col>
           </Row>
           <Row>
-            <Progress percent={percent} status={"normal"} />
+            <Progress percent={Number((Number(supernodeVO.voteObtainedRate) * 100).toFixed(2))} status={"normal"} />
           </Row>
         </>
       },
@@ -125,7 +141,7 @@ export default () => {
       title: '名称',
       dataIndex: 'name',
       key: 'name',
-      render: (name, supernodeInfo: SupernodeInfo) => {
+      render: (name, supernodeVO: SuperNodeVO) => {
         return <>
           <Row>
             <Col>
@@ -136,8 +152,8 @@ export default () => {
           </Row>
           <Row >
             <Col span={24}>
-              <Text title={supernodeInfo.description} type='secondary' style={{ width: "150px" }} ellipsis>
-                {supernodeInfo.description}
+              <Text title={supernodeVO.description} type='secondary' style={{ width: "150px" }} ellipsis>
+                {supernodeVO.description}
               </Text>
             </Col>
           </Row>
@@ -149,11 +165,8 @@ export default () => {
       title: '超级节点',
       dataIndex: 'addr',
       key: 'addr',
-      render: (addr, supernodeInfo: SupernodeInfo) => {
-        const amount = supernodeInfo.founders.reduce<CurrencyAmount>(
-          (amount, memberInfo) => amount.add(memberInfo.amount),
-          CurrencyAmount.ether(JSBI.BigInt(0))
-        )
+      render: (addr, supernodeVO: SuperNodeVO) => {
+        const amount = CurrencyAmount.ether( JSBI.BigInt(supernodeVO.totalAmount) )
         const supernodeTarget = CurrencyAmount.ether(ethers.utils.parseEther("5000").toBigInt());
         const couldAddPartner = supernodeTarget.greaterThan(amount);
         const _addr = addr.substring(0, 10) + "...." + addr.substring(addr.length - 8);
@@ -173,18 +186,18 @@ export default () => {
               <Text type='secondary'>ID:</Text>
             </Col>
             <Col span={20}>
-              <Text>{supernodeInfo.id}</Text>
+              <Text>{supernodeVO.id}</Text>
               <Space direction='horizontal' style={{ float: "right" }}>
                 {
                   couldAddPartner &&
                   <Button size='small' type='primary' style={{ float: "right" }} onClick={() => {
-                    dispatch(applicationControlVoteSupernode(supernodeInfo.addr));
+                    dispatch(applicationControlVoteSupernode(supernodeVO.addr));
                     navigate("/main/supernodes/append");
                   }}>加入合伙人</Button>
                 }
                 {
                   couldVote && !couldAddPartner && <Button size='small' type='default' style={{ float: "right" }} onClick={() => {
-                    dispatch(applicationControlVoteSupernode(supernodeInfo.addr));
+                    dispatch(applicationControlVoteSupernode(supernodeVO.addr));
                     navigate("/main/supernodes/vote");
                   }}>投票</Button>
                 }
@@ -197,35 +210,6 @@ export default () => {
       width: "200px"
     },
   ];
-
-  useEffect(() => {
-    if (supernodeStorageContract) {
-      supernodeStorageContract.callStatic.getAll()
-        .then(_supernodeInfos => {
-          const supernodeInfos: SupernodeInfo[] = _supernodeInfos.map(formatSupernodeInfo);
-          supernodeInfos.sort((s1, s2) => s2.voteInfo.totalAmount.greaterThan(s1.voteInfo.totalAmount) ? 1 : -1)
-          // 计算每个超级节点内创建时抵押的 SAFE 数量.
-          supernodeInfos.forEach((supernode: SupernodeInfo) => {
-            const totalFoundersAmount = supernode.founders.reduce<CurrencyAmount>(
-              (totalFoundersAmount, founder) => totalFoundersAmount.add(founder.amount),
-              CurrencyAmount.ether(JSBI.BigInt("0"))
-            );
-            
-          });
-          // 计算当前网络投票的所有投票价值.
-          const totalVotedAmount = supernodeInfos.reduce<CurrencyAmount>(
-            (totalVotedAmount, supernodeInfo) => totalVotedAmount.add(supernodeInfo.voteInfo.totalAmount),
-            CurrencyAmount.ether(JSBI.BigInt("0"))
-          );
-          // 更新超级节点地址集合到state
-          dispatch(applicationUpdateSupernodeAddresses(supernodeInfos.map(supernodeInfo => supernodeInfo.addr)));
-          setTotalVotedAmount(totalVotedAmount);
-          setSupernodeInfos(supernodeInfos);
-        }).catch(err => {
-
-        });
-    }
-  }, [supernodeStorageContract, activeAccount])
 
   return <>
     <Row style={{ height: "50px" }}>
@@ -244,7 +228,7 @@ export default () => {
           </>} />
           <Divider />
           {
-            (currentSupernodeInfo && currentSupernodeInfo.id == 0 &&  currentMasternodeInfo && currentMasternodeInfo.id == 0) && <>
+            (currentSupernodeInfo && currentSupernodeInfo.id == 0 && currentMasternodeInfo && currentMasternodeInfo.id == 0) && <>
               <Button onClick={() => navigate("/main/supernodes/create")}>注册超级节点</Button>
             </>
           }
@@ -264,7 +248,14 @@ export default () => {
           }
         </Card>
         <br /><br />
-        <Table dataSource={supernodeInfos} columns={columns} size="large" pagination={{ total: supernodeInfos.length, pageSize: 10 }} />
+        <Table onChange={(pagination) => {
+          const {current , pageSize , total} = pagination;
+          setPagination({
+            current,
+            pageSize,
+            total
+          })
+        }} dataSource={supernodeVOs} columns={columns} size="large" pagination={pagination} />
       </div>
     </div>
   </>

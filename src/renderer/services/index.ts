@@ -55,6 +55,46 @@ export interface GetTestCoinVO {
   from : string
 }
 
+export interface SuperNodeVO {
+  rank: number,
+  id: number,
+  totalAmount: string,
+  totalVoteNum: string,
+  totalVoteAmount: string,
+  voteObtainedRate: string,
+  createHeight: number,
+  updateHeight: number,
+  lastRewardHeight: number,
+  name: string,
+  addr: string,
+  enode: string,
+  creator: string,
+  description: string,
+  founders: MemberInfoVO[],
+  incentivePlan: IncentivePlanVO,
+  state : number
+}
+
+export interface MemberInfoVO {
+  lockID: number,
+  addr: string,
+  amount: string,
+  height: number,
+
+  lockDay?: number,
+  unlockHeight?: number,
+  releaseHeight?: number,
+  unfreezeHeight?: number,
+}
+
+export interface IncentivePlanVO {
+  creator: number,
+  partner: number,
+  voter: number
+}
+
+
+
 export function AddressActivityFormat(activity: AddressActivityVO): AddressActivityVO {
   const { data } = activity;
   let _data: any;

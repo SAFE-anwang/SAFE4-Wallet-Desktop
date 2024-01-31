@@ -182,6 +182,7 @@ export function useSafe4Balance(
         if (totalAmount) memo[address].total.amount = CurrencyAmount.ether(JSBI.BigInt(totalAmount.toString()))
         if (totalCount) memo[address].total.count = totalCount.toNumber();
 
+
         memo[address].avaiable = memo[address].avaiable ?? {};
         const avaiableAmount = availableAmountResults?.[i]?.result?.[0];
         const avaiableCount = availableAmountResults?.[i]?.result?.[1];
