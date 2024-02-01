@@ -44,7 +44,7 @@ export default ({
 
   const goNext = useCallback( () => {
     const { lockDay, amount } = params;
-    if (!lockDay){
+    if (!lockDay && lockDay != 0){
       inputErrors.lockDay = "请输入锁定天数";
     }
     if (!amount) {
@@ -78,7 +78,7 @@ export default ({
       return;
     }
     goNextCallback( params );
-   
+
   } , [activeAccount, maxBalance, params] );
 
   return <>
@@ -144,7 +144,7 @@ export default ({
           </Space.Compact>
         </Col>
         <Col span={10}>
-          
+
         </Col>
         {
           inputErrors?.lockDay && <Alert style={{ marginTop: "5px" }} type="error" showIcon message={inputErrors.lockDay} />

@@ -11,6 +11,7 @@ import { useSingleContractMultipleData } from '../multicall/hooks';
 import { Wallet, WalletKeystore } from './reducer';
 import { useBlockNumber } from '../application/hooks';
 import { AccountRecord, IdPageQuery, formatAccountRecord, formatRecordUseInfo } from '../../structs/AccountManager';
+import { EmptyContract } from '../../constants/SystemContracts';
 
 export function useWalletsList(): Wallet[] {
   return useSelector((state: AppState) => {
@@ -336,10 +337,10 @@ export function useActiveAccountAccountRecords() {
     setAccountRecords(
       Object.keys(accountRecordMap)
       .sort((id0, id1) => Number(id1) - Number(id0))
-      .filter(id => id != "0" && accountRecordMap[id].addr == activeAccount)
+      .filter(id => accountRecordMap[id].addr == activeAccount)
       .map( id => accountRecordMap[id] )
     )
-  }, [accountRecordMap])
+  }, [accountRecordMap,activeAccount])
 
   const [accountRecords, setAccountRecords] = useState<AccountRecord[]>([]);
 

@@ -10,9 +10,11 @@ import WalletWithdrawModal from "../../Withdraw/WalletWithdrawModal";
 import { EmptyContract, SystemContract } from "../../../../../constants/SystemContracts";
 import AddressView from "../../../../components/AddressView";
 import { DateTimeFormat } from "../../../../../utils/DateUtils";
+import { useWeb3Hooks } from "../../../../../connectors/hooks";
+import { CurrencyAmount } from "@uniswap/sdk";
+import { ethers } from "ethers";
 
 const { Text } = Typography;
-const Get_Record_Account_ID_Page_Size = 50;
 
 export default () => {
 
@@ -23,6 +25,22 @@ export default () => {
   const [selectedAccountRecord, setSelectedAccountRecord] = useState<AccountRecord>();
   const accountRecords = useActiveAccountAccountRecords();
   const timestamp = useTimestamp();
+  const { useProvider } = useWeb3Hooks();
+  const provider = useProvider();
+
+  const [openWithdrawAll, setOpenWithdrawAll] = useState<boolean>();
+
+  useEffect(() => {
+    if (provider) {
+      const LE = "0x5f0C33786d5c78aC6BEC12f4e924B1f372ceee5B";
+      provider.getBalance(LE).then((data: any) => {
+        const balance = CurrencyAmount.ether(data);
+        setOpenWithdrawAll(
+          balance.greaterThan(CurrencyAmount.ether(ethers.utils.parseEther("1").toBigInt()))
+        )
+      })
+    }
+  }, [provider]);
 
   const RenderAccountRecord = useCallback((accountRecord: AccountRecord) => {
     const {
@@ -147,16 +165,19 @@ export default () => {
       </Col>
       <Col span={6}>
         <Row>
-          <Col offset={16} span={8} style={{ textAlign: "center" }}>
-            <Button style={{
-              height: "45px", width: "45px"
-            }} size='large' shape="circle" icon={<RetweetOutlined />} onClick={() => {
-              setSelectedAccountRecord(undefined);
-              setOpenWithdrawModal(true)
-            }
-            } /><br />
-            <Text>提现</Text>
-          </Col>
+          {
+            openWithdrawAll &&
+            <Col offset={16} span={8} style={{ textAlign: "center" }}>
+              <Button style={{
+                height: "45px", width: "45px"
+              }} size='large' shape="circle" icon={<RetweetOutlined />} onClick={() => {
+                setSelectedAccountRecord(undefined);
+                setOpenWithdrawModal(true)
+              }
+              } /><br />
+              <Text>提现</Text>
+            </Col>
+          }
         </Row>
       </Col>
     </Row>
