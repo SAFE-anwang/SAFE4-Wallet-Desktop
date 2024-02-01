@@ -40,7 +40,7 @@ export default ({
                             <Text type='secondary'>节点状态:</Text>
                         </Col>
                         <Col span={18}>
-                            <Text strong>{RenderNodeState(masternodeInfo.stateInfo.state)}</Text>
+                            <Text strong>{RenderNodeState(masternodeInfo.state)}</Text>
                         </Col>
                     </Row>
                     <Row style={{ marginTop: "5px" }}>
