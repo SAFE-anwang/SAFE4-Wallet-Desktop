@@ -24,7 +24,7 @@ export default () => {
         provider?.getBlockNumber()
             .then(blockNumberCallback)
             .catch(error => {
-
+             
             });
         provider?.on("block", blockNumberCallback)
         return () => {
@@ -42,7 +42,7 @@ export default () => {
                     timestamp
                 }));
             }).catch(err => {
-
+                
             })
     }, [dispatch, state, debouncedState.blockNumber])
 

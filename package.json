@@ -1,5 +1,5 @@
 {
-  "description": "A foundation for scalable desktop apps",
+  "description": "A Wallet for Safe4 Blockchain Desktop Apps",
   "keywords": [
     "electron",
     "boilerplate",
@@ -21,7 +21,7 @@
   },
   "license": "MIT",
   "author": {
-    "name": "Electron React Boilerplate Maintainers",
+    "name": "anwang.com",
     "email": "electronreactboilerplate@gmail.com",
     "url": "https://electron-react-boilerplate.js.org"
   },
@@ -208,7 +208,7 @@
     "webpack-merge": "^5.9.0"
   },
   "build": {
-    "productName": "SAFE4-Wallet-Desktop",
+    "productName": "Safe4-Wallet-Desktop-TestNet",
     "appId": "org.anwang",
     "asar": true,
     "asarUnpack": "**\\*.{node,dll}",

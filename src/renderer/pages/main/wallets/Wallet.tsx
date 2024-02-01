@@ -1,29 +1,30 @@
 
-import { Typography, Button, Card, Divider, Statistic, Row, Col, Modal, Flex, Tooltip, Tabs, TabsProps, QRCode, Badge } from 'antd';
+import { Typography, Button, Divider, Statistic, Row, Col, Modal, Tabs, TabsProps, QRCode, Badge } from 'antd';
 import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import { useETHBalances, useSafe4Balance, useWalletsActiveAccount, useWalletsActiveSigner, useWalletsActiveWallet } from '../../../state/wallets/hooks';
+import { useETHBalances, useWalletsActiveAccount, useWalletsActiveWallet } from '../../../state/wallets/hooks';
 import { applicationActionUpdateAtCreateWallet, applicationUpdateWalletTab } from '../../../state/application/action';
-import { SearchOutlined, SendOutlined, QrcodeOutlined , LockOutlined } from '@ant-design/icons';
-import { useWeb3Hooks, useWeb3Network } from '../../../connectors/hooks';
-import { useBlockNumber } from '../../../state/application/hooks';
+import {  SendOutlined, QrcodeOutlined , LockOutlined } from '@ant-design/icons';
+import { useBlockNumber, useTimestamp } from '../../../state/application/hooks';
 import Locked from './tabs/Locked/Locked';
 import WalletLockModal from './Lock/WalletLockModal';
 import History from './tabs/History/History';
 import WalletSendModal from './Send/WalletSendModal';
 import { AppState } from '../../../state';
+import { useWeb3Hooks } from '../../../connectors/hooks';
+import { DateTimeFormat } from '../../../utils/DateUtils';
 
 const { Title, Text, Paragraph } = Typography;
 
 export default () => {
 
-  const navigate = useNavigate();
   const dispatch = useDispatch();
   const activeWallet = useWalletsActiveWallet();
   const account = useWalletsActiveAccount();
   const balance = useETHBalances([account])[account];
   const latestBlockNumber = useBlockNumber();
+  const timestamp = useTimestamp();
   const walletTab = useSelector<AppState , string|undefined>( state => state.application.control.walletTab );
 
   const [openReceiveModal, setOpenReceiveModal] = useState<boolean>(false);
@@ -63,6 +64,8 @@ export default () => {
       <Col span={12} style={{ textAlign: "right", lineHeight: "70px" }}>
         <Badge status="processing"></Badge>
         <Text style={{ marginLeft: "10px" }}>区块高度<Divider type='vertical' style={{ marginLeft: "12px", marginRight: "12px" }} />{latestBlockNumber}</Text>
+        <Divider type='vertical' />
+        <Text type='secondary'>{DateTimeFormat(timestamp * 1000)}</Text>
       </Col>
     </Row>
     <div style={{ width: "100%", paddingTop: "40px" }}>

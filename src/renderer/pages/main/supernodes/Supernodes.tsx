@@ -48,21 +48,25 @@ export default () => {
     pageSize ?: number,
     total?: number
   }>();
+  const [loading,setLoading] = useState<boolean>(false);
 
   useEffect(() => {
     if (pagination) {
       const { current, pageSize } = pagination;
+      setLoading(true);
       fetchSuperNodes({ current, pageSize })
         .then(data => {
           setSupernodeVOs(data.records);
+          setLoading(false);
         })
     }
   }, [pagination])
   useEffect(() => {
+    setLoading(true);
     fetchSuperNodes({ current : 1, pageSize:Supernode_Page_Size })
       .then(data => {
         const {current , pageSize , total} = data;
-        setPagination({current , pageSize , total})
+        setPagination({current , pageSize , total});
       })
   }, [blockNumber]);
 
@@ -248,7 +252,7 @@ export default () => {
           }
         </Card>
         <br /><br />
-        <Table onChange={(pagination) => {
+        <Table loading={loading} onChange={(pagination) => {
           const {current , pageSize , total} = pagination;
           setPagination({
             current,

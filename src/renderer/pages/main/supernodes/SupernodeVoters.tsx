@@ -28,9 +28,12 @@ export default ({
     total?: number
   }>();
 
+  const [loading,setLoading] = useState<boolean>(false);
+
   useEffect(() => {
     if (supernodeVoteContract) {
       // function getVoterNum(address _addr) external view returns (uint);
+      setLoading(true)
       supernodeVoteContract.callStatic.getVoterNum(supernodeAddr)
         .then(data => {
           const total = data.toNumber();
@@ -46,6 +49,7 @@ export default ({
 
   useEffect(() => {
     if (pagination && supernodeVoteContract) {
+      setLoading(true);
       const { current, pageSize , total } = pagination;
       if (current && pageSize && total && total > 0) {
         // function getVoters(address _addr, uint _start, uint _count) external view returns (address[] memory, uint[] memory);
@@ -63,7 +67,10 @@ export default ({
               votersNumArr[i].num = CurrencyAmount.ether(_num);
             }
             setVotersNumArr(votersNumArr);
+            setLoading(false);
           })
+      }else{
+        setLoading(false);
       }
     }
   }, [pagination]);
@@ -90,7 +97,7 @@ export default ({
     },
   ];
   return <>
-    <Table onChange={(pagination) => {
+    <Table loading={loading} onChange={(pagination) => {
       const { current, pageSize, total } = pagination;
       setPagination({
         current,

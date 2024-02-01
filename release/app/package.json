@@ -1,10 +1,10 @@
 {
-  "name": "SAFE4-Wallet-Desktop",
+  "name": "Safe4-Wallet-Desktop-TestNet",
   "version": "0.0.1",
-  "description": "A foundation for scalable desktop apps",
+  "description": "A Wallet for Safe4 Blockchain Desktop Apps",
   "license": "MIT",
   "author": {
-    "name": "Electron React Boilerplate Maintainers",
+    "name": "anwang.com",
     "email": "electronreactboilerplate@gmail.com",
     "url": "https://github.com/electron-react-boilerplate"
   },
