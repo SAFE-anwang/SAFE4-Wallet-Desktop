@@ -61,6 +61,9 @@ export default ({
         if ( _amount.greaterThan(maxBalance) ){
           inputErrors.amount = "转出数量大于持有数量";
         }
+        if ( !_amount.greaterThan(ZERO) ){
+          inputErrors.amount = "请输入正确的数量";
+        }
       } catch (error) {
         inputErrors.amount = "请输入正确的数量";
       }
