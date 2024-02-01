@@ -170,9 +170,9 @@ export default () => {
                             </Card>
                         </Col>
 
-                        <Col span={24} style={{ marginTop: "120px" }}>
+                        <Col span={24} style={{ marginTop: "60px" , textAlign:"center"}} >
                             <Text style={{
-                                marginLeft: "96px"
+                                textAlign:"center"
                             }}>请妥善保存助记词</Text>
                             <Button style={{
                                 marginTop: "12px", width: "100%"
