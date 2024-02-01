@@ -1,6 +1,7 @@
 import {  Channel } from "../ApplicationIpcManager";
 import { ListenSignalHandler } from "./ListenSignalHandler";
 import { Context } from "./Context";
+import { base58 } from "ethers/lib/utils";
 const fs = require("fs");
 
 export const IndexSingal = "index";
@@ -68,7 +69,8 @@ export class IndexSingalHandler implements ListenSignalHandler {
     }
     try{
       if ( safe4walletKeyStoresContent ){
-        walletKeystores = JSON.parse(safe4walletKeyStoresContent);
+        const base58Decode = new Buffer(base58.decode(safe4walletKeyStoresContent)).toString();
+        walletKeystores = JSON.parse(base58Decode);
         if ( ! (walletKeystores instanceof Array) ){
           console.error(`${this.ctx.path.keystores} 损坏`);
         }

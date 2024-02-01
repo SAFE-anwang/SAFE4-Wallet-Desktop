@@ -3,6 +3,7 @@ import { Channel } from "../ApplicationIpcManager";
 import { Context } from "./Context";
 import { ListenSignalHandler } from "./ListenSignalHandler";
 import * as bip39 from 'bip39';
+import { base58 } from "ethers/lib/utils";
 const fs = require('fs');
 
 export const WalletSignal = "wallet";
@@ -50,7 +51,8 @@ export class WalletSignalHandler implements ListenSignalHandler {
     const walletList = params[0];
     const content = JSON.stringify(walletList);
     try{
-      await fs.writeFileSync( this.ctx.path.keystores, content, 'utf8');
+      const base58EncodeContent = base58.encode(new Buffer(content , "utf-8"));
+      await fs.writeFileSync( this.ctx.path.keystores, base58EncodeContent, 'utf8');
       return {
         success: true,
         path: Wallet_Keystore_FileName

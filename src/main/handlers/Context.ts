@@ -11,7 +11,7 @@ export class Context {
   } = {
       resource: "",
       data: "data",
-      keystores: "safe4.wallet.keystores.json",
+      keystores: "safe4.wallet.keystores",
       database: "safe4.wallet.sqlite3"
     };
 
