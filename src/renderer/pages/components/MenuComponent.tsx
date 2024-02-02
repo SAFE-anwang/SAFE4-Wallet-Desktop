@@ -28,6 +28,7 @@ const items: MenuItem[] = [
   getItem("钱包", '/main/wallet', <WalletOutlined />),
   getItem("超级节点", '/main/supernodes', <ClusterOutlined />),
   getItem("主节点", '/main/masternodes', <ApartmentOutlined />),
+  getItem("提案", '/main/proposals', <ApartmentOutlined />),
   getItem('领取测试币', '/main/gettestcoin', <AppstoreOutlined />),
 ];
 
