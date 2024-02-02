@@ -9,6 +9,7 @@ import {
   applicationUpdateSupernodeAddresses,
   applicationControlAppendMasternode,
   applicationUpdateWalletTab,
+  applicationControlVoteProposal,
 } from './action';
 import { SupernodeInfo } from '../../structs/Supernode';
 
@@ -24,6 +25,7 @@ export interface IApplicationState {
     vote ?: string ,
     supernodeAppend ?: string
     masternodeAppend ?: string,
+    proposalId ?: number,
     walletTab ?: string,
   }
   supernodeAddresses : string[],
@@ -106,6 +108,16 @@ export default createReducer(initialState, (builder) => {
       control : {
         ...state.control,
         vote : payload
+      }
+    }
+  })
+
+  .addCase(applicationControlVoteProposal , ( state , { payload } ) => {
+    return {
+      ...state ,
+      control : {
+        ...state.control,
+        proposalId : payload
       }
     }
   })

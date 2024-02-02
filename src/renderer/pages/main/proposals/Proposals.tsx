@@ -1,5 +1,6 @@
 import { Alert, Col, Row, Typography, Card, Divider, Button, Tabs, TabsProps } from "antd";
 import { useNavigate } from "react-router-dom";
+import ProposalList from "./ProposalList";
 
 const { Text, Title } = Typography;
 
@@ -11,12 +12,12 @@ export default () => {
     {
       key: 'list',
       label: '提案列表',
-      children: <></>,
+      children: <ProposalList />,
     },
     {
       key: 'myproposals',
       label: '我的提案',
-      children: <></>,
+      children: <ProposalList queryMyProposals={true} />,
     },
   ];
 

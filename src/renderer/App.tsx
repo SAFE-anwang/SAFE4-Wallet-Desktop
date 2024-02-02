@@ -20,6 +20,7 @@ import MasternodeAppend from './pages/main/masternodes/Append/MasternodeAppend';
 import GetTestCoin from './pages/gettestcoin/GetTestCoin';
 import Proposals from './pages/main/proposals/Proposals';
 import ProposalCreate from './pages/main/proposals/Create/ProposalCreate';
+import ProposalVote from './pages/main/proposals/Vote/ProposalVote';
 
 export default function App() {
 
@@ -66,6 +67,7 @@ export default function App() {
               <Route path="/main/masternodes/append" element={<MasternodeAppend />} />
               <Route path="/main/proposals" element={<Proposals />} />
               <Route path="/main/proposals/create" element={<ProposalCreate />} />
+              <Route path="/main/proposals/vote" element={<ProposalVote />} />
               <Route path="/main/gettestcoin" element={<GetTestCoin />} />
               <Route path="/tools/web3" element={<TestMulticall />} />
               <Route path="/main/menu" element={<Menu />} />

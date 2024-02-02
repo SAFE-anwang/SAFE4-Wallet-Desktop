@@ -22,7 +22,7 @@ type RangePickerProps = GetProps<typeof DatePicker.RangePicker>;
 dayjs.extend(customParseFormat);
 const { RangePicker } = DatePicker;
 
-const enum PayType {
+export const enum PayType {
   ONETIME = "onetime",
   TIMES = "times"
 }
@@ -198,7 +198,7 @@ export default () => {
           <Divider />
           <Row>
             <Col span={24}>
-              <Text type='secondary'>付款方式</Text><br />
+              <Text type='secondary'>发放方式</Text><br />
               <Radio.Group value={params.payType} onChange={(payType) => {
                 setParams({
                   ...params,
@@ -206,13 +206,13 @@ export default () => {
                 })
               }}>
                 <Space direction="horizontal">
-                  <Radio value={PayType.ONETIME}>一次付清</Radio>
-                  <Radio value={PayType.TIMES}>分期付款</Radio>
+                  <Radio value={PayType.ONETIME}>一次</Radio>
+                  <Radio value={PayType.TIMES}>分期</Radio>
                 </Space>
               </Radio.Group>
             </Col>
             <Col style={{ marginTop: "10px" }} span={24}>
-              <Text type='secondary'>付款时间</Text><br />
+              <Text type='secondary'>发放时间</Text><br />
               {
                 params.payType == PayType.ONETIME && <>
                   <DatePicker locale={locale} showNow={false} status={inputErrors.payTime ? "error" : ""}

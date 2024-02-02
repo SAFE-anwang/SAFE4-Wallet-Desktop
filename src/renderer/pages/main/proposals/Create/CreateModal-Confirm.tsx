@@ -7,6 +7,12 @@ import { useWalletsActiveAccount } from "../../../../state/wallets/hooks"
 import { useDispatch } from "react-redux";
 import { applicationUpdateWalletTab } from "../../../../state/application/action";
 import { useNavigate } from "react-router-dom";
+import { PayType } from "./ProposalCreate";
+import { DateTimeFormat } from "../../../../utils/DateUtils";
+import { useProposalContract } from "../../../../hooks/useContracts";
+import { ONE } from "../../../../utils/CurrentAmountUtils";
+import { ethers } from "ethers";
+import { TransactionResponse } from "@ethersproject/providers";
 
 
 const { Text } = Typography;
@@ -20,10 +26,17 @@ export default ({
   createParams: {
     title?: string,
     description?: string,
+    payType : PayType,
+    payAmount ?: string,
+    payTimes ?: number,
+    startPayTime ?: number,
+    endPayTime ?: number
   }
 }) => {
+
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const proposalContract = useProposalContract(true);
   const [sending, setSending] = useState<boolean>(false);
   const {
     render,
@@ -43,11 +56,46 @@ export default ({
     }
   }, [txHash]);
 
-  return <Modal title="创建主节点" open={openCreateModal} footer={null} destroyOnClose onCancel={cancel}>
+  const doCreateProposal = useCallback( () => {
+    const { title , payAmount , startPayTime , endPayTime , description , payType , payTimes } = createParams;
+    if ( activeAccount && proposalContract && payAmount ){
+      setSending(true);
+      // function create(string memory _title, uint _payAmount, uint _payTimes, uint _startPayTime, uint _endPayTime, string memory _description) external payable returns (uint);
+      const _payTimes = payType == PayType.ONETIME ? 1 : payTimes;
+      const value = ethers.utils.parseEther("1").toBigInt()
+      proposalContract.create( title , ethers.utils.parseEther(payAmount).toBigInt() , _payTimes , startPayTime , endPayTime , description , {
+        value
+      }).then( (response:TransactionResponse) => {
+        const { hash,data } = response;
+        addTransaction({ to: proposalContract.address }, response, {
+          call: {
+            from: activeAccount,
+            to: proposalContract.address,
+            input: data,
+            value: value.toString()
+          }
+        });
+        setTxHash(hash);
+        setSending(false);
+        setTransactionResponse(response);
+      }).catch( (err:any) => {
+        setSending(false);
+        setErr(err)
+      });
+    }
+  } , [ activeAccount , createParams , proposalContract] );
+
+  return <Modal title="创建提案" open={openCreateModal} footer={null} destroyOnClose onCancel={cancel}>
     <Divider />
     {
       render
     }
+    <Row>
+      <Col span={24}>
+        <Text strong style={{ fontSize: "32px", marginLeft: "5px" }}>1 SAFE</Text>
+      </Col>
+    </Row>
+    <br />
     <Row>
       <Col span={24}>
         <Text type="secondary">从</Text>
@@ -67,16 +115,70 @@ export default ({
     </Row>
     <Divider />
     <Card size="small">
-
+      <Row>
+        <Col span={24}>
+          <Text type="secondary">提案标题</Text>
+        </Col>
+        <Col span={24}>
+          <Text>{createParams.title}</Text>
+        </Col>
+        <Divider style={{ margin: "8px 0px" }} />
+      </Row>
+      <Row>
+        <Col span={24}>
+          <Text type="secondary">提案简介</Text>
+        </Col>
+        <Col span={24}>
+          <Text>{createParams.description}</Text>
+        </Col>
+        <Divider style={{ margin: "8px 0px" }} />
+      </Row>
+      <Row>
+        <Col span={24}>
+          <Text type="secondary">申请SAFE数量</Text>
+        </Col>
+        <Col span={24}>
+          <Text strong>{createParams.payAmount} SAFE</Text>
+        </Col>
+        <Divider style={{ margin: "8px 0px" }} />
+      </Row>
+      <Row>
+        <Col span={24}>
+          <Text type="secondary">发放方式</Text>
+        </Col>
+        <Col span={24}>
+          {
+            createParams.payType == PayType.ONETIME && createParams.endPayTime && <>
+              {
+                <>
+                  <Text>在</Text><Text strong style={{marginLeft:"5px"}}>{DateTimeFormat(createParams.endPayTime)}</Text><br />
+                  <Text><Text strong>一次性</Text> 发放 </Text><Text strong style={{marginLeft:"5px"}}>{createParams.payAmount} SAFE</Text>
+                </>
+              }
+            </>
+          }
+           {
+            createParams.payType == PayType.TIMES && createParams.endPayTime && createParams.startPayTime  && <>
+              {
+                <>
+                  <Text>在</Text><Text strong style={{marginLeft:"5px",marginRight:"5px"}}>{DateTimeFormat(createParams.startPayTime)}</Text>
+                  <Text>到</Text><Text strong style={{marginLeft:"5px"}}>{DateTimeFormat(createParams.endPayTime)}</Text><br/>
+                  <Text><Text strong>分期{createParams.payTimes}次</Text> 合计发放 </Text><Text strong style={{marginLeft:"5px"}}>{createParams.payAmount} SAFE</Text>
+                </>
+              }
+            </>
+          }
+        </Col>
+      </Row>
     </Card>
     <Divider />
     <Row style={{ width: "100%", textAlign: "right" }}>
       <Col span={24}>
         {
-          !sending && !render && <Button icon={<LockOutlined />} onClick={() => {
-            // doRegisterMasternode();
+          !sending && !render && <Button onClick={() => {
+            doCreateProposal();
           }} disabled={sending} type="primary" style={{ float: "right" }}>
-            发送交易
+            执行
           </Button>
         }
         {

@@ -39,3 +39,7 @@ export const applicationUpdateSupernodeAddresses = createAction<string[]>(
 export const applicationUpdateWalletTab = createAction<string>(
   "application/updateWalletTab"
 )
+
+export const applicationControlVoteProposal = createAction<number | undefined>(
+  "application/controlVoteProposal"
+)

@@ -53,3 +53,7 @@ export function useMasternodeStorageContract( withSignerIfPossible ?: boolean ) 
 export function useMasternodeLogicContract( withSignerIfPossible ?: boolean ) : Contract | null | undefined {
   return useContract( SystemContract.MasterNodeLogic , SysContractABI[SystemContract.MasterNodeLogic], withSignerIfPossible);
 }
+
+export function useProposalContract( withSignerIfPossible ?: boolean ) : Contract | null | undefined {
+  return useContract( SystemContract.Proposal , SysContractABI[SystemContract.Proposal], withSignerIfPossible);
+}
