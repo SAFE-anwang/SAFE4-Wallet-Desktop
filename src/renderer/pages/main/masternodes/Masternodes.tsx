@@ -53,10 +53,10 @@ export default () => {
 
   useEffect(() => {
     if (pagination && masternodeStorageContract && multicallContract) {
-      const { pageSize, current } = pagination;
-      if (current && pageSize) {
+      const { pageSize, current , total } = pagination;
+      if (current && pageSize ) {
         setLoading(true);
-        masternodeStorageContract.callStatic.getAll((current - 1) * pageSize, pageSize)
+        masternodeStorageContract.callStatic.getAll( (current - 1) * pageSize , pageSize)
           .then((addresses: any) => {
             // function getInfo(address _addr) external view returns (MasterNodeInfo memory);
             const fragment = masternodeStorageContract.interface.getFunction("getInfo")

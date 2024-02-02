@@ -60,7 +60,7 @@ export default () => {
           setLoading(false);
         })
     }
-  }, [pagination])
+  }, [pagination,blockNumber])
   useEffect(() => {
     setLoading(true);
     fetchSuperNodes({ current : 1, pageSize:Supernode_Page_Size })
@@ -68,7 +68,7 @@ export default () => {
         const {current , pageSize , total} = data;
         setPagination({current , pageSize , total});
       })
-  }, [blockNumber]);
+  }, []);
 
   useEffect(() => {
     if (activeAccount && supernodeStorageContract) {
