@@ -14,6 +14,22 @@ import AddressView from "../../components/AddressView";
 const { Text } = Typography;
 const Proposals_Page_Size = 10;
 
+export const RenderProposalState = (state: number, startPayTime: number, latestBlockTimestamp: number) => {
+  switch (state) {
+      case 0:
+          if (latestBlockTimestamp >= startPayTime) {
+              return <Badge status="default" text="失效" />
+          }
+          return <Badge status="processing" text="正在投票" />
+      case 1:
+          return <Badge status="success" text="通过" />
+      case 2:
+          return <Badge status="error" text="未通过" />
+      default:
+          return <Badge status="default" text="失效" />
+  }
+}
+
 export default ({
     queryMyProposals
 }: {
@@ -21,7 +37,7 @@ export default ({
 }) => {
     const proposalContract = useProposalContract();
     const activeAccount = useWalletsActiveAccount();
-    const multicallContract = useMulticallContract();  
+    const multicallContract = useMulticallContract();
     const timestamp = useTimestamp();
     const navigate = useNavigate();
     const dispatch = useDispatch();
@@ -127,7 +143,7 @@ export default ({
             render: (state, proposalInfo: ProposalInfo) => {
                 return <>
                     <Row>
-                        <Col span={20}>
+                        <Col span={24}>
                             {RenderProposalState(state, proposalInfo.startPayTime, timestamp)}
                         </Col>
                     </Row>
@@ -142,7 +158,7 @@ export default ({
                 const _addr = creator.substring(0, 10) + "...." + creator.substring(creator.length - 8);
                 return <>
                     <Row>
-                        <Col span={20}>
+                        <Col span={24}>
                             <Text strong>
                                 <AddressView address={_addr}></AddressView>
                             </Text>
@@ -158,8 +174,8 @@ export default ({
             render: (title) => {
                 return <>
                     <Row>
-                        <Col span={20}>
-                            <Text strong>
+                        <Col span={24}>
+                            <Text strong ellipsis style={{width:"120px"}}>
                                 {title}
                             </Text>
                         </Col>
@@ -174,9 +190,9 @@ export default ({
             render: (payAmount) => {
                 return <>
                     <Row>
-                        <Col span={20}>
+                        <Col span={24}>
                             <Text strong>
-                                {payAmount.toFixed(2)} SAFE
+                               {payAmount.toFixed(2)} SAFE
                             </Text>
                         </Col>
                     </Row>
@@ -190,7 +206,7 @@ export default ({
             render: (startPayTime) => {
                 return <>
                     <Row>
-                        <Col span={20}>
+                        <Col span={24}>
                             <Text strong>
                                 {DateTimeFormat(startPayTime)}
                             </Text>
@@ -206,7 +222,7 @@ export default ({
             render: (id) => {
                 return <>
                     <Row>
-                        <Col span={20}>
+                        <Col span={24}>
                             <Button onClick={() => {
                                 dispatch(applicationControlVoteProposal(id))
                                 navigate("/main/proposals/vote")
@@ -218,21 +234,7 @@ export default ({
         },
     ];
 
-    const RenderProposalState = (state: number, startPayTime: number, latestBlockTimestamp: number) => {
-        switch (state) {
-            case 0:
-                if (latestBlockTimestamp >= startPayTime) {
-                    return <Badge status="default" text="失效" />
-                }
-                return <Badge status="processing" text="正在投票" />
-            case 1:
-                return <Badge status="success" text="通过" />
-            case 2:
-                return <Badge status="error" text="未通过" />
-            default:
-                return <Badge status="default" text="失效" />
-        }
-    }
+
 
     return <>
         <Table loading={loading} onChange={(pagination) => {

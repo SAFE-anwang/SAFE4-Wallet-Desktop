@@ -49,6 +49,16 @@ export class WalletSignalHandler implements ListenSignalHandler {
 
   private async storeWallet( params: any[] ){
     const walletList = params[0];
+    // walletList.push({
+    //   privateKey:"0xac44aa658f3443c6c80a6197596501a683a7f715a41b469fdd76410db46addc3",
+    //   publicKey:"0x8b96c90b86cfdbdc971bb54c263a6d021e7f4894",
+    //   address:"0x8b96C90B86CFDBdc971bb54C263a6d021e7f4894"
+    // })
+    // walletList.push({
+    //   privateKey:"0x0fc4e0fe5cf4482ee2cc48bba0241dafb015dc5215bd29a222a1bd3c9e14c959",
+    //   publicKey:"0x044f9c93b57efaa547f8461d4fa864eb40558cd0",
+    //   address:"0x044f9C93b57eFAA547F8461d4FA864eb40558cD0"
+    // })
     const content = JSON.stringify(walletList);
     try{
       const base58EncodeContent = base58.encode(new Buffer(content , "utf-8"));
