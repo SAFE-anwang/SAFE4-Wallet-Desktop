@@ -22,6 +22,7 @@ export enum DB_AddressActivity_Actions {
 
   AM_Deposit = "AccountManager:SafeDeposit",
   AM_Withdraw = "AccountManager:SafeWithdraw",
+  AM_Transfer = "AccountManager:SafeTransfer",
 
   SystemReward = "SystemReward:"
 }

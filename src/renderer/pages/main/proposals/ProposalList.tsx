@@ -15,19 +15,19 @@ const { Text } = Typography;
 const Proposals_Page_Size = 10;
 
 export const RenderProposalState = (state: number, startPayTime: number, latestBlockTimestamp: number) => {
-  switch (state) {
-      case 0:
-          if (latestBlockTimestamp >= startPayTime) {
-              return <Badge status="default" text="失效" />
-          }
-          return <Badge status="processing" text="正在投票" />
-      case 1:
-          return <Badge status="success" text="通过" />
-      case 2:
-          return <Badge status="error" text="未通过" />
-      default:
-          return <Badge status="default" text="失效" />
-  }
+    switch (state) {
+        case 0:
+            if (latestBlockTimestamp >= startPayTime) {
+                return <Badge status="default" text="失效" />
+            }
+            return <Badge status="processing" text="正在投票" />
+        case 1:
+            return <Badge status="success" text="通过" />
+        case 2:
+            return <Badge status="error" text="未通过" />
+        default:
+            return <Badge status="default" text="失效" />
+    }
 }
 
 export default ({
@@ -50,13 +50,17 @@ export default ({
         pageSize: number | undefined,
         current: number | undefined,
     }>();
+
     useEffect(() => {
         if (proposalContract) {
+            if (pagination && pagination.current != 1){
+                // 如果已经刷新过数据且不是第一页的情况下,不自动刷新数据.
+                return;
+            }
             if (queryMyProposals) {
                 // function getMineNum() external view returns (uint);
                 proposalContract.callStatic.getMineNum()
                     .then(data => {
-                        console.log(`query ${activeAccount} proposals num :${data.toNumber()}` )
                         setPagination({
                             total: data.toNumber(),
                             pageSize: Proposals_Page_Size,
@@ -75,39 +79,51 @@ export default ({
                     })
             }
         }
-    }, [proposalContract,activeAccount]);
+    }, [proposalContract, activeAccount,timestamp]);
 
     useEffect(() => {
         if (pagination && proposalContract && multicallContract) {
             const { pageSize, current, total } = pagination;
             if (current && pageSize && total && total > 0) {
+
+                //////////////////// 逆序 ////////////////////////
+                let position = total - (pageSize * current);
+                let offset = pageSize;
+                if (position < 0) {
+                    offset = pageSize + position;
+                    position = 0;
+                }
+                /////////////////////////////////////////////////
+
                 setLoading(true);
                 if (queryMyProposals) {
                     //  function getMines(uint _start, uint _count) external view returns (uint[] memory);
-                    proposalContract.callStatic.getMines((current - 1) * pageSize, pageSize)
+                    proposalContract.callStatic.getMines(position, offset)
                         .then((proposalIds: any) => {
                             multicallGetProposalInfoByIds(proposalIds)
                         });
                 } else {
                     // function getAll(uint _start, uint _count) external view returns (uint[] memory);
-                    proposalContract.callStatic.getAll((current - 1) * pageSize, pageSize)
+                    proposalContract.callStatic.getAll(position, offset)
                         .then((proposalIds: any) => {
                             multicallGetProposalInfoByIds(proposalIds)
                         });
                 }
-            }else{
+                
+            } else {
                 setProposalInfos(undefined);
             }
         }
     }, [pagination]);
 
-    const multicallGetProposalInfoByIds = useCallback((proposalIds: any) => {
+    const multicallGetProposalInfoByIds = useCallback((_proposalIds: any) => {
         if (multicallContract && proposalContract) {
+            const proposalIds = _proposalIds.map( (_id:any) => _id.toNumber() ).sort( (id0:number,id1:number) => id1-id0  )
             // function getInfo(uint _id) external view returns (ProposalInfo memory);
             const fragment = proposalContract.interface.getFunction("getInfo")
             const calls = proposalIds.map((proposalId: any) => [
                 proposalContract.address,
-                proposalContract.interface.encodeFunctionData(fragment, [proposalId.toNumber()])
+                proposalContract.interface.encodeFunctionData(fragment, [proposalId])
             ])
             multicallContract.callStatic.aggregate(calls)
                 .then(data => {
@@ -175,7 +191,7 @@ export default ({
                 return <>
                     <Row>
                         <Col span={24}>
-                            <Text strong ellipsis style={{width:"120px"}}>
+                            <Text strong ellipsis style={{ width: "120px" }}>
                                 {title}
                             </Text>
                         </Col>
@@ -192,7 +208,7 @@ export default ({
                     <Row>
                         <Col span={24}>
                             <Text strong>
-                               {payAmount.toFixed(2)} SAFE
+                                {payAmount.toFixed(2)} SAFE
                             </Text>
                         </Col>
                     </Row>
@@ -208,7 +224,7 @@ export default ({
                     <Row>
                         <Col span={24}>
                             <Text strong>
-                                {DateTimeFormat(startPayTime)}
+                                {DateTimeFormat(startPayTime * 1000)}
                             </Text>
                         </Col>
                     </Row>
@@ -233,6 +249,7 @@ export default ({
             },
         },
     ];
+
 
 
 

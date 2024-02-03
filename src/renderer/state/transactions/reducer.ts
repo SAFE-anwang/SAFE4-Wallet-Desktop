@@ -41,19 +41,19 @@ export interface TransactionDetails {
   accountManagerDatas?: {
     [eventLogIndex: string]: AccountManagerData
   },
-  systemRewardDatas ?: {
+  systemRewardDatas?: {
     [eventLogIndex: string]: SystemRewardData
   }
-  withdrawAmount?: string
+  withdrawAmount?: string,
 }
 
 export interface SystemRewardData {
-  action : string ,
+  action: string,
   eventLogIndex: number,
-  from : string,
-  to : string,
-  type : number,
-  amount : string
+  from: string,
+  to: string,
+  type: number,
+  amount: string
 }
 
 export interface AccountManagerData {
@@ -253,6 +253,17 @@ export function Activity2Transaction(row: any): TransactionDetails {
         }
       }
     case DB_AddressActivity_Actions.AM_Withdraw:
+      return {
+        ...transaction,
+        accountManagerDatas: {
+          [transaction.eventLogIndex]: {
+            ...transaction.data,
+            action: transaction.action,
+            eventLogIndex: transaction.eventLogIndex
+          }
+        }
+      }
+    case DB_AddressActivity_Actions.AM_Transfer:
       return {
         ...transaction,
         accountManagerDatas: {

@@ -13,7 +13,7 @@ export const RenderVoteResult = (voteResult: number) => {
       return <>
         <Text>
           <CheckCircleFilled style={{
-            color: "#52c41a", fontSize: "20px", float: "left", marginRight: "10px", marginLeft: "10px"
+            color: "#52c41a", fontSize: "16px", marginRight: "10px", marginLeft: "10px"
           }} />
           <Text type="success">同意</Text>
         </Text>
@@ -22,7 +22,7 @@ export const RenderVoteResult = (voteResult: number) => {
       return <>
         <Text>
           <CloseCircleFilled style={{
-            color: "#e53d3d", fontSize: "20px", float: "left", marginRight: "10px", marginLeft: "10px"
+            color: "#e53d3d", fontSize: "16px", marginRight: "10px", marginLeft: "10px"
           }} />
           <Text type="danger">拒绝</Text>
         </Text>
@@ -31,7 +31,7 @@ export const RenderVoteResult = (voteResult: number) => {
       return <>
         <Text>
           <QuestionCircleFilled style={{
-            color: "#c3a4a4", fontSize: "20px", float: "left", marginRight: "10px", marginLeft: "10px"
+            color: "#c3a4a4", fontSize: "16px", marginRight: "10px", marginLeft: "10px"
           }} />
           <Text type="secondary">弃权</Text>
         </Text>

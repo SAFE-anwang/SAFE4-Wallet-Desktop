@@ -5,6 +5,7 @@ import TransactionElementCall from "./TransactionElementCall";
 import { useWalletsActiveAccount } from "../../../../../state/wallets/hooks";
 import { TransactionDetails } from "../../../../../state/transactions/reducer";
 import TransactionElementSystemReward from "./TransactionElementSystemReward";
+import TransactionElementAM from "./TransactionElementAM";
 
 export default ({ transaction, setClickTransaction }: {
   transaction: TransactionDetails,
@@ -14,7 +15,7 @@ export default ({ transaction, setClickTransaction }: {
   const activeAccount = useWalletsActiveAccount();
   const ElementRender = useMemo(() => {
     const {
-      transfer, call, systemRewardDatas
+      transfer, call, systemRewardDatas , accountManagerDatas
     } = transaction;
     if (transfer) {
       return <>
@@ -29,6 +30,11 @@ export default ({ transaction, setClickTransaction }: {
     if (systemRewardDatas) {
       return <>
         <TransactionElementSystemReward transaction={transaction} setClickTransaction={setClickTransaction} />
+      </>
+    }
+    if (!call && accountManagerDatas){
+      return <>
+        <TransactionElementAM transaction={transaction} setClickTransaction={setClickTransaction} />
       </>
     }
     return <></>

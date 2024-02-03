@@ -97,6 +97,7 @@ export default () => {
           ...inputErrors,
           notEnough: "没有足够的SAFE来支付创建提案的费用!"
         })
+        return;
       }
       // GO next..
       setOpenCreateModal(true);

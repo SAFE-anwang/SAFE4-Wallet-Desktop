@@ -53,7 +53,9 @@ export default ({
       setTxHash(undefined);
       dispatch(applicationUpdateWalletTab("history"));
       navigate("/main/wallet");
+      return;
     }
+    setErr(undefined)
   }, [txHash]);
 
   const doCreateProposal = useCallback( () => {
@@ -63,7 +65,9 @@ export default ({
       // function create(string memory _title, uint _payAmount, uint _payTimes, uint _startPayTime, uint _endPayTime, string memory _description) external payable returns (uint);
       const _payTimes = payType == PayType.ONETIME ? 1 : payTimes;
       const value = ethers.utils.parseEther("1").toBigInt()
-      proposalContract.create( title , ethers.utils.parseEther(payAmount).toBigInt() , _payTimes , startPayTime , endPayTime , description , {
+      const _startPayTime = startPayTime && Math.floor(startPayTime / 1000);
+      const _endPayTime = endPayTime && Math.floor(endPayTime / 1000);
+      proposalContract.create( title , ethers.utils.parseEther(payAmount).toBigInt() , _payTimes , _startPayTime , _endPayTime , description , {
         value
       }).then( (response:TransactionResponse) => {
         const { hash,data } = response;
