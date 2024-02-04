@@ -1,5 +1,5 @@
 import React, { useCallback, useMemo } from "react";
-import { SupportAccountManagerFunctions, SupportMasternodeLogicFunctions, SupportSupernodeLogicFunctions, SupportSupernodeVoteFunctions } from "../../../../../constants/DecodeSupportFunction";
+import { SupportAccountManagerFunctions, SupportMasternodeLogicFunctions, SupportProposalFunctions, SupportSupernodeLogicFunctions, SupportSupernodeVoteFunctions } from "../../../../../constants/DecodeSupportFunction";
 import { SystemContract } from "../../../../../constants/SystemContracts";
 import { TransactionDetails } from "../../../../../state/transactions/reducer";
 import TransactionElementCallAMDeposit from "./TransactionElementCallAMDeposit";
@@ -9,6 +9,8 @@ import TransactionElementCallSNAppend from "./TransactionElementCallSNAppend";
 import TransactionElementCallSNVote from "./TransactionElementCallSNVote";
 import TransactionElementCallMNRegister from "./TransactionElementCallMNRegister";
 import TransactionElementCallMNAppend from "./TransactionElementCallMNAppend";
+import TransactionElementCallProposalVote from "./TransactionElementCallProposalVote";
+import TransactionElementCallProposalCreate from "./TransactionElementCallProposalCreate";
 
 export default ({ transaction, setClickTransaction, support }: {
   transaction: TransactionDetails,
@@ -29,11 +31,32 @@ export default ({ transaction, setClickTransaction, support }: {
         return CallSupernodeVoteFuncRender(support.supportFuncName, transaction, setClickTransaction, support)
       case SystemContract.MasterNodeLogic:
         return CallMasternodeLogicFuncRender(support.supportFuncName, transaction, setClickTransaction, support)
+      case SystemContract.Proposal:
+        return CallProposalFunsRender(support.supportFuncName, transaction, setClickTransaction, support)
       default:
         return <></>
     }
     return <></>
   }, [transaction, setClickTransaction, support]);
+
+  const CallProposalFunsRender = (funcName: string, transaction: TransactionDetails, setClickTransaction: (transaction: TransactionDetails) => void, support: any) => {
+    switch (funcName) {
+      case SupportProposalFunctions.Create:
+        return <TransactionElementCallProposalCreate
+          transaction={transaction}
+          setClickTransaction={setClickTransaction}
+          support={support}
+        />
+      case SupportProposalFunctions.Vote:
+        return <TransactionElementCallProposalVote
+          transaction={transaction}
+          setClickTransaction={setClickTransaction}
+          support={support}
+        />
+      default:
+        return <></>
+    }
+  }
 
   const CallSupernodeVoteFuncRender = (funcName: string, transaction: TransactionDetails, setClickTransaction: (transaction: TransactionDetails) => void, support: any) => {
     switch (funcName) {

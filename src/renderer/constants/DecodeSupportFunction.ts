@@ -18,6 +18,42 @@ export enum SupportMasternodeLogicFunctions {
   Register = "register",            // function register(bool _isUnion, address _addr, uint _lockDay, string memory _enode, string memory _description, uint _creatorIncentive, uint _partnerIncentive) external payable;
   AppendRegister = "appendRegister" // function appendRegister(address _addr, uint _lockDay) external payable;
 }
+export enum SupportProposalFunctions {
+  Create = "create",                //function create(string memory _title, uint _payAmount, uint _payTimes, uint _startPayTime, uint _endPayTime, string memory _description) external payable returns (uint);
+  Vote = "vote"                     //function vote(uint _id, uint _voteResult) external;
+}
+
+function decodeProposalFunctionData(IContract: Interface, fragment: FunctionFragment, input: string): {
+  supportFuncName: string,
+  inputDecodeResult: any
+} | undefined {
+  let formatDecodeResult = undefined;
+  switch (fragment.name) {
+    case SupportProposalFunctions.Vote:
+      const vote = IContract.decodeFunctionData(fragment, input);
+      formatDecodeResult = {
+        _id : vote[0],
+        _voteResult : vote[1]
+      }
+      break;
+    case SupportProposalFunctions.Create:
+      let create = IContract.decodeFunctionData(fragment, input);
+      formatDecodeResult = {
+        _title : create[0],
+        _payAmount : create[1],
+        _startPayTime : create[2],
+        _endPayTime : create[3],
+        _description : create[4]
+      }
+      break;
+    default:
+      break;
+  }
+  return formatDecodeResult ? {
+    supportFuncName: fragment.name,
+    inputDecodeResult: formatDecodeResult
+  } : undefined;
+}
 
 function decodeMasternodeLogicFunctionData(IContract: Interface, fragment: FunctionFragment, input: string): {
   supportFuncName: string,
@@ -160,6 +196,8 @@ export default (address: string | undefined, input: string | undefined): {
           return decodeSupernodeVoteFunctionData(IContract, fragment, input);
         case SystemContract.MasterNodeLogic:
           return decodeMasternodeLogicFunctionData(IContract, fragment, input);
+        case SystemContract.Proposal:
+          return decodeProposalFunctionData(IContract,fragment,input);
         default:
           return undefined;
       }

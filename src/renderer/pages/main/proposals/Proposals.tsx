@@ -35,7 +35,7 @@ export default () => {
       <div style={{ margin: "auto", width: "90%" }}>
         <Card style={{ marginBottom: "20px" }}>
           <Alert showIcon type="info" message={<>
-            <Text>支付1 SAFE</Text><br />
+            <Text>支付 <Text strong>1 SAFE</Text> 来创建提案从资金池里获取SAFE</Text><br />
             <Text>只有在线且排名前49的超级节点才可以进行投票</Text>
           </>} />
           <Divider />

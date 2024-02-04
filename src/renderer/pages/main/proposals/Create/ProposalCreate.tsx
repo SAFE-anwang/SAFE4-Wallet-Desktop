@@ -22,6 +22,21 @@ type RangePickerProps = GetProps<typeof DatePicker.RangePicker>;
 dayjs.extend(customParseFormat);
 const { RangePicker } = DatePicker;
 
+const InputRules = {
+  title : {
+    min : 8 ,
+    max : 256
+  },
+  description : {
+    min : 8,
+    max : 2048
+  },
+  payTimes : {
+    min : 1,
+    max : 100
+  }
+}
+
 export const enum PayType {
   ONETIME = "onetime",
   TIMES = "times"
@@ -72,6 +87,16 @@ export default () => {
     if (!payAmount) {
       inputErrors.payAmount = "请输入提案所需申请的SAFE数量"
     } else {
+
+      if ( title && (title.length > InputRules.title.max || title.length < InputRules.title.min )){
+        inputErrors.title = `标题长度需要大于${InputRules.title.min}且小于${InputRules.title.max}`;
+      }
+      if ( description && (description.length > InputRules.description.max || description.length < InputRules.description.min )){
+        inputErrors.description = `描述长度需要大于${InputRules.description.min}且小于${InputRules.description.max}`;
+      }
+      if ( payTimes && payTimes > InputRules.payTimes.max ){
+        inputErrors.payTimes = `分期次数不能超过${InputRules.payTimes.max}`;
+      }
       try {
         const _payAmount = CurrencyAmount.ether(ethers.utils.parseEther(payAmount).toBigInt());
         if (!_payAmount.greaterThan(ZERO)) {
@@ -203,7 +228,9 @@ export default () => {
               <Radio.Group value={params.payType} onChange={(payType) => {
                 setParams({
                   ...params,
-                  payType: payType.target.value
+                  payType: payType.target.value,
+                  startPayTime : undefined,
+                  endPayTime : undefined
                 })
               }}>
                 <Space direction="horizontal">

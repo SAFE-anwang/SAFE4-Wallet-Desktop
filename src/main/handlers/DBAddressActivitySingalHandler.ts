@@ -108,7 +108,7 @@ export class DBAddressActivitySingalHandler implements ListenSignalHandler {
   }) {
     const { transactionHash, blockNumber, status } = receipt;
     this.db.run(
-      "UPDATE Address_Activities SET status = ? , block_number = ? WHERE transaction_hash = ?",
+      "UPDATE Address_Activities SET status = ? , block_number = ? WHERE transaction_hash = ? ",
       [status, blockNumber, transactionHash],
       (err: any) => {
         if (err) {
@@ -166,7 +166,7 @@ export class DBAddressActivitySingalHandler implements ListenSignalHandler {
             // do update
             console.log("update activity txhash=", transactionHash)
             this.db.run(
-              "UPDATE Address_Activities Set timestamp = ? , event_log_index = ? WHERE action = ? AND transaction_hash = ?",
+              "UPDATE Address_Activities Set timestamp = ? , event_log_index = ? WHERE action = ? AND transaction_hash = ? AND event_log_index = ?",
               [timestamp, eventLogIndex , action, transactionHash],
               (err: any) => {
                 if (err) {

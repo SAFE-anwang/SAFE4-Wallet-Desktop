@@ -53,7 +53,7 @@ export default ({
       setSending(true);
       // function vote(uint _id, uint _voteResult) external;
       proposalContract.vote(proposalInfo.id, voteResult , {
-        gasLimit : 1000000
+        gasLimit : 20000000
       })
         .then((response: TransactionResponse) => {
           const { hash, data } = response;

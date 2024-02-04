@@ -1,7 +1,10 @@
 
 import { Alert, Button, Col, Row, Space, Statistic, Typography } from 'antd';
 import { useSafe4Balance, useWalletsActiveAccount } from '../../../../state/wallets/hooks';
-import { AccountRecord } from '../../../../structs/AccountManager';
+import { AccountRecord, formatAccountRecord } from '../../../../structs/AccountManager';
+import { useEffect, useMemo } from 'react';
+import { ZERO } from '../../../../utils/CurrentAmountUtils';
+import { useAccountManagerContract } from '../../../../hooks/useContracts';
 
 const { Text } = Typography;
 
@@ -14,6 +17,13 @@ export default ({
 
   const activeAccount = useWalletsActiveAccount();
   const safe4balance = useSafe4Balance([activeAccount])[activeAccount];
+
+  const nextClick = useMemo( () => {
+    if ( accountRecord ){
+      return true;
+    }
+    return safe4balance?.avaiable?.amount.greaterThan(ZERO);
+  } , [accountRecord] );
 
   return <>
     {
@@ -41,7 +51,7 @@ export default ({
     <br /><br /><br /><br />
     <Row style={{ width: "100%", textAlign: "right" }}>
       <Col span={24}>
-        <Button type="primary" style={{ float: "right" }} onClick={() => {
+        <Button disabled={!nextClick} type="primary" style={{ float: "right" }} onClick={() => {
           nextCallback()
         }}>下一步</Button>
       </Col>
