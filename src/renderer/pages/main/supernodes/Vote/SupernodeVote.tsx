@@ -16,13 +16,14 @@ import { useNavigate } from 'react-router-dom';
 import Supernode from '../Supernode';
 import { CurrencyAmount } from '@uniswap/sdk';
 import { ethers } from 'ethers';
+import { fetchSuperNodeAddresses } from '../../../../services/supernode';
 
 const { Text , Title } = Typography;
 
 export default () => {
 
   const supernodeAddr = useSelector<AppState, string | undefined>(state => state.application.control.vote);
-  const supernodeAddresses = useSelector<AppState, string[]>(state => state.application.supernodeAddresses);
+  const [supernodeAddresses,setSupernodeAddresses] = useState<string[]>([]);
   const activeAccountAccountRecords = useActiveAccountAccountRecords();
   const supernodeStorageContract = useSupernodeStorageContract();
   const navigate = useNavigate();
@@ -38,6 +39,11 @@ export default () => {
         })
     }
   }, [supernodeAddr]);
+
+  useEffect(()=>{
+    fetchSuperNodeAddresses()
+    .then( setSupernodeAddresses )
+  },[]);
 
   const ONE = CurrencyAmount.ether(ethers.utils.parseEther("1").toBigInt());
   const {

@@ -9,6 +9,11 @@ export async function fetchSuperNodes( params : PageQueryDTO ) : Promise<PageRes
   return serverResponse.data;
 }
 
+export async function fetchSuperNodeAddresses() : Promise<string[]> {
+  const serverResponse = await POST( `${Safescan_URL}:5005/nodes/supernodeAddresses` , {} );
+  return serverResponse.data;
+}
+
 
 
 

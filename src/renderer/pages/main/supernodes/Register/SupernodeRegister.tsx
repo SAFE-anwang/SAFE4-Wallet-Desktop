@@ -10,7 +10,7 @@ import { useMasternodeStorageContract, useSupernodeStorageContract } from '../..
 import { SupernodeInfo, formatSupernodeInfo } from '../../../../structs/Supernode';
 import VoteModalConfirm from '../Vote/VoteModal-Confirm';
 import { AccountRecord } from '../../../../structs/AccountManager';
-import { LeftOutlined, LockOutlined } from '@ant-design/icons';
+import { LeftOutlined, LockOutlined, QuestionCircleOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { Currency, CurrencyAmount, JSBI } from '@uniswap/sdk';
 import { ethers } from 'ethers';
@@ -28,6 +28,7 @@ export default () => {
   const masternodeStorageContract = useMasternodeStorageContract();
   const activeAccount = useWalletsActiveAccount();
   const balance = useETHBalances([activeAccount])[activeAccount];
+  const [enodeTips, setEnodeTips] = useState<boolean>(false);
 
   const [createParams, setCreateParams] = useState<{
     createType: number | 1,
@@ -73,22 +74,22 @@ export default () => {
     };
     if (!enode) {
       inputErrors.enode = "请输入超级节点ENODE!";
-    }else{
+    } else {
       const enodeRegex = /^enode:\/\/[0-9a-fA-F]{128}@(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}):(\d+)$/;
       const isMatch = enodeRegex.test(enode);
-      if (!isMatch){
+      if (!isMatch) {
         inputErrors.enode = "超级节点ENODE格式不正确!";
       }
     }
     if (!description) {
       inputErrors.description = "请输入超级节点简介信息!"
     };
-    if ( createParams.createType == Supernode_Create_Type_NoUnion
-        && !balance?.greaterThan(CurrencyAmount.ether(JSBI.BigInt(ethers.utils.parseEther("5000"))))) {
+    if (createParams.createType == Supernode_Create_Type_NoUnion
+      && !balance?.greaterThan(CurrencyAmount.ether(JSBI.BigInt(ethers.utils.parseEther("5000"))))) {
       inputErrors.balance = "账户余额不足以支付超级节点创建费用";
     }
-    if ( createParams.createType == Supernode_create_type_Union
-        && !balance?.greaterThan(CurrencyAmount.ether(JSBI.BigInt(ethers.utils.parseEther("1000"))))) {
+    if (createParams.createType == Supernode_create_type_Union
+      && !balance?.greaterThan(CurrencyAmount.ether(JSBI.BigInt(ethers.utils.parseEther("1000"))))) {
       inputErrors.balance = "账户余额不足以支付超级节点创建费用";
     }
     if (inputErrors.name || inputErrors.enode || inputErrors.description || inputErrors.balance) {
@@ -139,7 +140,7 @@ export default () => {
               <Radio.Group onChange={(e) => {
                 setInputErrors({
                   ...inputErrors,
-                  balance : undefined
+                  balance: undefined
                 })
                 setCreateParams({
                   ...createParams,
@@ -161,7 +162,7 @@ export default () => {
                 createParams.createType == Supernode_Create_Type_NoUnion &&
                 <Text strong>5,000 SAFE</Text>
               }
-               {
+              {
                 createParams.createType == Supernode_create_type_Union &&
                 <Text strong>1,000 SAFE</Text>
               }
@@ -202,7 +203,18 @@ export default () => {
           </Row>
           <Divider />
           <Row>
-            <Text type='secondary'>ENODE</Text>
+            <Col span={24}>
+              <QuestionCircleOutlined onClick={() => setEnodeTips(true)} style={{ cursor: "pointer", marginRight: "5px" }} /><Text type='secondary'>ENODE</Text>
+            </Col>
+            {
+              enodeTips && <Col span={24} style={{ marginBottom: "10px", marginTop: "5px" }}>
+                <Alert type='info' message={<>
+                  <Text>服务器上部署节点程序后,使用geth连接到控制台输入</Text><br />
+                  <Text strong code>admin.nodeInfo</Text><br />
+                  获取节点的ENODE信息
+                </>} />
+              </Col>
+            }
             <Input.TextArea status={inputErrors.enode ? "error" : ""}
               value={createParams.enode} placeholder='输入超级节点ENODE' onChange={(event) => {
                 const inputEnode = event.target.value;
@@ -250,7 +262,7 @@ export default () => {
               onChange={(result: number[]) => {
                 const left = result[0];
                 const right = result[1];
-                if (left >= 40 && left <= 50 && right >= 50 && right <= 60 && (right-left) <= 10 ) {
+                if (left >= 40 && left <= 50 && right >= 50 && right <= 60 && (right - left) <= 10) {
                   setSliderVal(result)
                 }
               }}
@@ -272,7 +284,7 @@ export default () => {
             </Row>
           </Row>
           <Divider />
-          
+
           <Row style={{ width: "100%", textAlign: "right" }}>
             <Col span={24}>
               <Button type="primary" onClick={() => {

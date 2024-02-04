@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { CheckboxValueType } from 'antd/es/checkbox/Group';
 import type { GetProp } from 'antd';
 import { useSelector } from 'react-redux';
-import { LeftOutlined, LockOutlined } from '@ant-design/icons';
+import { LeftOutlined, LockOutlined, QuestionCircleOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { Currency, CurrencyAmount, JSBI } from '@uniswap/sdk';
 import { ethers } from 'ethers';
@@ -26,6 +26,7 @@ export default () => {
   const masternodeStorageContract = useMasternodeStorageContract();
   const supernodeStorageContract = useSupernodeStorageContract();
   const [openRegisterModal, setOpenRegsterModal] = useState<boolean>(false);
+  const [enodeTips, setEnodeTips] = useState<boolean>(false);
 
   const [registerParams, setRegisterParams] = useState<{
     registerType: number | 1,
@@ -62,10 +63,10 @@ export default () => {
     incentivePlan.partner = 100 - sliderVal;
     if (!enode) {
       inputErrors.enode = "请输入主节点ENODE!";
-    }else{
+    } else {
       const enodeRegex = /^enode:\/\/[0-9a-fA-F]{128}@(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}):(\d+)$/;
       const isMatch = enodeRegex.test(enode);
-      if (!isMatch){
+      if (!isMatch) {
         inputErrors.enode = "主节点ENODE格式不正确!";
       }
     }
@@ -161,7 +162,18 @@ export default () => {
           </Row>
           <Divider />
           <Row>
-            <Text type='secondary'>ENODE</Text>
+            <Col span={24}>
+              <QuestionCircleOutlined onClick={()=>setEnodeTips(true)} style={{ cursor: "pointer", marginRight: "5px" }} /><Text type='secondary'>ENODE</Text>
+            </Col>
+            {
+              enodeTips && <Col span={24} style={{ marginBottom: "10px", marginTop: "5px" }}>
+                <Alert type='info' message={<>
+                  <Text>服务器上部署节点程序后,使用geth连接到控制台输入</Text><br />
+                  <Text strong code>admin.nodeInfo</Text><br />
+                  获取节点的ENODE信息
+                </>} />
+              </Col>
+            }
             <Input.TextArea status={inputErrors.enode ? "error" : ""}
               value={registerParams.enode} placeholder='输入主节点节点ENODE' onChange={(event) => {
                 const inputEnode = event.target.value;
