@@ -24,12 +24,12 @@ const { RangePicker } = DatePicker;
 
 const InputRules = {
   title : {
-    min : 8 ,
-    max : 256
+    min : 8,
+    max : 80
   },
   description : {
     min : 8,
-    max : 2048
+    max : 600
   },
   payTimes : {
     min : 1,

@@ -75,7 +75,7 @@ export default ({
       setSending(true);
       // function voteOrApproval(bool _isVote, address _dstAddr, uint[] memory _recordIDs) external;
       supernodeVoteContract.voteOrApproval(true, supernodeInfo.addr, accountRecordIds, {
-        gasLimit: 1000000
+        // gasLimit: 1000000
       })
         .then((response: any) => {
           const { hash, data } = response;

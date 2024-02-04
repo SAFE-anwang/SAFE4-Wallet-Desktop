@@ -51,6 +51,10 @@ export default ({
       const value = ethers.utils.parseEther(
         Masternode_create_type_Union == registerType ? "200" : "1000"
       );
+      if ( registerType == Masternode_Create_Type_NoUnion ){
+        incentivePlan.creator = 100;
+        incentivePlan.partner = 0;
+      }
       setSending(true);
       masternodeLogicContract.register(
         Masternode_create_type_Union == registerType,

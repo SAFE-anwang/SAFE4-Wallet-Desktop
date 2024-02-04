@@ -11,12 +11,18 @@ import type { RadioChangeEvent } from 'antd';
 import { useETHBalances, useWalletsActiveAccount } from '../../../../state/wallets/hooks';
 import { useMasternodeStorageContract, useSupernodeStorageContract } from '../../../../hooks/useContracts';
 import RegisterModalConfirm from './RegisterModal-Confirm';
+import { title } from 'process';
 const { Text, Title } = Typography;
 
 export const Masternode_Create_Type_NoUnion = 1;
 export const Masternode_create_type_Union = 2;
 
-
+const InputRules = {
+  description: {
+    min: 12,
+    max: 600
+  }
+}
 
 export default () => {
 
@@ -73,6 +79,9 @@ export default () => {
     if (!description) {
       inputErrors.description = "请输入主节点简介信息!"
     };
+    if (description && (description.length < InputRules.description.min || description.length > InputRules.description.max)) {
+      inputErrors.description = `简介信息长度需要大于${InputRules.description.min}且小于${InputRules.description.max}`;
+    }
     if (registerParams.registerType == Masternode_Create_Type_NoUnion
       && !balance?.greaterThan(CurrencyAmount.ether(JSBI.BigInt(ethers.utils.parseEther("1000"))))) {
       inputErrors.balance = "账户余额不足以锁仓来创建主节点";
@@ -163,7 +172,7 @@ export default () => {
           <Divider />
           <Row>
             <Col span={24}>
-              <QuestionCircleOutlined onClick={()=>setEnodeTips(true)} style={{ cursor: "pointer", marginRight: "5px" }} /><Text type='secondary'>ENODE</Text>
+              <QuestionCircleOutlined onClick={() => setEnodeTips(true)} style={{ cursor: "pointer", marginRight: "5px" }} /><Text type='secondary'>ENODE</Text>
             </Col>
             {
               enodeTips && <Col span={24} style={{ marginBottom: "10px", marginTop: "5px" }}>
@@ -212,28 +221,36 @@ export default () => {
             }
           </Row>
           <Divider />
-          <Row>
-            <Text type='secondary'>挖矿奖励分配方案</Text>
-            <br />
-            <Slider style={{ width: "100%" }}
-              value={sliderVal}
-              onChange={(result: number) => {
-                setSliderVal(result)
-              }}
-            />
-            <br />
-            <Row style={{ width: "100%" }}>
-              <Col span={12} style={{ textAlign: "left" }}>
-                <Text strong>创建者</Text><br />
-                <Text>{sliderVal} %</Text>
-              </Col>
-              <Col span={12} style={{ textAlign: "right" }}>
-                <Text strong>合伙人</Text><br />
-                <Text>{100 - sliderVal} %</Text>
-              </Col>
-            </Row>
-          </Row>
-          <Divider />
+
+          {
+            registerParams.registerType == Masternode_create_type_Union && <>
+              <Row>
+                <Text type='secondary'>挖矿奖励分配方案</Text>
+                <br />
+                <Slider style={{ width: "100%" }}
+                  value={sliderVal}
+                  onChange={(result: number) => {
+                    if ( result > 0 && result <= 50 ){
+                      setSliderVal(result)
+                    }
+                  }}
+                />
+                <br />
+                <Row style={{ width: "100%" }}>
+                  <Col span={12} style={{ textAlign: "left" }}>
+                    <Text strong>创建者</Text><br />
+                    <Text>{sliderVal} %</Text>
+                  </Col>
+                  <Col span={12} style={{ textAlign: "right" }}>
+                    <Text strong>合伙人</Text><br />
+                    <Text>{100 - sliderVal} %</Text>
+                  </Col>
+                </Row>
+              </Row>
+              <Divider />
+            </>
+          }
+
           <Row style={{ width: "100%", textAlign: "right" }}>
             <Col span={24}>
               <Button type="primary" onClick={() => {

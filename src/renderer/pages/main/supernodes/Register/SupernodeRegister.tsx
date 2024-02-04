@@ -21,6 +21,17 @@ const { Text, Title } = Typography;
 export const Supernode_Create_Type_NoUnion = 1;
 export const Supernode_create_type_Union = 2;
 
+const InputRules = {
+  name : {
+    min : 2,
+    max : 20
+  },
+  description: {
+    min: 12,
+    max: 600
+  }
+}
+
 export default () => {
 
   const navigate = useNavigate();
@@ -72,6 +83,9 @@ export default () => {
     if (!name) {
       inputErrors.name = "请输入超级节点名称!";
     };
+    if (name && (name.length < InputRules.name.min || name.length > InputRules.name.max)) {
+      inputErrors.name = `简介信息长度需要大于${InputRules.name.min}且小于${InputRules.name.max}`;
+    }
     if (!enode) {
       inputErrors.enode = "请输入超级节点ENODE!";
     } else {
@@ -81,9 +95,14 @@ export default () => {
         inputErrors.enode = "超级节点ENODE格式不正确!";
       }
     }
+
     if (!description) {
       inputErrors.description = "请输入超级节点简介信息!"
     };
+    if (description && (description.length < InputRules.description.min || description.length > InputRules.description.max)) {
+      inputErrors.description = `简介信息长度需要大于${InputRules.description.min}且小于${InputRules.description.max}`;
+    }
+
     if (createParams.createType == Supernode_Create_Type_NoUnion
       && !balance?.greaterThan(CurrencyAmount.ether(JSBI.BigInt(ethers.utils.parseEther("5000"))))) {
       inputErrors.balance = "账户余额不足以支付超级节点创建费用";
