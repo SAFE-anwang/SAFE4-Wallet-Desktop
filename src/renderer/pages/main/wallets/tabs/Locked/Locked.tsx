@@ -1,4 +1,4 @@
-import { Row, Statistic, Card, Col, Table, Typography, Button, Divider, Space, Tag } from "antd";
+import { Row, Statistic, Card, Col, Table, Typography, Button, Divider, Space, Tag, List } from "antd";
 import { useActiveAccountAccountRecords, useSafe4Balance, useWalletsActiveAccount } from "../../../../../state/wallets/hooks";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useBlockNumber, useTimestamp } from "../../../../../state/application/hooks";
@@ -14,6 +14,8 @@ import { ZERO } from "../../../../../utils/CurrentAmountUtils";
 
 const { Text } = Typography;
 
+const AccountRecords_Page_Size = 5;
+
 export default () => {
 
   const activeAccount = useWalletsActiveAccount();
@@ -21,20 +23,119 @@ export default () => {
   const blockNumber = useBlockNumber();
   const [openWithdrawModal, setOpenWithdrawModal] = useState<boolean>(false);
   const [selectedAccountRecord, setSelectedAccountRecord] = useState<AccountRecord>();
-  const accountRecords = useActiveAccountAccountRecords();
+  const [accountRecords, setAccountRecords] = useState<AccountRecord[]>([]);
   const timestamp = useTimestamp();
   const accountManagerContract = useAccountManagerContract();
-  const [accountRecordZERO,setAccountRecordZERO] = useState<AccountRecord>();
+  const multicallContract = useMulticallContract();
+  const [loading, setLoading] = useState<boolean>(false);
+  const [accountRecordZERO, setAccountRecordZERO] = useState<AccountRecord>();
 
   useEffect(() => {
-    if ( accountManagerContract ){
+    if (accountManagerContract) {
       // function getRecord0(address _addr) external view returns (AccountRecord memory);
       accountManagerContract.callStatic.getRecord0(activeAccount)
-        .then( _accountRecord => {
-          setAccountRecordZERO( formatAccountRecord(_accountRecord) )
+        .then(_accountRecord => {
+          setAccountRecordZERO(formatAccountRecord(_accountRecord))
+        })
+        .catch((err: any) => {
+          console.log("get zero error:", err)
         })
     }
-  },[accountManagerContract,blockNumber]);
+  }, [accountManagerContract, blockNumber]);
+
+  const [pagination, setPagination] = useState<{
+    total: number | undefined
+    pageSize: number | undefined,
+    current: number | undefined,
+    onChange?: (page: number) => void
+  }>();
+
+  useEffect(() => {
+    if (accountManagerContract) {
+      if (pagination && pagination.current != 1) {
+        // 如果已经刷新过数据且不是第一页的情况下,不自动刷新数据.
+        return;
+      }
+      // function getTotalAmount(address _addr) external view returns (uint, uint);
+      accountManagerContract.callStatic.getTotalAmount(activeAccount)
+        .then((data: any) => {
+          const pagination = {
+            total: data[1].toNumber(),
+            pageSize: AccountRecords_Page_Size,
+            position: "both",
+            current: 1,
+            onChange: (page: number) => {
+              pagination.current = page;
+              setPagination({
+                ...pagination
+              })
+            }
+          }
+          setPagination({
+            ...pagination,
+          })
+        })
+    }
+  }, [accountManagerContract, blockNumber, activeAccount]);
+
+  useEffect(() => {
+    if (pagination && accountManagerContract && multicallContract) {
+      const { pageSize, current, total } = pagination;
+      if (current && pageSize && total && total > 0) {
+        //////////////////// 逆序 ////////////////////////
+        let position = total - (pageSize * current);
+        let offset = pageSize;
+        if (position < 0) {
+          offset = pageSize + position;
+          position = 0;
+        }
+        /////////////////////////////////////////////////
+        // function getTotalIDs(address _addr, uint _start, uint _count) external view returns (uint[] memory);
+        setLoading(true);
+        accountManagerContract.getTotalIDs(activeAccount, position, offset)
+          .then((accountRecordIds: any) => {
+            multicallGetAccountRecordByIds(accountRecordIds);
+          })
+      } else {
+        setAccountRecords([]);
+      }
+    }
+  }, [pagination]);
+
+  const multicallGetAccountRecordByIds = useCallback((_accountRecordIds: any) => {
+    if (multicallContract && accountManagerContract) {
+      const accountRecordIds = _accountRecordIds.map((_id: any) => _id.toNumber()).sort((id0: number, id1: number) => id0 - id1)
+      const getRecordByIDFragment = accountManagerContract?.interface?.getFunction("getRecordByID");
+      const getRecordUseInfoFragment = accountManagerContract?.interface?.getFunction("getRecordUseInfo");
+      const getRecordByIDCalls = [];
+      const getRecordUseInfoCalls = [];
+      for (let i = 0; i < accountRecordIds.length; i++) {
+        getRecordByIDCalls.push([
+          accountManagerContract.address,
+          accountManagerContract?.interface.encodeFunctionData(getRecordByIDFragment, [accountRecordIds[i]])
+        ]);
+        getRecordUseInfoCalls.push([
+          accountManagerContract.address,
+          accountManagerContract?.interface.encodeFunctionData(getRecordUseInfoFragment, [accountRecordIds[i]])
+        ]);
+      }
+      multicallContract.callStatic.aggregate(getRecordByIDCalls.concat(getRecordUseInfoCalls))
+        .then(data => {
+          const raws = data[1];
+          const half = raws.length / 2;
+          const accountRecords: AccountRecord[] = [];
+          for (let i = half - 1; i >= 0; i--) {
+            const _accountRecord = accountManagerContract?.interface.decodeFunctionResult(getRecordByIDFragment, raws[i])[0];
+            const _recordUseInfo = accountManagerContract?.interface.decodeFunctionResult(getRecordUseInfoFragment, raws[half + i])[0];
+            const accountRecord = formatAccountRecord(_accountRecord);
+            accountRecord.recordUseInfo = formatRecordUseInfo(_recordUseInfo);
+            accountRecords.push(accountRecord);
+          }
+          setLoading(false);
+          setAccountRecords(accountRecords);
+        })
+    }
+  }, [multicallContract, accountManagerContract]);
 
   const RenderAccountRecord = useCallback((accountRecord: AccountRecord) => {
     const {
@@ -57,7 +158,7 @@ export default () => {
     const unfreezeDateTime = unfreezeHeight - blockNumber > 0 ? DateTimeFormat(((unfreezeHeight - blockNumber) * 30 + timestamp) * 1000) : undefined;
     const releaseDateTime = releaseHeight - blockNumber > 0 ? DateTimeFormat(((releaseHeight - blockNumber) * 30 + timestamp) * 1000) : undefined;
 
-    return <Card key={id} size="small" style={{ marginBottom: "60px" }}>
+    return <Card key={id} size="small" style={{ marginTop: "30px" }}>
       <Row>
         <Col span={6}>
           <Divider orientation="center" style={{ fontSize: "14px", marginTop: "-23px", fontWeight: "600" }}>锁仓信息</Divider>
@@ -185,14 +286,14 @@ export default () => {
     </Row>
 
     <Card title="锁仓列表" style={{ marginTop: "40px" }}>
-      {
-        accountRecordZERO && accountRecordZERO.amount.greaterThan(ZERO) && <>
-          {RenderAccountRecord(accountRecordZERO)}
-        </>
-      }
-      {
-        accountRecords && accountRecords.map(RenderAccountRecord)
-      }
+
+      <List
+        dataSource={accountRecords}
+        renderItem={RenderAccountRecord}
+        pagination={pagination}
+        loading={loading}
+      />
+
     </Card>
 
     <WalletWithdrawModal selectedAccountRecord={selectedAccountRecord}
