@@ -85,7 +85,6 @@ export default ({
         if (pagination && proposalContract && multicallContract) {
             const { pageSize, current, total } = pagination;
             if (current && pageSize && total && total > 0) {
-
                 //////////////////// 逆序 ////////////////////////
                 let position = total - (pageSize * current);
                 let offset = pageSize;
@@ -94,7 +93,6 @@ export default ({
                     position = 0;
                 }
                 /////////////////////////////////////////////////
-
                 setLoading(true);
                 if (queryMyProposals) {
                     //  function getMines(uint _start, uint _count) external view returns (uint[] memory);
@@ -109,7 +107,7 @@ export default ({
                             multicallGetProposalInfoByIds(proposalIds)
                         });
                 }
-                
+
             } else {
                 setProposalInfos(undefined);
             }

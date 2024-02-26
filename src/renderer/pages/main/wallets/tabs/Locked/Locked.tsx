@@ -13,7 +13,6 @@ import { DateTimeFormat } from "../../../../../utils/DateUtils";
 import { ZERO } from "../../../../../utils/CurrentAmountUtils";
 
 const { Text } = Typography;
-
 const AccountRecords_Page_Size = 5;
 
 export default () => {
@@ -35,13 +34,16 @@ export default () => {
       // function getRecord0(address _addr) external view returns (AccountRecord memory);
       accountManagerContract.callStatic.getRecord0(activeAccount)
         .then(_accountRecord => {
-          setAccountRecordZERO(formatAccountRecord(_accountRecord))
+          const accountRecordZERO = formatAccountRecord(_accountRecord);
+          if (accountRecordZERO.amount.greaterThan(ZERO)) {
+            setAccountRecordZERO(accountRecordZERO)
+          }
         })
         .catch((err: any) => {
           console.log("get zero error:", err)
         })
     }
-  }, [accountManagerContract, blockNumber]);
+  }, [accountManagerContract, blockNumber, activeAccount]);
 
   const [pagination, setPagination] = useState<{
     total: number | undefined
@@ -50,19 +52,15 @@ export default () => {
     onChange?: (page: number) => void
   }>();
 
-  useEffect(() => {
+  const initilizePageQuery = useCallback(() => {
     if (accountManagerContract) {
-      if (pagination && pagination.current != 1) {
-        // 如果已经刷新过数据且不是第一页的情况下,不自动刷新数据.
-        return;
-      }
       // function getTotalAmount(address _addr) external view returns (uint, uint);
       accountManagerContract.callStatic.getTotalAmount(activeAccount)
         .then((data: any) => {
           const pagination = {
             total: data[1].toNumber(),
             pageSize: AccountRecords_Page_Size,
-            position: "both",
+            position: "bottom",
             current: 1,
             onChange: (page: number) => {
               pagination.current = page;
@@ -76,7 +74,19 @@ export default () => {
           })
         })
     }
-  }, [accountManagerContract, blockNumber, activeAccount]);
+  }, [accountManagerContract]);
+
+  useEffect(() => {
+    if (pagination && pagination.current != 1) {
+      // 如果已经刷新过数据且不是第一页的情况下,不自动刷新数据.
+      return;
+    }
+    initilizePageQuery();
+  }, [blockNumber]);
+
+  useEffect(() => {
+    initilizePageQuery();
+  }, [accountManagerContract, activeAccount]);
 
   useEffect(() => {
     if (pagination && accountManagerContract && multicallContract) {
@@ -104,7 +114,9 @@ export default () => {
 
   const multicallGetAccountRecordByIds = useCallback((_accountRecordIds: any) => {
     if (multicallContract && accountManagerContract) {
-      const accountRecordIds = _accountRecordIds.map((_id: any) => _id.toNumber()).sort((id0: number, id1: number) => id0 - id1)
+      const accountRecordIds = _accountRecordIds.map((_id: any) => _id.toNumber())
+        .filter((id: number) => id > 0)
+      // .sort((id0: number, id1: number) => id1 - id0)
       const getRecordByIDFragment = accountManagerContract?.interface?.getFunction("getRecordByID");
       const getRecordUseInfoFragment = accountManagerContract?.interface?.getFunction("getRecordUseInfo");
       const getRecordByIDCalls = [];
@@ -119,11 +131,11 @@ export default () => {
           accountManagerContract?.interface.encodeFunctionData(getRecordUseInfoFragment, [accountRecordIds[i]])
         ]);
       }
+      const accountRecords: AccountRecord[] = [];
       multicallContract.callStatic.aggregate(getRecordByIDCalls.concat(getRecordUseInfoCalls))
         .then(data => {
           const raws = data[1];
           const half = raws.length / 2;
-          const accountRecords: AccountRecord[] = [];
           for (let i = half - 1; i >= 0; i--) {
             const _accountRecord = accountManagerContract?.interface.decodeFunctionResult(getRecordByIDFragment, raws[i])[0];
             const _recordUseInfo = accountManagerContract?.interface.decodeFunctionResult(getRecordUseInfoFragment, raws[half + i])[0];
@@ -135,7 +147,7 @@ export default () => {
           setAccountRecords(accountRecords);
         })
     }
-  }, [multicallContract, accountManagerContract]);
+  }, [multicallContract, accountManagerContract, pagination]);
 
   const RenderAccountRecord = useCallback((accountRecord: AccountRecord) => {
     const {
@@ -157,7 +169,6 @@ export default () => {
     const unlockDateTime = unlockHeight - blockNumber > 0 ? DateTimeFormat(((unlockHeight - blockNumber) * 30 + timestamp) * 1000) : undefined;
     const unfreezeDateTime = unfreezeHeight - blockNumber > 0 ? DateTimeFormat(((unfreezeHeight - blockNumber) * 30 + timestamp) * 1000) : undefined;
     const releaseDateTime = releaseHeight - blockNumber > 0 ? DateTimeFormat(((releaseHeight - blockNumber) * 30 + timestamp) * 1000) : undefined;
-
     return <Card key={id} size="small" style={{ marginTop: "30px" }}>
       <Row>
         <Col span={6}>
@@ -286,14 +297,17 @@ export default () => {
     </Row>
 
     <Card title="锁仓列表" style={{ marginTop: "40px" }}>
-
+      {
+        accountRecordZERO && ( pagination && pagination.current == 1 ) && <>
+          {RenderAccountRecord(accountRecordZERO)}
+        </>
+      }
       <List
         dataSource={accountRecords}
         renderItem={RenderAccountRecord}
         pagination={pagination}
         loading={loading}
       />
-
     </Card>
 
     <WalletWithdrawModal selectedAccountRecord={selectedAccountRecord}
