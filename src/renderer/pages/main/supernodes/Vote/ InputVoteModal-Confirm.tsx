@@ -6,6 +6,7 @@ import { SupernodeInfo } from "../../../../structs/Supernode";
 import { AccountRecord } from "../../../../structs/AccountManager";
 import AddressView from "../../../components/AddressView";
 import { CurrencyAmount, JSBI } from "@uniswap/sdk";
+import { LeftOutlined, LockOutlined } from '@ant-design/icons';
 import { useSupernodeVoteContract } from "../../../../hooks/useContracts";
 import { useWalletsActiveAccount } from "../../../../state/wallets/hooks";
 import { useTransactionAdder } from "../../../../state/transactions/hooks";
@@ -19,14 +20,13 @@ const { Text, Link } = Typography;
 export default ({
   openVoteModal, setOpenVoteModal,
   supernodeInfo,
-  accountRecords
+  amount
 }: {
   openVoteModal: boolean,
   setOpenVoteModal: (openVoteModal: boolean) => void,
   supernodeInfo: SupernodeInfo,
-  accountRecords: AccountRecord[]
+  amount: string
 }) => {
-
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const [sending, setSending] = useState<boolean>(false);
@@ -43,54 +43,34 @@ export default ({
     render, setTransactionResponse, setErr
   } = useTransactionResponseRender();
   const addTransaction = useTransactionAdder();
-  const options = accountRecords.map(accountRecord => {
-    return {
-      label: <>
-        <div key={accountRecord.id} style={{ margin: "15px 15px" }}>
-          <Row>
-            <Col>锁仓记录ID:</Col>
-            <Col>{accountRecord.id}</Col>
-          </Row>
-          <Row style={{ fontSize: "12px" }}>{accountRecord.amount.toFixed(2)} SAFE</Row>
-        </div>
-      </>,
-      value: accountRecord.id,
-      disabled: true
-    }
-  });
-  const accountRecordIds = accountRecords.map(accountRecord => accountRecord.id);
-  const totalCheckedAccountRecordAmount = accountRecords.reduce<CurrencyAmount>((totalCheckedAccountRecordAmount, accountRecord) => {
-    return totalCheckedAccountRecordAmount.add(accountRecord.amount)
-  }, CurrencyAmount.ether(JSBI.BigInt(0)));
-
   const supernodeVoteContract = useSupernodeVoteContract(true);
   const activeAccount = useWalletsActiveAccount();
   const doVoteSupernode = useCallback(() => {
     if (supernodeVoteContract) {
       setSending(true);
       // function voteOrApproval(bool _isVote, address _dstAddr, uint[] memory _recordIDs) external;
-      supernodeVoteContract.voteOrApproval(true, supernodeInfo.addr, accountRecordIds, {
-        // gasLimit: 1000000
-      })
-        .then((response: any) => {
-          const { hash, data } = response;
-          setTransactionResponse(response);
-          addTransaction({ to: supernodeVoteContract.address }, response, {
-            call: {
-              from: activeAccount,
-              to: supernodeVoteContract.address,
-              input: data,
-              value: "0"
-            }
-          });
-          setTxHash(hash);
-          setSending(false);
-        }).catch((err: any) => {
-          setErr(err);
-          setSending(false);
-        })
+      // supernodeVoteContract.voteOrApproval(true, supernodeInfo.addr, accountRecordIds, {
+      //   // gasLimit: 1000000
+      // })
+      //   .then((response: any) => {
+      //     const { hash, data } = response;
+      //     setTransactionResponse(response);
+      //     addTransaction({ to: supernodeVoteContract.address }, response, {
+      //       call: {
+      //         from: activeAccount,
+      //         to: supernodeVoteContract.address,
+      //         input: data,
+      //         value: "0"
+      //       }
+      //     });
+      //     setTxHash(hash);
+      //     setSending(false);
+      //   }).catch((err: any) => {
+      //     setErr(err);
+      //     setSending(false);
+      //   })
     }
-  }, [accountRecordIds, supernodeInfo, supernodeVoteContract, activeAccount]);
+  }, [supernodeInfo, supernodeVoteContract, activeAccount]);
 
   return <>
     <Modal footer={null} destroyOnClose title="投票" width="600px" open={openVoteModal} onCancel={cancel}>
@@ -100,7 +80,8 @@ export default ({
       }
       <Row >
         <Col span={24}>
-          <Text style={{ fontSize: "32px" }} strong>{totalCheckedAccountRecordAmount.toFixed(6)} SAFE</Text>
+          <LockOutlined style={{ fontSize: "32px" }} />
+          <Text style={{ fontSize: "32px" }} strong>{amount} SAFE</Text>
         </Col>
       </Row>
       <Row >
@@ -108,18 +89,19 @@ export default ({
           <Text type="secondary">从</Text>
         </Col>
         <Col span={24} style={{ paddingLeft: "5px" }} >
-          <Text>锁仓账户</Text>
-        </Col>
-        <Col span={24} style={{ paddingLeft: "15px" }} >
-          <div style={{ maxHeight: "200px", overflowY: "scroll" }}>
-            <Checkbox.Group
-              options={options}
-              value={accountRecordIds}
-            />
-          </div>
+          <Text>普通账户</Text>
         </Col>
       </Row>
       <br />
+      <Row>
+        <Col span={24}>
+          <Text type="secondary">到</Text>
+        </Col>
+        <Col span={24} style={{ paddingLeft: "5px" }} >
+          <Text>锁仓账户</Text>
+        </Col>
+      </Row>
+      <Divider />
       <Row>
         <Col span={24}>
           <Text type="secondary">投票到</Text>

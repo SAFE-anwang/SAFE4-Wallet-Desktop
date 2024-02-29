@@ -114,7 +114,7 @@ export default () => {
       <Spin spinning={true}>
         <Alert
           style={{
-            marginTop:"10px"
+            marginTop:"10%"
           }}
           type="info"
           message="创建钱包"

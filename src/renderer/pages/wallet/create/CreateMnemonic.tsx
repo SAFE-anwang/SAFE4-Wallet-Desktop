@@ -25,8 +25,8 @@ export default () => {
 
     useEffect(() => {
         const method = Wallet_Methods.generateMnemonic;
-        window.electron.ipcRenderer.sendMessage(IPC_CHANNEL, 
-            [WalletSignal, method, 
+        window.electron.ipcRenderer.sendMessage(IPC_CHANNEL,
+            [WalletSignal, method,
             [12]
             ]
         );
@@ -49,7 +49,7 @@ export default () => {
     }
 
     return <>
-        <Button style={{marginTop:"12px"}} size="large" shape="circle" icon={<LeftOutlined />} onClick={goBackClick} />
+        <Button style={{marginTop:"10%"}} size="large" shape="circle" icon={<LeftOutlined />} onClick={goBackClick} />
         <Row style={{
             marginTop: "20px"
         }}>

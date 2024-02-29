@@ -21,6 +21,7 @@ import GetTestCoin from './pages/gettestcoin/GetTestCoin';
 import Proposals from './pages/main/proposals/Proposals';
 import ProposalCreate from './pages/main/proposals/Create/ProposalCreate';
 import ProposalVote from './pages/main/proposals/Vote/ProposalVote';
+import ImportWallet from './pages/wallet/import/ImportWallet';
 
 export default function App() {
 
@@ -34,20 +35,20 @@ export default function App() {
           {
             !atCreateWallet && <Col span={6} style={{
               position: "fixed",
-              width: "200px"
+              width: "230px"
             }}>
               <MenuComponent />
             </Col>
           }
           <Col id='appContainer' span={18} style={{
-            minWidth:"1200px",
+            minWidth: "1200px",
             position: "fixed",
             overflowX: "auto",
             overflowY: "auto",
             top: "0",
             right: "0",
             bottom: "0",
-            left : "200px",
+            left: "235px",
             paddingLeft: "20px",
             paddingBottom: "20px",
           }}>
@@ -56,6 +57,7 @@ export default function App() {
               <Route path="/selectCreateWallet" element={<SelectCreateWallet />} />
               <Route path="/setPassword" element={<SetPassword />} />
               <Route path="/wallet/createMnemonic" element={<CreateMnemonic />} />
+              <Route path="/wallet/importWallet" element={<ImportWallet />} />
               <Route path="/waitingCreateWallet" element={<WaitingWalletCreate />} />
               <Route path="/main/wallet" element={<Wallet />} />
               <Route path="/main/supernodes" element={<Supernodes />} />

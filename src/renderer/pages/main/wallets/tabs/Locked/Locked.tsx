@@ -37,6 +37,8 @@ export default () => {
           const accountRecordZERO = formatAccountRecord(_accountRecord);
           if (accountRecordZERO.amount.greaterThan(ZERO)) {
             setAccountRecordZERO(accountRecordZERO)
+          }else{
+            setAccountRecordZERO(undefined);
           }
         })
         .catch((err: any) => {

@@ -19,6 +19,7 @@ import { ethers } from 'ethers';
 import { fetchSuperNodeAddresses } from '../../../../services/supernode';
 import type { TabsProps } from 'antd';
 import AccountRecordsVote from './AccountRecordsVote';
+import InputAmountVote from './InputAmountVote';
 
 const { Text, Title } = Typography;
 
@@ -31,15 +32,15 @@ export default () => {
   const [supernodeInfo, setSupernodeInfo] = useState<SupernodeInfo>();
   const items: TabsProps['items'] = [
     {
-      key: '1',
-      label: '锁仓记录投票',
-      children: <AccountRecordsVote supernodeInfo={supernodeInfo} supernodeAddresses={supernodeAddresses} />
+      key: 'inputAmount',
+      label: 'SAFE投票',
+      children: <InputAmountVote supernodeInfo={supernodeInfo} supernodeAddresses={supernodeAddresses} />,
     },
     {
-      key: '2',
-      label: '直接投票',
-      children: 'Content of Tab Pane 2',
-    },
+      key: 'accountRecords',
+      label: '锁仓记录投票',
+      children: <AccountRecordsVote supernodeInfo={supernodeInfo} supernodeAddresses={supernodeAddresses} />
+    }
   ];
 
   useEffect(() => {
@@ -73,7 +74,7 @@ export default () => {
     <div style={{ width: "100%", paddingTop: "40px", minWidth: "1000px" }}>
       <div style={{ margin: "auto", width: "90%" }}>
         <Row >
-          <Tabs style={{width:"100%"}} defaultActiveKey="1" items={items} />
+          <Tabs style={{width:"100%"}} defaultActiveKey="inputAmount" items={items} />
         </Row>
         <Row>
           {

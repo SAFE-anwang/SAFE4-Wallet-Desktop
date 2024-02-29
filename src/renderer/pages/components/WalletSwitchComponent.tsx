@@ -28,7 +28,7 @@ export default () => {
       items.push({
         label: <>
           <Text style={{ float: "left" }}>{name}</Text>
-          <Text style={{ float: "right", marginLeft: "50px" }}>{balance?.toFixed(2)}</Text>
+          <Text style={{ float: "right", marginLeft: "50px" }}>{balance?.toFixed(0)}</Text>
           <br />
           <Text type='secondary'>{address}</Text>
         </>,
@@ -51,15 +51,15 @@ export default () => {
       className='wallet-switch-selector'
       value={activeWallet?.name}
       onChange={switchActionWallet}
-      style={{ textAlign: "center", marginBottom: "15px", height: "50px", width: "190px", marginLeft: "5px", borderRadius: "20px" }}
+      style={{ textAlign: "center", marginBottom: "15px", height: "50px", width: "220px", marginLeft: "5px", borderRadius: "20px" }}
       dropdownRender={(menu) => (
-        <>
+        <div>
           {menu}
           <Divider style={{ margin: '8px 0' }} />
           <Button style={{ width: "100%", height: "60px" }} type="text" icon={<PlusOutlined />} onClick={createNewWallet}>
             创建新的钱包
           </Button>
-        </>
+        </div>
       )}
       options={items}
     />

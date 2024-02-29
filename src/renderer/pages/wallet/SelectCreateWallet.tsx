@@ -1,5 +1,5 @@
 import { Button, Col, Row, Typography } from "antd";
-import { PlusCircleTwoTone, VerticalAlignBottomOutlined , CloseOutlined  } from '@ant-design/icons';
+import { PlusCircleTwoTone, VerticalAlignBottomOutlined, CloseOutlined } from '@ant-design/icons';
 import { useNavigate } from "react-router-dom";
 import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
@@ -11,66 +11,70 @@ const { Text } = Typography;
 
 export default () => {
 
-    const navigate = useNavigate();
-    const dispatch = useDispatch();
-    const walletsList = useWalletsList();
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const walletsList = useWalletsList();
 
-    const createWalletClick = () => {
-        navigate("/wallet/createMnemonic")
-    }
-    const closeClick = () => {
-        navigate("/main/wallet");
-    }
+  const createWalletClick = () => {
+    navigate("/wallet/createMnemonic")
+  }
+  const importWalletClick = () => {
+    navigate("/wallet/importWallet")
+  }
 
-    const applicationData = useSelector<AppState , {[key : string] : any}>( state => state.application.data );
+  const closeClick = () => {
+    navigate("/main/wallet");
+  }
 
-    useEffect( () => {
-        dispatch(applicationActionUpdateAtCreateWallet(true))
-    },[]);
+  const applicationData = useSelector<AppState, { [key: string]: any }>(state => state.application.data);
 
-    return <>
-        <Row>
-            <Col span={24} style={{marginTop:"12px"}}>
-                {
-                    walletsList.length > 0 &&
-                    <Button onClick={closeClick} style={{float:"right"}} size="large" shape="circle" icon={<CloseOutlined />} />
-                }
-            </Col>
-        </Row>
-        <Row style={{ marginTop:"36px" }}>
-            <Col span={12}>
-                <div onClick={createWalletClick}
-                    style={{
-                        width: "300px", backgroundColor: "#f9f9f9", cursor: "pointer", margin: "auto", padding: "25px", borderRadius: "12px", border: "1px solid #dddddd",
-                    }}>
-                    <PlusCircleTwoTone twoToneColor="#52C41A" />
-                    <br /><br />
-                    <Text style={{
-                        fontSize: "28px"
-                    }} strong>创建钱包</Text>
-                    <br /><br />
-                    <Text style={{
-                        fontSize: "18px"
-                    }} type="secondary">通过创建一套基于BIP39标准的助记词</Text>
-                </div>
-            </Col>
-            {/* <Col span={12}>
-                <div style={{
-                    width: "300px", backgroundColor: "#f9f9f9", cursor: "pointer", margin: "auto", padding: "25px", borderRadius: "12px", border: "1px solid #dddddd",
-                }}>
-                    <VerticalAlignBottomOutlined />
-                    <br /><br />
-                    <Text style={{
-                        fontSize: "28px"
-                    }} strong>导入钱包</Text>
-                    <br /><br />
-                    <Text style={{
-                        fontSize: "18px"
-                    }} type="secondary">通过助记词,私钥来导入这个钱包</Text>
-                </div>
-            </Col> */}
-        </Row>
-        <br />< br />
-    </>
+  useEffect(() => {
+    dispatch(applicationActionUpdateAtCreateWallet(true))
+  }, []);
+
+  return <>
+    <Row>
+      <Col span={24} style={{ marginTop: "5%" }}>
+        {
+          walletsList.length > 0 &&
+          <Button onClick={closeClick} style={{ float: "right" }} size="large" shape="circle" icon={<CloseOutlined />} />
+        }
+      </Col>
+    </Row>
+    <Row style={{ marginTop: "10%" }}>
+      <Col span={12}>
+        <div onClick={createWalletClick}
+          style={{
+            width: "400px", backgroundColor: "#f9f9f9", cursor: "pointer", margin: "auto", padding: "25px", borderRadius: "12px", border: "1px solid #dddddd",
+          }}>
+          <PlusCircleTwoTone twoToneColor="#52C41A" />
+          <br /><br />
+          <Text style={{
+            fontSize: "28px"
+          }} strong>创建钱包</Text>
+          <br /><br />
+          <Text style={{
+            fontSize: "18px"
+          }} type="secondary">通过创建一套基于BIP39标准的助记词</Text>
+        </div>
+      </Col>
+      <Col span={12}>
+        <div onClick={importWalletClick} style={{
+          width: "400px", backgroundColor: "#f9f9f9", cursor: "pointer", margin: "auto", padding: "25px", borderRadius: "12px", border: "1px solid #dddddd",
+        }}>
+          <VerticalAlignBottomOutlined />
+          <br /><br />
+          <Text style={{
+            fontSize: "28px"
+          }} strong>导入钱包</Text>
+          <br /><br />
+          <Text style={{
+            fontSize: "18px"
+          }} type="secondary">通过助记词,私钥来导入这个钱包</Text>
+        </div>
+      </Col>
+    </Row>
+    <br />< br />
+  </>
 
 }
