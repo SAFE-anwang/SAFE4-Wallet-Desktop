@@ -21,7 +21,20 @@ export function useNewMnemonic(): string | undefined {
   })
 }
 
-export function useApplicationActionAtCreateWallet(): boolean{
+export function useImportWalletParams(): {
+  importType: string,
+  mnemonic?: string,
+  password?: string,
+  path?: string,
+  privateKey?: string,
+  address?: string
+} | undefined {
+  return useSelector((state: AppState) => {
+    return state.application.action.importWallet;
+  })
+}
+
+export function useApplicationActionAtCreateWallet(): boolean {
   return useSelector((state: AppState) => {
     return state.application.action.atCreateWallet;
   })

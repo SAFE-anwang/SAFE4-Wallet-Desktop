@@ -22,6 +22,7 @@ import Proposals from './pages/main/proposals/Proposals';
 import ProposalCreate from './pages/main/proposals/Create/ProposalCreate';
 import ProposalVote from './pages/main/proposals/Vote/ProposalVote';
 import ImportWallet from './pages/wallet/import/ImportWallet';
+import WaitingWalletImport from './pages/wallet/WaitingWalletImport';
 
 export default function App() {
 
@@ -59,6 +60,7 @@ export default function App() {
               <Route path="/wallet/createMnemonic" element={<CreateMnemonic />} />
               <Route path="/wallet/importWallet" element={<ImportWallet />} />
               <Route path="/waitingCreateWallet" element={<WaitingWalletCreate />} />
+              <Route path="/waitingImportWallet" element={<WaitingWalletImport />} />
               <Route path="/main/wallet" element={<Wallet />} />
               <Route path="/main/supernodes" element={<Supernodes />} />
               <Route path="/main/supernodes/vote" element={<SupernodeVote />} />

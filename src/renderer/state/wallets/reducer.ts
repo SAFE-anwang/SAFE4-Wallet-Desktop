@@ -4,7 +4,7 @@ import { walletsInitList, walletsLoadKeystores, walletsUpdateActiveWallet } from
 export interface WalletKeystore {
   mnemonic: string | undefined,
   password: string | undefined,
-  path: string,
+  path: string | undefined,
   privateKey: string,
   publicKey: string,
   address: string

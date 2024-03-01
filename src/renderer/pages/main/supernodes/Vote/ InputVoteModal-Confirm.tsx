@@ -14,6 +14,7 @@ import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { applicationUpdateWalletTab } from "../../../../state/application/action";
 import useTransactionResponseRender from "../../../components/useTransactionResponseRender";
+import { ethers } from "ethers";
 
 const { Text, Link } = Typography;
 
@@ -47,30 +48,31 @@ export default ({
   const activeAccount = useWalletsActiveAccount();
   const doVoteSupernode = useCallback(() => {
     if (supernodeVoteContract) {
+      const value = ethers.utils.parseEther(amount);
       setSending(true);
-      // function voteOrApproval(bool _isVote, address _dstAddr, uint[] memory _recordIDs) external;
-      // supernodeVoteContract.voteOrApproval(true, supernodeInfo.addr, accountRecordIds, {
-      //   // gasLimit: 1000000
-      // })
-      //   .then((response: any) => {
-      //     const { hash, data } = response;
-      //     setTransactionResponse(response);
-      //     addTransaction({ to: supernodeVoteContract.address }, response, {
-      //       call: {
-      //         from: activeAccount,
-      //         to: supernodeVoteContract.address,
-      //         input: data,
-      //         value: "0"
-      //       }
-      //     });
-      //     setTxHash(hash);
-      //     setSending(false);
-      //   }).catch((err: any) => {
-      //     setErr(err);
-      //     setSending(false);
-      //   })
+      // function voteOrApprovalWithAmount(bool _isVote, address _dstAddr) external
+      supernodeVoteContract.voteOrApprovalWithAmount( true, supernodeInfo.addr, {
+        value
+      })
+        .then((response: any) => {
+          const { hash, data } = response;
+          setTransactionResponse(response);
+          addTransaction({ to: supernodeVoteContract.address }, response, {
+            call: {
+              from: activeAccount,
+              to: supernodeVoteContract.address,
+              input: data,
+              value: value.toString()
+            }
+          });
+          setTxHash(hash);
+          setSending(false);
+        }).catch((err: any) => {
+          setErr(err);
+          setSending(false);
+        })
     }
-  }, [supernodeInfo, supernodeVoteContract, activeAccount]);
+  }, [supernodeInfo, supernodeVoteContract, activeAccount,amount]);
 
   return <>
     <Modal footer={null} destroyOnClose title="投票" width="600px" open={openVoteModal} onCancel={cancel}>

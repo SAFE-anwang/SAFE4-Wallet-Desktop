@@ -5,12 +5,14 @@ import { LeftOutlined, LockOutlined } from '@ant-design/icons';
 import { useCallback, useEffect, useState } from "react";
 import { ethers } from "ethers";
 import { HDNode } from "ethers/lib/utils";
+import { applicationActionConfirmedImport } from "../../../state/application/action";
 
 const { Text } = Typography;
 
-const Import_Type_PrivateKey = "ImportTypePrivateKey";
-const Import_Type_Mnemonic = "ImportTypeMnemonic";
+export const Import_Type_PrivateKey = "ImportTypePrivateKey";
+export const Import_Type_Mnemonic = "ImportTypeMnemonic";
 const BIP44_Safe4_Path = "m/44'/60'/0'/0/0";
+const privateKeyRegex = /^(0x)?[0-9a-fA-F]{64}$/;
 
 export default () => {
 
@@ -18,17 +20,13 @@ export default () => {
   const dispatch = useDispatch();
   const [address, setAddress] = useState<string>();
   const [importType, setImportType] = useState<string>(Import_Type_Mnemonic);
-  const importTypeOptions = importType == Import_Type_PrivateKey ?
-    ["导入私钥", "导入助记词"] :
-    ["导入助记词", "导入私钥"];
+  const importTypeOptions = ["导入助记词", "导入私钥"];
 
   const [activePassword, setActivePassword] = useState<boolean>(false);
   const [activePath, setActivePath] = useState<boolean>(false);
-
   const goBackClick = () => {
     navigate("/selectCreateWallet")
   }
-
   const [params, setParams] = useState<{
     privateKey?: string,
     mnemonic?: string,
@@ -37,47 +35,46 @@ export default () => {
   }>({
     path: BIP44_Safe4_Path
   });
-
-  const handlePrivateKeyInput = useCallback((inputPrivateKey: string) => {
-    const privateKeyRegex = /^(0x)?[0-9a-fA-F]{64}$/;
-    if (inputPrivateKey) {
-      if (privateKeyRegex.test(inputPrivateKey)) {
-        try {
-          const wallet = new ethers.Wallet(inputPrivateKey);
-          setAddress(wallet.address)
-          setParams({
-            ...params,
-            privateKey: inputPrivateKey
-          })
-        } catch (err: any) {
-          setAddress(undefined)
-        }
-      } else {
-        setAddress(undefined)
-      }
-    } else {
-
-    }
-  }, []);
+  const [inputErrors, setInputErrors] = useState<{
+    privateKey?: string,
+    mnemonic?: string,
+    path?: string
+  }>();
 
   // spy inquiry science come omit pyramid license crew fossil bitter hotel gas
   //"m/44'/60'/0'/0/0"
-  const handleImportMnemonicInput = (mnemonic: string, password: string | undefined, path: string) => {
-    if (mnemonic) {
+  const handleImportMnemonicInput = (mnemonic: string | undefined, password: string | undefined, path: string) => {
+    if (mnemonic && mnemonic != "") {
       if (ethers.utils.isValidMnemonic(mnemonic)) {
-        const wallet = HDNode.fromMnemonic(mnemonic,password,undefined).derivePath(path)
+        setInputErrors({
+          ...inputErrors,
+          mnemonic: undefined
+        })
+        const wallet = HDNode.fromMnemonic(mnemonic, password, undefined).derivePath(path)
         setAddress(wallet.address)
       } else {
-        console.log("invalid mnemonic")
+        setAddress(undefined);
+        setInputErrors({
+          ...inputErrors,
+          mnemonic: "无效的助记词"
+        })
       }
+    } else {
+      setInputErrors({
+        ...inputErrors,
+        mnemonic: undefined
+      })
     }
   }
 
   // 910a8a314c19ce07018da04970bb83c82d6f9a8062acc80f9aa1f786be6c2607
-  const handleImportPrivateKey = (privateKey: string) => {
-    const privateKeyRegex = /^(0x)?[0-9a-fA-F]{64}$/;
+  const handleImportPrivateKey = (privateKey?: string) => {
     if (privateKey) {
       if (privateKeyRegex.test(privateKey)) {
+        setInputErrors({
+          ...inputErrors,
+          privateKey: undefined
+        })
         try {
           const wallet = new ethers.Wallet(privateKey);
           setAddress(wallet.address)
@@ -86,25 +83,27 @@ export default () => {
         }
       } else {
         setAddress(undefined)
+        setInputErrors({
+          ...inputErrors,
+          privateKey: "无效的私钥"
+        })
       }
     } else {
-
+      setInputErrors({
+        ...inputErrors,
+        privateKey: undefined
+      })
     }
   }
 
   useEffect(() => {
     if (importType == Import_Type_Mnemonic) {
-      if (params?.mnemonic) {
-        const mnemonic = params.mnemonic;
-        handleImportMnemonicInput(mnemonic, params.password, params.path)
-      }
+      handleImportMnemonicInput(params.mnemonic, params.password, params.path)
     } else if (importType == Import_Type_PrivateKey) {
-      if (params?.privateKey) {
-        const privateKey = params.privateKey;
-        handleImportPrivateKey(privateKey);
-      }
+      handleImportPrivateKey(params.privateKey);
     }
   }, [importType, params]);
+
   useEffect(() => {
     if (!activePassword) {
       setParams({
@@ -120,7 +119,28 @@ export default () => {
         path: BIP44_Safe4_Path
       })
     }
-  }, [activePath])
+  }, [activePath]);
+
+  const importWallet = () => {
+    if (address) {
+      if (importType == Import_Type_Mnemonic) {
+        dispatch(applicationActionConfirmedImport({
+          importType,
+          address,
+          mnemonic : params.mnemonic,
+          password : params.password,
+          path : params.path
+        }))
+      } else if (importType == Import_Type_PrivateKey) {
+        dispatch(applicationActionConfirmedImport({
+          importType,
+          address,
+          privateKey: params.privateKey
+        }))
+      }
+      navigate("/waitingImportWallet")
+    }
+  }
 
   return <>
     <Button style={{ marginTop: "10%" }} size="large" shape="circle" icon={<LeftOutlined />} onClick={goBackClick} />
@@ -144,51 +164,98 @@ export default () => {
                   options={importTypeOptions}
                   onChange={(value) => {
                     if (value == '导入私钥') {
+                      setImportType(Import_Type_PrivateKey)
                       setParams({
                         ...params,
                         privateKey: undefined
                       })
-                      setImportType(Import_Type_PrivateKey)
-                      setAddress(undefined)
                     } else {
+                      setImportType(Import_Type_Mnemonic)
+                      setActivePassword(false)
+                      setActivePath(false)
                       setParams({
                         ...params,
                         mnemonic: undefined,
                         password: undefined,
                         path: BIP44_Safe4_Path
                       })
-                      setAddress(undefined)
-                      setActivePassword(false)
-                      setActivePath(false)
-                      setImportType(Import_Type_Mnemonic)
                     }
+                    setAddress(undefined)
                   }}
                 />
               </Col>
               {
                 importType == Import_Type_PrivateKey && <>
                   <Col style={{ marginTop: "20px" }} span={24}>
-                    <Input.TextArea onChange={(input) => {
-                      setParams({
-                        ...params,
-                        privateKey: input.target.value
-                      })
-                    }} style={{ height: "100px" }} />
+                    <Text type="secondary" strong>私钥</Text>
+                    <Input.TextArea status={inputErrors?.privateKey ? "error" : ""}
+                      onChange={(event) => {
+                        const inputPrivateKey = event.target.value;
+                        if (privateKeyRegex.test(inputPrivateKey)) {
+                          setParams({
+                            ...params,
+                            privateKey: event.target.value
+                          })
+                        } else {
+                          setAddress(undefined)
+                          setParams({
+                            ...params,
+                            privateKey: undefined
+                          })
+                        }
+                      }}
+                      onBlur={(event) => {
+                        setParams({
+                          ...params,
+                          privateKey: event.target.value
+                        })
+                      }}
+                      style={{ height: "100px" }} />
+                    {
+                      inputErrors?.privateKey && <>
+                        <Alert type="error" showIcon message={<>
+                          {inputErrors.privateKey}
+                        </>} style={{ marginTop: "5px" }} />
+                      </>
+                    }
                   </Col>
                 </>
               }
               {
                 importType == Import_Type_Mnemonic && <>
                   <Col style={{ marginTop: "20px" }} span={24}>
-                    <Input.TextArea onBlur={(event) => {
+                    <Text type="secondary" strong>助记词</Text>
+                    <Input.TextArea status={inputErrors?.mnemonic ? "error" : ""} onChange={(event) => {
+                      const inputMnemonic = event.target.value;
+                      if (ethers.utils.isValidMnemonic(inputMnemonic)) {
+                        setParams({
+                          ...params,
+                          mnemonic: event.target.value
+                        })
+                      } else {
+                        setAddress(undefined);
+                        setParams({
+                          ...params,
+                          mnemonic: undefined
+                        });
+                      }
+                    }} onBlur={(event) => {
                       setParams({
                         ...params,
                         mnemonic: event.target.value
                       })
                     }} style={{ height: "100px" }} />
+                    {
+                      inputErrors?.mnemonic && <>
+                        <Alert type="error" showIcon message={<>
+                          {inputErrors.mnemonic}
+                        </>} style={{ marginTop: "5px" }} />
+                      </>
+                    }
+
                   </Col>
-                  <Col style={{ marginTop: "20px" }} span={24}>
-                    <Text>密码</Text>
+                  <Col style={{ marginTop: "30px" }} span={24}>
+                    <Text type="secondary" strong>密码</Text>
                     <Switch style={{ float: "right", marginBottom: "5px" }} checkedChildren="开启" unCheckedChildren="关闭"
                       value={activePassword} onChange={setActivePassword} />
                     <Input.Password value={params.password} size="large" disabled={!activePassword} onChange={(event) => {
@@ -198,9 +265,9 @@ export default () => {
                       })
                     }} />
                   </Col>
-                  <Col style={{ marginTop: "20px" }} span={24}>
-                    <Text>BIP44 Path</Text>
-                    <Switch style={{ float: "right", marginBottom: "5px" }} checkedChildren="自定义" unCheckedChildren="默认"
+                  <Col style={{ marginTop: "30px" }} span={24}>
+                    <Text type="secondary" strong>BIP-44 Path</Text>
+                    <Switch style={{ float: "right", marginBottom: "5px" }} disabled checkedChildren="自定义" unCheckedChildren="默认"
                       value={activePath} onChange={setActivePath} />
                     <Input size="large" value={params.path} disabled={!activePath} onChange={(event) => {
                       setParams({
@@ -212,8 +279,8 @@ export default () => {
                 </>
               }
               {
-                address && <Col style={{ marginTop: "20px" }} span={24}>
-                  <Alert type="warning" message={<>
+                address && <Col style={{ marginTop: "30px" }} span={24}>
+                  <Alert type="success" message={<>
                     <Text type="secondary">钱包地址</Text><br />
                     <Text strong>
                       {address}
@@ -222,8 +289,8 @@ export default () => {
                 </Col>
               }
 
-              <Col style={{ marginTop: "20px" }} span={24}>
-                <Button type="primary" disabled={!address}>确认</Button>
+              <Col style={{ marginTop: "30px" }} span={24}>
+                <Button type="primary" disabled={!address} onClick={importWallet}>确认</Button>
               </Col>
             </Row>
           </Col>

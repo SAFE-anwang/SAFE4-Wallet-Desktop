@@ -10,6 +10,7 @@ import {
   applicationControlAppendMasternode,
   applicationUpdateWalletTab,
   applicationControlVoteProposal,
+  applicationActionConfirmedImport,
 } from './action';
 import { SupernodeInfo } from '../../structs/Supernode';
 
@@ -19,7 +20,16 @@ export interface IApplicationState {
     // 保存创建的助记词变量
     newMnemonic : string | undefined ,
     // 标识正在创建钱包的变量
-    atCreateWallet : boolean
+    atCreateWallet : boolean,
+    // 导入钱包时使用的传递变量
+    importWallet ?: {
+      importType : string,
+      mnemonic ?: string,
+      password ?: string,
+      path ?: string,
+      privateKey ?: string,
+      address ?: string
+    }
   }
   control:{
     vote ?: string ,
@@ -92,6 +102,16 @@ export default createReducer(initialState, (builder) => {
     }
   })
 
+  .addCase(applicationActionConfirmedImport , ( state , {payload}) => {
+    return {
+      ...state ,
+      action : {
+        ...state.action ,
+        importWallet : payload
+      }
+    }
+  })
+
   .addCase(applicationActionUpdateAtCreateWallet , (state , {payload}) => {
     return {
       ...state ,
@@ -131,7 +151,6 @@ export default createReducer(initialState, (builder) => {
       }
     }
   })
-
 
   .addCase(applicationUpdateSupernodeAddresses , (state , {payload}) => {
     state.supernodeAddresses = payload;

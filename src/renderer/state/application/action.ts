@@ -19,6 +19,15 @@ export const applicationActionConfirmedMnemonic = createAction<{
   mnemonic: string
 }>("application/actionConfirmedMnemonic");
 
+export const applicationActionConfirmedImport = createAction<{
+  importType : string ,
+  mnemonic ?: string ,
+  password ?: string ,
+  path ?: string,
+  privateKey ?: string,
+  address : string
+}>("application/actionConfirmedImport");
+
 
 export const applicationActionUpdateAtCreateWallet = createAction<boolean>(
   "application/actionUpdateAtCreateWallet"
