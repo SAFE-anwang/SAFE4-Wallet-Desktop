@@ -23,6 +23,7 @@ import ProposalCreate from './pages/main/proposals/Create/ProposalCreate';
 import ProposalVote from './pages/main/proposals/Vote/ProposalVote';
 import ImportWallet from './pages/wallet/import/ImportWallet';
 import WaitingWalletImport from './pages/wallet/WaitingWalletImport';
+import Safe3 from './pages/main/safe3/Safe3';
 
 export default function App() {
 
@@ -73,6 +74,7 @@ export default function App() {
               <Route path="/main/proposals/create" element={<ProposalCreate />} />
               <Route path="/main/proposals/vote" element={<ProposalVote />} />
               <Route path="/main/gettestcoin" element={<GetTestCoin />} />
+              <Route path="/main/safe3" element={<Safe3 />} />
               <Route path="/tools/web3" element={<TestMulticall />} />
               <Route path="/main/menu" element={<Menu />} />
             </Routes>
