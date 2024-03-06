@@ -1,48 +1,31 @@
 
-import { Alert, Col, Row, Typography, Card, Divider, Button, Tabs, TabsProps } from "antd";
+import { Alert, Col, Row, Typography, Card, Divider, Button, Tabs, TabsProps, Input } from "antd";
 import { useNavigate } from "react-router-dom";
 import { message, Steps, theme } from 'antd';
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import Safe3PrivateKey from "../../../utils/Safe3PrivateKey";
+
 
 const { Text, Title } = Typography;
 
 
-const steps = [
-  {
-    title: '查询地址',
-    content: 'First-content',
-  },
-  {
-    title: '验证私钥',
-    content: 'Second-content',
-  },
-  {
-    title: '上传合约',
-    content: 'Last-content',
-  },
-];
-
 export default () => {
+  const [safe3PrivateKey, setSafe3PrivateKey] = useState<string>();
+  const [safe3Wallet, setSafe3Wallet] = useState<{
+    privateKey: string,
+    publicKey: string,
+    compressPublicKey: string,
+    safe3Address: string,
+    safe3CompressAddress: string,
+    safe4Address: string
+  }>();
 
-  const [current, setCurrent] = useState(0);
-
-  const next = () => {
-    setCurrent(current + 1);
-  };
-
-  const prev = () => {
-    setCurrent(current - 1);
-  };
-
-  const items = steps.map((item) => ({ key: item.title, title: item.title }));
-
-  const contentStyle: React.CSSProperties = {
-    lineHeight: '260px',
-    textAlign: 'center',
-    marginTop: 16,
-  };
-
+  useEffect(() => {
+    const result = Safe3PrivateKey("XJ2M1PbCAifB8W91hcHDEho18kA2ByB4Jdmi4XBHq5sNgtuEpXr4");
+    console.log("result >> :", result);
+  }, [])
   return (<>
+
     <Row style={{ height: "50px" }}>
       <Col span={12}>
         <Title level={4} style={{ lineHeight: "16px" }}>
@@ -51,37 +34,36 @@ export default () => {
       </Col>
     </Row>
 
-
     <div style={{ width: "100%", paddingTop: "40px" }}>
       <div style={{ margin: "auto", width: "90%" }}>
-        <Card style={{ marginBottom: "20px" }}>
+        <Card>
           <Alert showIcon type="info" message={<>
             <Text>使用Safe3网络的钱包地址的私钥对信息进行签名</Text><br />
-            <Text>验证通过的签名信息会将Safe3网络的锁仓置换到Safe4网络的当前钱包地址上</Text>
+            <Text>验证通过的签名信息会将Safe3网络的锁仓置换到Safe4网络的钱包地址上</Text>
           </>} />
-        </Card>
-        <Divider />
-        <Card>
-
-          <Steps current={current} items={items} />
-          <div style={contentStyle}>{steps[current].content}</div>
-          <div style={{ marginTop: 24 }}>
-            {current < steps.length - 1 && (
-              <Button type="primary" onClick={() => next()}>
-                Next
-              </Button>
-            )}
-            {current === steps.length - 1 && (
-              <Button type="primary" onClick={() => message.success('Processing complete!')}>
-                Done
-              </Button>
-            )}
-            {current > 0 && (
-              <Button style={{ margin: '0 8px' }} onClick={() => prev()}>
-                Previous
-              </Button>
-            )}
-          </div>
+          <Row style={{marginTop:"50px"}}>
+            <Col span={24}>
+              <Text strong type="secondary">Safe3 钱包私钥</Text>
+            </Col>
+            <Col span={24} style={{ marginTop: "5px" }}>
+              <Input size="large" />
+            </Col>
+            <Col span={24} style={{ marginTop: "5px" }}>
+              <Alert type="error" showIcon message={<>
+                请输入从 Safe 桌面钱包导出的私钥地址
+              </>} />
+            </Col>
+            <Divider />
+            <Col span={12}>
+              <Text strong type="secondary">Safe3 钱包地址</Text><br />
+              dsads
+            </Col>
+            <Col span={12}>
+              <Text strong type="secondary">Safe4 钱包地址</Text><br />
+              dsads
+            </Col>
+            <Divider />
+          </Row>
 
         </Card>
       </div>
