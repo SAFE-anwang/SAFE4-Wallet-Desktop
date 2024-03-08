@@ -57,3 +57,7 @@ export function useMasternodeLogicContract( withSignerIfPossible ?: boolean ) : 
 export function useProposalContract( withSignerIfPossible ?: boolean ) : Contract | null | undefined {
   return useContract( SystemContract.Proposal , SysContractABI[SystemContract.Proposal], withSignerIfPossible);
 }
+
+export function useSafe3Contract( withSignerIfPossible ?: boolean ) : Contract | null | undefined {
+  return useContract( SystemContract.SAFE3 , SysContractABI[SystemContract.SAFE3], withSignerIfPossible);
+}
