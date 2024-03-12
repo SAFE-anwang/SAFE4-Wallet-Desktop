@@ -3,9 +3,9 @@ import { Typography, Button, Divider, Statistic, Row, Col, Modal, Tabs, TabsProp
 import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import { useETHBalances, useWalletsActiveAccount, useWalletsActiveWallet } from '../../../state/wallets/hooks';
+import { useETHBalances, useWalletsActiveAccount, useWalletsActivePrivateKey, useWalletsActiveWallet } from '../../../state/wallets/hooks';
 import { applicationActionUpdateAtCreateWallet, applicationUpdateWalletTab } from '../../../state/application/action';
-import {  SendOutlined, QrcodeOutlined , LockOutlined } from '@ant-design/icons';
+import { SendOutlined, QrcodeOutlined, LockOutlined, SecurityScanOutlined } from '@ant-design/icons';
 import { useBlockNumber, useTimestamp } from '../../../state/application/hooks';
 import Locked from './tabs/Locked/Locked';
 import WalletLockModal from './Lock/WalletLockModal';
@@ -25,9 +25,12 @@ export default () => {
   const balance = useETHBalances([account])[account];
   const latestBlockNumber = useBlockNumber();
   const timestamp = useTimestamp();
-  const walletTab = useSelector<AppState , string|undefined>( state => state.application.control.walletTab );
+  const walletTab = useSelector<AppState, string | undefined>(state => state.application.control.walletTab);
+
+  const privateKey = useWalletsActivePrivateKey();
 
   const [openReceiveModal, setOpenReceiveModal] = useState<boolean>(false);
+  const [openPrivateModal, setOpenPrivateModal] = useState<boolean>(false);
   const [openSendModal, setOpenSendModal] = useState<boolean>(false);
   const [openLockModal, setOpenLockMoal] = useState<boolean>(false);
 
@@ -60,6 +63,7 @@ export default () => {
           钱包 <Divider type='vertical' style={{ marginLeft: "12px", marginRight: "12px" }} />
           {activeWallet?.name}
         </Title>
+
       </Col>
       <Col span={12} style={{ textAlign: "right", lineHeight: "70px" }}>
         <Badge status="processing"></Badge>
@@ -79,23 +83,29 @@ export default () => {
           </Col>
           <Col span={6}>
             <Row>
-              <Col span={8} style={{ textAlign: "center" }}>
+              <Col span={6} style={{ textAlign: "center" }}>
                 <Button style={{
                   height: "45px", width: "45px"
-                }} size='large' shape="circle" icon={<LockOutlined />}onClick={() => setOpenLockMoal(true)}/><br />
+                }} size='large' shape="circle" icon={<LockOutlined />} onClick={() => setOpenLockMoal(true)} /><br />
                 <Text>锁仓</Text>
               </Col>
-              <Col span={8} style={{ textAlign: "center" }}>
+              <Col span={6} style={{ textAlign: "center" }}>
                 <Button style={{
                   height: "45px", width: "45px"
                 }} size='large' shape="circle" icon={<SendOutlined />} onClick={() => setOpenSendModal(true)} /><br />
                 <Text>发送</Text>
               </Col>
-              <Col span={8} style={{ textAlign: "center" }}>
+              <Col span={6} style={{ textAlign: "center" }}>
                 <Button style={{
                   height: "45px", width: "45px"
                 }} size='large' shape="circle" icon={<QrcodeOutlined />} onClick={() => setOpenReceiveModal(true)} /><br />
                 <Text>接收</Text>
+              </Col>
+              <Col span={6} style={{ textAlign: "center" }}>
+                <Button style={{
+                  height: "45px", width: "45px"
+                }} size='large' shape="circle" icon={<SecurityScanOutlined />} onClick={() => setOpenPrivateModal(true)} /><br />
+                <Text>私钥</Text>
               </Col>
             </Row>
           </Col>
@@ -119,6 +129,19 @@ export default () => {
       <Row style={{ width: "200px", textAlign: "center", margin: "auto" }}>
         <Text style={{ margin: "auto", marginTop: "20px", marginBottom: "20px" }} strong>
           {activeWallet?.address}
+        </Text>
+        <br />
+      </Row>
+    </Modal>
+
+    <Modal title="私钥" open={openPrivateModal} width={"400px"} footer={null} closable onCancel={() => { setOpenPrivateModal(false) }}>
+      <Divider />
+      <Row>
+        <Text style={{ margin: "auto", marginTop: "20px", marginBottom: "20px" }} type='danger'>不要将您的私钥暴露给任何人。</Text>
+      </Row>
+      <Row style={{ width: "300px", textAlign: "center", margin: "auto" }}>
+        <Text style={{ margin: "auto", marginTop: "20px", marginBottom: "20px" }} strong>
+          {privateKey && privateKey.replace("0x","")}
         </Text>
         <br />
       </Row>

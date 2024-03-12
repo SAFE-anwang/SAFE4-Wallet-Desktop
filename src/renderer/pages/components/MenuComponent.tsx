@@ -29,12 +29,12 @@ const items: MenuItem[] = [
   getItem("超级节点", '/main/supernodes', <ClusterOutlined />),
   getItem("主节点", '/main/masternodes', <ApartmentOutlined />),
   getItem("提案", '/main/proposals', <FilePptOutlined />),
-  getItem("Safe3 资产迁移", '/main/safe3', <ApiOutlined />),
+  // getItem("Safe3 资产迁移", '/main/safe3', <ApiOutlined />),
   getItem('领取测试币', '/main/gettestcoin', <AppstoreOutlined />),
 ];
 
 const bottom_items: MenuItem[] = [
-  getItem("菜单", '/main/menu', <SettingOutlined />),
+  // getItem("菜单", '/main/menu', <SettingOutlined />),
 ];
 
 const MenuComponent: React.FC = () => {

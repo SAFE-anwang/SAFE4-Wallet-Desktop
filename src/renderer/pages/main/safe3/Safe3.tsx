@@ -8,6 +8,9 @@ import Safe3Assets, { Safe3Asset } from "./Safe3Assets";
 import { useSafe3Contract } from "../../../hooks/useContracts";
 import { ZERO } from "../../../utils/CurrentAmountUtils";
 import { ethers } from "ethers";
+import {
+  CloseCircleTwoTone
+} from '@ant-design/icons';
 
 const { Text, Title } = Typography;
 
@@ -26,6 +29,12 @@ const steps = [
     content: 'Second-content',
   },
 ];
+
+export interface TxExecuteStatus {
+  txHash?: string,
+  status: number,
+  error?: any
+}
 
 export default () => {
 
@@ -48,6 +57,14 @@ export default () => {
 
   const [safe3Asset, setSafe3Asset] = useState<Safe3Asset>();
   const safe3Contract = useSafe3Contract(true);
+
+  const [redeemTxHashs, setRedeemTxHashs] = useState<{
+    avaiable?: TxExecuteStatus,
+    locked?: TxExecuteStatus,
+    masternode?: TxExecuteStatus
+  }>();
+  const [redeeming, setRedeeming] = useState<boolean>(false);
+  const [enode, setEncode] = useState<string>();
 
   useEffect(() => {
     // const result = Safe3PrivateKey("XJ2M1PbCAifB8W91hcHDEho18kA2ByB4Jdmi4XBHq5sNgtuEpXr4");
@@ -72,7 +89,7 @@ export default () => {
 
   useEffect(() => {
     setSafe3PrivateKey("XJ2M1PbCAifB8W91hcHDEho18kA2ByB4Jdmi4XBHq5sNgtuEpXr4")
-  }, [])
+  }, []);
 
   useEffect(() => {
     if (safe3Asset) {
@@ -84,27 +101,93 @@ export default () => {
 
   const executeRedeem = useCallback(async () => {
     if (safe3Contract && safe3Wallet && safe3Asset) {
+
       const { safe3Address, availableSafe3Info, lockedNum, specialSafe3Info } = safe3Asset;
       const publicKey = safe3Wallet.safe3Address == safe3Address ? safe3Wallet.publicKey : safe3Wallet.compressPublicKey;
       const { privateKey } = safe3Wallet;
       const safe4Wallet = new ethers.Wallet(privateKey);
-      const signMsg = await safe4Wallet.signMessage(publicKey);
-      console.log(signMsg);
+      const signMsg = await safe4Wallet.signMessage(safe3Address);
+
+      console.log("privateKey :", privateKey);
+      console.log("publicKey  :", publicKey);
+      console.log("signMsg    :", signMsg)
+
+      setRedeeming(true);
+
+      let _redeemTxHashs = redeemTxHashs ?? {};
       // safe3 可用资产大于零,且没有被赎回.
       if ( // availableSafe3Info?.amount.greaterThan(ZERO) &&
         availableSafe3Info?.redeemHeight == 0) {
-        safe3Contract.redeemAvailable(
-          ethers.utils.toUtf8Bytes(publicKey),
-          ethers.utils.toUtf8Bytes(signMsg) ,
-          {
-            gasLimit : 500000
+        try {
+          let response = await safe3Contract.redeemAvailable(
+            ethers.utils.toUtf8Bytes(publicKey),
+            ethers.utils.toUtf8Bytes(signMsg),
+            {
+              gasLimit: 500000
+            }
+          );
+          console.log("redeem avaialbe txhash:", response.hash)
+          _redeemTxHashs.avaiable = {
+            status: 1,
+            txHash: response.hash
           }
-        ).then((data: any) => {
-          console.log("execute success >>", data)
-        }).catch((err: any) => {
-          console.log("execute failed >>", err)
-        })
+          setRedeemTxHashs({..._redeemTxHashs})
+        } catch (error) {
+
+        }
       }
+
+      // safe3 锁仓资产大于零,且没有被赎回.
+      // if (  lockedNum?.amount.greaterThan(ZERO) &&
+      // availableSafe3Info?.redeemHeight == 0) {
+      // try {
+      //   let response = await safe3Contract.redeemAvailable(
+      //     ethers.utils.toUtf8Bytes(publicKey),
+      //     ethers.utils.toUtf8Bytes(signMsg),
+      //     {
+      //       gasLimit: 500000
+      //     }
+      //   );
+      //   setRedeemTxHashs({
+      //     ...redeemTxHashs,
+      //     locked: {
+      //       status: 1,
+      //       txHash: response.hash
+      //     }
+      //   })
+      // } catch (error) {
+
+      // }
+
+      // safe3 主节点
+      if ( // specialSafe3Info?.amount.greaterThan(ZERO) &&
+        specialSafe3Info?.redeemHeight == 0
+      ) {
+        try {
+          let response = await safe3Contract.redeemMasterNode(
+            ethers.utils.toUtf8Bytes(publicKey),
+            ethers.utils.toUtf8Bytes(signMsg),
+            "",
+            {
+              gasLimit: 500000
+            }
+          );
+          _redeemTxHashs.masternode = {
+            status: 1,
+            txHash: response.hash
+          }
+          setRedeemTxHashs({..._redeemTxHashs});
+        } catch (error: any) {
+          _redeemTxHashs.masternode = {
+            status: 0,
+            error: error.toString()
+          }
+          setRedeemTxHashs({..._redeemTxHashs})
+          console.log("redeem Masternode-Error:", error)
+        }
+      }
+
+      setRedeeming(false);
     }
   }, [safe3Wallet, safe3Asset, safe3Contract]);
 
@@ -151,7 +234,6 @@ export default () => {
                 </Col>
               </>
             }
-
             {
               safe3Wallet && <>
                 <Divider />
@@ -168,13 +250,53 @@ export default () => {
                     <Text strong>{safe3Wallet?.safe4Address}</Text><br />
                   </Col>
                   <Button
-                    disabled={safe3Asset ? false : true}
+                    loading={redeeming}
+                    disabled={safe3Asset && !redeemTxHashs ? false : true}
                     style={{ marginTop: "20px" }} type="primary"
                     onClick={() => {
                       executeRedeem();
                     }}>
                     迁移
                   </Button>
+                  {
+                    redeemTxHashs &&
+                    <>
+                      <Alert style={{ marginTop: "20px" }} type="success" message={<>
+                        {
+                          redeemTxHashs?.avaiable && <>
+                            <Text type="secondary">可用余额迁移交易哈希</Text><br />
+                            <Text strong>{redeemTxHashs.avaiable.txHash}</Text> <br />
+                          </>
+                        }
+                        {
+                          redeemTxHashs?.locked && <>
+                            <Text type="secondary">锁仓余额迁移交易哈希</Text><br />
+                            <Text strong>{redeemTxHashs.locked.txHash}</Text> <br />
+                          </>
+                        }
+                        {
+                          redeemTxHashs?.masternode && <>
+                            {
+                              redeemTxHashs.masternode.status == 1 && <>
+                                <Text type="secondary">主节点迁移交易哈希</Text><br />
+                                <Text strong>{redeemTxHashs.masternode.txHash}</Text> <br />
+                              </>
+                            }
+                            {
+                              redeemTxHashs.masternode.status == 0 && <>
+                                <Text type="secondary">主节点迁移交易失败</Text><br />
+                                <Text strong type="danger">
+                                  <CloseCircleTwoTone twoToneColor="red" style={{ marginRight: "5px" }} />
+                                  {redeemTxHashs.masternode.error}
+                                </Text> <br />
+                              </>
+                            }
+                          </>
+                        }
+                      </>} />
+                    </>
+                  }
+
                 </Col>
               </>
             }
