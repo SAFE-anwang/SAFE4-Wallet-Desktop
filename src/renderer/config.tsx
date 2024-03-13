@@ -12,7 +12,7 @@ const Config = {
   },
   "prod": {
     Default_Web3_Endpoint: "http://172.104.162.94:8545",
-    Safescan_URL: "http://172.104.162.94"
+    Safescan_URL: "http://safe4.anwang.com"
   }
 }
 

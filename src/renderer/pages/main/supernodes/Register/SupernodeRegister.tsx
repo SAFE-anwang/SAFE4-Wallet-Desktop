@@ -22,9 +22,9 @@ export const Supernode_Create_Type_NoUnion = 1;
 export const Supernode_create_type_Union = 2;
 
 const InputRules = {
-  name : {
-    min : 2,
-    max : 20
+  name: {
+    min: 2,
+    max: 20
   },
   description: {
     min: 12,
@@ -40,10 +40,12 @@ export default () => {
   const activeAccount = useWalletsActiveAccount();
   const balance = useETHBalances([activeAccount])[activeAccount];
   const [enodeTips, setEnodeTips] = useState<boolean>(false);
+  const [checking, setChecking] = useState<boolean>(false);
 
   const [createParams, setCreateParams] = useState<{
     createType: number | 1,
     name: string | undefined,
+    address: string | undefined,
     enode: string | undefined,
     description: string | undefined,
     incentivePlan: {
@@ -54,6 +56,7 @@ export default () => {
   }>({
     createType: Supernode_Create_Type_NoUnion,
     name: undefined,
+    address: activeAccount,
     enode: undefined,
     description: undefined,
     incentivePlan: {
@@ -67,16 +70,19 @@ export default () => {
     name: string | undefined,
     enode: string | undefined,
     description: string | undefined,
-    balance: string | undefined
+    balance: string | undefined,
+    address: string | undefined
   }>({
     name: undefined,
     enode: undefined,
     description: undefined,
-    balance: undefined
+    balance: undefined,
+    address: undefined
   });
 
   const nextClick = async () => {
-    const { name, enode, description, incentivePlan } = createParams;
+
+    const { name, enode, description, incentivePlan, address } = createParams;
     incentivePlan.partner = sliderVal[0];
     incentivePlan.creator = sliderVal[1] - sliderVal[0];
     incentivePlan.voter = 100 - sliderVal[1];
@@ -95,7 +101,17 @@ export default () => {
         inputErrors.enode = "超级节点ENODE格式不正确!";
       }
     }
-
+    if (!address) {
+      inputErrors.address = "请输入超级节点地址";
+    } else {
+      try {
+        if (!ethers.utils.isAddress(address)) {
+          inputErrors.address = "请输入合法的钱包地址";
+        }
+      } catch (error) {
+        inputErrors.address = "请输入合法的钱包地址";
+      }
+    }
     if (!description) {
       inputErrors.description = "请输入超级节点简介信息!"
     };
@@ -111,7 +127,7 @@ export default () => {
       && !balance?.greaterThan(CurrencyAmount.ether(JSBI.BigInt(ethers.utils.parseEther("1000"))))) {
       inputErrors.balance = "账户余额不足以支付超级节点创建费用";
     }
-    if (inputErrors.name || inputErrors.enode || inputErrors.description || inputErrors.balance) {
+    if (inputErrors.name || inputErrors.enode || inputErrors.description || inputErrors.balance || inputErrors.address) {
       setInputErrors({ ...inputErrors });
       return;
     }
@@ -120,16 +136,23 @@ export default () => {
        * function existName(string memory _name) external view returns (bool);
        * function existEnode(string memory _enode) external view returns (bool);
        */
+      setChecking(true);
       const nameExists = await supernodeStorageContract.callStatic.existName(name);
+      const addrExists = await supernodeStorageContract.callStatic.exist(address);
+      const addrExistsInMasternodes = await masternodeStorageContract.callStatic.exist(address);
       const enodeExists = await supernodeStorageContract.callStatic.existEnode(enode);
       const enodeExistsInMasternodes = await masternodeStorageContract.callStatic.existEnode(enode);
       if (nameExists) {
         inputErrors.name = "该名称已被使用";
       }
+      if (addrExists || addrExistsInMasternodes) {
+        inputErrors.address = "该地址已被使用";
+      }
       if (enodeExists || enodeExistsInMasternodes) {
         inputErrors.enode = "该ENODE已被使用";
       }
-      if (nameExists || enodeExists || enodeExistsInMasternodes) {
+      setChecking(false);
+      if (nameExists || enodeExists || enodeExistsInMasternodes || addrExists || addrExistsInMasternodes) {
         setInputErrors({ ...inputErrors });
         return;
       }
@@ -137,6 +160,18 @@ export default () => {
     }
   }
   const [openCreateModal, setOpenCreateModal] = useState<boolean>(false);
+
+  useEffect(() => {
+    setCreateParams({
+      ...createParams,
+      address: activeAccount
+    })
+    setInputErrors({
+      ...inputErrors,
+      balance: undefined,
+      address: undefined
+    })
+  }, [activeAccount]);
 
   return <>
     <Row style={{ height: "50px" }}>
@@ -195,6 +230,28 @@ export default () => {
               {
                 inputErrors && inputErrors.balance &&
                 <Alert style={{ marginTop: "5px" }} type='error' message={inputErrors.balance} showIcon></Alert>
+              }
+            </Col>
+          </Row>
+          <Divider />
+          <Row>
+            <Col span={24}>
+              <Text type='secondary'>超级节点地址</Text>
+              <Input status={inputErrors.name ? "error" : ""}
+                value={createParams.address} placeholder='输入超级节点地址' onChange={(event) => {
+                  const inputAddress = event.target.value;
+                  setInputErrors({
+                    ...inputErrors,
+                    address: undefined
+                  })
+                  setCreateParams({
+                    ...createParams,
+                    address: inputAddress
+                  });
+                }}></Input>
+              {
+                inputErrors && inputErrors.address &&
+                <Alert style={{ marginTop: "5px" }} type='error' message={inputErrors.address} showIcon></Alert>
               }
             </Col>
           </Row>
@@ -306,7 +363,7 @@ export default () => {
 
           <Row style={{ width: "100%", textAlign: "right" }}>
             <Col span={24}>
-              <Button type="primary" onClick={() => {
+              <Button loading={checking} type="primary" onClick={() => {
                 nextClick();
               }}>下一步</Button>
             </Col>

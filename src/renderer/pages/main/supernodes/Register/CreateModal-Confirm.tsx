@@ -21,7 +21,8 @@ export default ({
   openCreateModal: boolean,
   setOpenCreateModal: (openCreateModal: boolean) => void,
   createParams: {
-    createType: number
+    createType: number,
+    address : string | undefined,
     name: string | undefined,
     enode: string | undefined,
     description: string | undefined,
@@ -47,7 +48,7 @@ export default ({
 
   const doCreateSupernode = useCallback(() => {
     if (activeAccount && supernodeLogicContract) {
-      const { createType, name, enode, description, incentivePlan } = createParams;
+      const { createType, name, enode, description, incentivePlan , address } = createParams;
       // function register(bool _isUnion, address _addr, uint _lockDay, string memory _name, string memory _enode, string memory _description,
       //                    uint _creatorIncentive, uint _partnerIncentive, uint _voterIncentive) external payable;
       const value = ethers.utils.parseEther(
@@ -56,7 +57,7 @@ export default ({
       setSending(true);
       supernodeLogicContract.register(
         Supernode_create_type_Union == createType,
-        activeAccount,
+        address,
         720,
         name, enode, description,
         incentivePlan.creator, incentivePlan.partner, incentivePlan.voter,

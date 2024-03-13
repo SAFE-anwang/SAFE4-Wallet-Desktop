@@ -68,8 +68,8 @@ export default ({
             </div>
           </>
         }
-        { 
-          status == 0 && <> 
+        {
+          status == 0 && <>
             <CloseCircleFilled style={{
               color: "#e53d3d", fontSize: "50px", float: "left", marginRight: "20px", marginLeft: "20px"
             }} />
@@ -88,7 +88,7 @@ export default ({
     <Card style={{ marginTop: "8px" }}>
       <Text type="secondary">交易哈希</Text>
       <Button onClick={() => {
-         window.open(`${Safescan_URL}/tx/${hash}`)
+         window.open(`https://safe4.anwang.com/tx/${hash}`)
       }} size="small" icon={<ExportOutlined />} style={{float:"right"}} />
       <br />
       <Text>{hash}</Text>

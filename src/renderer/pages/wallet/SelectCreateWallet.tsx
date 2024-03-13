@@ -34,14 +34,14 @@ export default () => {
 
   return <>
     <Row>
-      <Col span={24} style={{ marginTop: "5%" }}>
+      <Col span={24} style={{ marginTop: "10%" }}>
         {
           walletsList.length > 0 &&
-          <Button onClick={closeClick} style={{ float: "right" }} size="large" shape="circle" icon={<CloseOutlined />} />
+          <Button onClick={closeClick} style={{ float: "left" }} size="large" shape="circle" icon={<CloseOutlined />} />
         }
       </Col>
     </Row>
-    <Row style={{ marginTop: "10%" }}>
+    <Row style={{ marginTop: "5%" }}>
       <Col span={12}>
         <div onClick={createWalletClick}
           style={{

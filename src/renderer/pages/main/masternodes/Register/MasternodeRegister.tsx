@@ -1,17 +1,12 @@
 import { Typography, Row, Col, Button, Card, Checkbox, CheckboxProps, Divider, Input, Slider, Alert, Radio, Space } from 'antd';
 import { useEffect, useMemo, useState } from 'react';
-import { CheckboxValueType } from 'antd/es/checkbox/Group';
-import type { GetProp } from 'antd';
-import { useSelector } from 'react-redux';
 import { LeftOutlined, LockOutlined, QuestionCircleOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { Currency, CurrencyAmount, JSBI } from '@uniswap/sdk';
 import { ethers } from 'ethers';
-import type { RadioChangeEvent } from 'antd';
 import { useETHBalances, useWalletsActiveAccount } from '../../../../state/wallets/hooks';
 import { useMasternodeStorageContract, useSupernodeStorageContract } from '../../../../hooks/useContracts';
 import RegisterModalConfirm from './RegisterModal-Confirm';
-import { title } from 'process';
 const { Text, Title } = Typography;
 
 export const Masternode_Create_Type_NoUnion = 1;
@@ -36,6 +31,7 @@ export default () => {
 
   const [registerParams, setRegisterParams] = useState<{
     registerType: number | 1,
+    address : string | undefined,
     enode: string | undefined,
     description: string | undefined,
     incentivePlan: {
@@ -44,6 +40,7 @@ export default () => {
     }
   }>({
     registerType: Masternode_Create_Type_NoUnion,
+    address : activeAccount,
     enode: undefined,
     description: undefined,
     incentivePlan: {
@@ -52,19 +49,33 @@ export default () => {
     }
   });
 
+  useEffect(()=>{
+    setRegisterParams({
+      ...registerParams,
+      address : activeAccount
+    })
+    setInputErrors({
+      ...inputErrors,
+      balance : undefined,
+      address : undefined
+    })
+  },[activeAccount]);
+
   const [sliderVal, setSliderVal] = useState<number>(50);
   const [inputErrors, setInputErrors] = useState<{
+    address : string | undefined ,
     enode: string | undefined,
     description: string | undefined,
     balance: string | undefined
   }>({
+    address : undefined,
     enode: undefined,
     description: undefined,
     balance: undefined
   });
 
   const nextClick = async () => {
-    const { enode, description, incentivePlan } = registerParams;
+    const { enode, description, incentivePlan , address } = registerParams;
     incentivePlan.creator = sliderVal;
     incentivePlan.partner = 100 - sliderVal;
     if (!enode) {
@@ -74,6 +85,13 @@ export default () => {
       const isMatch = enodeRegex.test(enode);
       if (!isMatch) {
         inputErrors.enode = "主节点ENODE格式不正确!";
+      }
+    }
+    if (!address){
+      inputErrors.address = "请输入主节点钱包地址";
+    }else{
+      if ( !ethers.utils.isAddress(address) ){
+        inputErrors.address = "请输入合法的钱包地址";
       }
     }
     if (!description) {
@@ -90,7 +108,7 @@ export default () => {
       && !balance?.greaterThan(CurrencyAmount.ether(JSBI.BigInt(ethers.utils.parseEther("200"))))) {
       inputErrors.balance = "账户余额不足以锁仓来创建主节点";
     }
-    if (inputErrors.enode || inputErrors.description || inputErrors.balance) {
+    if (inputErrors.enode || inputErrors.description || inputErrors.balance || inputErrors.address) {
       setInputErrors({ ...inputErrors });
       return;
     }
@@ -98,8 +116,17 @@ export default () => {
       /**
        * function existEnode(string memory _enode) external view returns (bool);
        */
+      setChecking(true);
+      const addrExistsInMasternodes = await masternodeStorageContract.callStatic.exist(address);
+      const addrExistsInSupernodes = await supernodeStorageContract.callStatic.exist(address);
       const enodeExistsInMasternodes = await masternodeStorageContract.callStatic.existEnode(enode);
       const enodeExistsInSupernodes = await supernodeStorageContract.callStatic.existEnode(enode);
+      setChecking(false);
+      if (addrExistsInMasternodes || addrExistsInSupernodes) {
+        inputErrors.address = "该钱包地址已被使用";
+        setInputErrors({ ...inputErrors });
+        return;
+      }
       if (enodeExistsInMasternodes || enodeExistsInSupernodes) {
         inputErrors.enode = "该ENODE已被使用";
         setInputErrors({ ...inputErrors });
@@ -108,6 +135,8 @@ export default () => {
       setOpenRegsterModal(true);
     }
   }
+
+  const [checking,setChecking] = useState<boolean>(false);
 
   return <>
     <Row style={{ height: "50px" }}>
@@ -168,6 +197,26 @@ export default () => {
                 <Alert style={{ marginTop: "5px" }} type='error' message={inputErrors.balance} showIcon></Alert>
               }
             </Col>
+          </Row>
+          <Divider />
+          <Row>
+            <Text type='secondary'>主节点钱包地址</Text>
+            <Input status={inputErrors.address ? "error" : ""}
+              value={registerParams.address} placeholder='请输入主节点钱包地址' onChange={(event) => {
+                const inputDescription = event.target.value;
+                setInputErrors({
+                  ...inputErrors,
+                  address: undefined
+                })
+                setRegisterParams({
+                  ...registerParams,
+                  address: inputDescription
+                })
+              }}></Input>
+            {
+              inputErrors && inputErrors.address &&
+              <Alert style={{ marginTop: "5px" }} type='error' message={inputErrors.address} showIcon></Alert>
+            }
           </Row>
           <Divider />
           <Row>
@@ -253,7 +302,7 @@ export default () => {
 
           <Row style={{ width: "100%", textAlign: "right" }}>
             <Col span={24}>
-              <Button type="primary" onClick={() => {
+              <Button loading={checking} type="primary" onClick={() => {
                 nextClick();
               }}>下一步</Button>
             </Col>

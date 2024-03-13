@@ -20,7 +20,8 @@ export default ({
   openRegisterModal: boolean,
   setOpenRegisterModal: (openRegisterModal: boolean) => void,
   registerParams: {
-    registerType: number
+    registerType: number,
+    address : string | undefined,
     enode: string | undefined,
     description: string | undefined,
     incentivePlan: {
@@ -44,7 +45,7 @@ export default ({
 
   const doRegisterMasternode = useCallback(() => {
     if (activeAccount && masternodeLogicContract) {
-      const { registerType, enode, description, incentivePlan } = registerParams;
+      const { registerType, enode, description, incentivePlan , address } = registerParams;
       // function register(bool _isUnion, address _addr, uint _lockDay, string memory _enode, string memory _description,
       //  uint _creatorIncentive, uint _partnerIncentive) external payable;
       //
@@ -58,7 +59,7 @@ export default ({
       setSending(true);
       masternodeLogicContract.register(
         Masternode_create_type_Union == registerType,
-        activeAccount,
+        address,
         720,
         enode, description,
         incentivePlan.creator, incentivePlan.partner,
