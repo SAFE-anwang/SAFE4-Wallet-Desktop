@@ -1,9 +1,7 @@
 
 import { Alert, Col, Row, Typography, Card, Divider, Button, Tabs, TabsProps, Input, Spin } from "antd";
-import { useNavigate } from "react-router-dom";
-import { message, Steps, theme } from 'antd';
 import { useCallback, useEffect, useState } from "react";
-import { useMulticallContract, useSafe3Contract } from "../../../hooks/useContracts";
+import { useSafe3Contract } from "../../../hooks/useContracts";
 import { AvailableSafe3Info, SpecialSafe3Info, formatAvailableSafe3Info, formatSpecialSafe3Info } from "../../../structs/Safe3";
 import { ZERO } from "../../../utils/CurrentAmountUtils";
 
@@ -19,10 +17,13 @@ export interface Safe3Asset {
 export default ({
   safe3Address, safe3CompressAddress , setSafe3Asset
 }: {
+
   safe3Address?: string,
   safe3CompressAddress?: string ,
   setSafe3Asset : ( safe3Asset ?: Safe3Asset ) => void
+
 }) => {
+
   const safe3Contract = useSafe3Contract();
   const [safe3AddressAsset, setSafe3AddressAsset] = useState<Safe3Asset>();
   const [safe3CompressAddressAsset, setSafe3CompressAddressAsset] = useState<Safe3Asset>();
@@ -53,7 +54,6 @@ export default ({
     } else {
       setSafe3CompressAddressAsset(undefined);
     }
-
   }, [safe3Address, safe3Contract, safe3CompressAddress]);
 
   const loadSafe3Asset = useCallback((address: string, callback: (safe3Asset: Safe3Asset) => void) => {

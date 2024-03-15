@@ -1,5 +1,16 @@
 import ChecksumAddress from "../utils/ChecksumAddress";
 
+export const GET = async function (url: string, params?: any): Promise<any> {
+  const URI_params = params ? "?" + obj2URIParams(params) : undefined;
+  const response = await fetch(URI_params ? url + URI_params : url, {
+      method: 'get',
+      headers: {
+          'Content-Type': "application/json"
+      }
+  })
+  const json = await response.json();
+  return json as any;
+}
 
 export const POST = async function (url: string, params?: any): Promise<ApiResponse<any>> {
   try {
@@ -22,6 +33,21 @@ export const POST = async function (url: string, params?: any): Promise<ApiRespo
   }
 }
 
+function obj2URIParams(data: any) {
+  var _result = [];
+  for (var key in data) {
+      var value = data[key];
+      if (value.constructor === Array) {
+          value.forEach(function (_value) {
+              _result.push(key + "=" + _value);
+          });
+      } else {
+          _result.push(key + '=' + value);
+      }
+  }
+  return _result.join('&');
+}
+
 export interface ApiResponse<VO> {
   code: string,
   message: string,
@@ -42,6 +68,13 @@ export interface PageQueryDTO {
   orderMode?: string | undefined,
   orderProp?: string | undefined,
   blockNumber?: number
+}
+
+export interface Safe3AddressVO {
+  address : string ,
+  avaliable : string ,
+  locked : string ,
+  masternode : boolean
 }
 
 export interface AddressActivityVO {

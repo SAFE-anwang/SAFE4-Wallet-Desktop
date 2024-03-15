@@ -11,6 +11,7 @@ import { ethers } from "ethers";
 import {
   CloseCircleTwoTone
 } from '@ant-design/icons';
+import { useWeb3Hooks } from "../../../connectors/hooks";
 
 const { Text, Title } = Typography;
 
@@ -38,12 +39,17 @@ export interface TxExecuteStatus {
 
 export default () => {
 
+  const { useProvider } = useWeb3Hooks();
+  const provider = useProvider();
   const [current, setCurrent] = useState(0);
   const items = steps.map((item) => ({ key: item.title, title: item.title }));
 
   const [safe3PrivateKey, setSafe3PrivateKey] = useState<string>();
+  const [enode, setEncode] = useState<string>();
+
   const [inputErrors, setInputErrors] = useState<{
-    safe3PrivateKeyError: string
+    safe3PrivateKeyError?: string,
+    encode?: string
   }>();
 
   const [safe3Wallet, setSafe3Wallet] = useState<{
@@ -54,7 +60,6 @@ export default () => {
     safe3CompressAddress: string,
     safe4Address: string
   }>();
-
   const [safe3Asset, setSafe3Asset] = useState<Safe3Asset>();
   const safe3Contract = useSafe3Contract(true);
 
@@ -64,7 +69,6 @@ export default () => {
     masternode?: TxExecuteStatus
   }>();
   const [redeeming, setRedeeming] = useState<boolean>(false);
-  const [enode, setEncode] = useState<string>();
 
   useEffect(() => {
     // const result = Safe3PrivateKey("XJ2M1PbCAifB8W91hcHDEho18kA2ByB4Jdmi4XBHq5sNgtuEpXr4");
@@ -77,6 +81,7 @@ export default () => {
         )
       } else {
         setInputErrors({
+          ...inputErrors,
           safe3PrivateKeyError: "请输入从 Safe3 桌面钱包导出的私钥"
         })
         setSafe3Wallet(undefined);
@@ -88,10 +93,6 @@ export default () => {
   }, [safe3PrivateKey]);
 
   useEffect(() => {
-    setSafe3PrivateKey("XJ2M1PbCAifB8W91hcHDEho18kA2ByB4Jdmi4XBHq5sNgtuEpXr4")
-  }, []);
-
-  useEffect(() => {
     if (safe3Asset) {
       setCurrent(1)
     } else {
@@ -100,96 +101,99 @@ export default () => {
   }, [safe3Asset]);
 
   const executeRedeem = useCallback(async () => {
-    if (safe3Contract && safe3Wallet && safe3Asset) {
+    if (provider && safe3Contract && safe3Wallet && safe3Asset) {
 
       const { safe3Address, availableSafe3Info, lockedNum, specialSafe3Info } = safe3Asset;
-      const publicKey = safe3Wallet.safe3Address == safe3Address ? safe3Wallet.publicKey : safe3Wallet.compressPublicKey;
+      const publicKey = "0x" + (safe3Wallet.safe3Address == safe3Address ? safe3Wallet.publicKey : safe3Wallet.compressPublicKey);
       const { privateKey } = safe3Wallet;
       const safe4Wallet = new ethers.Wallet(privateKey);
-      const signMsg = await safe4Wallet.signMessage(safe3Address);
+      const sha256Address = ethers.utils.sha256(ethers.utils.toUtf8Bytes(safe3Address));
+      const signMsg = await safe4Wallet.signMessage(ethers.utils.arrayify(sha256Address));
 
+      console.log("safe3Wallet:", safe3Wallet);
       console.log("privateKey :", privateKey);
       console.log("publicKey  :", publicKey);
-      console.log("signMsg    :", signMsg)
-
+      console.log("address:", safe3Address);
+      console.log("sha256_address:", sha256Address);
+      console.log("signMsg    :", signMsg);
       setRedeeming(true);
 
       let _redeemTxHashs = redeemTxHashs ?? {};
       // safe3 可用资产大于零,且没有被赎回.
       if ( // availableSafe3Info?.amount.greaterThan(ZERO) &&
-        availableSafe3Info?.redeemHeight == 0) {
+        true) {
         try {
           let response = await safe3Contract.redeemAvailable(
-            ethers.utils.toUtf8Bytes(publicKey),
-            ethers.utils.toUtf8Bytes(signMsg),
-            {
-              gasLimit: 500000
-            }
+            ethers.utils.arrayify(publicKey),
+            ethers.utils.arrayify(signMsg)
           );
           console.log("redeem avaialbe txhash:", response.hash)
           _redeemTxHashs.avaiable = {
             status: 1,
             txHash: response.hash
           }
-          setRedeemTxHashs({..._redeemTxHashs})
+          setRedeemTxHashs({ ..._redeemTxHashs })
         } catch (error) {
-
+          console.log("redeem Available error >>", error)
         }
       }
-
       // safe3 锁仓资产大于零,且没有被赎回.
-      // if (  lockedNum?.amount.greaterThan(ZERO) &&
-      // availableSafe3Info?.redeemHeight == 0) {
-      // try {
-      //   let response = await safe3Contract.redeemAvailable(
-      //     ethers.utils.toUtf8Bytes(publicKey),
-      //     ethers.utils.toUtf8Bytes(signMsg),
-      //     {
-      //       gasLimit: 500000
-      //     }
-      //   );
-      //   setRedeemTxHashs({
-      //     ...redeemTxHashs,
-      //     locked: {
-      //       status: 1,
-      //       txHash: response.hash
-      //     }
-      //   })
-      // } catch (error) {
-
-      // }
-
+      if (lockedNum && lockedNum > 0) {
+        try {
+          const transactionParameters = {
+            to: safe3Contract.address,
+            data: safe3Contract.interface.encodeFunctionData("redeemLocked", [
+              ethers.utils.arrayify(publicKey),
+              ethers.utils.arrayify(signMsg)
+            ])
+          };
+          const gas = await provider.estimateGas(transactionParameters);
+          console.log("gas ::" , gas)
+          let response = await safe3Contract.redeemLocked(
+            ethers.utils.arrayify(publicKey),
+            ethers.utils.arrayify(signMsg)
+          );
+          console.log("redeem lockeed txhash:", response.hash)
+          _redeemTxHashs.locked = {
+            status: 1,
+            txHash: response.hash
+          }
+          setRedeemTxHashs({ ..._redeemTxHashs })
+        } catch (error: any) {
+          _redeemTxHashs.locked = {
+            status: 0,
+            error: error.toString()
+          }
+          setRedeemTxHashs({ ..._redeemTxHashs })
+          console.log("redeem Locked error >>", error)
+        }
+      }
       // safe3 主节点
-      if ( // specialSafe3Info?.amount.greaterThan(ZERO) &&
-        specialSafe3Info?.redeemHeight == 0
+      if ( true
       ) {
         try {
           let response = await safe3Contract.redeemMasterNode(
-            ethers.utils.toUtf8Bytes(publicKey),
-            ethers.utils.toUtf8Bytes(signMsg),
-            "",
-            {
-              gasLimit: 500000
-            }
+            ethers.utils.arrayify(publicKey),
+            ethers.utils.arrayify(signMsg),
+            "enode://a7470f55fa1921b412eb66503d87857cb0840a65407c41016f10557ccd6bdf454bc38fa17629fd19ce66ca89445a92516b3f3f33ff7fed3f9ebdbdd2bb261358@10.0.1.164:30303"
           );
           _redeemTxHashs.masternode = {
             status: 1,
             txHash: response.hash
           }
-          setRedeemTxHashs({..._redeemTxHashs});
+          setRedeemTxHashs({ ..._redeemTxHashs });
         } catch (error: any) {
           _redeemTxHashs.masternode = {
             status: 0,
             error: error.toString()
           }
-          setRedeemTxHashs({..._redeemTxHashs})
+          setRedeemTxHashs({ ..._redeemTxHashs })
           console.log("redeem Masternode-Error:", error)
         }
       }
-
       setRedeeming(false);
     }
-  }, [safe3Wallet, safe3Asset, safe3Contract]);
+  }, [provider , safe3Wallet, safe3Asset, safe3Contract]);
 
   return (<>
     <Row style={{ height: "50px" }}>
@@ -249,6 +253,22 @@ export default () => {
                   <Col span={24}>
                     <Text strong>{safe3Wallet?.safe4Address}</Text><br />
                   </Col>
+                  {
+                    safe3Asset?.specialSafe3Info &&
+                    //safe3Asset?.specialSafe3Info.amount.greaterThan(ZERO) &&
+                    safe3Asset?.specialSafe3Info.redeemHeight == 0 &&
+                    <>
+                      <Col span={24} style={{ marginTop: "20px" }}>
+                        <Text strong type="secondary">Safe4 主节点 ENODE</Text><br />
+                      </Col>
+                      <Col span={24}>
+                        <Input.TextArea value={enode} onChange={(event) => {
+                          setEncode(event.target.value);
+                        }} />
+                      </Col>
+                    </>
+                  }
+
                   <Button
                     loading={redeeming}
                     disabled={safe3Asset && !redeemTxHashs ? false : true}
