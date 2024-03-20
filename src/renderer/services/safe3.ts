@@ -10,6 +10,6 @@ export async function fetchSafe3Address( address : string ) : Promise<Safe3Addre
     address ,
     avaliable : "1",
     locked : "1",
-    masternode : false
+    masternode : true
   }
 }

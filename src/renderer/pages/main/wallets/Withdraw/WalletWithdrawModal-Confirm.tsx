@@ -41,7 +41,7 @@ export default ({
     if (activeAccount && accountManaggerContract) {
       if (accountRecord) {
         accountManaggerContract.withdrawByID([accountRecord.id] , {
-          gasLimit : 300000
+          // gasLimit : 300000
         })
           .then((response: any) => {
             setSending(false);
