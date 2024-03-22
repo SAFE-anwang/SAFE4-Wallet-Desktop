@@ -9,7 +9,8 @@ export async function fetchSafe3Address( address : string ) : Promise<Safe3Addre
   return {
     address ,
     avaliable : "1",
-    locked : "1",
-    masternode : true
+    locked : "1050",
+    masternode : true ,
+    mLockedAmount : "1000"
   }
 }

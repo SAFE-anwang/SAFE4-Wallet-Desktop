@@ -13,10 +13,13 @@ import {
   GlobalOutlined
 } from '@ant-design/icons';
 import { useWeb3Hooks } from "../../../connectors/hooks";
+import { useETHBalances, useWalletsActiveAccount } from "../../../state/wallets/hooks";
+import { CurrencyAmount } from "@uniswap/sdk";
 
 const { Text, Title } = Typography;
 
 const base58Regex = /^[1-9A-HJ-NP-Za-km-z]{52}$/;
+const redeemNeedAmount = "0.01";
 
 const isSafe3DesktopExportPrivateKey = (input: string) => {
   return base58Regex.test(input);
@@ -45,7 +48,6 @@ export default () => {
   const provider = useProvider();
   const [current, setCurrent] = useState(0);
   const items = steps.map((item) => ({ key: item.title, title: item.title }));
-
   const [safe3PrivateKey, setSafe3PrivateKey] = useState<string>();
   const [enode, setEncode] = useState<string>();
 
@@ -62,10 +64,13 @@ export default () => {
     safe3CompressAddress: string,
     safe4Address: string
   }>();
+
   const [safe3Asset, setSafe3Asset] = useState<Safe3Asset>();
   const safe3Contract = useSafe3Contract(true);
   const masternodeContract = useMasternodeStorageContract();
   const supernodeContract = useSupernodeStorageContract();
+  const activeAccount = useWalletsActiveAccount();
+  const balance = useETHBalances([activeAccount])[activeAccount];
 
   const [redeemTxHashs, setRedeemTxHashs] = useState<{
     avaiable?: TxExecuteStatus,
@@ -78,20 +83,29 @@ export default () => {
   //   setSafe3PrivateKey("XFwbwpghGT8w8uqwJmZQ4uPjiB61ZdPvcN165LDu2HttQjE8Z2KR")
   // }, []);
 
+  const notEnough = useMemo(() => {
+    const needAmount = CurrencyAmount.ether(ethers.utils.parseEther(redeemNeedAmount).toBigInt());
+    if (!balance) {
+      return false;
+    }
+    return needAmount.greaterThan(balance);
+  }, [activeAccount, balance]);
+
   const redeemEnable = useMemo(() => {
     if (!safe3Asset) {
       return false;
     }
+    if (notEnough){
+      return false;
+    }
     const avaiable = safe3Asset.availableSafe3Info.amount.greaterThan(ZERO) &&
       safe3Asset.availableSafe3Info.redeemHeight == 0;
-    const locked = safe3Asset.locked.lockedNum > 0 && safe3Asset.locked.redeemHeight == 0;
+    const locked = safe3Asset.locked.txLockedAmount.greaterThan(ZERO) && safe3Asset.locked.redeemHeight == 0;
     const masternode = safe3Asset.masternode && safe3Asset.masternode.redeemHeight == 0;
     return avaiable || locked || masternode;
-  }, [safe3Asset]);
+  }, [safe3Asset, notEnough]);
 
   useEffect(() => {
-    // const result = Safe3PrivateKey("XJ2M1PbCAifB8W91hcHDEho18kA2ByB4Jdmi4XBHq5sNgtuEpXr4");
-    console.log("safe3 private key >> :", safe3PrivateKey);
     if (safe3PrivateKey) {
       if (isSafe3DesktopExportPrivateKey(safe3PrivateKey)) {
         setInputErrors(undefined);
@@ -165,7 +179,7 @@ export default () => {
 
       // safe3 可用资产大于零,且没有被赎回.
       if (
-        // availableSafe3Info.redeemHeight == 0 &&
+        availableSafe3Info.redeemHeight == 0 &&
         availableSafe3Info.amount.greaterThan(ZERO)
       ) {
         try {
@@ -193,8 +207,8 @@ export default () => {
 
       // safe3 锁仓资产大于零,且没有被赎回.
       if (
-        // locked.redeemHeight == 0 &&
-        locked.lockedNum > 0
+        locked.redeemHeight == 0 &&
+        locked.txLockedAmount.greaterThan(ZERO)
       ) {
         try {
           // const transactionParameters = {
@@ -231,7 +245,7 @@ export default () => {
       // safe3 主节点
       if (
         safe3Asset.masternode
-        // && safe3Asset.masternode.redeemHeight == 0
+        && safe3Asset.masternode.redeemHeight == 0
       ) {
         try {
           let response = await safe3Contract.redeemMasterNode(
@@ -322,13 +336,13 @@ export default () => {
                     }} style={{ marginLeft: "10px" }} size="small" icon={<GlobalOutlined />} />
                   </Col>
                   {
-                    safe3Asset?.masternode &&
+                    safe3Asset?.masternode && safe3Asset.masternode.redeemHeight == 0 &&
                     <>
                       <Col span={24} style={{ marginTop: "20px" }}>
                         <Text strong type="secondary">Safe4 主节点 ENODE</Text><br />
                       </Col>
                       <Col span={24}>
-                        <Input.TextArea value={enode} onChange={(event) => {
+                        <Input.TextArea disabled={redeeming} value={enode} onChange={(event) => {
                           setEncode(event.target.value);
                           setInputErrors({
                             ...inputErrors,
@@ -343,17 +357,28 @@ export default () => {
                           </Col>
                         </>
                       }
+
                     </>
                   }
+                  <Divider />
                   <Button
                     loading={redeeming}
-                    // disabled={ redeemEnable && safe3Asset && !redeemTxHashs ? false : true}
+                    disabled={redeemEnable && !redeemTxHashs ? false : true}
                     style={{ marginTop: "20px" }} type="primary"
                     onClick={() => {
                       executeRedeem();
                     }}>
                     迁移
                   </Button>
+                  {
+                    notEnough && <>
+                      <Alert style={{ marginTop: "5px" }} showIcon type="error" message={
+                        <>
+                          当前正在使用的钱包没有 SAFE 来支付迁移资产所需要支付的手续费。
+                        </>
+                      } />
+                    </>
+                  }
                   {
                     redeemTxHashs &&
                     <>

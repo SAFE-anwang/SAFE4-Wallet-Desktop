@@ -74,7 +74,8 @@ export interface Safe3AddressVO {
   address : string ,
   avaliable : string ,
   locked : string ,
-  masternode : boolean
+  masternode : boolean ,
+  mLockedAmount : string ,
 }
 
 export interface AddressActivityVO {

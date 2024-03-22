@@ -1,7 +1,7 @@
 
 import { Alert, Col, Row, Typography, Card, Divider, Button, Tabs, TabsProps, Input, Spin } from "antd";
 import { useCallback, useEffect, useState } from "react";
-import { useSafe3Contract } from "../../../hooks/useContracts";
+import { useMasternodeLogicContract, useSafe3Contract } from "../../../hooks/useContracts";
 import { AvailableSafe3Info, SpecialSafe3Info, formatAvailableSafe3Info, formatLockedSafe3Info, formatSpecialSafe3Info } from "../../../structs/Safe3";
 import { ZERO } from "../../../utils/CurrentAmountUtils";
 import { CurrencyAmount } from "@uniswap/sdk";
@@ -10,7 +10,6 @@ import { ethers } from "ethers";
 import { CheckCircleTwoTone, CheckSquareTwoTone } from '@ant-design/icons';
 
 const { Text } = Typography;
-
 const LockedTxLimit = 10;
 
 export interface Safe3Asset {
@@ -20,22 +19,23 @@ export interface Safe3Asset {
     lockedNum: number,
     lockedAmount: CurrencyAmount,
     redeemHeight: number,
+    txLockedAmount: CurrencyAmount
   },
   masternode?: {
-    redeemHeight: number
+    redeemHeight: number,
+    lockedAmount: CurrencyAmount
   }
 }
 
 export default ({
   safe3Address, safe3CompressAddress, setSafe3Asset
 }: {
-
   safe3Address?: string,
   safe3CompressAddress?: string,
   setSafe3Asset: (safe3Asset?: Safe3Asset) => void
-
 }) => {
   const safe3Contract = useSafe3Contract();
+  const masternodeStorageContract = useMasternodeLogicContract();
   const [safe3AddressAsset, setSafe3AddressAsset] = useState<Safe3Asset>();
   const [safe3CompressAddressAsset, setSafe3CompressAddressAsset] = useState<Safe3Asset>();
   const [safe3AddressAssetLoading, setSafe3AddressAssetLoading] = useState<boolean>(false);
@@ -69,7 +69,7 @@ export default ({
   }, [safe3Address, safe3Contract, safe3CompressAddress]);
 
   const loadSafe3Asset = useCallback((address: string, callback: (safe3Asset: Safe3Asset) => void) => {
-    if (safe3Contract) {
+    if (safe3Contract && masternodeStorageContract) {
       // 查询地址的可用资产信息
       safe3Contract.callStatic.getAvailableInfo(address)
         .then(data => {
@@ -80,7 +80,8 @@ export default ({
             locked: {
               lockedNum: 0,
               lockedAmount: ZERO,
-              redeemHeight: 0
+              redeemHeight: 0,
+              txLockedAmount: ZERO
             }
           }
           // 查询地址的锁仓数据.
@@ -93,14 +94,19 @@ export default ({
                     const lockedSafe3Infos = _lockedSafe3Infos.map(formatLockedSafe3Info);
                     const loopResult: {
                       redeemHeight: number,
-                      mRedeemHeight?: number
+                      masternode?: {
+                        redeemHeight: number,
+                        lockedAmount: CurrencyAmount
+                      }
                     } = {
                       redeemHeight: 0
                     };
                     const totalLockedAmount = lockedSafe3Infos.map(lockTx => {
                       if (lockTx.isMN) {
-                        loopResult.mRedeemHeight = lockTx.redeemHeight;
-                        console.log(lockTx)
+                        loopResult.masternode = {
+                          redeemHeight: lockTx.redeemHeight,
+                          lockedAmount: lockTx.amount
+                        }
                       } else {
                         loopResult.redeemHeight = lockTx.redeemHeight;
                       }
@@ -114,11 +120,13 @@ export default ({
                       _safe3Asset.locked = {
                         redeemHeight: loopResult.redeemHeight,
                         lockedNum,
-                        lockedAmount: totalLockedAmount
+                        lockedAmount: totalLockedAmount,
+                        txLockedAmount: loopResult.masternode ? totalLockedAmount.subtract(loopResult.masternode.lockedAmount) : totalLockedAmount
                       }
-                      if (loopResult.mRedeemHeight != undefined) {
+                      if (loopResult.masternode) {
                         _safe3Asset.masternode = {
-                          redeemHeight: loopResult.mRedeemHeight
+                          redeemHeight: loopResult.masternode.redeemHeight,
+                          lockedAmount: loopResult.masternode.lockedAmount
                         }
                       }
                       callback(_safe3Asset);
@@ -126,25 +134,37 @@ export default ({
                       // 如果锁仓数据过于多,则通过浏览器接口来获取锁仓以及是否为主节点.
                       // 查询区块链浏览器接口获取它是否是主节点.
                       fetchSafe3Address(address).then(data => {
-                        const { masternode, locked } = data;
+                        const { masternode, locked, mLockedAmount } = data;
                         const isMasternode = masternode;
                         const lockedAmount = CurrencyAmount.ether(ethers.utils.parseEther(locked).toBigInt());
+                        const masternodeLockedAmount = CurrencyAmount.ether(ethers.utils.parseEther(mLockedAmount).toBigInt());
+                        const txLockedAmount = lockedAmount.subtract(masternodeLockedAmount);
                         _safe3Asset.locked = {
                           redeemHeight: loopResult.redeemHeight,
                           lockedNum,
-                          lockedAmount
+                          lockedAmount,
+                          txLockedAmount
                         }
                         if (isMasternode) {
                           // 如何检查它是否已经迁移了主节点 ??
                           // 1.> 如果在第一页的遍历结果中已经出现了主节点的锁仓记录，则直接用它的结果就可以了.
-                          // 2.> 如果没有，则尝试使用估算gas的方式来验证是否可以进行主节点迁移.如果可以.则表明它是主节点且可以进行迁移.
-                          // 3.> 如果估算报错，根据错误来判断，它是不是主节点，以及是否迁移了.
-                          if (loopResult.mRedeemHeight != undefined) {
+                          // 2.> 如果是需要查询浏览器接口获取是否为主节点的情况,不好判断是否迁移过主节点,则先简单的从masternodes中检测这个地址是不是主节点.
+                          if (loopResult.masternode) {
                             _safe3Asset.masternode = {
-                              redeemHeight: loopResult.mRedeemHeight
+                              redeemHeight: loopResult.masternode.redeemHeight,
+                              lockedAmount: loopResult.masternode.lockedAmount
                             }
                           } else {
-
+                            // for 2
+                            masternodeStorageContract.callStatic.exist(address)
+                              .then((exist: boolean) => {
+                                _safe3Asset.masternode = {
+                                  redeemHeight: exist ? 1 : 0,
+                                  lockedAmount: masternodeLockedAmount
+                                }
+                                callback(_safe3Asset);
+                                return;
+                              });
                           }
                         }
                         callback(_safe3Asset);
@@ -157,7 +177,7 @@ export default ({
             })
         })
     }
-  }, [safe3Contract]);
+  }, [safe3Contract, masternodeStorageContract]);
 
   useEffect(() => {
     if (safe3AddressAsset) {
@@ -231,7 +251,7 @@ export default ({
         safe3CompressAddress && <>
           <Spin spinning={safe3CompressAddressAssetLoading}>
             <Col span={24} style={{ marginTop: "5px" }}>
-              <Text strong type="secondary">账户余额</Text><br />
+              <Text strong type="secondary">可用余额</Text><br />
             </Col>
             <Col span={24}>
               <Text strong delete={
@@ -247,25 +267,19 @@ export default ({
               <Text delete={
                 safe3CompressAddressAsset && safe3CompressAddressAsset?.locked.redeemHeight > 0
               }>
-                <Text strong>{safe3CompressAddressAsset?.locked?.lockedAmount?.toFixed(2)} SAFE</Text><br />
+                <Text strong>{safe3CompressAddressAsset?.locked.txLockedAmount.toFixed(2)} SAFE</Text><br />
               </Text>
             </Col>
             {
               safe3CompressAddressAsset?.masternode && <>
                 <Col span={24} style={{ marginTop: "5px" }}>
-                  {
-                    safe3CompressAddressAsset.masternode.redeemHeight == 0 && <>
-                      <CheckCircleTwoTone twoToneColor="#52c41a" style={{ marginRight: "5px" }} />
-                      <Text strong>主节点</Text>
-                    </>
-                  }
-                  {
-                    safe3CompressAddressAsset.masternode.redeemHeight != 0 && <>
-                      <CheckSquareTwoTone twoToneColor="#dfdfdf" style={{ marginRight: "5px" }} />
-                      <Text type="secondary" delete>主节点</Text>
-                    </>
-                  }
+                  <Text strong type="secondary">主节点</Text><br />
                 </Col>
+                <Text strong delete={
+                  safe3CompressAddressAsset.masternode.redeemHeight > 0
+                }>
+                  {safe3CompressAddressAsset.masternode.lockedAmount.toFixed(2)} SAFE
+                </Text>
               </>
             }
           </Spin>
