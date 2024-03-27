@@ -1,0 +1,13 @@
+.menu-item-container .ant-card-body {
+  padding : 0px 0px;
+}
+
+.menu-item {
+  height: 60px ;
+  line-height: 60px ;
+  cursor: pointer;
+}
+
+.menu-item:hover {
+  background-color: #efefef;
+}

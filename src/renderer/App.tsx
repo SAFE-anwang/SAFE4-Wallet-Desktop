@@ -24,6 +24,8 @@ import ProposalVote from './pages/main/proposals/Vote/ProposalVote';
 import ImportWallet from './pages/wallet/import/ImportWallet';
 import WaitingWalletImport from './pages/wallet/WaitingWalletImport';
 import Safe3 from './pages/main/safe3/Safe3';
+import Network from './pages/main/menu/network/Network';
+import Storage from './pages/main/menu/storage/Storage';
 
 export default function App() {
 
@@ -77,6 +79,8 @@ export default function App() {
               <Route path="/main/safe3" element={<Safe3 />} />
               <Route path="/tools/web3" element={<TestMulticall />} />
               <Route path="/main/menu" element={<Menu />} />
+              <Route path="/main/menu/storage" element={<Storage />} />
+              <Route path="/main/menu/network" element={<Network />} />
             </Routes>
           </Col>
         </Row>

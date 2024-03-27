@@ -34,7 +34,7 @@ const items: MenuItem[] = [
 ];
 
 const bottom_items: MenuItem[] = [
-  // getItem("菜单", '/main/menu', <SettingOutlined />),
+  getItem("菜单", '/main/menu', <SettingOutlined />),
 ];
 
 const MenuComponent: React.FC = () => {
