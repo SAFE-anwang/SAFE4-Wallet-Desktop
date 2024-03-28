@@ -64,7 +64,7 @@ type ChainConfig = { [chainId: number]: BasicChainInformation | ExtendedChainInf
 
 export const MAINNET_CHAINS: ChainConfig = {
   6666666: {
-    urls: ['http://47.107.47.210:8545'].filter(Boolean),
+    urls: ['http://172.104.162.94:8544','http://172.104.162.94:8545'].filter(Boolean),
     name: 'Safe4',
     nativeCurrency: SAFE4,
   },
@@ -131,6 +131,8 @@ export const URLS: { [chainId: number]: string[] } = Object.keys(CHAINS).reduce<
     if (validURLs.length) {
       accumulator[Number(chainId)] = validURLs
     }
+
+    console.log("accumulator::" , )
 
     return accumulator
   },
