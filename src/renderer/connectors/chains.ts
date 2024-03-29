@@ -3,6 +3,12 @@ import config from '../config'
 
 const {Default_Web3_Endpoint} = config;
 
+const BSC: AddEthereumChainParameter['nativeCurrency'] = {
+  name: 'BSC',
+  symbol: 'BNB',
+  decimals: 18,
+}
+
 const SAFE4: AddEthereumChainParameter['nativeCurrency'] = {
   name: 'Safe4',
   symbol: 'SAFE',
@@ -48,15 +54,14 @@ export const MAINNET_CHAINS: ChainConfig = {
   //   name: 'BNB',
   //   nativeCurrency: BSC,
   // },
+}
+
+export const TESTNET_CHAINS: ChainConfig = {
   6666666: {
     urls: [Default_Web3_Endpoint].filter(Boolean),
     name: 'Safe4',
     nativeCurrency: SAFE4,
   },
-}
-
-export const TESTNET_CHAINS: ChainConfig = {
-
 }
 
 export const CHAINS: ChainConfig = {

@@ -3,12 +3,13 @@ import { useDispatch } from "react-redux";
 import { useWeb3Hooks, useWeb3Network } from "../../connectors/hooks";
 import useDebounce from "../../hooks/useDebounce";
 import { applicationBlockchainUpdateBlockNumber } from "./action";
+import { useWeb3React } from "@web3-react/core";
 
 
 export default () => {
-
-    const { useProvider } = useWeb3Hooks();
-    const provider = useProvider();
+    // const { useProvider } = useWeb3Hooks();
+    // const provider = useProvider();
+    const { provider } = useWeb3React();
     const dispatch = useDispatch();
 
     const [state, setState] = useState<{ blockNumber: number | null }>({
@@ -16,7 +17,7 @@ export default () => {
     })
     const debouncedState = useDebounce(state, 100);
     const blockNumberCallback = (blockNumber: number) => {
-        
+
         setState({ blockNumber });
     }
 
@@ -24,12 +25,12 @@ export default () => {
         provider?.getBlockNumber()
             .then(blockNumberCallback)
             .catch(error => {
-             
+
             });
         provider?.on("block", blockNumberCallback)
         return () => {
             provider?.removeListener('block', blockNumberCallback)
-        } 
+        }
     }, [provider]);
 
     useEffect(() => {
@@ -42,7 +43,7 @@ export default () => {
                     timestamp
                 }));
             }).catch(err => {
-                
+
             })
     }, [dispatch, state, debouncedState.blockNumber])
 

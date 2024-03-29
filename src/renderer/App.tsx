@@ -1,5 +1,5 @@
 import { MemoryRouter as Router, Routes, Route } from 'react-router-dom';
-import { Col, Row } from 'antd';
+import { Button, Col, Row } from 'antd';
 import MenuComponent from './pages/components/MenuComponent';
 import Index from './pages/index';
 import SelectCreateWallet from './pages/wallet/SelectCreateWallet';
@@ -24,68 +24,125 @@ import ProposalVote from './pages/main/proposals/Vote/ProposalVote';
 import ImportWallet from './pages/wallet/import/ImportWallet';
 import WaitingWalletImport from './pages/wallet/WaitingWalletImport';
 import Safe3 from './pages/main/safe3/Safe3';
-import Network from './pages/main/menu/network/Network';
+import NetworkPage from './pages/main/menu/network/NetworkPage';
 import Storage from './pages/main/menu/storage/Storage';
+import { useEffect, useState } from 'react';
+
+import { Web3ReactHooks, Web3ReactProvider, initializeConnector } from '@web3-react/core'
+import { hooks as networkHooks, network, initializeConnect } from './connectors/network';
+import LoopUpdate from './LoopUpdate';
+import { Network } from '@web3-react/network';
+import { URLS } from './pages/web3reactexample/chains';
+import { Web3ReactStore } from '@web3-react/types';
+
+const Endpoint0 = "";
+const Endpoint1 = "";
+
+const conn = initializeConnect({
+  1: ["https://cloudflare-eth.com"]
+})
 
 export default function App() {
-
   const atCreateWallet = useApplicationActionAtCreateWallet();
+  const [endpoint, setEndpoint] = useState();
+  const [loading, setLoading] = useState<boolean>(true);
+
+  const [connectors, setConnectors] = useState<[Network, Web3ReactHooks][]>([
+    [conn[0], conn[1]]
+  ]);
+
+  useEffect(() => {
+    setTimeout(() => {
+      setLoading(false);
+      console.log("hell");
+    }, 1000);
+  }, []);
+
+  const [providerKey,setProviderKey] = useState<string>("https://cloudflare-eth.com");
+
+  const _Router = <>
+    <Button onClick={() => {
+      const _conn = initializeConnect({
+        6666666: ["http://172.104.162.94:8545"]
+      })
+      setProviderKey("http://172.104.162.94:8545")
+      setConnectors([
+        [_conn[0], _conn[1]]
+      ]);
+    }}>1</Button>
+        <Button onClick={() => {
+      const _conn = initializeConnect({
+        1: ["https://cloudflare-eth.com"]
+      })
+      setProviderKey("https://cloudflare-eth.com")
+      setConnectors([
+        [_conn[0], _conn[1]]
+      ]);
+    }}>2</Button>
+    <Router>
+      <Row style={{
+      }}>
+        {
+          !atCreateWallet && <Col span={6} style={{
+            position: "fixed",
+            width: "230px"
+          }}>
+            <MenuComponent />
+          </Col>
+        }
+        <Col id='appContainer' span={18} style={{
+          minWidth: "1200px",
+          position: "fixed",
+          overflowX: "auto",
+          overflowY: "auto",
+          top: "0",
+          right: "0",
+          bottom: "0",
+          left: "235px",
+          paddingLeft: "20px",
+          paddingBottom: "20px",
+        }}>
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/selectCreateWallet" element={<SelectCreateWallet />} />
+            <Route path="/setPassword" element={<SetPassword />} />
+            <Route path="/wallet/createMnemonic" element={<CreateMnemonic />} />
+            <Route path="/wallet/importWallet" element={<ImportWallet />} />
+            <Route path="/waitingCreateWallet" element={<WaitingWalletCreate />} />
+            <Route path="/waitingImportWallet" element={<WaitingWalletImport />} />
+            <Route path="/main/wallet" element={<Wallet />} />
+            <Route path="/main/supernodes" element={<Supernodes />} />
+            <Route path="/main/supernodes/vote" element={<SupernodeVote />} />
+            <Route path="/main/supernodes/append" element={<SupernodeAppend />} />
+            <Route path="/main/supernodes/create" element={<SupernodeRegister />} />
+            <Route path="/main/masternodes" element={<Masternodes />} />
+            <Route path="/main/masternodes/register" element={<MasternodeRegister />} />
+            <Route path="/main/masternodes/append" element={<MasternodeAppend />} />
+            <Route path="/main/proposals" element={<Proposals />} />
+            <Route path="/main/proposals/create" element={<ProposalCreate />} />
+            <Route path="/main/proposals/vote" element={<ProposalVote />} />
+            <Route path="/main/gettestcoin" element={<GetTestCoin />} />
+            <Route path="/main/safe3" element={<Safe3 />} />
+            <Route path="/tools/web3" element={<TestMulticall />} />
+            <Route path="/main/menu" element={<Menu />} />
+            <Route path="/main/menu/storage" element={<Storage />} />
+            <Route path="/main/menu/network" element={<NetworkPage />} />
+          </Routes>
+        </Col>
+      </Row>
+    </Router>
+  </>
 
   return (
     <>
-      <Router>
-        <Row style={{
-        }}>
-          {
-            !atCreateWallet && <Col span={6} style={{
-              position: "fixed",
-              width: "230px"
-            }}>
-              <MenuComponent />
-            </Col>
-          }
-          <Col id='appContainer' span={18} style={{
-            minWidth: "1200px",
-            position: "fixed",
-            overflowX: "auto",
-            overflowY: "auto",
-            top: "0",
-            right: "0",
-            bottom: "0",
-            left: "235px",
-            paddingLeft: "20px",
-            paddingBottom: "20px",
-          }}>
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/selectCreateWallet" element={<SelectCreateWallet />} />
-              <Route path="/setPassword" element={<SetPassword />} />
-              <Route path="/wallet/createMnemonic" element={<CreateMnemonic />} />
-              <Route path="/wallet/importWallet" element={<ImportWallet />} />
-              <Route path="/waitingCreateWallet" element={<WaitingWalletCreate />} />
-              <Route path="/waitingImportWallet" element={<WaitingWalletImport />} />
-              <Route path="/main/wallet" element={<Wallet />} />
-              <Route path="/main/supernodes" element={<Supernodes />} />
-              <Route path="/main/supernodes/vote" element={<SupernodeVote />} />
-              <Route path="/main/supernodes/append" element={<SupernodeAppend />} />
-              <Route path="/main/supernodes/create" element={<SupernodeRegister />} />
-              <Route path="/main/masternodes" element={<Masternodes />} />
-              <Route path="/main/masternodes/register" element={<MasternodeRegister />} />
-              <Route path="/main/masternodes/append" element={<MasternodeAppend />} />
-              <Route path="/main/proposals" element={<Proposals />} />
-              <Route path="/main/proposals/create" element={<ProposalCreate />} />
-              <Route path="/main/proposals/vote" element={<ProposalVote />} />
-              <Route path="/main/gettestcoin" element={<GetTestCoin />} />
-              <Route path="/main/safe3" element={<Safe3 />} />
-              <Route path="/tools/web3" element={<TestMulticall />} />
-              <Route path="/main/menu" element={<Menu />} />
-              <Route path="/main/menu/storage" element={<Storage />} />
-              <Route path="/main/menu/network" element={<Network />} />
-            </Routes>
-          </Col>
-        </Row>
-
-      </Router>
+      {
+        !loading && <>
+          <Web3ReactProvider key={providerKey} connectors={connectors}>
+            <LoopUpdate />
+            {_Router}
+          </Web3ReactProvider>
+        </>
+      }
     </>
   );
 }

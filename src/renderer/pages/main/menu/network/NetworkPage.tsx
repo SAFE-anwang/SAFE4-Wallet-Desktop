@@ -4,26 +4,16 @@ import { useNavigate } from 'react-router-dom';
 import {
   LeftOutlined
 } from '@ant-design/icons';
-import { useWeb3Hooks } from '../../../../connectors/hooks';
-import NetworkCard from '../../../web3reactexample/components/connectorCards/NetworkCard';
 import { network } from '../../../../connectors/network';
+import { useWeb3React } from '@web3-react/core';
 
 const { Title, Text } = Typography;
 
 export default () => {
 
   const navigate = useNavigate();
-  const { useProvider } = useWeb3Hooks();
-  const provider = useProvider();
-
-  useEffect(() => {
-    if (provider) {
-      console.log(provider)
-      provider.getNetwork().then((data) => {
-        console.log(data)
-      })
-    }
-  }, [provider]);
+  const web3React = useWeb3React();
+  const { provider , chainId , connector } = web3React;
 
   return <>
     <Row style={{ height: "50px" }}>
@@ -47,7 +37,7 @@ export default () => {
             </Col>
             <Col span={12}>
               <Text type='secondary'>服务地址(Endpoint)</Text><br />
-              <Text>http://172.23.12.142:8545</Text>
+              <Text>{provider?.connection.url}</Text>
             </Col>
           </Row>
           <Row style={{ marginBottom: "20px" }}>
@@ -57,7 +47,7 @@ export default () => {
             </Col>
             <Col span={12}>
               <Text type='secondary'>网络ID</Text><br />
-              <Text>666666</Text>
+              <Text>{chainId}</Text>
             </Col>
           </Row>
         </Card>
@@ -138,9 +128,7 @@ export default () => {
             </Row>
           </Card>
 
-
           <Divider />
-          <NetworkCard />
 
         </Card>
       </div>
