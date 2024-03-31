@@ -1,8 +1,7 @@
 
 import { Typography, Button, Divider, Statistic, Row, Col, Modal, Tabs, TabsProps, QRCode, Badge } from 'antd';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
 import { useETHBalances, useWalletsActiveAccount, useWalletsActivePrivateKey, useWalletsActiveWallet } from '../../../state/wallets/hooks';
 import { applicationActionUpdateAtCreateWallet, applicationUpdateWalletTab } from '../../../state/application/action';
 import { SendOutlined, QrcodeOutlined, LockOutlined, SecurityScanOutlined } from '@ant-design/icons';
@@ -12,8 +11,8 @@ import WalletLockModal from './Lock/WalletLockModal';
 import History from './tabs/History/History';
 import WalletSendModal from './Send/WalletSendModal';
 import { AppState } from '../../../state';
-import { useWeb3Hooks } from '../../../connectors/hooks';
 import { DateTimeFormat } from '../../../utils/DateUtils';
+import { useWeb3React } from '@web3-react/core';
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -26,8 +25,8 @@ export default () => {
   const latestBlockNumber = useBlockNumber();
   const timestamp = useTimestamp();
   const walletTab = useSelector<AppState, string | undefined>(state => state.application.control.walletTab);
-
   const privateKey = useWalletsActivePrivateKey();
+  const { isActivating, isActive , chainId } = useWeb3React();
 
   const [openReceiveModal, setOpenReceiveModal] = useState<boolean>(false);
   const [openPrivateModal, setOpenPrivateModal] = useState<boolean>(false);
@@ -55,6 +54,20 @@ export default () => {
     dispatch(applicationActionUpdateAtCreateWallet(false));
   }, []);
 
+  const renderConnectStatus = useMemo(() => {
+    if (isActive) {
+      return <Badge status="processing"></Badge>
+    }
+    if (isActivating) {
+      return <Badge status='warning'></Badge>
+    }
+    return <Badge status='error'></Badge>
+  }, [isActivating, isActive]);
+
+  const renderNetworkType = useMemo(() => {
+    return chainId == 6666666 ? <Text type='success'>测试网</Text> : "主网"
+  } , [chainId]);
+
   return (<>
 
     <Row style={{ height: "50px" }}>
@@ -66,10 +79,24 @@ export default () => {
 
       </Col>
       <Col span={12} style={{ textAlign: "right", lineHeight: "70px" }}>
-        <Badge status="processing"></Badge>
-        <Text style={{ marginLeft: "10px" }}>区块高度<Divider type='vertical' style={{ marginLeft: "12px", marginRight: "12px" }} />{latestBlockNumber}</Text>
-        <Divider type='vertical' />
-        <Text type='secondary'>{DateTimeFormat(timestamp * 1000)}</Text>
+        {renderConnectStatus}
+        {
+          isActivating && <>
+            <Text strong style={{ marginLeft: "10px" }}>正在连接</Text>
+          </>
+        }
+        {
+          !isActivating && isActive && <>
+            <Text style={{ marginLeft: "10px" }}>{renderNetworkType}<Divider type='vertical' style={{ marginLeft: "12px", marginRight: "12px" }} />{latestBlockNumber}</Text>
+            <Divider type='vertical' />
+            <Text type='secondary'>{DateTimeFormat(timestamp * 1000)}</Text>
+          </>
+        }
+        {
+          !isActivating && !isActive && <>
+            <Text strong style={{ marginLeft: "10px" }}>网络异常</Text>
+          </>
+        }
       </Col>
     </Row>
     <div style={{ width: "100%", paddingTop: "40px" }}>
@@ -141,7 +168,7 @@ export default () => {
       </Row>
       <Row style={{ width: "300px", textAlign: "center", margin: "auto" }}>
         <Text style={{ margin: "auto", marginTop: "20px", marginBottom: "20px" }} strong>
-          {privateKey && privateKey.replace("0x","")}
+          {privateKey && privateKey.replace("0x", "")}
         </Text>
         <br />
       </Row>

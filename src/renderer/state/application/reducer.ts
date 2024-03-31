@@ -11,9 +11,11 @@ import {
   applicationUpdateWalletTab,
   applicationControlVoteProposal,
   applicationActionConfirmedImport,
+  applicationUpdateWeb3Rpc,
 } from './action';
 import { SupernodeInfo } from '../../structs/Supernode';
 
+import Config from "../../config"
 
 export interface IApplicationState {
   action:{
@@ -42,7 +44,11 @@ export interface IApplicationState {
   blockchain : {
     networkId : "SAFE4" ,
     blockNumber : number,
-    timestamp : number
+    timestamp : number , 
+    web3rpc:{
+      chainId : number, 
+      endpoint : string
+    }
   }
   data : {
     [key:string]  : any
@@ -61,7 +67,11 @@ const initialState: IApplicationState = {
   blockchain:{
     networkId : "SAFE4",
     blockNumber: 0,
-    timestamp : 0
+    timestamp : 0 , 
+    web3rpc : {
+      endpoint : Config.Default_Web3_Endpoint,
+      chainId  : 6666666
+    }
   },
   data:{
 
@@ -158,6 +168,10 @@ export default createReducer(initialState, (builder) => {
 
   .addCase(applicationUpdateWalletTab , (state , {payload}) => {
     state.control.walletTab = payload;
+  })
+
+  .addCase(applicationUpdateWeb3Rpc , (state , {payload}) => {
+    state.blockchain.web3rpc = payload;
   })
 
 })

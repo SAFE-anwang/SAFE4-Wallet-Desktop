@@ -49,6 +49,10 @@ export const applicationUpdateWalletTab = createAction<string>(
   "application/updateWalletTab"
 )
 
+export const applicationUpdateWeb3Rpc = createAction<{endpoint : string , chainId : number}>(
+  "application/updateWeb3Rpc"
+);
+
 export const applicationControlVoteProposal = createAction<number | undefined>(
   "application/controlVoteProposal"
 )

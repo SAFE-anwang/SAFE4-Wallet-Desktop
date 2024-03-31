@@ -5,11 +5,11 @@ import MulticallABI from "../abis/Multicall.json";
 import { Contract } from '@ethersproject/contracts'
 import { useWalletsActivePrivateKey, useWalletsActiveSigner, useWalletsActiveWallet } from "../state/wallets/hooks";
 import { SysContractABI, SystemContract } from "../constants/SystemContracts";
+import { useWeb3React } from "@web3-react/core";
 
 
 export function useContract(address: string | undefined, ABI: any, withSignerIfPossible = true): Contract | null {
-  const { useProvider } = useWeb3Hooks();
-  const provider = useProvider();
+  const { provider } = useWeb3React();
   const activeWallet = useWalletsActiveWallet();
   const signer = useWalletsActiveSigner()
   return useMemo(() => {

@@ -3,7 +3,6 @@ import { CurrencyAmount, JSBI } from '@uniswap/sdk';
 import { ethers } from 'ethers';
 import { useEffect, useMemo, useState } from 'react';
 import { useSelector } from 'react-redux'
-import { useWeb3Hooks } from '../../connectors/hooks';
 import { useAccountManagerContract, useMulticallContract } from '../../hooks/useContracts';
 import { isAddress } from '../../utils';
 import { AppState } from '../index';
@@ -11,7 +10,7 @@ import { useSingleContractMultipleData } from '../multicall/hooks';
 import { Wallet, WalletKeystore } from './reducer';
 import { useBlockNumber } from '../application/hooks';
 import { AccountRecord, IdPageQuery, formatAccountRecord, formatRecordUseInfo } from '../../structs/AccountManager';
-import { EmptyContract } from '../../constants/SystemContracts';
+import { useWeb3React } from '@web3-react/core';
 
 export function useWalletsList(): Wallet[] {
   return useSelector((state: AppState) => {
@@ -51,8 +50,7 @@ export function useWalletsActivePrivateKey(): string | undefined {
 }
 
 export function useWalletsActiveSigner(): ethers.Wallet | undefined {
-  const { useProvider } = useWeb3Hooks();
-  const provider = useProvider();
+  const { provider } = useWeb3React();
   const activePrivateKey = useWalletsActivePrivateKey();
   return activePrivateKey ? new ethers.Wallet(activePrivateKey, provider) : undefined;
 }
@@ -64,7 +62,6 @@ export function useETHBalances(
   uncheckedAddresses?: (string | undefined)[]
 ): { [address: string]: CurrencyAmount | undefined } {
   const multicallContract = useMulticallContract()
-
   const addresses: string[] = useMemo(
     () =>
       uncheckedAddresses
@@ -81,6 +78,8 @@ export function useETHBalances(
     'getEthBalance',
     addresses.map(address => [address])
   )
+
+  console.log("getEthBalance ==" , results)
 
   return useMemo(
     () =>

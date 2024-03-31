@@ -9,6 +9,7 @@ import { Activity2Transaction, TransactionDetails, TransactionsCombine, Transact
 import { fetchAddressActivity } from "../../services/address";
 import { IPC_CHANNEL } from "../../config";
 import { DBAddressActivitySignal, DB_AddressActivity_Methods } from "../../../main/handlers/DBAddressActivitySingalHandler";
+import { useWeb3React } from "@web3-react/core";
 
 export function shouldCheck(
   lastBlockNumber: number,
@@ -33,10 +34,7 @@ export function shouldCheck(
 }
 
 export default () => {
-
-  const { useProvider, useChainId } = useWeb3Hooks();
-  const provider = useProvider();
-  const chainId = useChainId;
+  const { provider , chainId } = useWeb3React();
   const latestBlockNumber = useBlockNumber()
   const dispatch = useDispatch<AppDispatch>()
   const state = useSelector<AppState, AppState['transactions']>(state => state.transactions)

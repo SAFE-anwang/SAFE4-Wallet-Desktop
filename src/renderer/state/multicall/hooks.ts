@@ -1,4 +1,5 @@
 import { BigNumber } from "@ethersproject/bignumber"
+import { useWeb3React } from "@web3-react/core"
 import { Contract } from "ethers"
 import { FunctionFragment, Interface } from "ethers/lib/utils"
 import { useEffect, useMemo } from "react"
@@ -44,8 +45,7 @@ export const NEVER_RELOAD: ListenerOptions = {
 
 // the lowest level call for subscribing to contract data
 function useCallsData(calls: (Call | undefined)[], options?: ListenerOptions): CallResult[] {
-  const { useChainId } = useWeb3Hooks();
-  const chainId = useChainId();
+  const { chainId } = useWeb3React();
   const callResults = useSelector<AppState, AppState['multicall']['callResults']>(state => state.multicall.callResults)
   const dispatch = useDispatch<AppDispatch>()
   const serializedCallKeys: string = useMemo(
@@ -169,7 +169,7 @@ export function useSingleContractMultipleData(
     [callInputs, contract, fragment]
   )
   const results = useCallsData(calls, options)
-  const latestBlockNumber = useBlockNumber()
+  const latestBlockNumber = useBlockNumber();
 
   return useMemo(() => {
     return results.map(result => toCallState(result, contract?.interface, fragment, latestBlockNumber))

@@ -6,7 +6,7 @@ import SelectCreateWallet from './pages/wallet/SelectCreateWallet';
 import SetPassword from './pages/wallet/SetPassword';
 import CreateMnemonic from './pages/wallet/create/CreateMnemonic';
 import WaitingWalletCreate from './pages/wallet/WaitingWalletCreate';
-import { useApplicationActionAtCreateWallet } from './state/application/hooks';
+import { useApplicationActionAtCreateWallet, useApplicationBlockchainWeb3Rpc } from './state/application/hooks';
 import Wallet from './pages/main/wallets/Wallet';
 import TestMulticall from './pages/main/tools/TestMulticall';
 import Menu from './pages/main/menu';
@@ -32,53 +32,59 @@ import { Web3ReactHooks, Web3ReactProvider, initializeConnector } from '@web3-re
 import { hooks as networkHooks, network, initializeConnect } from './connectors/network';
 import LoopUpdate from './LoopUpdate';
 import { Network } from '@web3-react/network';
-import { URLS } from './pages/web3reactexample/chains';
-import { Web3ReactStore } from '@web3-react/types';
-
-const Endpoint0 = "";
-const Endpoint1 = "";
-
-const conn = initializeConnect({
-  1: ["https://cloudflare-eth.com"]
-})
+import { useDispatch } from 'react-redux';
+import { applicationUpdateWeb3Rpc } from './state/application/action';
 
 export default function App() {
+  const dispatch = useDispatch();
   const atCreateWallet = useApplicationActionAtCreateWallet();
-  const [endpoint, setEndpoint] = useState();
+  const web3Rpc = useApplicationBlockchainWeb3Rpc();
+  const [activeWeb3Rpc, setActiveWeb3Rpc] = useState<{
+    chainId: number,
+    endpoint: string
+  } | undefined>();
+  const [connectors, setConnectors] = useState<[Network, Web3ReactHooks][] | undefined>();
   const [loading, setLoading] = useState<boolean>(true);
-
-  const [connectors, setConnectors] = useState<[Network, Web3ReactHooks][]>([
-    [conn[0], conn[1]]
-  ]);
 
   useEffect(() => {
     setTimeout(() => {
       setLoading(false);
-      console.log("hell");
     }, 1000);
   }, []);
 
-  const [providerKey,setProviderKey] = useState<string>("https://cloudflare-eth.com");
+  useEffect(() => {
+    const { chainId, endpoint } = web3Rpc;
+    if (chainId && endpoint) {
+      if (endpoint != activeWeb3Rpc?.endpoint) {
+        const conn = initializeConnect({
+          [chainId]: [endpoint]
+        })
+        setConnectors([
+          [conn[0] , conn[1]]
+        ]);
+        setActiveWeb3Rpc({
+          chainId,
+          endpoint
+        })
+      }
+    }
+  }, [web3Rpc]);
 
   const _Router = <>
+
     <Button onClick={() => {
-      const _conn = initializeConnect({
-        6666666: ["http://172.104.162.94:8545"]
-      })
-      setProviderKey("http://172.104.162.94:8545")
-      setConnectors([
-        [_conn[0], _conn[1]]
-      ]);
-    }}>1</Button>
-        <Button onClick={() => {
-      const _conn = initializeConnect({
-        1: ["https://cloudflare-eth.com"]
-      })
-      setProviderKey("https://cloudflare-eth.com")
-      setConnectors([
-        [_conn[0], _conn[1]]
-      ]);
-    }}>2</Button>
+      dispatch(applicationUpdateWeb3Rpc({
+        chainId: 6666666,
+        endpoint: "http://172.104.162.94:8545"
+      }));
+    }}>Safe4</Button>
+    <Button onClick={() => {
+      dispatch(applicationUpdateWeb3Rpc({
+        chainId: 1,
+        endpoint: "https://cloudflare-eth.com"
+      }));
+    }}>ETH</Button>
+
     <Router>
       <Row style={{
       }}>
@@ -136,10 +142,10 @@ export default function App() {
   return (
     <>
       {
-        !loading && <>
-          <Web3ReactProvider key={providerKey} connectors={connectors}>
+        !loading && connectors && <>
+          <Web3ReactProvider key={activeWeb3Rpc?.endpoint} connectors={connectors}>
             <LoopUpdate />
-            {_Router}
+            { _Router }
           </Web3ReactProvider>
         </>
       }
