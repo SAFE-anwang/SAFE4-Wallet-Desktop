@@ -28,3 +28,5 @@ export const updateMulticallResults = createAction<{
         [callKey: string]: string | null
     }
 }>('updateMulticallResults')
+
+export const clearMulticallState = createAction("clearMulticallState");

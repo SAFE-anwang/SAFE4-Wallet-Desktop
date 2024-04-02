@@ -1,19 +1,52 @@
 import { Typography, Button, Card, Divider, Statistic, Row, Col, Modal, Flex, Tooltip, Tabs, TabsProps, QRCode, Badge, Space, Alert } from 'antd';
-import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   LeftOutlined
 } from '@ant-design/icons';
-import { network } from '../../../../connectors/network';
 import { useWeb3React } from '@web3-react/core';
+import NetworkOption from './NetworkOption';
+import { isSafe4Mainnet, isSafe4Network, isSafe4Testnet } from '../../../../utils/Safe4Network';
 
 const { Title, Text } = Typography;
 
 export default () => {
 
   const navigate = useNavigate();
-  const web3React = useWeb3React();
-  const { provider , chainId , connector } = web3React;
+  const { provider, chainId, isActivating, isActive } = useWeb3React();
+
+  const renderActiveStatus = () => {
+    if ( isActivating ) {
+      return <>
+        <Badge status="warning"></Badge>
+        <Text style={{ marginLeft: "5px" }}>正在连接</Text>
+      </>
+    }
+    if (isActive) {
+      return <>
+        <Badge status="processing"></Badge>
+        <Text style={{ marginLeft: "5px" }}>{renderNetwork()}</Text>
+      </>
+    }
+    return <>
+      <Badge status="error"></Badge>
+      <Text style={{ marginLeft: "5px" }}>网络异常</Text>
+    </>
+  }
+
+  const renderNetwork = () => {
+    if (chainId) {
+      if (isSafe4Network(chainId)) {
+        if (isSafe4Testnet(chainId)) {
+          return <Text type="success">测试网</Text>
+        }
+        if (isSafe4Mainnet(chainId)) {
+          return <Text>主网</Text>
+        }
+      } else {
+        return <Text type="secondary">[{provider?.network.name}]</Text>
+      }
+    }
+  }
 
   return <>
     <Row style={{ height: "50px" }}>
@@ -33,21 +66,11 @@ export default () => {
           <Row style={{ marginBottom: "20px" }}>
             <Col span={12}>
               <Text type='secondary'>网络类型</Text><br />
-              <Text>主网</Text>
+              { renderActiveStatus() }
             </Col>
             <Col span={12}>
               <Text type='secondary'>服务地址(Endpoint)</Text><br />
               <Text>{provider?.connection.url}</Text>
-            </Col>
-          </Row>
-          <Row style={{ marginBottom: "20px" }}>
-            <Col span={12}>
-              <Text type='secondary'>网络名称</Text><br />
-              <Text>Safe4</Text>
-            </Col>
-            <Col span={12}>
-              <Text type='secondary'>网络ID</Text><br />
-              <Text>{chainId}</Text>
             </Col>
           </Row>
         </Card>
@@ -58,78 +81,12 @@ export default () => {
             仅支持 Safe4 网络的端点服务,您也可以连接自己的 Safe4 节点.
           </>} />
 
-          <Card size='small' style={{ marginBottom: "10px" }}>
-            <Row >
-              <Col span={6}>
-                主网
-              </Col>
-              <Col span={12}>
-                http://172.23.12.142:8545
-              </Col>
-              <Col span={6} style={{ textAlign: "center" }}>
-                <Space>
-                  <Button size='small'>
-                    使用
-                  </Button>
-                  <Button size='small'>
-                    删除
-                  </Button>
-                </Space>
-              </Col>
-            </Row>
-          </Card>
-
-          <Card size='small' style={{ marginBottom: "10px" }}>
-            <Row >
-              <Col span={6}>
-                主网
-              </Col>
-              <Col span={12}>
-                http://172.23.12.142:8545
-              </Col>
-              <Col span={6} style={{ textAlign: "center" }}>
-                <Space>
-                  <Button size='small'>
-                    使用
-                  </Button>
-                  <Button size='small'>
-                    删除
-                  </Button>
-                </Space>
-              </Col>
-            </Row>
-          </Card>
-
-          <Card size='small' style={{ marginBottom: "10px" }}>
-            <Row >
-              <Col span={6}>
-                主网
-              </Col>
-              <Col span={12}>
-                http://172.23.12.142:8545
-              </Col>
-              <Col span={6} style={{ textAlign: "center" }}>
-                <Space>
-                  <Button size='small' onClick={() => {
-                     console.log(network);
-                     network.activate(6666666).then( () => {
-                      console.log("lllll")
-                     }).catch( ( error:any ) => {
-                      console.log("error :" , error)
-                     });
-                  }}>
-                    使用
-                  </Button>
-                  <Button size='small'>
-                    删除
-                  </Button>
-                </Space>
-              </Col>
-            </Row>
-          </Card>
+          <NetworkOption endpoint='http://172.104.162.94:8545' />
+          <NetworkOption endpoint='http://47.107.47.210:8545' />
+          <NetworkOption endpoint='https://arb1.arbitrum.io/rpc' />
+          <NetworkOption endpoint='https://polygon-rpc.com' />
 
           <Divider />
-
         </Card>
       </div>
     </div>

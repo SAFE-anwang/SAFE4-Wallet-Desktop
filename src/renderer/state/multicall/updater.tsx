@@ -22,18 +22,15 @@ async function fetchChunk(
 ): Promise<{ results: string[]; blockNumber: number }> {
   let resultsBlockNumber, returnData
   try {
-    console.log("multicall do..." , chunk)
     ;[resultsBlockNumber, returnData] = await multicallContract.callStatic.aggregate(chunk.map(obj => [obj.address, obj.callData]));
   } catch (error) {
     console.debug('Failed to fetch chunk inside retry', error)
     throw error;
   }
-  console.log("returnData >>" , returnData)
   if (resultsBlockNumber.toNumber() < minBlockNumber) {
     console.debug(`Fetched results for old block number: ${resultsBlockNumber.toString()} vs. ${minBlockNumber}`)
     throw new RetryableError('Fetched for old block number')
   }
-  console.log("return multicall returndata..." , returnData)
   return { results: returnData, blockNumber: resultsBlockNumber.toNumber() }
 }
 
@@ -144,9 +141,7 @@ export default () => {
         })
         promise
           .then(({ results: returnData, blockNumber: fetchBlockNumber }) => {
-            console.log("handle multicall returndata >>" , returnData)
             cancellations.current = { cancellations: [], blockNumber: latestBlockNumber }
-
             // accumulates the length of all previous indices
             const firstCallKeyIndex = chunkedCalls.slice(0, index).reduce<number>((memo, curr) => memo + curr.length, 0)
             const lastCallKeyIndex = firstCallKeyIndex + returnData.length
@@ -162,7 +157,6 @@ export default () => {
                 blockNumber: fetchBlockNumber
               })
             )
-            console.log("dispatch multicall returndata >>" , returnData)
           })
           .catch((error: any) => {
             if (error instanceof CancelledError) {

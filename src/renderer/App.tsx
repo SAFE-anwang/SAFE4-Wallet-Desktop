@@ -72,19 +72,6 @@ export default function App() {
 
   const _Router = <>
 
-    <Button onClick={() => {
-      dispatch(applicationUpdateWeb3Rpc({
-        chainId: 6666666,
-        endpoint: "http://172.104.162.94:8545"
-      }));
-    }}>Safe4</Button>
-    <Button onClick={() => {
-      dispatch(applicationUpdateWeb3Rpc({
-        chainId: 1,
-        endpoint: "https://cloudflare-eth.com"
-      }));
-    }}>ETH</Button>
-
     <Router>
       <Row style={{
       }}>

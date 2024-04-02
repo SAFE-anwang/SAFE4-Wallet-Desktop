@@ -1,5 +1,5 @@
 import { createReducer } from "@reduxjs/toolkit"
-import { addMulticallListeners, fetchingMulticallResults, removeMulticallListeners, updateMulticallResults } from "./actions"
+import { addMulticallListeners, clearMulticallState, fetchingMulticallResults, removeMulticallListeners, updateMulticallResults } from "./actions"
 
 export interface MulticallState {
   callListeners?: {
@@ -115,6 +115,10 @@ export default createReducer(initialState, (builder) => {
       })
     })
 
-
+    .addCase(clearMulticallState , ( state , payload ) => {
+      return {
+        callResults : {}
+      }
+    })
 
 })

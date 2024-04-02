@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react"
 import { useDispatch } from "react-redux";
-import { useWeb3Hooks, useWeb3Network } from "../../connectors/hooks";
 import useDebounce from "../../hooks/useDebounce";
 import { applicationBlockchainUpdateBlockNumber } from "./action";
 import { useWeb3React } from "@web3-react/core";
