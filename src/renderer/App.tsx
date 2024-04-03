@@ -34,6 +34,7 @@ import LoopUpdate from './LoopUpdate';
 import { Network } from '@web3-react/network';
 import { useDispatch } from 'react-redux';
 import { applicationUpdateWeb3Rpc } from './state/application/action';
+import Test from './pages/main/tools/Test';
 
 export default function App() {
   const dispatch = useDispatch();
@@ -116,7 +117,7 @@ export default function App() {
             <Route path="/main/proposals/vote" element={<ProposalVote />} />
             <Route path="/main/gettestcoin" element={<GetTestCoin />} />
             <Route path="/main/safe3" element={<Safe3 />} />
-            <Route path="/tools/web3" element={<TestMulticall />} />
+            <Route path="/main/test" element={<Test />} />
             <Route path="/main/menu" element={<Menu />} />
             <Route path="/main/menu/storage" element={<Storage />} />
             <Route path="/main/menu/network" element={<NetworkPage />} />

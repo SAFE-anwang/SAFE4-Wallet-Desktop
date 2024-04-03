@@ -14,6 +14,7 @@ const { Title, Text } = Typography;
 
 
 export default () => {
+
   const data = useSelector<AppState, { [key: string]: any }>(state => state.application.data);
   const navigate = useNavigate();
 
@@ -35,7 +36,7 @@ export default () => {
               <WifiOutlined />
             </Col>
             <Col span={20}>
-              网络 [Mainnet]
+              网络
             </Col>
             <Col span={2} style={{ textAlign: "center" }}>
               <RightOutlined />
