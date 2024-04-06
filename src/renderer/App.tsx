@@ -1,44 +1,30 @@
-import { MemoryRouter as Router, Routes, Route } from 'react-router-dom';
-import { Button, Col, Row } from 'antd';
-import MenuComponent from './pages/components/MenuComponent';
-import Index from './pages/index';
-import SelectCreateWallet from './pages/wallet/SelectCreateWallet';
-import SetPassword from './pages/wallet/SetPassword';
-import CreateMnemonic from './pages/wallet/create/CreateMnemonic';
-import WaitingWalletCreate from './pages/wallet/WaitingWalletCreate';
-import { useApplicationActionAtCreateWallet, useApplicationBlockchainWeb3Rpc } from './state/application/hooks';
-import Wallet from './pages/main/wallets/Wallet';
-import TestMulticall from './pages/main/tools/TestMulticall';
-import Menu from './pages/main/menu';
-import Supernodes from './pages/main/supernodes/Supernodes';
-import Masternodes from './pages/main/masternodes/Masternodes';
-import SupernodeVote from './pages/main/supernodes/Vote/SupernodeVote';
-import SupernodeRegister from './pages/main/supernodes/Register/SupernodeRegister';
-import SupernodeAppend from './pages/main/supernodes/Append/SupernodeAppend';
-import MasternodeRegister from './pages/main/masternodes/Register/MasternodeRegister';
-import MasternodeAppend from './pages/main/masternodes/Append/MasternodeAppend';
-import GetTestCoin from './pages/gettestcoin/GetTestCoin';
-import Proposals from './pages/main/proposals/Proposals';
-import ProposalCreate from './pages/main/proposals/Create/ProposalCreate';
-import ProposalVote from './pages/main/proposals/Vote/ProposalVote';
-import ImportWallet from './pages/wallet/import/ImportWallet';
-import WaitingWalletImport from './pages/wallet/WaitingWalletImport';
-import Safe3 from './pages/main/safe3/Safe3';
-import NetworkPage from './pages/main/menu/network/NetworkPage';
-import Storage from './pages/main/menu/storage/Storage';
-import { useEffect, useState } from 'react';
-
-import { Web3ReactHooks, Web3ReactProvider, initializeConnector } from '@web3-react/core'
+import { Button, Card, Col, Input, Row } from 'antd';
+import { useApplicationBlockchainWeb3Rpc } from './state/application/hooks';
+import { useCallback, useEffect, useState } from 'react';
+import { Web3ReactHooks, Web3ReactProvider } from '@web3-react/core'
 import { hooks as networkHooks, network, initializeConnect } from './connectors/network';
 import LoopUpdate from './LoopUpdate';
 import { Network } from '@web3-react/network';
 import { useDispatch } from 'react-redux';
-import { applicationUpdateWeb3Rpc } from './state/application/action';
-import Test from './pages/main/tools/Test';
+import AppRouters from './pages/AppRouters';
+import { IndexSingal, Index_Methods } from '../main/handlers/IndexSingalHandler';
+import { IPC_CHANNEL } from './config';
+import { applicationDataLoaded, applicationSetPassword } from './state/application/action';
+import { walletsLoadKeystores } from './state/wallets/action';
+const CryptoJS = require('crypto-js');
 
 export default function App() {
   const dispatch = useDispatch();
-  const atCreateWallet = useApplicationActionAtCreateWallet();
+
+  const [walletsKeystores, setWalletKeystores] = useState();
+  const [encrypt, setEncrypt] = useState<{
+    salt: string,
+    iv: string,
+    ciphertext: string
+  }>();
+  const [password, setPassword] = useState<string>();
+  const [passwordError, setPasswordError] = useState<string>();
+
   const web3Rpc = useApplicationBlockchainWeb3Rpc();
   const [activeWeb3Rpc, setActiveWeb3Rpc] = useState<{
     chainId: number,
@@ -48,9 +34,26 @@ export default function App() {
   const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
-    setTimeout(() => {
-      setLoading(false);
-    }, 1000);
+    const method = Index_Methods.load;
+    window.electron.ipcRenderer.sendMessage(IPC_CHANNEL, [IndexSingal, 'load', []]);
+    window.electron.ipcRenderer.once(IPC_CHANNEL, (arg) => {
+      if (arg instanceof Array && arg[0] == IndexSingal && arg[1] == method) {
+        const data = arg[2][0];
+        const {
+          walletKeystores,
+          path,
+          encrypt,
+        } = data;
+        dispatch(applicationDataLoaded({
+          path
+        }));
+        if (encrypt) {
+          setEncrypt(encrypt);
+          return;
+        }
+        setWalletKeystores(walletKeystores);
+      }
+    });
   }, []);
 
   useEffect(() => {
@@ -61,7 +64,7 @@ export default function App() {
           [chainId]: [endpoint]
         })
         setConnectors([
-          [conn[0] , conn[1]]
+          [conn[0], conn[1]]
         ]);
         setActiveWeb3Rpc({
           chainId,
@@ -71,69 +74,59 @@ export default function App() {
     }
   }, [web3Rpc]);
 
-  const _Router = <>
+  const decrypt = useCallback(() => {
+    if (password && encrypt) {
+      const salt = CryptoJS.enc.Hex.parse(encrypt.salt);
+      const ciphertext = CryptoJS.enc.Hex.parse(encrypt.ciphertext);
+      const iv = CryptoJS.enc.Hex.parse(encrypt.iv);
+      const key = CryptoJS.PBKDF2(password, salt, {
+        keySize: 256 / 32,
+        iterations: 1024,
+        hasher: CryptoJS.algo.SHA256
+      });
+      const decrypted = CryptoJS.AES.decrypt(
+        { ciphertext },
+        key,
+        { iv: iv, mode: CryptoJS.mode.CBC, padding: CryptoJS.pad.Pkcs7 }
+      );
+      try {
+        const text = decrypted.toString(CryptoJS.enc.Utf8);
+        const walletKeystores = JSON.parse(text);
+        setWalletKeystores(walletKeystores);
+        dispatch(applicationSetPassword(password));
+      } catch (err) {
+        console.log("decrypt error:", err)
+      }
+    }
+  }, [password, encrypt]);
 
-    <Router>
-      <Row style={{
-      }}>
-        {
-          !atCreateWallet && <Col span={6} style={{
-            position: "fixed",
-            width: "230px"
-          }}>
-            <MenuComponent />
-          </Col>
-        }
-        <Col id='appContainer' span={18} style={{
-          minWidth: "1200px",
-          position: "fixed",
-          overflowX: "auto",
-          overflowY: "auto",
-          top: "0",
-          right: "0",
-          bottom: "0",
-          left: "235px",
-          paddingLeft: "20px",
-          paddingBottom: "20px",
-        }}>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/selectCreateWallet" element={<SelectCreateWallet />} />
-            <Route path="/setPassword" element={<SetPassword />} />
-            <Route path="/wallet/createMnemonic" element={<CreateMnemonic />} />
-            <Route path="/wallet/importWallet" element={<ImportWallet />} />
-            <Route path="/waitingCreateWallet" element={<WaitingWalletCreate />} />
-            <Route path="/waitingImportWallet" element={<WaitingWalletImport />} />
-            <Route path="/main/wallet" element={<Wallet />} />
-            <Route path="/main/supernodes" element={<Supernodes />} />
-            <Route path="/main/supernodes/vote" element={<SupernodeVote />} />
-            <Route path="/main/supernodes/append" element={<SupernodeAppend />} />
-            <Route path="/main/supernodes/create" element={<SupernodeRegister />} />
-            <Route path="/main/masternodes" element={<Masternodes />} />
-            <Route path="/main/masternodes/register" element={<MasternodeRegister />} />
-            <Route path="/main/masternodes/append" element={<MasternodeAppend />} />
-            <Route path="/main/proposals" element={<Proposals />} />
-            <Route path="/main/proposals/create" element={<ProposalCreate />} />
-            <Route path="/main/proposals/vote" element={<ProposalVote />} />
-            <Route path="/main/gettestcoin" element={<GetTestCoin />} />
-            <Route path="/main/safe3" element={<Safe3 />} />
-            <Route path="/main/test" element={<Test />} />
-            <Route path="/main/menu" element={<Menu />} />
-            <Route path="/main/menu/storage" element={<Storage />} />
-            <Route path="/main/menu/network" element={<NetworkPage />} />
-          </Routes>
-        </Col>
-      </Row>
-    </Router>
-  </>
-
+  useEffect(() => {
+    if (walletsKeystores) {
+      dispatch(walletsLoadKeystores(walletsKeystores));
+    }
+  }, [walletsKeystores]);
+  
   return (
     <>
       {
-        !loading && connectors && <>
+        !walletsKeystores && <>
+          <Row style={{ marginTop: "100px" }}>
+            <Card style={{ width: "50%", margin: "auto" }}>
+              <Input.Password onChange={(event) => {
+                setPassword(event.target.value)
+              }} />
+              <Button onClick={decrypt} type='primary' size='large' style={{ width: "100%", marginTop: "20px" }}>
+                确认
+              </Button>
+            </Card>
+          </Row>
+        </>
+      }
+      {
+        walletsKeystores && connectors && <>
           <Web3ReactProvider key={activeWeb3Rpc?.endpoint} connectors={connectors}>
             <LoopUpdate />
-            { _Router }
+            <AppRouters />
           </Web3ReactProvider>
         </>
       }

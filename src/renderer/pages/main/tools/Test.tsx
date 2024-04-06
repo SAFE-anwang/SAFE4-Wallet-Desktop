@@ -6,27 +6,34 @@ const CryptoJS = require('crypto-js');
 
 export default () => {
 
-  const privateKey = useWalletsActivePrivateKey();
-
   useEffect(() => {
+
     // 定义密码和待加密的数据
     const password = 'MySecretPassword123'; // 密码
     const dataToEncrypt = 'Hello, world!';   // 待加密的数据
+
+    const salt = CryptoJS.lib.WordArray.random(32);
     // 使用 PBKDF2 派生密钥
-    const key = CryptoJS.PBKDF2(password, 'safe4.wallet.salt', {
+    const key = CryptoJS.PBKDF2(password, salt, {
       keySize: 256 / 32,
-      iterations: 1000 ,
+      iterations: 1024 ,
       hasher: CryptoJS.algo.SHA256
     });
-    console.log("key :>>" , key.toString())
-    // const key = CryptoJS.enc.Utf8.parse("936afc503717c78da8e705246dcbac7492725b799fae80a0305dcd0d076ca507");  //十六位十六进制数作为密钥
     const iv = CryptoJS.lib.WordArray.random(16);
+
     // AES 加密
-    const encryptedData = CryptoJS.AES.encrypt(dataToEncrypt, key, { iv: iv, mode: CryptoJS.mode.CBC, padding: CryptoJS.pad.Pkcs7 });
-    console.log('Encrypted Data:', encryptedData.toString());
+    const encrypt = CryptoJS.AES.encrypt(dataToEncrypt, key, { iv: iv, mode: CryptoJS.mode.CBC, padding: CryptoJS.pad.Pkcs7 });
+    const ciphertext = encrypt.ciphertext.toString(CryptoJS.enc.Hex);
+    console.log("ciphertext:" , ciphertext)
+
     // console.log(CryptoJS.AES.encrypt)
     // // AES 解密
-    const decryptedData = CryptoJS.AES.decrypt(encryptedData, key, { iv: iv, mode: CryptoJS.mode.CBC, padding: CryptoJS.pad.Pkcs7 });
+    const decryptedData = CryptoJS.AES.decrypt( 
+      { ciphertext : CryptoJS.enc.Hex.parse(ciphertext) } , 
+      key, 
+      { iv: iv, mode: CryptoJS.mode.CBC, padding: CryptoJS.pad.Pkcs7 }
+    );
+
     console.log('Decrypted Data:', decryptedData.toString(CryptoJS.enc.Utf8));
 
 

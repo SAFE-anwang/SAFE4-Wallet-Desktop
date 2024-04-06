@@ -4,7 +4,9 @@ import { Context } from "./Context";
 import { ListenSignalHandler } from "./ListenSignalHandler";
 import * as bip39 from 'bip39';
 import { base58 } from "ethers/lib/utils";
+
 const fs = require('fs');
+const CryptoJS = require('crypto-js');
 
 export const WalletSignal = "wallet";
 export const Wallet_Keystore_FileName = "safe4wallet.keystores.json";
@@ -12,7 +14,7 @@ export const Wallet_Keystore_FileName = "safe4wallet.keystores.json";
 export enum Wallet_Methods {
   generateMnemonic = "generateMnemonic",
   generateWallet = "generateWallet",
-  storeWallet = "storeWallet"
+  storeWallet = "storeWallet" 
 }
 
 export class WalletSignalHandler implements ListenSignalHandler {
@@ -20,8 +22,8 @@ export class WalletSignalHandler implements ListenSignalHandler {
   getSingal(): string {
     return WalletSignal;
   }
-  ctx : Context
-  constructor( ctx : Context ) {
+  ctx: Context
+  constructor(ctx: Context) {
     this.ctx = ctx;
   }
 
@@ -32,9 +34,9 @@ export class WalletSignalHandler implements ListenSignalHandler {
     if (Wallet_Methods.generateMnemonic == method) {
       data = this.generateMnemonic();
     } else if (Wallet_Methods.generateWallet == method) {
-      try{
+      try {
         data = await this.gennerateWallet(params);
-      }catch( err : any ){
+      } catch (err: any) {
         data = err;
       }
     } else if (Wallet_Methods.storeWallet == method) {
@@ -47,30 +49,50 @@ export class WalletSignalHandler implements ListenSignalHandler {
     return bip39.generateMnemonic();
   }
 
-  private async storeWallet( params: any[] ){
+  private async storeWallet(params: any[]) {
     const walletList = params[0];
+    const applicationPassword = params[1];
     const content = JSON.stringify(walletList);
-    try{
-      const base58EncodeContent = base58.encode(new Buffer(content , "utf-8"));
-      await fs.writeFileSync( this.ctx.path.keystores, base58EncodeContent, 'utf8');
+    try {
+      // pbkdf2 the password with rondom-salt(32 byte length)
+      const salt = CryptoJS.lib.WordArray.random(32);
+      const aesKey = CryptoJS.PBKDF2(applicationPassword, salt, {
+        keySize: 256 / 32,
+        iterations: 1024,
+        hasher: CryptoJS.algo.SHA256
+      });
+      // aes by secret with random-iv(16 byte length)
+      const iv = CryptoJS.lib.WordArray.random(16);
+      const encrypt = CryptoJS.AES.encrypt(
+        content, aesKey, 
+        { iv: iv, mode: CryptoJS.mode.CBC, padding: CryptoJS.pad.Pkcs7 }
+      );
+      const json = JSON.stringify({
+        salt : CryptoJS.enc.Hex.stringify(salt) , 
+        iv : CryptoJS.enc.Hex.stringify(iv),
+        ciphertext : encrypt.ciphertext.toString(CryptoJS.enc.Hex)
+      }); 
+      // base58
+      const base58Encode = base58.encode( ethers.utils.toUtf8Bytes(json) );
+      await fs.writeFileSync(this.ctx.path.keystores, base58Encode, 'utf8');
       return {
         success: true,
         path: Wallet_Keystore_FileName
       }
-    }catch( err : any ){
+    } catch (err: any) {
       return {
-        success : false,
-        reason : err
+        success: false,
+        reason: err
       }
     }
   }
 
-  private async gennerateWallet( params: any[] ) {
+  private async gennerateWallet(params: any[]) {
     const mnemonic = params[0];
     const password = params[1];
     const path = "m/44'/60'/0'/0/" + 0;
-    const wallet = ethers.Wallet.fromMnemonic(mnemonic,path);
-    const { privateKey , publicKey , address } = wallet;
+    const wallet = ethers.Wallet.fromMnemonic(mnemonic, path);
+    const { privateKey, publicKey, address } = wallet;
     return {
       mnemonic,
       path,

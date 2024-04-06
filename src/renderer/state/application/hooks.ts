@@ -1,6 +1,7 @@
 
 import { useSelector } from 'react-redux'
 import { AppState } from '../index';
+import { AfterSetPasswordTODO } from './reducer';
 
 
 export function useBlockNumber(): number {
@@ -43,6 +44,24 @@ export function useApplicationActionAtCreateWallet(): boolean {
 export function useApplicationBlockchainWeb3Rpc() : { endpoint : string , chainId : number } {
   return useSelector((state: AppState) => {
     return state.application.blockchain.web3rpc;
+  })
+}
+
+export function hasApplicationPasswordSetted() : boolean {
+  return useSelector((state: AppState) => {
+    return state.application.encrypt?.password ? true : false;
+  })
+}
+
+export function useApplicationAfterSetPasswordTODO() : AfterSetPasswordTODO {
+  return useSelector((state: AppState) => {
+    return state.application.action.afterSetPasswordTODO;
+  })
+}
+
+export function useApplicationPassword() : string | undefined {
+  return useSelector((state: AppState) => {
+    return state.application.encrypt?.password;
   })
 }
 

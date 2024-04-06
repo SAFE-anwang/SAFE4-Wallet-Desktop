@@ -3,9 +3,10 @@ import { PlusCircleTwoTone, VerticalAlignBottomOutlined, CloseOutlined } from '@
 import { useNavigate } from "react-router-dom";
 import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { applicationActionUpdateAtCreateWallet } from "../../state/application/action";
+import { applicationActionUpdateAtCreateWallet, applicationUpdateAfterSetPasswordTODO } from "../../state/application/action";
 import { useWalletsList } from "../../state/wallets/hooks";
-import { AppState } from "../../state";
+import { hasApplicationPasswordSetted } from "../../state/application/hooks";
+import { AfterSetPasswordTODO } from "../../state/application/reducer";
 
 const { Text } = Typography;
 
@@ -14,19 +15,28 @@ export default () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const walletsList = useWalletsList();
+  const applicationPasswordSetted = hasApplicationPasswordSetted();
 
   const createWalletClick = () => {
-    navigate("/wallet/createMnemonic")
+    if ( applicationPasswordSetted ){
+      navigate("/wallet/createMnemonic")
+    }else{
+      dispatch(applicationUpdateAfterSetPasswordTODO( AfterSetPasswordTODO.CREATE ))
+      navigate("/setPassword");
+    }
   }
   const importWalletClick = () => {
-    navigate("/wallet/importWallet")
+    if ( applicationPasswordSetted ){
+      navigate("/wallet/importWallet")
+    }else{
+      dispatch(applicationUpdateAfterSetPasswordTODO( AfterSetPasswordTODO.IMPORT ))
+      navigate("/setPassword");
+    }
   }
 
   const closeClick = () => {
     navigate("/main/wallet");
   }
-
-  const applicationData = useSelector<AppState, { [key: string]: any }>(state => state.application.data);
 
   useEffect(() => {
     dispatch(applicationActionUpdateAtCreateWallet(true))

@@ -1,7 +1,7 @@
 import { Alert, Spin, Steps, StepProps, Card, Divider } from "antd"
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useNewMnemonic } from "../../state/application/hooks";
+import { useApplicationPassword, useNewMnemonic } from "../../state/application/hooks";
 import { IPC_CHANNEL } from "../../config";
 import { WalletSignal, Wallet_Methods } from "../../../main/handlers/WalletSignalHandler";
 import { useDispatch } from "react-redux";
@@ -14,6 +14,7 @@ export default () => {
 
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const password = useApplicationPassword();
   const newMnemonic = useNewMnemonic();
   const walletsKeystores = useWalletsKeystores();
 
@@ -104,8 +105,8 @@ export default () => {
   }, [newMnemonic]);
 
   useEffect(() => {
-    if (newWalletKeystore?.address) {
-      window.electron.ipcRenderer.sendMessage(IPC_CHANNEL, [WalletSignal, Wallet_Methods.storeWallet, [walletsKeystores]]);
+    if (newWalletKeystore?.address && password) {
+      window.electron.ipcRenderer.sendMessage(IPC_CHANNEL, [WalletSignal, Wallet_Methods.storeWallet, [walletsKeystores,password]]);
     }
   }, [newWalletKeystore])
 

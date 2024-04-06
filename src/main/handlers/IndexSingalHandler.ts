@@ -1,9 +1,9 @@
-import {  Channel } from "../ApplicationIpcManager";
+import { Channel } from "../ApplicationIpcManager";
 import { ListenSignalHandler } from "./ListenSignalHandler";
 import { Context } from "./Context";
-import { base58 } from "ethers/lib/utils";
-const fs = require("fs");
+import { ethers } from "ethers";
 
+const fs = require("fs");
 export const IndexSingal = "index";
 
 export enum Index_Methods {
@@ -12,24 +12,22 @@ export enum Index_Methods {
 
 export class IndexSingalHandler implements ListenSignalHandler {
 
-  getSingal(): string {
+  getSingal(): string { 
     return IndexSingal;
   }
-
-  private db : any;
-  private ctx : Context;
-
-  public getSqlite3DB() : any{
+  private db: any;
+  private ctx: Context;
+  public getSqlite3DB(): any {
     return this.db;
   }
 
-  constructor( ctx : Context , DBConnectedCallback : () => void ){
+  constructor(ctx: Context, DBConnectedCallback: () => void) {
     this.ctx = ctx;
     const sqlite3 = require('sqlite3').verbose();
     const database = ctx.path.database;
-    console.log("[sqlite3] Connect DB path :" ,database)
-    this.db = new sqlite3.Database(
-      database,
+    console.log("[sqlite3] Connect DB path :", database)
+    this.db = new sqlite3.Database( 
+      database, 
       function (err: any) {
         if (err) {
           return;
@@ -38,48 +36,71 @@ export class IndexSingalHandler implements ListenSignalHandler {
         DBConnectedCallback();
       }
     )
+
   }
 
   handleOn(event: Electron.IpcMainEvent, ...args: any[]): void {
     const method: string = args[0][1];
     const params: any[] = args[0][2];
     let data = undefined;
-    if ( method == Index_Methods.load ){
+    if (method == Index_Methods.load) { 
       data = this.load();
     }
-    event.reply(Channel, [this.getSingal(), method , [data] ])
+    event.reply(Channel, [this.getSingal(), method, [data]])
   }
 
-  private load() : any {
-    const walletKeystores = this.loadWalletKeystores();
+  private load(): any {
+    const { walletKeystores, encrypt } = this.loadWalletKeystores();
     return {
-      path : this.ctx.path,
-      walletKeystores
+      path: this.ctx.path,
+      walletKeystores,
+      encrypt
     }
   }
 
-  private loadWalletKeystores() : any {
-    let walletKeystores : any[] = [];
+  private loadWalletKeystores(): { walletKeystores ?: any , encrypt ?: any } {
+    let walletKeystores: any = []; 
     let safe4walletKeyStoresContent = undefined;
-    try{
+    let encrypt : {
+      salt : string,
+      iv : string,
+      ciphertext : string
+    };
+    try {
       safe4walletKeyStoresContent = fs.readFileSync(
-        this.ctx.path.keystores , "utf8");
-    }catch(err){
-      console.error(`No ${ this.ctx.path.keystores } found`)
+        this.ctx.path.keystores, "utf8");
+    } catch (err) {
+      console.error(`No ${this.ctx.path.keystores} found`)
     }
-    try{
-      if ( safe4walletKeyStoresContent ){
-        const base58Decode = new Buffer(base58.decode(safe4walletKeyStoresContent)).toString();
-        walletKeystores = JSON.parse(base58Decode);
-        if ( ! (walletKeystores instanceof Array) ){
-          console.error(`${this.ctx.path.keystores} 损坏`);
+    try {
+      if (safe4walletKeyStoresContent) {
+        const base58DecodeResult = JSON.parse(
+          ethers.utils.toUtf8String(
+            ethers.utils.base58.decode(safe4walletKeyStoresContent)
+          )
+        );
+        console.log("Load safe4.wallet.keystores:", base58DecodeResult);
+        if (base58DecodeResult instanceof Array) {
+          console.log("Un encrypt safe4.wallet.keystores")
+          walletKeystores = base58DecodeResult;
+        } else if (base58DecodeResult instanceof Object) {
+          console.log("Encrypted safe4.wallet.keystores")
+          encrypt = {
+            ...base58DecodeResult
+          }
+          return {
+            walletKeystores , 
+            encrypt
+          }
         }
       }
-    }catch(err){
+    } catch (err) {
       console.error(`${this.ctx.path.keystores} 损坏`);
     }
     console.log(`Finish Load ${this.ctx.path.keystores}`)
-    return walletKeystores;
+    return {
+      walletKeystores
+    };
   }
 
 }

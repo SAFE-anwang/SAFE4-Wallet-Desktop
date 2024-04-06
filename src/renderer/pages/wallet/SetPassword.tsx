@@ -1,23 +1,78 @@
-import { Button, Col, Divider, Input, Row, Tag, Typography } from "antd";
+import { Alert, Button, Col, Divider, Input, Row, Tag, Typography } from "antd";
 import { LeftOutlined, LockOutlined } from '@ant-design/icons';
 import { useNavigate } from "react-router-dom";
+import { useApplicationAfterSetPasswordTODO } from "../../state/application/hooks";
+import { useCallback, useMemo, useState } from "react";
+import { AfterSetPasswordTODO } from "../../state/application/reducer";
+import { useDispatch } from "react-redux";
+import { applicationSetPassword } from "../../state/application/action";
 
 const { Text } = Typography;
 
+const PasswordRegex = /.{8,}/;
 
 export default () => {
-
     const navigate = useNavigate();
+    const dispatch = useDispatch();
+    const afterSetPasswordTODO = useApplicationAfterSetPasswordTODO();
+
+    const [password, setPassword] = useState<{
+        passwordInput?: string,
+        passwordConfirm?: string
+    }>();
+    const [inputErrors, setInputErrors] = useState<{
+        passwordInput?: string,
+        passwordConfirm?: string
+    }>();
 
     const goBackClick = () => {
         navigate("/selectCreateWallet")
     }
+
     const goNextClick = () => {
-        navigate("/wallet/createMnemonic")
+        if (passwordCheck() && password?.passwordInput){
+            dispatch( applicationSetPassword(password.passwordInput) )
+            if ( afterSetPasswordTODO == AfterSetPasswordTODO.CREATE ){
+                navigate("/wallet/createMnemonic")
+            }else if ( afterSetPasswordTODO == AfterSetPasswordTODO.IMPORT ){
+                navigate("/wallet/importWallet")
+            }
+        }
     }
 
+    const nextClickAble = useMemo(() => {
+        if (password) {
+            return password.passwordConfirm && password.passwordInput;
+        }
+        return false;
+    }, [password]);
+
+    const passwordCheck = useCallback(() => {
+        if (password?.passwordInput && password.passwordConfirm) {
+            const { passwordInput, passwordConfirm } = password;
+            if (!PasswordRegex.test(passwordInput)) {
+                setInputErrors({
+                    ...inputErrors,
+                    passwordInput: "密码长度必须大于8,且必须包含大小写字母及特殊符号"
+                });
+                return false;
+            }
+            if (passwordConfirm != passwordInput) {
+                setInputErrors({
+                    ...inputErrors,
+                    passwordConfirm: "两次密码输入不一致"
+                });
+                return false;
+            }
+            setInputErrors(undefined);
+            return true;
+        }
+        return false;
+    }, [password]);
+
     return <>
-        <Button style={{marginTop:"12px"}} size="large" shape="circle" icon={<LeftOutlined />} onClick={goBackClick} />
+        {afterSetPasswordTODO}
+        <Button style={{ marginTop: "12px" }} size="large" shape="circle" icon={<LeftOutlined />} onClick={goBackClick} />
         <Row style={{
             marginTop: "20px"
         }}>
@@ -28,16 +83,50 @@ export default () => {
                             fontSize: "28px"
                         }} strong>设置密码</Text>
                         <br /> <br /> <br /> <br />
-                        <Input.Password placeholder="至少8位字符" size="large" style={{
+                        <Input.Password onChange={(event) => {
+                            setPassword({
+                                ...password,
+                                passwordInput: event.target.value
+                            })
+                            setInputErrors({
+                                ...inputErrors,
+                                passwordInput: undefined
+                            })
+                        }} placeholder="至少8位字符" size="large" style={{
                             height: "56px"
                         }} />
-                        <br /> <br /> <br />
-                        <Input.Password placeholder="确认密码" size="large" style={{
+                        <br />
+                        {
+                            inputErrors?.passwordInput && <>
+                                <Alert style={{ marginTop: "5px" }} type="error" showIcon message={<>
+                                    {inputErrors?.passwordInput}
+                                </>} />
+                            </>
+                        }
+                        <br /> <br />
+                        <Input.Password onChange={(event) => {
+                            setPassword({
+                                ...password,
+                                passwordConfirm: event.target.value
+                            });
+                            setInputErrors({
+                                ...inputErrors,
+                                passwordConfirm: undefined
+                            })
+                        }} placeholder="确认密码" size="large" style={{
                             height: "56px"
                         }} />
-                        <br /> <br /> <br />
-                        <Button onClick={goNextClick} style={{
-                            width: "100%", height: "56px", fontSize: "18px" , background:"#2bbb2b" , color:"white"
+                        <br />
+                        {
+                            inputErrors?.passwordConfirm && <>
+                                <Alert style={{ marginTop: "5px" }} type="error" showIcon message={<>
+                                    {inputErrors?.passwordConfirm}
+                                </>} />
+                            </>
+                        }
+                        <br /> <br />
+                        <Button disabled={!nextClickAble} type="primary" onClick={goNextClick} style={{
+                            width: "100%", height: "56px", fontSize: "18px"
                         }}>继续</Button>
                     </Col>
                     <Col span={4}>
