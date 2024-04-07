@@ -1,6 +1,6 @@
-import { Button, Card, Col, Input, Row } from 'antd';
+import { Alert, Button, Card, Col, Image, Input, Row, Typography } from 'antd';
 import { useApplicationBlockchainWeb3Rpc } from './state/application/hooks';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Web3ReactHooks, Web3ReactProvider } from '@web3-react/core'
 import { hooks as networkHooks, network, initializeConnect } from './connectors/network';
 import LoopUpdate from './LoopUpdate';
@@ -11,9 +11,13 @@ import { IndexSingal, Index_Methods } from '../main/handlers/IndexSingalHandler'
 import { IPC_CHANNEL } from './config';
 import { applicationDataLoaded, applicationSetPassword } from './state/application/action';
 import { walletsLoadKeystores } from './state/wallets/action';
+import SAFE_LOGO from './assets/logo/SAFE.png'
 const CryptoJS = require('crypto-js');
 
+const { Text } = Typography;
+
 export default function App() {
+
   const dispatch = useDispatch();
 
   const [walletsKeystores, setWalletKeystores] = useState();
@@ -24,6 +28,7 @@ export default function App() {
   }>();
   const [password, setPassword] = useState<string>();
   const [passwordError, setPasswordError] = useState<string>();
+
 
   const web3Rpc = useApplicationBlockchainWeb3Rpc();
   const [activeWeb3Rpc, setActiveWeb3Rpc] = useState<{
@@ -95,7 +100,8 @@ export default function App() {
         setWalletKeystores(walletKeystores);
         dispatch(applicationSetPassword(password));
       } catch (err) {
-        console.log("decrypt error:", err)
+        console.log("decrypt error:", err);
+        setPasswordError("输入正确的密码才能打开本地加密文件");
       }
     }
   }, [password, encrypt]);
@@ -105,19 +111,38 @@ export default function App() {
       dispatch(walletsLoadKeystores(walletsKeystores));
     }
   }, [walletsKeystores]);
-  
+
   return (
     <>
       {
         !walletsKeystores && <>
-          <Row style={{ marginTop: "100px" }}>
-            <Card style={{ width: "50%", margin: "auto" }}>
-              <Input.Password onChange={(event) => {
-                setPassword(event.target.value)
-              }} />
-              <Button onClick={decrypt} type='primary' size='large' style={{ width: "100%", marginTop: "20px" }}>
-                确认
-              </Button>
+          <Row style={{ marginTop: "20%" }}>
+            <Card style={{ width:"400px", margin: "auto", boxShadow: "5px 5px 10px #888888" }}>
+              <Row>
+                <Col span={24} style={{ textAlign: "center" }}>
+                  <Image style={{ marginTop: "10px", width: "80%" }} src={SAFE_LOGO} />
+                </Col>
+                <Col span={24} style={{ textAlign: "center", marginTop: "10px" }}>
+                  <Text style={{ fontSize: "28px" }}>Safe4</Text>
+                </Col>
+                <Col span={24} style={{ textAlign: "center", marginTop: "10px" }}>
+                  <Text type='secondary' style={{ fontSize: "18px" }}>即将进入去中心化网络</Text>
+                </Col>
+                <Col span={24} style={{ marginTop: "20px" }}>
+                  <Input.Password size='large' onChange={(event) => {
+                    setPassword(event.target.value);
+                    setPasswordError(undefined);
+                  }} placeholder='输入密码' />
+                  {
+                    passwordError && <>
+                      <Alert style={{ marginTop: "5px" }} type='error' showIcon message={passwordError} />
+                    </>
+                  }
+                </Col>
+                <Button disabled={password ? false : true} onClick={decrypt} type='primary' size='large' style={{ width: "100%", marginTop: "20px" }}>
+                  解锁
+                </Button>
+              </Row>
             </Card>
           </Row>
         </>
