@@ -12,7 +12,7 @@ export enum Index_Methods {
 
 export class IndexSingalHandler implements ListenSignalHandler {
 
-  getSingal(): string { 
+  getSingal(): string {
     return IndexSingal;
   }
   private db: any;
@@ -26,8 +26,8 @@ export class IndexSingalHandler implements ListenSignalHandler {
     const sqlite3 = require('sqlite3').verbose();
     const database = ctx.path.database;
     console.log("[sqlite3] Connect DB path :", database)
-    this.db = new sqlite3.Database( 
-      database, 
+    this.db = new sqlite3.Database(
+      database,
       function (err: any) {
         if (err) {
           return;
@@ -36,35 +36,52 @@ export class IndexSingalHandler implements ListenSignalHandler {
         DBConnectedCallback();
       }
     )
-
   }
 
-  handleOn(event: Electron.IpcMainEvent, ...args: any[]): void {
+  async handleOn(event: Electron.IpcMainEvent, ...args: any[]) {
     const method: string = args[0][1];
     const params: any[] = args[0][2];
     let data = undefined;
-    if (method == Index_Methods.load) { 
-      data = this.load();
+    if (method == Index_Methods.load) {
+      data = await this.load();
     }
     event.reply(Channel, [this.getSingal(), method, [data]])
   }
 
-  private load(): any {
+  private async load() {
     const { walletKeystores, encrypt } = this.loadWalletKeystores();
+    const rpc_configs = await this.loadRpcConfig();
     return {
       path: this.ctx.path,
       walletKeystores,
-      encrypt
+      encrypt,
+      rpc_configs,
     }
   }
 
-  private loadWalletKeystores(): { walletKeystores ?: any , encrypt ?: any } {
-    let walletKeystores: any = []; 
+  private loadRpcConfig(): Promise<any> {
+    return new Promise((resolve, reject) => {
+      this.db.all(
+        "SELECT * FROM Rpc_Config",
+        [],
+        (err: any, rows: any) => {
+          if (err) {
+            reject(err)
+            return;
+          }
+          resolve(rows);
+        }
+      )
+    });
+  }
+
+  private loadWalletKeystores(): { walletKeystores?: any, encrypt?: any } {
+    let walletKeystores: any = [];
     let safe4walletKeyStoresContent = undefined;
-    let encrypt : {
-      salt : string,
-      iv : string,
-      ciphertext : string
+    let encrypt: {
+      salt: string,
+      iv: string,
+      ciphertext: string
     };
     try {
       safe4walletKeyStoresContent = fs.readFileSync(
@@ -79,17 +96,17 @@ export class IndexSingalHandler implements ListenSignalHandler {
             ethers.utils.base58.decode(safe4walletKeyStoresContent)
           )
         );
-        console.log("Load safe4.wallet.keystores:", base58DecodeResult);
+        // console.log("Load safe4.wallet.keystores:", base58DecodeResult);
         if (base58DecodeResult instanceof Array) {
-          console.log("Un encrypt safe4.wallet.keystores")
+          console.log("Load Unencrypt safe4.wallet.keystores");
           walletKeystores = base58DecodeResult;
         } else if (base58DecodeResult instanceof Object) {
-          console.log("Encrypted safe4.wallet.keystores")
+          console.log("Load Encrypted safe4.wallet.keystores");
           encrypt = {
             ...base58DecodeResult
           }
           return {
-            walletKeystores , 
+            walletKeystores,
             encrypt
           }
         }

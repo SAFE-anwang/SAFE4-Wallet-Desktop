@@ -5,7 +5,6 @@ import { Menu, Switch } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import WalletSwitchComponent from './WalletSwitchComponent';
 
-
 type MenuItem = Required<MenuProps>['items'][number];
 
 function getItem(
@@ -30,7 +29,7 @@ const items: MenuItem[] = [
   getItem("主节点", '/main/masternodes', <ApartmentOutlined />),
   getItem("提案", '/main/proposals', <FilePptOutlined />),
   getItem("Safe3 资产迁移", '/main/safe3', <ApiOutlined />),
-  getItem("Test", '/main/test', <ApiOutlined />),
+  // getItem("Test", '/main/test', <ApiOutlined />),
   getItem('领取测试币', '/main/gettestcoin', <AppstoreOutlined />),
 ];
 

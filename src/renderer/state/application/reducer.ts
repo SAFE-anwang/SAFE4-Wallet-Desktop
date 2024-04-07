@@ -38,7 +38,7 @@ export interface IApplicationState {
       privateKey?: string,
       address?: string
     },
-    // 
+    //
     afterSetPasswordTODO :AfterSetPasswordTODO
   }
   control: {
@@ -53,17 +53,17 @@ export interface IApplicationState {
     networkId: "SAFE4",
     blockNumber: number,
     timestamp: number,
-    web3rpc: {
+    web3rpc ?: {
       chainId: number,
       endpoint: string
     }
   }
   data: {
     [key: string]: any
-  } , 
-  
+  } ,
+
   encrypt ?: {
-    password ?: string , 
+    password ?: string ,
     salt ?: string,
     iv ?: string,
     ciphertext ?: string
@@ -85,10 +85,6 @@ const initialState: IApplicationState = {
     networkId: "SAFE4",
     blockNumber: 0,
     timestamp: 0,
-    web3rpc: {
-      endpoint: Config.Default_Web3_Endpoint,
-      chainId: 6666666
-    }
   },
   data: {
 
@@ -146,7 +142,7 @@ export default createReducer(initialState, (builder) => {
         }
       }
     })
-    
+
     .addCase(applicationUpdateAfterSetPasswordTODO, (state, { payload }) => {
       return {
         ...state,

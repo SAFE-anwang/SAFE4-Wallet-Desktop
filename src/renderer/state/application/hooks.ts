@@ -41,7 +41,7 @@ export function useApplicationActionAtCreateWallet(): boolean {
   })
 }
 
-export function useApplicationBlockchainWeb3Rpc() : { endpoint : string , chainId : number } {
+export function useApplicationBlockchainWeb3Rpc() : { endpoint : string , chainId : number } | undefined {
   return useSelector((state: AppState) => {
     return state.application.blockchain.web3rpc;
   })

@@ -83,8 +83,9 @@ export default () => {
 
           <NetworkOption endpoint='http://172.104.162.94:8545' />
           <NetworkOption endpoint='http://47.107.47.210:8545' />
-          <NetworkOption endpoint='https://arb1.arbitrum.io/rpc' />
-          <NetworkOption endpoint='https://polygon-rpc.com' />
+
+          {/* <NetworkOption endpoint='https://arb1.arbitrum.io/rpc' />
+          <NetworkOption endpoint='https://polygon-rpc.com' /> */}
 
           <Divider />
         </Card>

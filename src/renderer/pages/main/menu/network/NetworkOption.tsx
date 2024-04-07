@@ -89,7 +89,7 @@ export default ({
   }
 
   const cantUseable = () => {
-    if (chainId  /* && isSafe4Network( chainId ) */) {
+    if (chainId   && isSafe4Network( chainId ) ) {
       return endpoint == activeEndpoint;
     }
     return true;

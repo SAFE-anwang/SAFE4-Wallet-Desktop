@@ -5,6 +5,7 @@ import { ListenSignalHandler } from "./handlers/ListenSignalHandler";
 import { WalletSignalHandler } from "./handlers/WalletSignalHandler";
 import { Channels } from "./preload";
 import { Context } from "./handlers/Context";
+import { RpcConfigSingalHandler } from "./handlers/RpcConfigSignalHandler";
 
 export const Channel : Channels = "ipc-example";
 
@@ -17,6 +18,7 @@ export class ApplicationIpcManager {
     this.listenSignalHandlers.push(new WalletSignalHandler(ctx));
     const indexSignalHandler = new IndexSingalHandler( ctx , () => {
       this.listenSignalHandlers.push(new DBAddressActivitySingalHandler(indexSignalHandler.getSqlite3DB()));
+      this.listenSignalHandlers.push(new RpcConfigSingalHandler(indexSignalHandler.getSqlite3DB()));
     });
     this.listenSignalHandlers.push(indexSignalHandler);
   }

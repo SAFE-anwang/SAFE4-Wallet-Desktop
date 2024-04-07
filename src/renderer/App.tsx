@@ -1,15 +1,15 @@
-import { Alert, Button, Card, Col, Image, Input, Row, Typography } from 'antd';
+import { Alert, Button, Card, Col, Image, Input, Row, Spin, Typography } from 'antd';
 import { useApplicationBlockchainWeb3Rpc } from './state/application/hooks';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Web3ReactHooks, Web3ReactProvider } from '@web3-react/core'
-import { hooks as networkHooks, network, initializeConnect } from './connectors/network';
+import { initializeConnect } from './connectors/network';
 import LoopUpdate from './LoopUpdate';
 import { Network } from '@web3-react/network';
 import { useDispatch } from 'react-redux';
 import AppRouters from './pages/AppRouters';
 import { IndexSingal, Index_Methods } from '../main/handlers/IndexSingalHandler';
-import { IPC_CHANNEL } from './config';
-import { applicationDataLoaded, applicationSetPassword } from './state/application/action';
+import config, { IPC_CHANNEL } from './config';
+import { applicationDataLoaded, applicationSetPassword, applicationUpdateWeb3Rpc } from './state/application/action';
 import { walletsLoadKeystores } from './state/wallets/action';
 import SAFE_LOGO from './assets/logo/SAFE.png'
 const CryptoJS = require('crypto-js');
@@ -19,6 +19,7 @@ const { Text } = Typography;
 export default function App() {
 
   const dispatch = useDispatch();
+  const [loading, setLoading] = useState<boolean>(true);
 
   const [walletsKeystores, setWalletKeystores] = useState();
   const [encrypt, setEncrypt] = useState<{
@@ -29,14 +30,49 @@ export default function App() {
   const [password, setPassword] = useState<string>();
   const [passwordError, setPasswordError] = useState<string>();
 
-
   const web3Rpc = useApplicationBlockchainWeb3Rpc();
   const [activeWeb3Rpc, setActiveWeb3Rpc] = useState<{
     chainId: number,
     endpoint: string
   } | undefined>();
   const [connectors, setConnectors] = useState<[Network, Web3ReactHooks][] | undefined>();
-  const [loading, setLoading] = useState<boolean>(true);
+  const [dbRpcConfigs, setDbRpcConfigs] = useState<{
+    chainId: number,
+    endpoint: string,
+    active: number
+  }[]>();
+
+  useEffect(() => {
+    if (!loading && dbRpcConfigs) {
+      console.log("[App.tsx] load rpc-configs :" , dbRpcConfigs);
+      const activeRpcConfig = dbRpcConfigs.find(rpcConfig => rpcConfig.active == 1);
+      const endpoint = activeRpcConfig ? activeRpcConfig.endpoint : config.Default_Web3_Endpoint;
+      const chainId = activeRpcConfig ? activeRpcConfig.chainId : config.Default_Web3_ChainId;
+      dispatch(applicationUpdateWeb3Rpc({
+        chainId: chainId,
+        endpoint: endpoint
+      }));
+    }
+  }, [loading, dbRpcConfigs]);
+  useEffect(() => {
+    if (web3Rpc) {
+      const { chainId, endpoint } = web3Rpc;
+      if (chainId && endpoint) {
+        if (endpoint != activeWeb3Rpc?.endpoint) {
+          const conn = initializeConnect({
+            [chainId]: [endpoint]
+          })
+          setConnectors([
+            [conn[0], conn[1]]
+          ]);
+          setActiveWeb3Rpc({
+            chainId,
+            endpoint
+          })
+        }
+      }
+    }
+  }, [web3Rpc]);
 
   useEffect(() => {
     const method = Index_Methods.load;
@@ -48,36 +84,30 @@ export default function App() {
           walletKeystores,
           path,
           encrypt,
+          rpc_configs
         } = data;
+        setDbRpcConfigs(rpc_configs.map((rpc_config: any) => {
+          const { id, chain_id, endpoint, active } = rpc_config;
+          return {
+            chainId: chain_id,
+            endpoint,
+            active
+          }
+        }));
         dispatch(applicationDataLoaded({
           path
         }));
         if (encrypt) {
           setEncrypt(encrypt);
-          return;
+        } else {
+          setWalletKeystores(walletKeystores);
         }
-        setWalletKeystores(walletKeystores);
+        setLoading(false);
       }
     });
   }, []);
 
-  useEffect(() => {
-    const { chainId, endpoint } = web3Rpc;
-    if (chainId && endpoint) {
-      if (endpoint != activeWeb3Rpc?.endpoint) {
-        const conn = initializeConnect({
-          [chainId]: [endpoint]
-        })
-        setConnectors([
-          [conn[0], conn[1]]
-        ]);
-        setActiveWeb3Rpc({
-          chainId,
-          endpoint
-        })
-      }
-    }
-  }, [web3Rpc]);
+
 
   const decrypt = useCallback(() => {
     if (password && encrypt) {
@@ -115,12 +145,16 @@ export default function App() {
   return (
     <>
       {
-        !walletsKeystores && <>
+        loading && <Spin fullscreen spinning={loading} />
+      }
+
+      {
+        !loading && !walletsKeystores && encrypt && <>
           <Row style={{ marginTop: "20%" }}>
-            <Card style={{ width:"400px", margin: "auto", boxShadow: "5px 5px 10px #888888" }}>
+            <Card style={{ width: "400px", margin: "auto", boxShadow: "5px 5px 10px #888888" }}>
               <Row>
                 <Col span={24} style={{ textAlign: "center" }}>
-                  <Image style={{ marginTop: "10px", width: "80%" }} src={SAFE_LOGO} />
+                  <Image preview={false} style={{ marginTop: "10px", width: "80%" }} src={SAFE_LOGO} />
                 </Col>
                 <Col span={24} style={{ textAlign: "center", marginTop: "10px" }}>
                   <Text style={{ fontSize: "28px" }}>Safe4</Text>
@@ -147,14 +181,16 @@ export default function App() {
           </Row>
         </>
       }
+
       {
-        walletsKeystores && connectors && <>
+        !loading && walletsKeystores && connectors && <>
           <Web3ReactProvider key={activeWeb3Rpc?.endpoint} connectors={connectors}>
             <LoopUpdate />
             <AppRouters />
           </Web3ReactProvider>
         </>
       }
+
     </>
   );
 }
