@@ -44,7 +44,7 @@ export default function App() {
 
   useEffect(() => {
     if (!loading && dbRpcConfigs) {
-      console.log("[App.tsx] load rpc-configs :" , dbRpcConfigs);
+      console.log("[App.tsx] load rpc-configs :", dbRpcConfigs);
       const activeRpcConfig = dbRpcConfigs.find(rpcConfig => rpcConfig.active == 1);
       const endpoint = activeRpcConfig ? activeRpcConfig.endpoint : config.Default_Web3_Endpoint;
       const chainId = activeRpcConfig ? activeRpcConfig.chainId : config.Default_Web3_ChainId;
@@ -107,9 +107,8 @@ export default function App() {
     });
   }, []);
 
-
-
   const decrypt = useCallback(() => {
+    console.log("do decrypt , password=" , password)
     if (password && encrypt) {
       const salt = CryptoJS.enc.Hex.parse(encrypt.salt);
       const ciphertext = CryptoJS.enc.Hex.parse(encrypt.ciphertext);

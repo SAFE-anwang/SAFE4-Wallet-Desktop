@@ -1,13 +1,12 @@
-import { Row, Statistic, Card, Col, Table, Typography, Button, Divider, Space, Tag, List } from "antd";
-import { useActiveAccountAccountRecords, useSafe4Balance, useWalletsActiveAccount } from "../../../../../state/wallets/hooks";
+import { Row, Statistic, Card, Col, Typography, Button, Divider, Space, Tag, List } from "antd";
+import { useSafe4Balance, useWalletsActiveAccount } from "../../../../../state/wallets/hooks";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useBlockNumber, useTimestamp } from "../../../../../state/application/hooks";
 import { useAccountManagerContract, useMulticallContract } from "../../../../../hooks/useContracts";
-import { AccountRecord, formatAccountRecord, formatRecordUseInfo, IdPageQuery } from "../../../../../structs/AccountManager";
-import { ColumnsType } from "antd/es/table";
-import { LockOutlined, RetweetOutlined, UnlockFilled, UnlockOutlined, UnlockTwoTone } from '@ant-design/icons';
+import { AccountRecord, formatAccountRecord, formatRecordUseInfo } from "../../../../../structs/AccountManager";
+import { LockOutlined, RetweetOutlined } from '@ant-design/icons';
 import WalletWithdrawModal from "../../Withdraw/WalletWithdrawModal";
-import { EmptyContract, SystemContract } from "../../../../../constants/SystemContracts";
+import { EmptyContract } from "../../../../../constants/SystemContracts";
 import AddressView from "../../../../components/AddressView";
 import { DateTimeFormat } from "../../../../../utils/DateUtils";
 import { ZERO } from "../../../../../utils/CurrentAmountUtils";
@@ -273,7 +272,7 @@ export default () => {
       </Col>
       <Col span={6}>
         <Row>
-          <Col offset={16} span={8} style={{ textAlign: "center" }}>
+          <Col offset={18} span={6} style={{ textAlign: "center" }}>
             <Button style={{
               height: "45px", width: "45px"
             }} size='large' shape="circle" icon={<RetweetOutlined />} onClick={() => {

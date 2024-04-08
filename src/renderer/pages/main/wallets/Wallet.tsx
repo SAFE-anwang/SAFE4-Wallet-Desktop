@@ -1,5 +1,6 @@
 
-import { Typography, Button, Divider, Statistic, Row, Col, Modal, Tabs, TabsProps, QRCode, Badge } from 'antd';
+import { Typography, Button, Divider, Statistic, Row, Col, Modal, Tabs, TabsProps, QRCode, Badge, Dropdown } from 'antd';
+import type { MenuProps } from 'antd';
 import { useEffect, useMemo, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useETHBalances, useWalletsActiveAccount, useWalletsActivePrivateKey, useWalletsActiveWallet } from '../../../state/wallets/hooks';
@@ -13,6 +14,7 @@ import WalletSendModal from './Send/WalletSendModal';
 import { AppState } from '../../../state';
 import { DateTimeFormat } from '../../../utils/DateUtils';
 import { useWeb3React } from '@web3-react/core';
+import { Safe4_Network_Config } from '../../../config';
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -26,14 +28,14 @@ export default () => {
   const timestamp = useTimestamp();
   const walletTab = useSelector<AppState, string | undefined>(state => state.application.control.walletTab);
   const privateKey = useWalletsActivePrivateKey();
-  const { isActivating, isActive , chainId } = useWeb3React();
+  const { isActivating, isActive, chainId } = useWeb3React();
 
   const [openReceiveModal, setOpenReceiveModal] = useState<boolean>(false);
   const [openPrivateModal, setOpenPrivateModal] = useState<boolean>(false);
   const [openSendModal, setOpenSendModal] = useState<boolean>(false);
   const [openLockModal, setOpenLockMoal] = useState<boolean>(false);
 
-  const items: TabsProps['items'] = [
+  const tabItems: TabsProps['items'] = [
     {
       key: 'locked',
       label: '锁仓',
@@ -65,8 +67,35 @@ export default () => {
   }, [isActivating, isActive]);
 
   const renderNetworkType = useMemo(() => {
-    return chainId == 6666666 ? <Text type='success'>测试网</Text> : "主网"
-  } , [chainId]);
+    return chainId == Safe4_Network_Config.Testnet.chainId ? <Text type='success'>测试网</Text> : "主网"
+  }, [chainId]);
+
+  const items: MenuProps['items'] = [
+    {
+      key: '1',
+      label: (
+        <a target="_blank" rel="noopener noreferrer" href="https://www.antgroup.com">
+          助记词
+        </a>
+      ),
+    },
+    {
+      key: '2',
+      label: (
+        <a target="_blank" rel="noopener noreferrer" href="https://www.aliyun.com">
+          私钥
+        </a>
+      ),
+    },
+    {
+      key: '3',
+      label: (
+        <a target="_blank" rel="noopener noreferrer" href="https://www.luohanacademy.com">
+          Keystore
+        </a>
+      ),
+    },
+  ];
 
   return (<>
 
@@ -129,16 +158,20 @@ export default () => {
                 <Text>接收</Text>
               </Col>
               <Col span={6} style={{ textAlign: "center" }}>
-                <Button style={{
-                  height: "45px", width: "45px"
-                }} size='large' shape="circle" icon={<SecurityScanOutlined />} onClick={() => setOpenPrivateModal(true)} /><br />
+                <Dropdown menu={{ items }} placement="bottomLeft">
+                  <Button style={{
+                    height: "45px", width: "45px"
+                  }} size='large' shape="circle" icon={<SecurityScanOutlined />} onClick={() => setOpenPrivateModal(true)} />
+                </Dropdown>
+                <br />
                 <Text>私钥</Text>
               </Col>
             </Row>
+
           </Col>
         </Row>
         <Row style={{ marginTop: "50px" }}>
-          <Tabs style={{ width: "100%" }} activeKey={walletTab} defaultActiveKey={walletTab} items={items} onChange={onChange} />
+          <Tabs style={{ width: "100%" }} activeKey={walletTab} defaultActiveKey={walletTab} items={tabItems} onChange={onChange} />
         </Row>
       </div>
     </div>
