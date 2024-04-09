@@ -3,9 +3,9 @@ import { Typography, Button, Divider, Statistic, Row, Col, Modal, Tabs, TabsProp
 import type { MenuProps } from 'antd';
 import { useEffect, useMemo, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { useETHBalances, useWalletsActiveAccount, useWalletsActivePrivateKey, useWalletsActiveWallet } from '../../../state/wallets/hooks';
+import { useETHBalances, useWalletsActiveAccount, useWalletsActiveKeystore, useWalletsActivePrivateKey, useWalletsActiveWallet } from '../../../state/wallets/hooks';
 import { applicationActionUpdateAtCreateWallet, applicationUpdateWalletTab } from '../../../state/application/action';
-import { SendOutlined, QrcodeOutlined, LockOutlined, SecurityScanOutlined } from '@ant-design/icons';
+import { SendOutlined, QrcodeOutlined, LockOutlined, MoreOutlined } from '@ant-design/icons';
 import { useBlockNumber, useTimestamp } from '../../../state/application/hooks';
 import Locked from './tabs/Locked/Locked';
 import WalletLockModal from './Lock/WalletLockModal';
@@ -15,6 +15,7 @@ import { AppState } from '../../../state';
 import { DateTimeFormat } from '../../../utils/DateUtils';
 import { useWeb3React } from '@web3-react/core';
 import { Safe4_Network_Config } from '../../../config';
+import WalletKeystoreModal from './WalletKeystoreModal';
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -28,10 +29,14 @@ export default () => {
   const timestamp = useTimestamp();
   const walletTab = useSelector<AppState, string | undefined>(state => state.application.control.walletTab);
   const privateKey = useWalletsActivePrivateKey();
+  const walletKeystore = useWalletsActiveKeystore();
   const { isActivating, isActive, chainId } = useWeb3React();
 
   const [openReceiveModal, setOpenReceiveModal] = useState<boolean>(false);
   const [openPrivateModal, setOpenPrivateModal] = useState<boolean>(false);
+  const [openMnemonicModal, setOpenMnemonicModal] = useState<boolean>(false);
+  const [openKeystoreModal, setOpenKeystoreModal] = useState<boolean>(false);
+
   const [openSendModal, setOpenSendModal] = useState<boolean>(false);
   const [openLockModal, setOpenLockMoal] = useState<boolean>(false);
 
@@ -70,32 +75,51 @@ export default () => {
     return chainId == Safe4_Network_Config.Testnet.chainId ? <Text type='success'>测试网</Text> : "主网"
   }, [chainId]);
 
-  const items: MenuProps['items'] = [
-    {
-      key: '1',
+  const items: MenuProps['items'] = useMemo(() => {
+    const items: MenuProps['items'] = [];
+    if (walletKeystore?.mnemonic) {
+      items.push({
+        key: 'mnemonic',
+        label: (
+          <a onClick={() => {
+            setOpenMnemonicModal(true);
+          }}>
+            助记词
+          </a>
+        ),
+      })
+    }
+    items.push({
+      key: 'privateKey',
       label: (
-        <a target="_blank" rel="noopener noreferrer" href="https://www.antgroup.com">
-          助记词
-        </a>
-      ),
-    },
-    {
-      key: '2',
-      label: (
-        <a target="_blank" rel="noopener noreferrer" href="https://www.aliyun.com">
+        <a onClick={() => {
+          setOpenPrivateModal(true);
+        }}>
           私钥
         </a>
       ),
-    },
-    {
-      key: '3',
+    });
+    items.push({
+      key: 'keystore',
       label: (
-        <a target="_blank" rel="noopener noreferrer" href="https://www.luohanacademy.com">
+        <a onClick={() => {
+          setOpenKeystoreModal(true);
+        }} >
           Keystore
         </a>
       ),
-    },
-  ];
+    })
+    return items;
+  }, [walletKeystore]);
+
+  const renderOrderMnemonicWords = (mnemonic: string) => {
+    const mnemonicArray = mnemonic.split(" ");
+    return <>
+      {
+        mnemonicArray.map(word => { })
+      }
+    </>
+  }
 
   return (<>
 
@@ -157,15 +181,17 @@ export default () => {
                 }} size='large' shape="circle" icon={<QrcodeOutlined />} onClick={() => setOpenReceiveModal(true)} /><br />
                 <Text>接收</Text>
               </Col>
+
               <Col span={6} style={{ textAlign: "center" }}>
                 <Dropdown menu={{ items }} placement="bottomLeft">
                   <Button style={{
                     height: "45px", width: "45px"
-                  }} size='large' shape="circle" icon={<SecurityScanOutlined />} onClick={() => setOpenPrivateModal(true)} />
+                  }} size='large' shape="circle" icon={<MoreOutlined />} />
                 </Dropdown>
                 <br />
-                <Text>私钥</Text>
+                <Text>更多</Text>
               </Col>
+
             </Row>
 
           </Col>
@@ -194,21 +220,80 @@ export default () => {
       </Row>
     </Modal>
 
-    <Modal title="私钥" open={openPrivateModal} width={"400px"} footer={null} closable onCancel={() => { setOpenPrivateModal(false) }}>
-      <Divider />
-      <Row>
-        <Text style={{ margin: "auto", marginTop: "20px", marginBottom: "20px" }} type='danger'>不要将您的私钥暴露给任何人。</Text>
-      </Row>
-      <Row style={{ width: "300px", textAlign: "center", margin: "auto" }}>
-        <Text style={{ margin: "auto", marginTop: "20px", marginBottom: "20px" }} strong>
-          {privateKey && privateKey.replace("0x", "")}
-        </Text>
-        <br />
-      </Row>
-    </Modal>
+    {
+      walletKeystore?.privateKey && <>
+        <Modal title="私钥" open={openPrivateModal} width={"400px"} footer={null} closable onCancel={() => { setOpenPrivateModal(false) }}>
+          <Divider />
+          <Row>
+            <Text style={{ margin: "auto", marginTop: "20px", marginBottom: "20px" }} type='danger'>不要将您的私钥暴露给任何人。</Text>
+          </Row>
+          <Row style={{ width: "300px", textAlign: "center", margin: "auto" }}>
+            <Text style={{ margin: "auto", marginTop: "20px", marginBottom: "20px" }} strong>
+              {privateKey && privateKey.replace("0x", "")}
+            </Text>
+            <br />
+          </Row>
+        </Modal>
+      </>
+    }
+
+    {
+      walletKeystore?.mnemonic && <>
+        <Modal title="助记词" open={openMnemonicModal} width={"400px"} footer={null} closable onCancel={() => { setOpenMnemonicModal(false) }}>
+          <Divider />
+          <Row style={{ width: "300px", textAlign: "left", margin: "auto" }}>
+            {
+              walletKeystore.mnemonic.split(" ")
+                .map((word, index) => {
+                  return <>
+                    <Col key={word} span={12}>
+                      <Row>
+                        <Col span={4}>
+                          <Text type='secondary'>{index + 1}.</Text>
+                        </Col>
+                        <Col span={20}>
+                          <Text strong>{word}</Text>
+                        </Col>
+                      </Row>
+                    </Col>
+                  </>
+                })
+            }
+          </Row>
+          <Divider />
+          {
+            walletKeystore.password && <>
+              <Row style={{ width: "300px", textAlign: "left", margin: "auto", marginTop: "20px" }}>
+                <Col span={24}>
+                  <Text type='secondary' style={{ marginRight: "10px" }}>种子密码</Text>
+                </Col>
+                <Col span={24}>
+                  <Text strong>
+                    {walletKeystore.password}
+                  </Text>
+                </Col>
+              </Row>
+            </>
+          }
+
+          <Row style={{ width: "300px", textAlign: "left", margin: "auto", marginTop: "20px" }}>
+            <Col span={24}>
+              <Text type='secondary' style={{ marginRight: "10px" }}>BIP44-Path</Text>
+            </Col>
+            <Col span={24}>
+              <Text strong>
+                {walletKeystore.path}
+              </Text>
+            </Col>
+          </Row>
+
+        </Modal>
+      </>
+    }
 
     <WalletSendModal openSendModal={openSendModal} setOpenSendModal={setOpenSendModal} />
     <WalletLockModal openLockModal={openLockModal} setOpenLockModal={setOpenLockMoal} />
+    <WalletKeystoreModal openKeystoreModal={openKeystoreModal} setOpenKeystoreModal={setOpenKeystoreModal} />
 
   </>)
 

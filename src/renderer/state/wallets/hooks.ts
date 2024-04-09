@@ -49,6 +49,19 @@ export function useWalletsActivePrivateKey(): string | undefined {
   });
 }
 
+export function useWalletsActiveKeystore(): WalletKeystore | undefined {
+  return useSelector((state: AppState) => {
+    if (state.wallets.activeWallet) {
+      return state.wallets.keystores.filter(
+        walletKetstore => {
+          return walletKetstore.publicKey == state.wallets.activeWallet?.publicKey
+        }
+      )[0];
+    }
+    return undefined;
+  });
+}
+
 export function useWalletsActiveSigner(): ethers.Wallet | undefined {
   const { provider } = useWeb3React();
   const activePrivateKey = useWalletsActivePrivateKey();
