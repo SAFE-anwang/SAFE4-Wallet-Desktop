@@ -10,10 +10,8 @@ import { useNavigate } from "react-router-dom";
 import { PayType } from "./ProposalCreate";
 import { DateTimeFormat } from "../../../../utils/DateUtils";
 import { useProposalContract } from "../../../../hooks/useContracts";
-import { ONE } from "../../../../utils/CurrentAmountUtils";
 import { ethers } from "ethers";
 import { TransactionResponse } from "@ethersproject/providers";
-
 
 const { Text } = Typography;
 

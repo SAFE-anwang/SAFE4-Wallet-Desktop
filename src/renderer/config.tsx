@@ -12,6 +12,18 @@ export const Safe4_Network_Config = {
   }
 }
 
+export const Safe4_Business_Config = {
+
+  Masternode : {
+
+  } ,
+
+  Supernode : {
+
+  }
+
+}
+
 const Config = {
   "dev": {
     Default_Web3_Endpoint: "http://47.107.47.210:8545",

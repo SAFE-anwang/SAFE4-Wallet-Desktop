@@ -1,13 +1,13 @@
 
 
-import { Typography, Button, Divider, Statistic, Row, Col, Modal, Tabs, TabsProps, QRCode, Badge, Dropdown, Input, Spin } from 'antd';
+import { Typography, Button, Divider, Statistic, Row, Col, Modal, Tabs, TabsProps, QRCode, Badge, Dropdown, Input, Spin, Alert } from 'antd';
 import type { MenuProps } from 'antd';
 import { useEffect, useMemo, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useETHBalances, useWalletsActiveAccount, useWalletsActiveKeystore, useWalletsActivePrivateKey, useWalletsActiveSigner, useWalletsActiveWallet } from '../../../state/wallets/hooks';
 import { applicationActionUpdateAtCreateWallet, applicationUpdateWalletTab } from '../../../state/application/action';
 import { SendOutlined, QrcodeOutlined, LockOutlined, MoreOutlined } from '@ant-design/icons';
-import { useBlockNumber, useTimestamp } from '../../../state/application/hooks';
+import { useApplicationPassword, useBlockNumber, useTimestamp } from '../../../state/application/hooks';
 import Locked from './tabs/Locked/Locked';
 import WalletLockModal from './Lock/WalletLockModal';
 import History from './tabs/History/History';
@@ -24,32 +24,33 @@ export default ({
   openKeystoreModal: boolean,
   setOpenKeystoreModal: (openKeystoreModal: boolean) => void
 }) => {
-  const privateKey = useWalletsActivePrivateKey();
 
+  const privateKey = useWalletsActivePrivateKey();
   const [keystore, setKeystore] = useState<string>();
   const [encrypting, setEncrypting] = useState<boolean>(false);
+  const password = useApplicationPassword();
 
   useEffect(() => {
     if (privateKey) {
       const ethersWallet = new ethers.Wallet(privateKey);
       setKeystore(undefined);
       setEncrypting(true);
-      ethersWallet.encrypt("123456").then((keystore: any) => {
+      ethersWallet.encrypt(password ? password : "").then((keystore: any) => {
         setKeystore(keystore);
         setEncrypting(false);
       });
     } else {
       setKeystore(undefined);
     }
-  }, [privateKey]);
+  }, [privateKey, password]);
 
   return (<>
     <Modal title="Keystore" open={openKeystoreModal} width={"400px"} footer={null} closable onCancel={() => { setOpenKeystoreModal(false) }}>
       <Divider />
       {
         encrypting && <>
-          <Text type='secondary'> 正在执行导出 Keystore 标准文件</Text>
-          <br/><br />
+          <Text type='secondary'>正在执行使用您设置的钱包密码加密并导出Keystore标准文件</Text>
+          <br /><br />
         </>
       }
       <Spin spinning={encrypting}>
@@ -62,7 +63,6 @@ export default ({
           </Text>
         </>
       }
-
     </Modal>
 
   </>)

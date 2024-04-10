@@ -85,7 +85,7 @@ export default () => {
   return <>
     <Row style={{ height: "50px" }}>
       <Col span={8}>
-        <Button style={{ marginTop: "18px", marginRight: "12px", float: "left" }} size="large" shape="circle" icon={<LeftOutlined />} onClick={() => {
+        <Button style={{ marginTop: "14px", marginRight: "12px", float: "left" }} size="large" shape="circle" icon={<LeftOutlined />} onClick={() => {
           navigate("/main/supernodes")
         }} />
         <Title level={4} style={{ lineHeight: "16px", float: "left" }}>

@@ -16,6 +16,8 @@ import { DateTimeFormat } from '../../../utils/DateUtils';
 import { useWeb3React } from '@web3-react/core';
 import { Safe4_Network_Config } from '../../../config';
 import WalletKeystoreModal from './WalletKeystoreModal';
+import WalletPrivateKeyModal from './WalletPrivateKeyModal';
+import WalletMnemonicModal from './WalletMnemonicModal';
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -33,7 +35,7 @@ export default () => {
   const { isActivating, isActive, chainId } = useWeb3React();
 
   const [openReceiveModal, setOpenReceiveModal] = useState<boolean>(false);
-  const [openPrivateModal, setOpenPrivateModal] = useState<boolean>(false);
+  const [openPrivateKeyModal, setOpenPrivateKeyModal] = useState<boolean>(false);
   const [openMnemonicModal, setOpenMnemonicModal] = useState<boolean>(false);
   const [openKeystoreModal, setOpenKeystoreModal] = useState<boolean>(false);
 
@@ -93,7 +95,7 @@ export default () => {
       key: 'privateKey',
       label: (
         <a onClick={() => {
-          setOpenPrivateModal(true);
+          setOpenPrivateKeyModal(true);
         }}>
           私钥
         </a>
@@ -222,78 +224,19 @@ export default () => {
 
     {
       walletKeystore?.privateKey && <>
-        <Modal title="私钥" open={openPrivateModal} width={"400px"} footer={null} closable onCancel={() => { setOpenPrivateModal(false) }}>
-          <Divider />
-          <Row>
-            <Text style={{ margin: "auto", marginTop: "20px", marginBottom: "20px" }} type='danger'>不要将您的私钥暴露给任何人。</Text>
-          </Row>
-          <Row style={{ width: "300px", textAlign: "center", margin: "auto" }}>
-            <Text style={{ margin: "auto", marginTop: "20px", marginBottom: "20px" }} strong>
-              {privateKey && privateKey.replace("0x", "")}
-            </Text>
-            <br />
-          </Row>
-        </Modal>
+        <WalletPrivateKeyModal openPrivateKeyModal={openPrivateKeyModal} setOpenPrivateKeyModal={setOpenPrivateKeyModal} />
       </>
     }
-
     {
       walletKeystore?.mnemonic && <>
-        <Modal title="助记词" open={openMnemonicModal} width={"400px"} footer={null} closable onCancel={() => { setOpenMnemonicModal(false) }}>
-          <Divider />
-          <Row style={{ width: "300px", textAlign: "left", margin: "auto" }}>
-            {
-              walletKeystore.mnemonic.split(" ")
-                .map((word, index) => {
-                  return <>
-                    <Col key={word} span={12}>
-                      <Row>
-                        <Col span={4}>
-                          <Text type='secondary'>{index + 1}.</Text>
-                        </Col>
-                        <Col span={20}>
-                          <Text strong>{word}</Text>
-                        </Col>
-                      </Row>
-                    </Col>
-                  </>
-                })
-            }
-          </Row>
-          <Divider />
-          {
-            walletKeystore.password && <>
-              <Row style={{ width: "300px", textAlign: "left", margin: "auto", marginTop: "20px" }}>
-                <Col span={24}>
-                  <Text type='secondary' style={{ marginRight: "10px" }}>种子密码</Text>
-                </Col>
-                <Col span={24}>
-                  <Text strong>
-                    {walletKeystore.password}
-                  </Text>
-                </Col>
-              </Row>
-            </>
-          }
-
-          <Row style={{ width: "300px", textAlign: "left", margin: "auto", marginTop: "20px" }}>
-            <Col span={24}>
-              <Text type='secondary' style={{ marginRight: "10px" }}>BIP44-Path</Text>
-            </Col>
-            <Col span={24}>
-              <Text strong>
-                {walletKeystore.path}
-              </Text>
-            </Col>
-          </Row>
-
-        </Modal>
+        <WalletMnemonicModal openMnemonicModal={openMnemonicModal} setOpenMnemonicModal={setOpenMnemonicModal} />
       </>
     }
 
+    <WalletKeystoreModal openKeystoreModal={openKeystoreModal} setOpenKeystoreModal={setOpenKeystoreModal} />
     <WalletSendModal openSendModal={openSendModal} setOpenSendModal={setOpenSendModal} />
     <WalletLockModal openLockModal={openLockModal} setOpenLockModal={setOpenLockMoal} />
-    <WalletKeystoreModal openKeystoreModal={openKeystoreModal} setOpenKeystoreModal={setOpenKeystoreModal} />
+
 
   </>)
 

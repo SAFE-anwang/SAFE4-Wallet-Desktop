@@ -7,7 +7,6 @@ import { useWalletsActiveAccount } from "../../../../state/wallets/hooks";
 import { useMasternodeLogicContract, useSupernodeLogicContract } from "../../../../hooks/useContracts";
 import { ethers } from "ethers";
 import { TransactionResponse } from "@ethersproject/providers";
-import { SupernodeInfo } from "../../../../structs/Supernode";
 import AddressView from "../../../components/AddressView";
 import { MasternodeInfo } from "../../../../structs/Masternode";
 import { useDispatch } from "react-redux";
@@ -51,7 +50,6 @@ export default ({
         360,
         {
           value: value,
-          gasLimit : 1000000
         }
       ).then((response: TransactionResponse) => {
         const { hash , data } = response;

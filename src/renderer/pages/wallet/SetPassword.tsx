@@ -71,7 +71,7 @@ export default () => {
     }, [password]);
 
     return <>
-        <Button style={{ marginTop: "12px" }} size="large" shape="circle" icon={<LeftOutlined />} onClick={goBackClick} />
+        <Button style={{ marginTop: "14px" }} size="large" shape="circle" icon={<LeftOutlined />} onClick={goBackClick} />
         <Row style={{
             marginTop: "20px"
         }}>

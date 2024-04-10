@@ -17,7 +17,7 @@ export default () => {
     if ( supernodeVoteContract ){
       // function voteOrApproval(bool _isVote, address _dstAddr, uint[] memory _recordIDs) external;
       // supernodeVoteContract.voteOrApproval(
-      //   true , 
+      //   true ,
       //   "0x131191CfB9aFb4C3F776d6CeCEe1921e8c3EAb0F",
       //   [40]
       // ).then( (response:any) => {
@@ -26,11 +26,13 @@ export default () => {
       //   console.log("Error :" , err)
       // });
     }
+
+    console.log("aaa")
   } , [ supernodeVoteContract ] )
 
   return <>
     {
-      
+
     }
   </>
 }

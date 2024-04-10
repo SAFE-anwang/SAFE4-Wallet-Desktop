@@ -27,7 +27,6 @@ import SelectCreateWallet from './wallet/SelectCreateWallet';
 import SetPassword from './wallet/SetPassword';
 import WaitingWalletCreate from './wallet/WaitingWalletCreate';
 import WaitingWalletImport from './wallet/WaitingWalletImport';
-
 export default () => {
     const atCreateWallet = useApplicationActionAtCreateWallet();
     return <>

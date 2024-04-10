@@ -1,5 +1,5 @@
 import { Alert, Button, Card, Col, Image, Input, Row, Spin, Typography } from 'antd';
-import { useApplicationBlockchainWeb3Rpc } from './state/application/hooks';
+import { useApplicationActionAtCreateWallet, useApplicationBlockchainWeb3Rpc } from './state/application/hooks';
 import { useCallback, useEffect, useState } from 'react';
 import { Web3ReactHooks, Web3ReactProvider } from '@web3-react/core'
 import { initializeConnect } from './connectors/network';
@@ -12,8 +12,33 @@ import config, { IPC_CHANNEL } from './config';
 import { applicationDataLoaded, applicationSetPassword, applicationUpdateWeb3Rpc } from './state/application/action';
 import { walletsLoadKeystores } from './state/wallets/action';
 import SAFE_LOGO from './assets/logo/SAFE.png'
+import { MemoryRouter as Router, Routes, Route } from 'react-router-dom';
+import MenuComponent from './pages/components/MenuComponent';
+import Index from './pages/index';
+import SelectCreateWallet from './pages/wallet/SelectCreateWallet';
+import SetPassword from './pages/wallet/SetPassword';
+import CreateMnemonic from './pages/wallet/create/CreateMnemonic';
+import ImportWallet from './pages/wallet/import/ImportWallet';
+import WaitingWalletCreate from './pages/wallet/WaitingWalletCreate';
+import WaitingWalletImport from './pages/wallet/WaitingWalletImport';
+import Wallet from './pages/main/wallets/Wallet';
+import Supernodes from './pages/main/supernodes/Supernodes';
+import SupernodeVote from './pages/main/supernodes/Vote/SupernodeVote';
+import SupernodeAppend from './pages/main/supernodes/Append/SupernodeAppend';
+import SupernodeRegister from './pages/main/supernodes/Register/SupernodeRegister';
+import Masternodes from './pages/main/masternodes/Masternodes';
+import MasternodeRegister from './pages/main/masternodes/Register/MasternodeRegister';
+import MasternodeAppend from './pages/main/masternodes/Append/MasternodeAppend';
+import Proposals from './pages/main/proposals/Proposals';
+import ProposalCreate from './pages/main/proposals/Create/ProposalCreate';
+import ProposalVote from './pages/main/proposals/Vote/ProposalVote';
+import GetTestCoin from './pages/gettestcoin/GetTestCoin';
+import Safe3 from './pages/main/safe3/Safe3';
+import Test from './pages/main/tools/Test';
+import Menu from './pages/main/menu';
+import NetworkPage from './pages/main/menu/network/NetworkPage';
+import Storage from './pages/main/menu/storage/Storage';
 const CryptoJS = require('crypto-js');
-
 const { Text } = Typography;
 
 export default function App() {
@@ -108,7 +133,7 @@ export default function App() {
   }, []);
 
   const decrypt = useCallback(() => {
-    console.log("do decrypt , password=" , password)
+    console.log("do decrypt , password=", password)
     if (password && encrypt) {
       const salt = CryptoJS.enc.Hex.parse(encrypt.salt);
       const ciphertext = CryptoJS.enc.Hex.parse(encrypt.ciphertext);
@@ -140,13 +165,13 @@ export default function App() {
       dispatch(walletsLoadKeystores(walletsKeystores));
     }
   }, [walletsKeystores]);
+  const atCreateWallet = useApplicationActionAtCreateWallet();
 
   return (
     <>
       {
         loading && <Spin fullscreen spinning={loading} />
       }
-
       {
         !loading && !walletsKeystores && encrypt && <>
           <Row style={{ marginTop: "20%" }}>
@@ -180,16 +205,65 @@ export default function App() {
           </Row>
         </>
       }
-
       {
         !loading && walletsKeystores && connectors && <>
           <Web3ReactProvider key={activeWeb3Rpc?.endpoint} connectors={connectors}>
             <LoopUpdate />
-            <AppRouters />
+            <Router>
+              <Row style={{
+              }}>
+                {
+                  !atCreateWallet && <Col span={6} style={{
+                    position: "fixed",
+                    width: "230px"
+                  }}>
+                    <MenuComponent />
+                  </Col>
+                }
+                <Col id='appContainer' span={18} style={{
+                  minWidth: "1200px",
+                  position: "fixed",
+                  overflowX: "auto",
+                  overflowY: "auto",
+                  top: "0",
+                  right: "0",
+                  bottom: "0",
+                  left: "235px",
+                  paddingLeft: "20px",
+                  paddingBottom: "20px",
+                }}>
+                  <Routes>
+                    <Route path="/" element={<Index />} />
+                    <Route path="/selectCreateWallet" element={<SelectCreateWallet />} />
+                    <Route path="/setPassword" element={<SetPassword />} />
+                    <Route path="/wallet/createMnemonic" element={<CreateMnemonic />} />
+                    <Route path="/wallet/importWallet" element={<ImportWallet />} />
+                    <Route path="/waitingCreateWallet" element={<WaitingWalletCreate />} />
+                    <Route path="/waitingImportWallet" element={<WaitingWalletImport />} />
+                    <Route path="/main/wallet" element={<Wallet />} />
+                    <Route path="/main/supernodes" element={<Supernodes />} />
+                    <Route path="/main/supernodes/vote" element={<SupernodeVote />} />
+                    <Route path="/main/supernodes/append" element={<SupernodeAppend />} />
+                    <Route path="/main/supernodes/create" element={<SupernodeRegister />} />
+                    <Route path="/main/masternodes" element={<Masternodes />} />
+                    <Route path="/main/masternodes/register" element={<MasternodeRegister />} />
+                    <Route path="/main/masternodes/append" element={<MasternodeAppend />} />
+                    <Route path="/main/proposals" element={<Proposals />} />
+                    <Route path="/main/proposals/create" element={<ProposalCreate />} />
+                    <Route path="/main/proposals/vote" element={<ProposalVote />} />
+                    <Route path="/main/gettestcoin" element={<GetTestCoin />} />
+                    <Route path="/main/safe3" element={<Safe3 />} />
+                    <Route path="/main/test" element={<Test />} />
+                    <Route path="/main/menu" element={<Menu />} />
+                    <Route path="/main/menu/storage" element={<Storage />} />
+                    <Route path="/main/menu/network" element={<NetworkPage />} />
+                  </Routes>
+                </Col>
+              </Row>
+            </Router>
           </Web3ReactProvider>
         </>
       }
-
     </>
   );
 }

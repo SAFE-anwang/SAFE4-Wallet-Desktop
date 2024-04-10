@@ -87,83 +87,88 @@ export default () => {
   return <>
     <Row style={{ height: "50px" }}>
       <Col span={8}>
-        <Button style={{ marginTop: "18px", marginRight: "12px", float: "left" }} size="large" shape="circle" icon={<LeftOutlined />} onClick={() => {
+        <Button style={{ marginTop: "14px", marginRight: "12px", float: "left" }} size="large" shape="circle" icon={<LeftOutlined />} onClick={() => {
           navigate("/main/masternodes")
         }} />
         <Title level={4} style={{ lineHeight: "16px", float: "left" }}>
-          主节点联合创建
+          主节点
+          {
+            params && params.left > 0 && <>联合创建</>
+          }
         </Title>
       </Col>
     </Row>
 
     <div style={{ width: "100%", paddingTop: "40px", minWidth: "1000px" }}>
       <div style={{ margin: "auto", width: "90%" }}>
-        <Row>
-          <Card title="通过锁仓SAFE来成为这个主节点的合伙人" style={{ width: "100%" }}>
-            <>
-              <Row>
-                <Col span={24}>
-                  <Text type="secondary">主节点剩余份额</Text>
-                </Col>
-                <Col span={24}>
-                  <Text style={{ fontSize: "20px" }} strong>{params?.left} SAFE</Text>
-                </Col>
-              </Row>
-              <Divider />
-              <Row >
-                <Col span={10}>
-                  <Text strong>数量</Text>
-                  <br />
-                  <Text style={{ fontSize: "20px" }} strong>{params?.value} SAFE</Text>
-                  {
-                    params && params.step > 0 && <Slider
-                      step={params.step}
-                      defaultValue={params.value}
-                      max={params.left}
-                      value={params.value}
-                      onChange={(val) => {
-                        if (!(val < params.min)) {
-                          setNotEnoughError(undefined);
-                          setParams({
-                            ...params,
-                            value: val
-                          })
-                        }
-                      }}
-                    />
-                  }
-                  <br />
-                  {
-                    notEnoughError && <Alert showIcon type='error' message={notEnoughError} />
-                  }
-                </Col>
-                <Col span={14}>
-                  <Text type='secondary' style={{ float: "right" }} strong>账户余额</Text>
-                  <br />
-                  <Text style={{ float: "right", fontSize: "20px", lineHeight: "36px" }}>
-                    {balance?.toFixed(6)} SAFE
-                  </Text>
-                </Col>
-              </Row>
-              <Divider />
-              <Button type='primary' onClick={nextClick}>
-                成为合伙人
-              </Button>
-            </>
-          </Card>
-        </Row>
-
+        {
+          params && params.left > 0 && <>
+            <Row>
+              <Card title="通过锁仓SAFE来成为这个主节点的合伙人" style={{ width: "100%" , marginBottom:"50px" }}>
+                <>
+                  <Row>
+                    <Col span={24}>
+                      <Text type="secondary">主节点剩余份额</Text>
+                    </Col>
+                    <Col span={24}>
+                      <Text style={{ fontSize: "20px" }} strong>{params?.left} SAFE</Text>
+                    </Col>
+                  </Row>
+                  <Divider style={{marginTop:"5px",marginBottom:"15px"}} />
+                  <Row >
+                    <Col span={10}>
+                      <Text strong>锁仓数量</Text>
+                      <br />
+                      <Text style={{ fontSize: "20px" }} strong>{params?.value} SAFE</Text>
+                      {
+                        params && params.step > 0 && <Slider
+                          step={params.step}
+                          defaultValue={params.value}
+                          max={params.left}
+                          value={params.value}
+                          onChange={(val) => {
+                            if (!(val < params.min)) {
+                              setNotEnoughError(undefined);
+                              setParams({
+                                ...params,
+                                value: val
+                              })
+                            }
+                          }}
+                        />
+                      }
+                      <br />
+                      {
+                        notEnoughError && <Alert showIcon type='error' message={notEnoughError} />
+                      }
+                    </Col>
+                    <Col span={14}>
+                      <Text type='secondary' style={{ float: "right" }} strong>账户余额</Text>
+                      <br />
+                      <Text style={{ float: "right", fontSize: "20px", lineHeight: "36px" }}>
+                        {balance?.toFixed(6)} SAFE
+                      </Text>
+                    </Col>
+                  </Row>
+                  <Divider style={{marginTop:"0px"}} />
+                  <Button type='primary' onClick={nextClick}>
+                    成为合伙人
+                  </Button>
+                </>
+              </Card>
+            </Row>
+          </>
+        }
         <Row>
           {
             masternodeInfo && <Masternode masternodeInfo={masternodeInfo} />
           }
         </Row>
-
       </div>
     </div>
 
     {
-      masternodeInfo && params?.value && <AppendModalConfirm openAppendModal={openAppendModal} setOpenAppendModal={setOpenAppendModal}
+      masternodeInfo && params && params.value > 0 && <AppendModalConfirm openAppendModal={openAppendModal} setOpenAppendModal={setOpenAppendModal}
         masternodeInfo={masternodeInfo}
         valueAmount={params?.value}
       />

@@ -53,10 +53,10 @@ export default () => {
 
   useEffect(() => {
     if (pagination && masternodeStorageContract && multicallContract) {
-      const { pageSize, current , total } = pagination;
-      if (current && pageSize ) {
+      const { pageSize, current, total } = pagination;
+      if (current && pageSize) {
         setLoading(true);
-        masternodeStorageContract.callStatic.getAll( (current - 1) * pageSize , pageSize)
+        masternodeStorageContract.callStatic.getAll((current - 1) * pageSize, pageSize)
           .then((addresses: any) => {
             // function getInfo(address _addr) external view returns (MasterNodeInfo memory);
             const fragment = masternodeStorageContract.interface.getFunction("getInfo")
@@ -147,7 +147,7 @@ export default () => {
       title: '质押SAFE',
       dataIndex: 'id',
       key: '_id2',
-      width:"300px",
+      width: "300px",
       render: (id, masternodeInfo: MasternodeInfo) => {
         const amount = masternodeInfo.founders.reduce<CurrencyAmount>(
           (amount, memberInfo) => amount.add(memberInfo.amount),
@@ -162,20 +162,20 @@ export default () => {
             </Col>
             <Col span={12}>
               <Space direction='horizontal' style={{ float: "right" }}>
-                {
-                  couldAddPartner &&
-                  <Button size='small' type='primary' style={{ float: "right" }} onClick={() => {
+                <Button size='small' style={{ float: "right" }}
+                  type={couldAddPartner ? "primary" : "default"}
+                  onClick={() => {
                     dispatch(applicationControlAppendMasternode(masternodeInfo.addr))
                     navigate("/main/masternodes/append")
-                  }}>加入合伙人</Button>
-                }
+                  }}>
+                  {couldAddPartner ? "加入合伙人" : "查看"}
+                </Button>
               </Space>
             </Col>
           </Row>
         </>
       },
     },
-
   ];
 
   return <>
@@ -210,7 +210,7 @@ export default () => {
           {
             currentMasternodeInfo && currentMasternodeInfo.id == 0 &&
             currentSupernodeInfo && currentSupernodeInfo.id == 0 && <>
-              <Button onClick={() => { navigate("/main/masternodes/register") }}>成为主节点</Button>
+              <Button onClick={() => { navigate("/main/masternodes/register") }}>注册主节点</Button>
             </>
           }
         </Card>
