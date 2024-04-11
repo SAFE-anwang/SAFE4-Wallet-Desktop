@@ -67,7 +67,6 @@ export default ({
       const _endPayTime = endPayTime && Math.floor(endPayTime / 1000);
       proposalContract.create( title , ethers.utils.parseEther(payAmount).toBigInt() , _payTimes , _startPayTime , _endPayTime , description , {
         value,
-        gasLimit: 500000,
       }).then( (response:TransactionResponse) => {
         const { hash,data } = response;
         addTransaction({ to: proposalContract.address }, response, {

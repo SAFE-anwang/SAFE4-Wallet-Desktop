@@ -1,7 +1,6 @@
-import React, { useState, useRef, useMemo } from 'react';
+import React, { useMemo } from 'react';
 import { PlusOutlined } from '@ant-design/icons';
 import { Divider, Input, Select, Space, Button, Typography, Row, Col } from 'antd';
-import type { InputRef } from 'antd';
 import "./comp.css";
 import { useNavigate } from 'react-router-dom';
 import { useETHBalances, useWalletsActiveWallet, useWalletsList } from '../../state/wallets/hooks';

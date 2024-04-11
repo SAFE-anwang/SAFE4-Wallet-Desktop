@@ -65,7 +65,6 @@ export default ({
         incentivePlan.creator, incentivePlan.partner,
         {
           value,
-          gasLimit: 1000000
         }
       ).then((response: TransactionResponse) => {
         const { hash,data } = response;

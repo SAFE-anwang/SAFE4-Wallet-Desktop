@@ -139,7 +139,7 @@ export default () => {
                       }
                       <br />
                       {
-                        notEnoughError && <Alert showIcon type='error' message={notEnoughError} />
+                        notEnoughError && <Alert showIcon type='error' message={notEnoughError} style={{marginBottom:"20px"}} />
                       }
                     </Col>
                     <Col span={14}>

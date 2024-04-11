@@ -6,7 +6,7 @@ import AddressView from '../../components/AddressView';
 import Members from '../../components/Members';
 import { RenderNodeState } from './Supernodes';
 import { useMulticallContract, useSupernodeVoteContract } from '../../../hooks/useContracts';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import SupernodeVoters from './SupernodeVoters';
 
 const { Text } = Typography;
@@ -18,36 +18,36 @@ export default ({
 }) => {
 
   const supernodeVoteContract = useSupernodeVoteContract();
-  const [totalVoteNum , setTotalVoteNum] = useState<CurrencyAmount>();
+  const [totalVoteNum, setTotalVoteNum] = useState<CurrencyAmount>();
   const [totalVoteAmount, setTotalVoteAmount] = useState<CurrencyAmount>();
 
-  useEffect( () => {
-    if ( supernodeVoteContract){
+  useEffect(() => {
+    if (supernodeVoteContract) {
       // function getTotalVoteNum(address _addr) external view returns (uint);
       // function getTotalAmount(address _addr) external view returns (uint);
-      supernodeVoteContract.callStatic.getTotalVoteNum( supernodeInfo.addr )
-        .then( data => { setTotalVoteNum( CurrencyAmount.ether(data) ) } )
-      supernodeVoteContract.callStatic.getTotalAmount( supernodeInfo.addr )
-        .then( data => { setTotalVoteAmount(CurrencyAmount.ether(data)) } )
+      supernodeVoteContract.callStatic.getTotalVoteNum(supernodeInfo.addr)
+        .then(data => { setTotalVoteNum(CurrencyAmount.ether(data)) })
+      supernodeVoteContract.callStatic.getTotalAmount(supernodeInfo.addr)
+        .then(data => { setTotalVoteAmount(CurrencyAmount.ether(data)) })
     }
-  } , [supernodeVoteContract] );
+  }, [supernodeVoteContract, supernodeInfo]);
 
-  const items: TabsProps['items'] = [
-    {
+  const items: TabsProps['items'] = useMemo(() => {
+    return [{
       key: '1',
-      label: <>
-        创建人 <Divider type='vertical' /> 合伙人
-      </>,
-      children: <Members memberInfos={supernodeInfo.founders} />,
+        label: <>
+          创建人 <Divider type='vertical' /> 合伙人
+        </>,
+          children: <Members memberInfos={supernodeInfo.founders} />,
     },
     {
       key: '2',
-      label: <>
-        投票人
-      </>,
-      children: <SupernodeVoters supernodeAddr={supernodeInfo.addr} />,
-    },
-  ];
+        label: <>
+          投票人
+        </>,
+          children: <SupernodeVoters supernodeAddr={supernodeInfo.addr} />,
+    }];
+  }, [supernodeInfo.addr])
 
   return <>
     <Card title="超级节点详情" style={{ width: "100%", marginTop: "50px" }}>

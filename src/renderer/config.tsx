@@ -13,13 +13,18 @@ export const Safe4_Network_Config = {
 }
 
 export const Safe4_Business_Config = {
-
   Masternode : {
 
   } ,
-
   Supernode : {
+    Register : {
+      LockAmount : 5000,
+      UnionLockAmount : 1000 ,
+      LockDays : 720
+    } ,
+    Append : {
 
+    }
   }
 
 }

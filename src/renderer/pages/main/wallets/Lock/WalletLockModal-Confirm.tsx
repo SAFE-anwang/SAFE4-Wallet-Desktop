@@ -6,8 +6,6 @@ import { SearchOutlined, SendOutlined, QrcodeOutlined, LockOutlined } from '@ant
 import { ethers } from "ethers";
 import { useAccountManagerContract } from "../../../../hooks/useContracts";
 import useTransactionResponseRender from "../../../components/useTransactionResponseRender";
-import { TransactionResponse } from "@ethersproject/providers";
-import AddressView from "../../../components/AddressView";
 const { Text, Link } = Typography;
 
 export default ({
@@ -37,8 +35,8 @@ export default ({
     amount: string,
     lockDay: number
   }) => {
-    setSending(true);
     if (accountManaggerContract) {
+      setSending(true);
       accountManaggerContract.deposit(to, lockDay, {
         value: ethers.utils.parseEther(amount),
       }).then((response: any) => {

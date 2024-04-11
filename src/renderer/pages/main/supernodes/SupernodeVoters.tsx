@@ -45,7 +45,7 @@ export default ({
           })
         })
     }
-  }, [supernodeVoteContract]);
+  }, [supernodeVoteContract,supernodeAddr]);
 
   useEffect(() => {
     if (pagination && supernodeVoteContract) {

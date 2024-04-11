@@ -11,6 +11,7 @@ import { TransactionResponse } from "@ethersproject/providers";
 import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { applicationUpdateWalletTab } from "../../../../state/application/action";
+import { Safe4_Business_Config } from "../../../../config";
 
 const { Text } = Typography;
 
@@ -52,18 +53,18 @@ export default ({
       // function register(bool _isUnion, address _addr, uint _lockDay, string memory _name, string memory _enode, string memory _description,
       //                    uint _creatorIncentive, uint _partnerIncentive, uint _voterIncentive) external payable;
       const value = ethers.utils.parseEther(
-        Supernode_create_type_Union == createType ? "1000" : "5000"
+        (Supernode_create_type_Union == createType ? Safe4_Business_Config.Supernode.Register.UnionLockAmount
+          : Safe4_Business_Config.Supernode.Register.LockAmount ) + ""
       );
       setSending(true);
       supernodeLogicContract.register(
         Supernode_create_type_Union == createType,
         address,
-        720,
+        Safe4_Business_Config.Supernode.Register.LockDays,
         name, enode, description,
         incentivePlan.creator, incentivePlan.partner, incentivePlan.voter,
         {
           value,
-          gasLimit: 1000000
         }
       ).then((response: TransactionResponse) => {
         const { hash, data } = response;

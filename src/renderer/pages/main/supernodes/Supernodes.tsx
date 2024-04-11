@@ -1,6 +1,6 @@
 
 import { CurrencyAmount, JSBI } from '@uniswap/sdk';
-import { Typography, Row, Col, Progress, Table, Badge, Button, Space, Card, Alert, Divider } from 'antd';
+import { Typography, Row, Col, Progress, Table, Badge, Button, Space, Card, Alert, Divider, Modal } from 'antd';
 import { ColumnsType, ColumnType } from 'antd/es/table';
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -15,6 +15,7 @@ import { MasternodeInfo, formatMasternode } from '../../../structs/Masternode';
 import { fetchSuperNodes } from '../../../services/supernode';
 import { SuperNodeVO } from '../../../services';
 import { useBlockNumber } from '../../../state/application/hooks';
+import Supernode from './Supernode';
 
 const { Title, Text } = Typography;
 
@@ -42,13 +43,16 @@ export default () => {
   const activeAccount = useWalletsActiveAccount();
   const [currentSupernodeInfo, setCurrentSupernodeInfo] = useState<SupernodeInfo>();
   const [currentMasternodeInfo, setCurrentMasternodeInfo] = useState<MasternodeInfo>();
-  const [supernodeVOs , setSupernodeVOs] = useState<SuperNodeVO[]>([]);
+  const [supernodeVOs, setSupernodeVOs] = useState<SuperNodeVO[]>([]);
   const [pagination, setPagination] = useState<{
-    current ?: number,
-    pageSize ?: number,
+    current?: number,
+    pageSize?: number,
     total?: number
   }>();
-  const [loading,setLoading] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(false);
+
+  const [openSupernodeModal, setOpenSupernodeModal] = useState<boolean>(false);
+  const [openSupernodeInfo, setOpenSupernodeInfo] = useState<SupernodeInfo>();
 
   useEffect(() => {
     if (pagination) {
@@ -60,13 +64,13 @@ export default () => {
           setLoading(false);
         })
     }
-  }, [pagination,blockNumber])
+  }, [pagination, blockNumber])
   useEffect(() => {
     setLoading(true);
-    fetchSuperNodes({ current : 1, pageSize:Supernode_Page_Size })
+    fetchSuperNodes({ current: 1, pageSize: Supernode_Page_Size })
       .then(data => {
-        const {current , pageSize , total} = data;
-        setPagination({current , pageSize , total});
+        const { current, pageSize, total } = data;
+        setPagination({ current, pageSize, total });
       })
   }, []);
 
@@ -102,7 +106,7 @@ export default () => {
       dataIndex: 'id',
       key: '_id',
       render: (id, supernodeVO: SuperNodeVO) => {
-        const { state , rank } = supernodeVO;
+        const { state, rank } = supernodeVO;
         return <>
           <Row>
             <Col>
@@ -170,7 +174,7 @@ export default () => {
       dataIndex: 'addr',
       key: 'addr',
       render: (addr, supernodeVO: SuperNodeVO) => {
-        const amount = CurrencyAmount.ether( JSBI.BigInt(supernodeVO.totalAmount) )
+        const amount = CurrencyAmount.ether(JSBI.BigInt(supernodeVO.totalAmount))
         const supernodeTarget = CurrencyAmount.ether(ethers.utils.parseEther("5000").toBigInt());
         const couldAddPartner = supernodeTarget.greaterThan(amount);
         const _addr = addr.substring(0, 10) + "...." + addr.substring(addr.length - 8);
@@ -205,6 +209,17 @@ export default () => {
                     navigate("/main/supernodes/vote");
                   }}>投票</Button>
                 }
+                <Button size='small' type='default' style={{ float: "right" }} onClick={() => {
+                  if (supernodeStorageContract) {
+                    supernodeStorageContract.callStatic.getInfo(supernodeVO.addr)
+                      .then(_supernodeInfo => {
+                        setOpenSupernodeInfo(formatSupernodeInfo(_supernodeInfo));
+                        setOpenSupernodeModal(true);
+                      })
+                      .catch(err => {
+                      })
+                  }
+                }}>查看</Button>
               </Space>
 
             </Col>
@@ -253,7 +268,7 @@ export default () => {
         </Card>
         <br /><br />
         <Table loading={loading} onChange={(pagination) => {
-          const {current , pageSize , total} = pagination;
+          const { current, pageSize, total } = pagination;
           setPagination({
             current,
             pageSize,
@@ -262,5 +277,15 @@ export default () => {
         }} dataSource={supernodeVOs} columns={columns} size="large" pagination={pagination} />
       </div>
     </div>
+
+    <Modal open={openSupernodeModal} width={1000} footer={null} closable onCancel={() => {
+      setOpenSupernodeInfo(undefined);
+      setOpenSupernodeModal(false);
+    }}>
+      {
+        openSupernodeInfo && <Supernode supernodeInfo={openSupernodeInfo} />
+      }
+    </Modal>
+
   </>
 }

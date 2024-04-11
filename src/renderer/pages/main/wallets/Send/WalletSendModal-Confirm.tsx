@@ -17,7 +17,7 @@ export default ({
   to: string,
   amount: string,
   setTxHash : (txHash : string) => void
-  close: () => void , 
+  close: () => void ,
 }) => {
 
   const signer = useWalletsActiveSigner();
@@ -38,7 +38,7 @@ export default ({
       const value = ethers.utils.parseEther(amount);
       const tx = {
         to,
-        value
+        value ,
       }
       setSending(true);
       signer.sendTransaction(tx).then(response => {

@@ -136,8 +136,6 @@ export interface IncentivePlanVO {
   voter: number
 }
 
-
-
 export function AddressActivityFormat(activity: AddressActivityVO): AddressActivityVO {
   const { data } = activity;
   let _data: any;

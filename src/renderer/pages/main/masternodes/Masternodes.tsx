@@ -54,9 +54,21 @@ export default () => {
   useEffect(() => {
     if (pagination && masternodeStorageContract && multicallContract) {
       const { pageSize, current, total } = pagination;
-      if (current && pageSize) {
+      if (current && pageSize && total) {
         setLoading(true);
-        masternodeStorageContract.callStatic.getAll((current - 1) * pageSize, pageSize)
+        //////////////////// 逆序 ////////////////////////
+        let _position = (current - 1) * pageSize;
+        let _offset = pageSize;
+        /////////////////////////////////////////////////
+        //////////////////// 逆序 ////////////////////////
+        let position = total - (pageSize * current);
+        let offset = pageSize;
+        if (position < 0) {
+          offset = pageSize + position;
+          position = 0;
+        }
+        //////////////////////////////////////////////////
+        masternodeStorageContract.callStatic.getAll(position, offset)
           .then((addresses: any) => {
             // function getInfo(address _addr) external view returns (MasterNodeInfo memory);
             const fragment = masternodeStorageContract.interface.getFunction("getInfo")
@@ -71,7 +83,7 @@ export default () => {
                   return formatMasternode(_masternode);
                 })
                 // then set masternodes ...
-                setMasternodes(masternodes);
+                setMasternodes(masternodes.sort( (m0:MasternodeInfo,m1:MasternodeInfo) => m1.id - m0.id ));
                 setLoading(false);
               })
           });
