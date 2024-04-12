@@ -114,17 +114,7 @@ export default () => {
     return items;
   }, [walletKeystore]);
 
-  const renderOrderMnemonicWords = (mnemonic: string) => {
-    const mnemonicArray = mnemonic.split(" ");
-    return <>
-      {
-        mnemonicArray.map(word => { })
-      }
-    </>
-  }
-
   return (<>
-
     <Row style={{ height: "50px" }}>
       <Col span={12}>
         <Title level={4} style={{ lineHeight: "16px" }}>

@@ -11,6 +11,7 @@ import { TransactionResponse } from "@ethersproject/providers";
 import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { applicationUpdateWalletTab } from "../../../../state/application/action";
+import { Safe4_Business_Config } from "../../../../config";
 
 const { Text } = Typography;
 
@@ -21,7 +22,7 @@ export default ({
   setOpenRegisterModal: (openRegisterModal: boolean) => void,
   registerParams: {
     registerType: number,
-    address : string | undefined,
+    address: string | undefined,
     enode: string | undefined,
     description: string | undefined,
     incentivePlan: {
@@ -45,14 +46,15 @@ export default ({
 
   const doRegisterMasternode = useCallback(() => {
     if (activeAccount && masternodeLogicContract) {
-      const { registerType, enode, description, incentivePlan , address } = registerParams;
+      const { registerType, enode, description, incentivePlan, address } = registerParams;
       // function register(bool _isUnion, address _addr, uint _lockDay, string memory _enode, string memory _description,
       //  uint _creatorIncentive, uint _partnerIncentive) external payable;
       //
       const value = ethers.utils.parseEther(
-        Masternode_create_type_Union == registerType ? "200" : "1000"
+        Masternode_create_type_Union == registerType ? Safe4_Business_Config.Masternode.Create.UnionLockAmount + ""
+          : Safe4_Business_Config.Masternode.Create.LockAmount + ""
       );
-      if ( registerType == Masternode_Create_Type_NoUnion ){
+      if (registerType == Masternode_Create_Type_NoUnion) {
         incentivePlan.creator = 100;
         incentivePlan.partner = 0;
       }
@@ -60,14 +62,14 @@ export default ({
       masternodeLogicContract.register(
         Masternode_create_type_Union == registerType,
         address,
-        720,
+        Safe4_Business_Config.Masternode.Create.LockDays,
         enode, description,
         incentivePlan.creator, incentivePlan.partner,
         {
           value,
         }
       ).then((response: TransactionResponse) => {
-        const { hash,data } = response;
+        const { hash, data } = response;
         addTransaction({ to: masternodeLogicContract.address }, response, {
           call: {
             from: activeAccount,
@@ -156,10 +158,10 @@ export default ({
     <Row style={{ width: "100%", textAlign: "right" }}>
       <Col span={24}>
         {
-          !sending && !render && <Button icon={<LockOutlined />} onClick={() => {
+          !sending && !render && <Button onClick={() => {
             doRegisterMasternode();
           }} disabled={sending} type="primary" style={{ float: "right" }}>
-            发送交易
+            广播交易
           </Button>
         }
         {

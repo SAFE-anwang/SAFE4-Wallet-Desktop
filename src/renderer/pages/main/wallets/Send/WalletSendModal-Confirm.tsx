@@ -100,7 +100,7 @@ export default ({
             !sending && !render && <Button icon={<SendOutlined />} onClick={() => {
               doSendTransaction({ to, amount });
             }} disabled={sending} type="primary" style={{ float: "right" }}>
-              执行
+              广播交易
             </Button>
           }
           {

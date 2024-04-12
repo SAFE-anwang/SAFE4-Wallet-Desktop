@@ -12,6 +12,7 @@ import AddressView from "../../../components/AddressView";
 import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { applicationUpdateWalletTab } from "../../../../state/application/action";
+import { Safe4_Business_Config } from "../../../../config";
 
 const { Text } = Typography;
 
@@ -47,7 +48,7 @@ export default ({
       const value = ethers.utils.parseEther(valueAmount + "");
       supernodeLogicContract.appendRegister(
         supernodeInfo.addr,
-        360,
+        Safe4_Business_Config.Masternode.Create.LockDays,
         {
           value: value
         }
@@ -81,9 +82,9 @@ export default ({
       navigate("/main/wallet");
     }
   }, [txHash]);
-  
 
-  return <Modal title="联合创建超级节点" open={openAppendModal} footer={null} destroyOnClose onCancel={cancel}>
+
+  return <Modal title="众筹创建超级节点" open={openAppendModal} footer={null} destroyOnClose onCancel={cancel}>
     <Divider />
     {
       render
@@ -148,7 +149,7 @@ export default ({
           !sending && !render && <Button onClick={() => {
             doAppendSupernode();
           }} disabled={sending} type="primary" style={{ float: "right" }}>
-            执行
+            广播交易
           </Button>
         }
         {

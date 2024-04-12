@@ -248,7 +248,7 @@ export default () => {
           <Divider />
           {
             (currentSupernodeInfo && currentSupernodeInfo.id == 0 && currentMasternodeInfo && currentMasternodeInfo.id == 0) && <>
-              <Button onClick={() => navigate("/main/supernodes/create")}>注册超级节点</Button>
+              <Button onClick={() => navigate("/main/supernodes/create")}>创建超级节点</Button>
             </>
           }
           {

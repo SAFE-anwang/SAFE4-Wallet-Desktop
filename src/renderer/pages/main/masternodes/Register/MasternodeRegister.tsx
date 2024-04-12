@@ -1,12 +1,15 @@
 import { Typography, Row, Col, Button, Card, Checkbox, CheckboxProps, Divider, Input, Slider, Alert, Radio, Space } from 'antd';
 import { useEffect, useMemo, useState } from 'react';
-import { LeftOutlined, LockOutlined, QuestionCircleOutlined } from '@ant-design/icons';
+import { LeftOutlined, QuestionCircleOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { Currency, CurrencyAmount, JSBI } from '@uniswap/sdk';
 import { ethers } from 'ethers';
 import { useETHBalances, useWalletsActiveAccount } from '../../../../state/wallets/hooks';
-import { useMasternodeStorageContract, useSupernodeStorageContract } from '../../../../hooks/useContracts';
+import { useMasternodeStorageContract, useMulticallContract, useSupernodeStorageContract } from '../../../../hooks/useContracts';
 import RegisterModalConfirm from './RegisterModal-Confirm';
+import NumberFormat from '../../../../utils/NumberFormat';
+import { Safe4_Business_Config } from '../../../../config';
+import CallMulticallAggregate, { CallMulticallAggregateContractCall } from '../../../../state/multicall/CallMulticallAggregate';
 const { Text, Title } = Typography;
 
 export const Masternode_Create_Type_NoUnion = 1;
@@ -26,12 +29,13 @@ export default () => {
   const balance = useETHBalances([activeAccount])[activeAccount];
   const masternodeStorageContract = useMasternodeStorageContract();
   const supernodeStorageContract = useSupernodeStorageContract();
+  const multicallContract = useMulticallContract();
   const [openRegisterModal, setOpenRegsterModal] = useState<boolean>(false);
   const [enodeTips, setEnodeTips] = useState<boolean>(false);
 
   const [registerParams, setRegisterParams] = useState<{
     registerType: number | 1,
-    address : string | undefined,
+    address: string | undefined,
     enode: string | undefined,
     description: string | undefined,
     incentivePlan: {
@@ -40,7 +44,7 @@ export default () => {
     }
   }>({
     registerType: Masternode_Create_Type_NoUnion,
-    address : activeAccount,
+    address: activeAccount,
     enode: undefined,
     description: undefined,
     incentivePlan: {
@@ -49,33 +53,33 @@ export default () => {
     }
   });
 
-  useEffect(()=>{
+  useEffect(() => {
     setRegisterParams({
       ...registerParams,
-      address : activeAccount
+      address: activeAccount
     })
     setInputErrors({
       ...inputErrors,
-      balance : undefined,
-      address : undefined
+      balance: undefined,
+      address: undefined
     })
-  },[activeAccount]);
+  }, [activeAccount]);
 
   const [sliderVal, setSliderVal] = useState<number>(50);
   const [inputErrors, setInputErrors] = useState<{
-    address : string | undefined ,
+    address: string | undefined,
     enode: string | undefined,
     description: string | undefined,
     balance: string | undefined
   }>({
-    address : undefined,
+    address: undefined,
     enode: undefined,
     description: undefined,
     balance: undefined
   });
 
   const nextClick = async () => {
-    const { enode, description, incentivePlan , address } = registerParams;
+    const { enode, description, incentivePlan, address } = registerParams;
     incentivePlan.creator = sliderVal;
     incentivePlan.partner = 100 - sliderVal;
     if (!enode) {
@@ -87,10 +91,10 @@ export default () => {
         inputErrors.enode = "主节点ENODE格式不正确!";
       }
     }
-    if (!address){
+    if (!address) {
       inputErrors.address = "请输入主节点钱包地址";
-    }else{
-      if ( !ethers.utils.isAddress(address) ){
+    } else {
+      if (!ethers.utils.isAddress(address)) {
         inputErrors.address = "请输入合法的钱包地址";
       }
     }
@@ -101,11 +105,15 @@ export default () => {
       inputErrors.description = `简介信息长度需要大于${InputRules.description.min}且小于${InputRules.description.max}`;
     }
     if (registerParams.registerType == Masternode_Create_Type_NoUnion
-      && !balance?.greaterThan(CurrencyAmount.ether(JSBI.BigInt(ethers.utils.parseEther("1000"))))) {
+      && !balance?.greaterThan(CurrencyAmount.ether(JSBI.BigInt(ethers.utils.parseEther(
+        Safe4_Business_Config.Masternode.Create.LockAmount + ""
+      ))))) {
       inputErrors.balance = "账户余额不足以锁仓来创建主节点";
     }
     if (registerParams.registerType == Masternode_create_type_Union
-      && !balance?.greaterThan(CurrencyAmount.ether(JSBI.BigInt(ethers.utils.parseEther("200"))))) {
+      && !balance?.greaterThan(CurrencyAmount.ether(JSBI.BigInt(ethers.utils.parseEther(
+        Safe4_Business_Config.Masternode.Create.UnionLockAmount + ""
+      ))))) {
       inputErrors.balance = "账户余额不足以锁仓来创建主节点";
     }
     if (inputErrors.enode || inputErrors.description || inputErrors.balance || inputErrors.address) {
@@ -117,26 +125,52 @@ export default () => {
        * function existEnode(string memory _enode) external view returns (bool);
        */
       setChecking(true);
-      const addrExistsInMasternodes = await masternodeStorageContract.callStatic.exist(address);
-      const addrExistsInSupernodes = await supernodeStorageContract.callStatic.exist(address);
-      const enodeExistsInMasternodes = await masternodeStorageContract.callStatic.existEnode(enode);
-      const enodeExistsInSupernodes = await supernodeStorageContract.callStatic.existEnode(enode);
-      setChecking(false);
-      if (addrExistsInMasternodes || addrExistsInSupernodes) {
-        inputErrors.address = "该钱包地址已被使用";
-        setInputErrors({ ...inputErrors });
-        return;
+
+      const addrExistCall: CallMulticallAggregateContractCall = {
+        contract: masternodeStorageContract,
+        functionName: "exist",
+        params: [address]
+      };
+      const addrExistInSupernodesCall: CallMulticallAggregateContractCall = {
+        contract: supernodeStorageContract,
+        functionName: "exist",
+        params: [address]
+      };
+      const enodeExistCall: CallMulticallAggregateContractCall = {
+        contract: masternodeStorageContract,
+        functionName: "existEnode",
+        params: [enode]
+      };
+      const enodeExistInSupernodesCall: CallMulticallAggregateContractCall = {
+        contract: supernodeStorageContract,
+        functionName: "existEnode",
+        params: [enode]
       }
-      if (enodeExistsInMasternodes || enodeExistsInSupernodes) {
-        inputErrors.enode = "该ENODE已被使用";
-        setInputErrors({ ...inputErrors });
-        return;
-      }
-      setOpenRegsterModal(true);
+
+      CallMulticallAggregate(multicallContract, [
+        addrExistCall, addrExistInSupernodesCall, enodeExistCall, enodeExistInSupernodesCall
+      ], () => {
+        const addrExistsInMasternodes : boolean = addrExistCall.result;
+        const addrExistsInSupernodes : boolean = addrExistInSupernodesCall.result;
+        const enodeExistsInMasternodes : boolean = enodeExistCall.result;
+        const enodeExistsInSupernodes : boolean = enodeExistInSupernodesCall.result;
+        setChecking(false);
+        if (addrExistsInMasternodes || addrExistsInSupernodes) {
+          inputErrors.address = "该钱包地址已被使用";
+          setInputErrors({ ...inputErrors });
+          return;
+        }
+        if (enodeExistsInMasternodes || enodeExistsInSupernodes) {
+          inputErrors.enode = "该ENODE已被使用";
+          setInputErrors({ ...inputErrors });
+          return;
+        }
+        setOpenRegsterModal(true);
+      });
     }
   }
 
-  const [checking,setChecking] = useState<boolean>(false);
+  const [checking, setChecking] = useState<boolean>(false);
 
   return <>
     <Row style={{ height: "50px" }}>
@@ -179,11 +213,11 @@ export default () => {
               <Text type='secondary'>锁仓</Text><br />
               {
                 registerParams.registerType == Masternode_Create_Type_NoUnion &&
-                <Text strong>1,000 SAFE</Text>
+                <Text strong>{NumberFormat(Safe4_Business_Config.Masternode.Create.LockAmount)} SAFE</Text>
               }
               {
                 registerParams.registerType == Masternode_create_type_Union &&
-                <Text strong>200 SAFE</Text>
+                <Text strong>{NumberFormat(Safe4_Business_Config.Masternode.Create.UnionLockAmount)} SAFE</Text>
               }
               <br />
             </Col>
@@ -232,7 +266,7 @@ export default () => {
                 </>} />
               </Col>
             }
-            <Input.TextArea status={inputErrors.enode ? "error" : ""}
+            <Input.TextArea style={{ height: "100px" }} status={inputErrors.enode ? "error" : ""}
               value={registerParams.enode} placeholder='输入主节点节点ENODE' onChange={(event) => {
                 const inputEnode = event.target.value;
                 setInputErrors({
@@ -252,7 +286,7 @@ export default () => {
           <Divider />
           <Row>
             <Text type='secondary'>简介</Text>
-            <Input status={inputErrors.description ? "error" : ""}
+            <Input.TextArea style={{ height: "100px" }} status={inputErrors.description ? "error" : ""}
               value={registerParams.description} placeholder='请输入主节点简介信息' onChange={(event) => {
                 const inputDescription = event.target.value;
                 setInputErrors({
@@ -263,7 +297,7 @@ export default () => {
                   ...registerParams,
                   description: inputDescription
                 })
-              }}></Input>
+              }}></Input.TextArea>
             {
               inputErrors && inputErrors.description &&
               <Alert style={{ marginTop: "5px" }} type='error' message={inputErrors.description} showIcon></Alert>
@@ -279,7 +313,7 @@ export default () => {
                 <Slider style={{ width: "100%" }}
                   value={sliderVal}
                   onChange={(result: number) => {
-                    if ( result > 0 && result <= 50 ){
+                    if (result > 0 && result <= 50) {
                       setSliderVal(result)
                     }
                   }}

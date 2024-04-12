@@ -53,14 +53,14 @@ export default ({
       // function register(bool _isUnion, address _addr, uint _lockDay, string memory _name, string memory _enode, string memory _description,
       //                    uint _creatorIncentive, uint _partnerIncentive, uint _voterIncentive) external payable;
       const value = ethers.utils.parseEther(
-        (Supernode_create_type_Union == createType ? Safe4_Business_Config.Supernode.Register.UnionLockAmount
-          : Safe4_Business_Config.Supernode.Register.LockAmount ) + ""
+        (Supernode_create_type_Union == createType ? Safe4_Business_Config.Supernode.Create.UnionLockAmount
+          : Safe4_Business_Config.Supernode.Create.LockAmount ) + ""
       );
       setSending(true);
       supernodeLogicContract.register(
         Supernode_create_type_Union == createType,
         address,
-        Safe4_Business_Config.Supernode.Register.LockDays,
+        Safe4_Business_Config.Supernode.Create.LockDays,
         name, enode, description,
         incentivePlan.creator, incentivePlan.partner, incentivePlan.voter,
         {

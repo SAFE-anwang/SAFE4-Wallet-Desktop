@@ -7,8 +7,7 @@ import { useAccountManagerContract } from "../../../../hooks/useContracts";
 import { AccountRecord } from "../../../../structs/AccountManager";
 import { RetweetOutlined } from '@ant-design/icons';
 import useTransactionResponseRender from "../../../components/useTransactionResponseRender";
-const { Text, Link } = Typography;
-
+const { Text } = Typography;
 
 export default ({
   accountRecord, cancel,
@@ -63,9 +62,7 @@ export default ({
             setErr(err)
           })
       } else {
-        accountManaggerContract.withdraw({
-          // gasLimit: 5000000
-        })
+        accountManaggerContract.withdraw()
           .then((response: any) => {
             setSending(false);
             const { hash, data } = response;
@@ -156,12 +153,12 @@ export default ({
             !sending && !render && <Button onClick={() => {
               doWithdrawTransaction()
             }} disabled={sending} type="primary" style={{ float: "right" }}>
-              执行
+              广播交易
             </Button>
           }
           {
             sending && !render && <Button loading disabled type="primary" style={{ float: "right" }}>
-              广播交易..
+              发送中..
             </Button>
           }
           {

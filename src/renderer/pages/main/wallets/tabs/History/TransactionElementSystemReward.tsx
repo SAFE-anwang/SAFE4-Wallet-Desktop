@@ -1,7 +1,6 @@
 import { List, Row, Typography } from "antd";
 import { TransactionDetails } from "../../../../../state/transactions/reducer"
 import TransactionElementTemplate from "./TransactionElementTemplate"
-import TransactionElement from "./TransactionElement";
 import { CurrencyAmount, JSBI } from "@uniswap/sdk";
 
 const { Text } = Typography;

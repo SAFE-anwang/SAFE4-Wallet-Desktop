@@ -6,7 +6,7 @@ import { useActiveAccountAccountRecords, useETHBalances, useWalletsActiveAccount
 import { EmptyContract } from '../../../../constants/SystemContracts';
 import { useSelector } from 'react-redux';
 import { AppState } from '../../../../state';
-import { useMasternodeStorageContract, useSupernodeStorageContract } from '../../../../hooks/useContracts';
+import { useMasternodeStorageContract, useMulticallContract, useSupernodeStorageContract } from '../../../../hooks/useContracts';
 import { SupernodeInfo, formatSupernodeInfo } from '../../../../structs/Supernode';
 import VoteModalConfirm from '../Vote/VoteModal-Confirm';
 import { AccountRecord } from '../../../../structs/AccountManager';
@@ -18,6 +18,7 @@ import CreateModalConfirm from './CreateModal-Confirm';
 import type { RadioChangeEvent } from 'antd';
 import NumberFormat from '../../../../utils/NumberFormat';
 import { Safe4_Business_Config } from '../../../../config';
+import CallMulticallAggregate, { CallMulticallAggregateContractCall } from '../../../../state/multicall/CallMulticallAggregate';
 const { Text, Title } = Typography;
 
 export const Supernode_Create_Type_NoUnion = 1;
@@ -39,6 +40,7 @@ export default () => {
   const navigate = useNavigate();
   const supernodeStorageContract = useSupernodeStorageContract();
   const masternodeStorageContract = useMasternodeStorageContract();
+  const multicallContract = useMulticallContract();
   const activeAccount = useWalletsActiveAccount();
   const balance = useETHBalances([activeAccount])[activeAccount];
   const [enodeTips, setEnodeTips] = useState<boolean>(false);
@@ -82,8 +84,7 @@ export default () => {
     address: undefined
   });
 
-  const nextClick = async () => {
-
+  const nextClick = () => {
     const { name, enode, description, incentivePlan, address } = createParams;
     incentivePlan.partner = sliderVal[0];
     incentivePlan.creator = sliderVal[1] - sliderVal[0];
@@ -122,43 +123,74 @@ export default () => {
     }
 
     if (createParams.createType == Supernode_Create_Type_NoUnion
-      && !balance?.greaterThan(CurrencyAmount.ether(JSBI.BigInt(ethers.utils.parseEther( Safe4_Business_Config.Supernode.Register.LockAmount + "" ))))) {
+      && !balance?.greaterThan(CurrencyAmount.ether(JSBI.BigInt(ethers.utils.parseEther(Safe4_Business_Config.Supernode.Register.LockAmount + ""))))) {
       inputErrors.balance = "账户余额不足以支付超级节点创建费用";
     }
     if (createParams.createType == Supernode_create_type_Union
-      && !balance?.greaterThan(CurrencyAmount.ether(JSBI.BigInt(ethers.utils.parseEther( Safe4_Business_Config.Supernode.Register.UnionLockAmount + "" ))))) {
+      && !balance?.greaterThan(CurrencyAmount.ether(JSBI.BigInt(ethers.utils.parseEther(Safe4_Business_Config.Supernode.Register.UnionLockAmount + ""))))) {
       inputErrors.balance = "账户余额不足以支付超级节点创建费用";
     }
     if (inputErrors.name || inputErrors.enode || inputErrors.description || inputErrors.balance || inputErrors.address) {
       setInputErrors({ ...inputErrors });
       return;
     }
-    if (supernodeStorageContract && masternodeStorageContract) {
+    if (supernodeStorageContract && masternodeStorageContract && multicallContract) {
       /**
        * function existName(string memory _name) external view returns (bool);
        * function existEnode(string memory _enode) external view returns (bool);
        */
       setChecking(true);
-      const nameExists = await supernodeStorageContract.callStatic.existName(name);
-      const addrExists = await supernodeStorageContract.callStatic.exist(address);
-      const addrExistsInMasternodes = await masternodeStorageContract.callStatic.exist(address);
-      const enodeExists = await supernodeStorageContract.callStatic.existEnode(enode);
-      const enodeExistsInMasternodes = await masternodeStorageContract.callStatic.existEnode(enode);
-      if (nameExists) {
-        inputErrors.name = "该名称已被使用";
+      const nameExistCall : CallMulticallAggregateContractCall = {
+        contract: supernodeStorageContract,
+        functionName: "existName",
+        params: [name],
+      };
+      const addrExistCall : CallMulticallAggregateContractCall= {
+        contract: supernodeStorageContract,
+        functionName: "exist",
+        params: [address]
       }
-      if (addrExists || addrExistsInMasternodes) {
-        inputErrors.address = "该地址已被使用";
+      const addrExistInMasternodesCall : CallMulticallAggregateContractCall = {
+        contract: masternodeStorageContract,
+        functionName: "exist",
+        params: [address]
       }
-      if (enodeExists || enodeExistsInMasternodes) {
-        inputErrors.enode = "该ENODE已被使用";
+      const enodeExistCall : CallMulticallAggregateContractCall = {
+        contract: supernodeStorageContract,
+        functionName: "existEnode",
+        params: [enode]
       }
-      setChecking(false);
-      if (nameExists || enodeExists || enodeExistsInMasternodes || addrExists || addrExistsInMasternodes) {
-        setInputErrors({ ...inputErrors });
-        return;
+      const enodeExistInMasternodeCall : CallMulticallAggregateContractCall = {
+        contract: masternodeStorageContract,
+        functionName: "existEnode",
+        params: [enode]
       }
-      setOpenCreateModal(true);
+      CallMulticallAggregate(
+        multicallContract,
+        [nameExistCall, addrExistCall, addrExistInMasternodesCall, enodeExistCall, enodeExistInMasternodeCall],
+        () => {
+          const nameExists : boolean = nameExistCall.result;
+          const addrExists : boolean = addrExistCall.result;
+          const addrExistsInMasternodes : boolean = addrExistInMasternodesCall.result;
+          const enodeExists : boolean = enodeExistCall.result;
+          const enodeExistsInMasternodes : boolean = enodeExistInMasternodeCall.result;
+          if (nameExists) {
+            inputErrors.name = "该名称已被使用";
+          }
+          if (addrExists || addrExistsInMasternodes) {
+            inputErrors.address = "该地址已被使用";
+          }
+          if (enodeExists || enodeExistsInMasternodes) {
+            inputErrors.enode = "该ENODE已被使用";
+          }
+          setChecking(false);
+          if (nameExists || enodeExists || enodeExistsInMasternodes || addrExists || addrExistsInMasternodes) {
+            setInputErrors({ ...inputErrors });
+            return;
+          }
+          setOpenCreateModal(true);
+        }
+      )
     }
   }
   const [openCreateModal, setOpenCreateModal] = useState<boolean>(false);
@@ -216,11 +248,11 @@ export default () => {
               <Text type='secondary'>锁仓</Text><br />
               {
                 createParams.createType == Supernode_Create_Type_NoUnion &&
-                <Text strong>{ NumberFormat( Safe4_Business_Config.Supernode.Register.LockAmount ) } SAFE</Text>
+                <Text strong>{NumberFormat(Safe4_Business_Config.Supernode.Register.LockAmount)} SAFE</Text>
               }
               {
                 createParams.createType == Supernode_create_type_Union &&
-                <Text strong>{ NumberFormat( Safe4_Business_Config.Supernode.Register.UnionLockAmount ) } SAFE</Text>
+                <Text strong>{NumberFormat(Safe4_Business_Config.Supernode.Register.UnionLockAmount)} SAFE</Text>
               }
               <br />
             </Col>
@@ -293,7 +325,7 @@ export default () => {
                 </>} />
               </Col>
             }
-            <Input.TextArea status={inputErrors.enode ? "error" : ""}
+            <Input.TextArea style={{height:"100px"}} status={inputErrors.enode ? "error" : ""}
               value={createParams.enode} placeholder='输入超级节点ENODE' onChange={(event) => {
                 const inputEnode = event.target.value;
                 setInputErrors({

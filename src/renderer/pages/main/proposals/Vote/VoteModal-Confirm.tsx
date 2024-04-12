@@ -149,7 +149,7 @@ export default ({
           !sending && !render && <Button onClick={() => {
             doVoteProposal();
           }} disabled={sending} type="primary" style={{ float: "right" }}>
-            执行
+            广播交易
           </Button>
         }
         {

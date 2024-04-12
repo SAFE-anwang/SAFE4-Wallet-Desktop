@@ -222,7 +222,7 @@ export default () => {
           {
             currentMasternodeInfo && currentMasternodeInfo.id == 0 &&
             currentSupernodeInfo && currentSupernodeInfo.id == 0 && <>
-              <Button onClick={() => { navigate("/main/masternodes/register") }}>注册主节点</Button>
+              <Button onClick={() => { navigate("/main/masternodes/register") }}>创建主节点</Button>
             </>
           }
         </Card>

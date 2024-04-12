@@ -1,7 +1,7 @@
 
-import { Typography, Row, Col, Button, Card, Checkbox, CheckboxProps, Divider, Space, Input, Slider, InputNumber, Alert } from 'antd';
-import { useEffect, useMemo, useState } from 'react';
-import { useActiveAccountAccountRecords, useETHBalances, useWalletsActiveAccount } from '../../../../state/wallets/hooks';
+import { Typography, Row, Col, Button, Card, Divider, Space, Input, Slider, InputNumber, Alert } from 'antd';
+import { useEffect, useState } from 'react';
+import { useETHBalances, useWalletsActiveAccount } from '../../../../state/wallets/hooks';
 import { useSelector } from 'react-redux';
 import { AppState } from '../../../../state';
 import { useSupernodeStorageContract } from '../../../../hooks/useContracts';
@@ -12,6 +12,7 @@ import { CurrencyAmount, JSBI } from '@uniswap/sdk';
 import { ethers } from 'ethers';
 import AppendModalConfirm from './AppendModal-Confirm';
 import Supernode from '../Supernode';
+import { Safe4_Business_Config } from '../../../../config';
 
 const { Text, Title } = Typography;
 
@@ -52,8 +53,8 @@ export default () => {
         (totalAmount, founder) => totalAmount = totalAmount.add(founder.amount),
         CurrencyAmount.ether(JSBI.BigInt(0))
       )
-      const left = 5000 - Number(totalAmount.toFixed(0));
-      if (left < 500) {
+      const left = Safe4_Business_Config.Supernode.Create.LockAmount - Number(totalAmount.toFixed(0));
+      if ( left < Safe4_Business_Config.Supernode.Create.UnionLockAmount ) {
         setParams({
           step: 0,
           min: left,
@@ -62,10 +63,10 @@ export default () => {
         })
       } else {
         setParams({
-          step: 1000,
-          min: 1000,
+          step: Safe4_Business_Config.Supernode.Create.UnionLockAmount ,
+          min: Safe4_Business_Config.Supernode.Create.UnionLockAmount ,
           left,
-          value: 1000
+          value: Safe4_Business_Config.Supernode.Create.UnionLockAmount
         })
       }
     }

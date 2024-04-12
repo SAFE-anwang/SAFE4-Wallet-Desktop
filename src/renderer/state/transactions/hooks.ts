@@ -5,6 +5,8 @@ import { useCallback, useMemo } from "react";
 import { addTransaction } from "./actions";
 import { Transfer, TransactionDetails, ContractCall } from "./reducer";
 import { DateFormat } from "../../utils/DateUtils";
+import { CurrencyAmount, JSBI } from "@uniswap/sdk";
+import { ethers } from "ethers";
 
 
 export function useTransactionAdder2(): (
@@ -108,13 +110,32 @@ export function useTransactions(account?: string) {
       })
   }, [account, transactions]);
   const dateTransactions: {
-    [date: string]: TransactionDetails[]
+    [date: string]: {
+      transactions : TransactionDetails[] ,
+      systemRewardAmount : CurrencyAmount
+    }
   } = {};
+
   accountTransactions.forEach(transaction => {
     const date = transaction.timestamp ? transaction.timestamp : transaction.addedTime;
     const dateKey = DateFormat(date);
-    dateTransactions[dateKey] = dateTransactions[dateKey] ?? [];
-    dateTransactions[dateKey].push(transaction)
+    dateTransactions[dateKey] = dateTransactions[dateKey] ?? {
+      transactions : [] ,
+      systemRewardAmount : CurrencyAmount.ether(JSBI.BigInt(0))
+    };
+    if ( transaction.systemRewardDatas ){
+      Object.keys( transaction.systemRewardDatas )
+        .forEach( eventLogIndex => {
+          if ( transaction.systemRewardDatas ){
+            const {amount} = transaction.systemRewardDatas[eventLogIndex];
+            const _amount = CurrencyAmount.ether(JSBI.BigInt( amount ));
+            dateTransactions[dateKey].systemRewardAmount =
+            dateTransactions[dateKey].systemRewardAmount.add(_amount);
+          }
+        })
+    }else{
+      dateTransactions[dateKey].transactions.push(transaction);
+    }
   });
   return dateTransactions;
 }

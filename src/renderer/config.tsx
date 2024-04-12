@@ -13,20 +13,26 @@ export const Safe4_Network_Config = {
 }
 
 export const Safe4_Business_Config = {
-  Masternode : {
-
-  } ,
-  Supernode : {
-    Register : {
-      LockAmount : 5000,
-      UnionLockAmount : 1000 ,
-      LockDays : 720
-    } ,
-    Append : {
-
+  Masternode: {
+    Create: {
+      // 创建主节点时需要锁仓的 SAFE 数量
+      LockAmount: 1000,
+      // 众筹主节点时需要锁仓的 SAFE 数量
+      UnionLockAmount: 200,
+      // 锁仓天数
+      LockDays: 720
+    },
+  },
+  Supernode: {
+    Create: {
+      // 创建超级节点时需要锁仓的 SAFE 数量
+      LockAmount: 5000,
+      // 众筹创建超级节点时需要锁仓的 SAFE 数量
+      UnionLockAmount: 1000,
+      // 锁仓天数
+      LockDays: 720
     }
   }
-
 }
 
 const Config = {
