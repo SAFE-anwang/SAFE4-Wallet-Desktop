@@ -61,7 +61,10 @@ export interface IApplicationState {
   data: {
     [key: string]: any
   } ,
-
+  rpcConfigs ?: {
+    chainId : number , 
+    endpoint : string
+  }[],
   encrypt ?: {
     password ?: string ,
     salt ?: string,
@@ -93,12 +96,13 @@ const initialState: IApplicationState = {
 
 export default createReducer(initialState, (builder) => {
 
-  builder.addCase(applicationDataLoaded, (state, { payload: { path } }) => {
+  builder.addCase(applicationDataLoaded, (state, { payload: { path , rpcConfigs } }) => {
     const { resource, data, database, keystores } = path;
     state.data["resource"] = resource;
     state.data["data"] = data;
     state.data["database"] = database;
     state.data["keystores"] = keystores;
+    state.rpcConfigs = rpcConfigs;
   })
 
     .addCase(applicationBlockchainUpdateBlockNumber, (state, { payload }) => {

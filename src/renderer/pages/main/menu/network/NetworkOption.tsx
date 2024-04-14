@@ -89,14 +89,14 @@ export default ({
   }
 
   const cantUseable = () => {
-    if (chainId   && isSafe4Network( chainId ) ) {
+    if (chainId && isSafe4Network( chainId ) ) {
       return endpoint == activeEndpoint;
     }
     return true;
   }
 
   return <>
-    <Card size='small' style={{ marginBottom: "10px" , background: endpoint == activeEndpoint ? "#efefef" : "" }}>
+    <Card key={endpoint} size='small' style={{ marginBottom: "10px" , background: endpoint == activeEndpoint ? "#efefef" : "" }}>
       <Row>
         <Col span={6}>
           {renderActiveStatus()}

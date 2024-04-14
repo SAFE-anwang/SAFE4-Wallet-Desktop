@@ -4,7 +4,7 @@ import { ethers } from 'ethers';
 import { base58, sha256 } from 'ethers/lib/utils';
 const CryptoJS = require('crypto-js');
 
-const hexToUtf8Bytes = (hex: string): Uint8Array => {
+const hexToUint8Bytes = (hex: string): Uint8Array => {
   let _hex = hex.indexOf("0x") == 0 ? hex.substring(2) : hex;
   const hexBytes = _hex.match(/.{1,2}/g)?.map(byte => parseInt(byte, 16));
   if (hexBytes) {
@@ -14,7 +14,7 @@ const hexToUtf8Bytes = (hex: string): Uint8Array => {
 }
 
 const sha256Hex = (hex: string): string => {
-  const bytes = hexToUtf8Bytes(hex);
+  const bytes = hexToUint8Bytes(hex);
   return bytes ? sha256(bytes).substring(2) : "";
 }
 
@@ -34,7 +34,7 @@ const publicKeyToAddress = ( publicKey : string , networkFlag : string ) : strin
   const twiceSha256Hash = sha256Hex( sha256Hex(withNetwork) );
   const header = twiceSha256Hash.substring(0, 8);
   const beforeBase58 = withNetwork + header;
-  return base58.encode( hexToUtf8Bytes(beforeBase58) );
+  return base58.encode( hexToUint8Bytes(beforeBase58) );
 }
 
 const toCompressPublicKey = ( publicKey : string ) => {
@@ -58,8 +58,6 @@ export default ( Safe3PrivateKey_Base58 : string) : {
   safe3CompressAddress : string,
   safe4Address : string
 } => {
-  // privatekey
-  // const privateKeyBase58 = "XJ2M1PbCAifB8W91hcHDEho18kA2ByB4Jdmi4XBHq5sNgtuEpXr4";
   const privateKeyDecodeHex = ethers.utils.hexValue(base58.decode(Safe3PrivateKey_Base58));
   const privateKey = privateKeyDecodeHex.substring(4,68);
   const wallet = new ethers.Wallet(privateKey);

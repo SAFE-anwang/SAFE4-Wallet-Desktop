@@ -9,7 +9,7 @@ import { WalletKeystore } from "../../state/wallets/reducer";
 import { walletsLoadKeystores } from "../../state/wallets/action";
 import { applicationActionUpdateAtCreateWallet } from "../../state/application/action";
 import { LeftOutlined, LockOutlined } from '@ant-design/icons';
-import { useImportWalletParams } from "../../state/application/hooks";
+import { useApplicationPassword, useImportWalletParams } from "../../state/application/hooks";
 import { Import_Type_Mnemonic, Import_Type_PrivateKey } from "./import/ImportWallet";
 import { HDNode } from "ethers/lib/utils";
 import { ethers } from "ethers";
@@ -18,6 +18,7 @@ export default () => {
 
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const password = useApplicationPassword();
   const importWalletParams = useImportWalletParams();
   const walletsKeystores = useWalletsKeystores();
   const [newWalletKeystore, setNewWalletKeystore] = useState<WalletKeystore>();
@@ -174,10 +175,10 @@ export default () => {
   }, [importWalletParams])
 
   useEffect(() => {
-    if (newWalletKeystore?.address) {
-      window.electron.ipcRenderer.sendMessage(IPC_CHANNEL, [WalletSignal, Wallet_Methods.storeWallet, [walletsKeystores]]);
+    if (newWalletKeystore?.address && password) {
+      window.electron.ipcRenderer.sendMessage(IPC_CHANNEL, [WalletSignal, Wallet_Methods.storeWallet, [walletsKeystores,password]]);
     }
-  }, [newWalletKeystore])
+  }, [newWalletKeystore,password])
 
   return (
     <>

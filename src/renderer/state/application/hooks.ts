@@ -65,4 +65,9 @@ export function useApplicationPassword() : string | undefined {
   })
 }
 
+export function useApplicationRpcConfigs() : { chainId : number , endpoint : string }[] | undefined {
+  return useSelector((state: AppState) => {
+    return state.application.rpcConfigs;
+  })
+}
 

@@ -10,7 +10,11 @@ export const applicationDataLoaded = createAction<{
     data: string,
     keystores: string,
     database: string
-  }
+  } , 
+  rpcConfigs : {
+    chainId : number , 
+    endpoint : string
+  }[]
 }>("application/dataLoaded")
 
 export const applicationActionConfirmedMnemonic = createAction<{

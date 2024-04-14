@@ -6,7 +6,6 @@ import { initializeConnect } from './connectors/network';
 import LoopUpdate from './LoopUpdate';
 import { Network } from '@web3-react/network';
 import { useDispatch } from 'react-redux';
-import AppRouters from './pages/AppRouters';
 import { IndexSingal, Index_Methods } from '../main/handlers/IndexSingalHandler';
 import config, { IPC_CHANNEL } from './config';
 import { applicationDataLoaded, applicationSetPassword, applicationUpdateWeb3Rpc } from './state/application/action';
@@ -111,16 +110,17 @@ export default function App() {
           encrypt,
           rpc_configs
         } = data;
-        setDbRpcConfigs(rpc_configs.map((rpc_config: any) => {
+        const rpcConfigs = rpc_configs.map((rpc_config: any) => {
           const { id, chain_id, endpoint, active } = rpc_config;
           return {
             chainId: chain_id,
             endpoint,
             active
           }
-        }));
+        });
+        setDbRpcConfigs(rpcConfigs);
         dispatch(applicationDataLoaded({
-          path
+          path , rpcConfigs
         }));
         if (encrypt) {
           setEncrypt(encrypt);

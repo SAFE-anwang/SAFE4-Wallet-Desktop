@@ -6,13 +6,23 @@ import { useCallback, useEffect, useState } from "react";
 import { ethers } from "ethers";
 import { HDNode } from "ethers/lib/utils";
 import { applicationActionConfirmedImport } from "../../../state/application/action";
+import Safe3PrivateKey from "../../../utils/Safe3PrivateKey";
 
 const { Text } = Typography;
 
 export const Import_Type_PrivateKey = "ImportTypePrivateKey";
 export const Import_Type_Mnemonic = "ImportTypeMnemonic";
 const BIP44_Safe4_Path = "m/44'/60'/0'/0/0";
+
 const privateKeyRegex = /^(0x)?[0-9a-fA-F]{64}$/;
+const safe3Base58PrivateKeyRegex = /^[1-9A-HJ-NP-Za-km-z]{52}$/;
+
+const isValidPrivateKey = (inputPrivateKey: string) => {
+  return {
+    isEVMPrivateKey: privateKeyRegex.test(inputPrivateKey),
+    isSafe3Base58PrivateKey: safe3Base58PrivateKeyRegex.test(inputPrivateKey)
+  }
+}
 
 export default () => {
 
@@ -127,9 +137,9 @@ export default () => {
         dispatch(applicationActionConfirmedImport({
           importType,
           address,
-          mnemonic : params.mnemonic,
-          password : params.password,
-          path : params.path
+          mnemonic: params.mnemonic,
+          password: params.password,
+          path: params.path
         }))
       } else if (importType == Import_Type_PrivateKey) {
         dispatch(applicationActionConfirmedImport({
@@ -190,11 +200,12 @@ export default () => {
                     <Text type="secondary" strong>私钥</Text>
                     <Input.TextArea status={inputErrors?.privateKey ? "error" : ""}
                       onChange={(event) => {
-                        const inputPrivateKey = event.target.value;
-                        if (privateKeyRegex.test(inputPrivateKey)) {
+                        const inputPrivateKey = event.target.value.trim();
+                        const { isEVMPrivateKey, isSafe3Base58PrivateKey } = isValidPrivateKey(inputPrivateKey)
+                        if (isEVMPrivateKey || isSafe3Base58PrivateKey) {
                           setParams({
                             ...params,
-                            privateKey: event.target.value
+                            privateKey: isSafe3Base58PrivateKey ? Safe3PrivateKey(inputPrivateKey).privateKey : inputPrivateKey
                           })
                         } else {
                           setAddress(undefined)
@@ -205,9 +216,11 @@ export default () => {
                         }
                       }}
                       onBlur={(event) => {
+                        const inputPrivateKey = event.target.value.trim();
+                        const { isSafe3Base58PrivateKey } = isValidPrivateKey(inputPrivateKey);
                         setParams({
                           ...params,
-                          privateKey: event.target.value
+                          privateKey: isSafe3Base58PrivateKey ? Safe3PrivateKey(inputPrivateKey).privateKey : inputPrivateKey
                         })
                       }}
                       style={{ height: "100px" }} />
@@ -266,7 +279,7 @@ export default () => {
                     }} />
                   </Col>
                   <Col style={{ marginTop: "30px" }} span={24}>
-                    <Text type="secondary" strong>BIP-44 Path</Text>
+                    <Text type="secondary" strong>BIP44-Path</Text>
                     <Switch style={{ float: "right", marginBottom: "5px" }} disabled checkedChildren="自定义" unCheckedChildren="默认"
                       value={activePath} onChange={setActivePath} />
                     <Input size="large" value={params.path} disabled={!activePath} onChange={(event) => {
