@@ -133,7 +133,6 @@ export default function App() {
   }, []);
 
   const decrypt = useCallback(() => {
-    console.log("do decrypt , password=", password)
     if (password && encrypt) {
       const salt = CryptoJS.enc.Hex.parse(encrypt.salt);
       const ciphertext = CryptoJS.enc.Hex.parse(encrypt.ciphertext);
@@ -222,10 +221,9 @@ export default function App() {
                 }
                 <Col id='appContainer' span={18} style={{
                   minWidth: "1200px",
-                  position: "fixed",
                   overflowX: "auto",
                   overflowY: "auto",
-                  top: "0",
+                  top: "-10px",
                   right: "0",
                   bottom: "0",
                   left: "235px",

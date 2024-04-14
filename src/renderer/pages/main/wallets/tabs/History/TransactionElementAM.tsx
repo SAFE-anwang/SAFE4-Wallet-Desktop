@@ -3,7 +3,7 @@ import { Col, Row, Avatar, List, Typography, Modal, Button } from "antd";
 import { useTransaction, useTransactions } from "../../../../../state/transactions/hooks";
 import { LoadingOutlined, FileDoneOutlined, LockOutlined } from '@ant-design/icons';
 import { Spin } from 'antd';
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { TransactionDetails } from "../../../../../state/transactions/reducer";
 import { ethers } from "ethers";
 import EtherAmount from "../../../../../utils/EtherAmount";
@@ -27,6 +27,13 @@ export default ({ transaction, setClickTransaction }: {
     accountManagerDatas
   } = transaction;
 
+  const isFirstIndex = useCallback( ( eventLogIndex : string ) => {
+    if ( accountManagerDatas ){
+      return Object.keys(accountManagerDatas).indexOf(eventLogIndex) == 0
+    }
+    return false;
+  } , [accountManagerDatas])
+
   return <>
     {
       <List.Item onClick={() => { setClickTransaction(transaction) }} key={transaction.hash} className="history-element" style={{ paddingLeft: "15px", paddingRight: "15px" }}>
@@ -37,7 +44,8 @@ export default ({ transaction, setClickTransaction }: {
               .filter(eventLogIndex => accountManagerDatas[eventLogIndex].action == DB_AddressActivity_Actions.AM_Deposit)
               .map(eventLogIndex => {
                 const accountManagerData = accountManagerDatas[eventLogIndex];
-                return <span style={{ width: "100%", marginTop: "20px" }}>
+                const marginTop = isFirstIndex(eventLogIndex) ? "" : "20px";
+                return <span style={{ width: "100%", marginTop}}>
                   <AccountManagerSafeDeposit from={accountManagerData.from} to={accountManagerData.to} value={accountManagerData.amount} status={1} />
                 </span>
               })
@@ -48,7 +56,8 @@ export default ({ transaction, setClickTransaction }: {
               .filter(eventLogIndex => accountManagerDatas[eventLogIndex].action == DB_AddressActivity_Actions.AM_Withdraw)
               .map(eventLogIndex => {
                 const accountManagerData = accountManagerDatas[eventLogIndex];
-                return <span style={{ width: "100%", marginTop: "20px" }}>
+                const marginTop = isFirstIndex(eventLogIndex) ? "" : "20px";
+                return <span style={{ width: "100%", marginTop}}>
                   <AccountManagerSafeWithdraw from={accountManagerData.from} to={accountManagerData.to} value={accountManagerData.amount} status={1} />
                 </span>
               })
@@ -59,8 +68,8 @@ export default ({ transaction, setClickTransaction }: {
               .filter(eventLogIndex => accountManagerDatas[eventLogIndex].action == DB_AddressActivity_Actions.AM_Transfer)
               .map(eventLogIndex => {
                 const accountManagerData = accountManagerDatas[eventLogIndex];
-                const marginTop = eventLogIndex == "1" ? "" : "20px";
-                return <span style={{ width: "100%" , marginTop }}>
+                const marginTop = isFirstIndex(eventLogIndex) ? "" : "20px";
+                return <span style={{ width: "100%", marginTop}}>
                   <AccountManagerSafeTransfer from={accountManagerData.from} to={accountManagerData.to} value={accountManagerData.amount} status={1} />
                 </span>
               })

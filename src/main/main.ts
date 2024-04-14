@@ -92,7 +92,7 @@ const createWindow = async () => {
       webSecurity: false
     },
   });
-  mainWindow.setMinimumSize( 1400 , 800 );
+  mainWindow.setMinimumSize( 1500 , 1000 );
 
   mainWindow.loadURL(resolveHtmlPath('index.html'));
 
