@@ -174,7 +174,7 @@ export default createReducer(initialState, (builder) => {
     })
 
     .addCase(loadTransactionsAndUpdateAddressActivityFetch, (state, { payload: { addTxns, addressActivityFetch } }) => {
-      if (addTxns) {
+      if (addTxns && addTxns.length > 0) {
         state.transactions = TransactionsCombine(state.transactions, addTxns);
       }
       const nextFetch = addressActivityFetch ?? undefined;

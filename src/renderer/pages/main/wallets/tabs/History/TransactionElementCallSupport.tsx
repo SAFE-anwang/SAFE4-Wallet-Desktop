@@ -1,5 +1,5 @@
 import React, { useCallback, useMemo } from "react";
-import { SupportAccountManagerFunctions, SupportMasternodeLogicFunctions, SupportProposalFunctions, SupportSupernodeLogicFunctions, SupportSupernodeVoteFunctions } from "../../../../../constants/DecodeSupportFunction";
+import { SupportSafe3Functions, SupportAccountManagerFunctions, SupportMasternodeLogicFunctions, SupportProposalFunctions, SupportSupernodeLogicFunctions, SupportSupernodeVoteFunctions } from "../../../../../constants/DecodeSupportFunction";
 import { SystemContract } from "../../../../../constants/SystemContracts";
 import { TransactionDetails } from "../../../../../state/transactions/reducer";
 import TransactionElementCallAMDeposit from "./TransactionElementCallAMDeposit";
@@ -11,6 +11,7 @@ import TransactionElementCallMNRegister from "./TransactionElementCallMNRegister
 import TransactionElementCallMNAppend from "./TransactionElementCallMNAppend";
 import TransactionElementCallProposalVote from "./TransactionElementCallProposalVote";
 import TransactionElementCallProposalCreate from "./TransactionElementCallProposalCreate";
+import TransactionElementCallSafe3Redeem from "./TransactionElementCallSafe3Redeem";
 
 export default ({ transaction, setClickTransaction, support }: {
   transaction: TransactionDetails,
@@ -33,8 +34,10 @@ export default ({ transaction, setClickTransaction, support }: {
         return CallMasternodeLogicFuncRender(support.supportFuncName, transaction, setClickTransaction, support)
       case SystemContract.Proposal:
         return CallProposalFunsRender(support.supportFuncName, transaction, setClickTransaction, support)
+      case SystemContract.SAFE3:
+        return CallSafe3FunsRender(support.supportFuncName, transaction, setClickTransaction, support)
       default:
-        return <></>
+        return <>No support Contract-Function-Render</>
     }
     return <></>
   }, [transaction, setClickTransaction, support]);
@@ -58,9 +61,30 @@ export default ({ transaction, setClickTransaction, support }: {
     }
   }
 
+  const CallSafe3FunsRender = (funcName: string, transaction: TransactionDetails, setClickTransaction: (transaction: TransactionDetails) => void, support: any) => {
+    switch (funcName) {
+      case SupportSafe3Functions.RedeemAvailable:
+      case SupportSafe3Functions.RedeemLocked:
+      case SupportSafe3Functions.RedeemMasterNode:
+        return <TransactionElementCallSafe3Redeem
+          transaction={transaction}
+          setClickTransaction={setClickTransaction}
+          support={support}
+        />
+      default:
+        return <></>
+    }
+  }
+
   const CallSupernodeVoteFuncRender = (funcName: string, transaction: TransactionDetails, setClickTransaction: (transaction: TransactionDetails) => void, support: any) => {
     switch (funcName) {
       case SupportSupernodeVoteFunctions.VoteOrApproval:
+        return <TransactionElementCallSNVote
+          transaction={transaction}
+          setClickTransaction={setClickTransaction}
+          support={support}
+        />
+      case SupportSupernodeVoteFunctions.VoteOrApprovalWithAmount:
         return <TransactionElementCallSNVote
           transaction={transaction}
           setClickTransaction={setClickTransaction}

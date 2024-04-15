@@ -12,7 +12,8 @@ export enum SupportSupernodeLogicFunctions {
   AppendRegister = "appendRegister" // function appendRegister(address _addr, uint _lockDay) external payable;
 }
 export enum SupportSupernodeVoteFunctions {
-  VoteOrApproval = "voteOrApproval" // function voteOrApproval(bool _isVote, address _dstAddr, uint[] memory _recordIDs)
+  VoteOrApproval = "voteOrApproval", // function voteOrApproval(bool _isVote, address _dstAddr, uint[] memory _recordIDs)
+  VoteOrApprovalWithAmount = "voteOrApprovalWithAmount" // function voteOrApprovalWithAmount(bool _isVote, address _dstAddr) external
 }
 export enum SupportMasternodeLogicFunctions {
   Register = "register",            // function register(bool _isUnion, address _addr, uint _lockDay, string memory _enode, string memory _description, uint _creatorIncentive, uint _partnerIncentive) external payable;
@@ -21,6 +22,11 @@ export enum SupportMasternodeLogicFunctions {
 export enum SupportProposalFunctions {
   Create = "create",                //function create(string memory _title, uint _payAmount, uint _payTimes, uint _startPayTime, uint _endPayTime, string memory _description) external payable returns (uint);
   Vote = "vote"                     //function vote(uint _id, uint _voteResult) external;
+}
+export enum SupportSafe3Functions {
+  RedeemAvailable = "redeemAvailable", // function redeemAvailable(bytes memory _pubkey, bytes memory _sig) external;
+  RedeemLocked = "redeemLocked",       // function redeemLocked(bytes memory _pubkey, bytes memory _sig) external;
+  RedeemMasterNode = "redeemMasterNode" // function redeemMasterNode(bytes memory _pubkey, bytes memory _sig, string memory _enode) external;
 }
 
 function decodeProposalFunctionData(IContract: Interface, fragment: FunctionFragment, input: string): {
@@ -32,18 +38,18 @@ function decodeProposalFunctionData(IContract: Interface, fragment: FunctionFrag
     case SupportProposalFunctions.Vote:
       const vote = IContract.decodeFunctionData(fragment, input);
       formatDecodeResult = {
-        _id : vote[0],
-        _voteResult : vote[1]
+        _id: vote[0],
+        _voteResult: vote[1]
       }
       break;
     case SupportProposalFunctions.Create:
       let create = IContract.decodeFunctionData(fragment, input);
       formatDecodeResult = {
-        _title : create[0],
-        _payAmount : create[1],
-        _startPayTime : create[2],
-        _endPayTime : create[3],
-        _description : create[4]
+        _title: create[0],
+        _payAmount: create[1],
+        _startPayTime: create[2],
+        _endPayTime: create[3],
+        _description: create[4]
       }
       break;
     default:
@@ -127,6 +133,13 @@ function decodeSupernodeVoteFunctionData(
         _dstAddr: voteOrApproval[1],
       }
       break;
+    case SupportSupernodeVoteFunctions.VoteOrApprovalWithAmount:
+      const voteOrApprovalWithAmount = IContract.decodeFunctionData(fragment, input);
+      formatDecodeResult = {
+        _isVote: voteOrApprovalWithAmount[0],
+        _dstAddr: voteOrApprovalWithAmount[1],
+      }
+      break;
     default:
       break;
   }
@@ -171,6 +184,34 @@ function decodeAccountManagerFunctionData(
   } : undefined;
 }
 
+function decodeSafe3FunctionData(
+  IContract: Interface, fragment: FunctionFragment, input: string): {
+    supportFuncName: string,
+    inputDecodeResult: any
+  } | undefined {
+  let formatDecodeResult = undefined;
+  switch (fragment.name) {
+    case SupportSafe3Functions.RedeemAvailable:
+    case SupportSafe3Functions.RedeemLocked:
+    case SupportSafe3Functions.RedeemMasterNode:
+      // function redeemAvailable(bytes memory _pubkey, bytes memory _sig) external;
+      // function redeemLocked(bytes memory _pubkey, bytes memory _sig) external;
+      // function redeemMasterNode(bytes memory _pubkey, bytes memory _sig, string memory _enode) external;
+      const redeem = IContract.decodeFunctionData(fragment, input);
+      formatDecodeResult = {
+        _pubkey: redeem[0],
+        _sig: redeem[1]
+      }
+      break;
+    default:
+      break;
+  }
+  return formatDecodeResult ? {
+    supportFuncName: fragment.name,
+    inputDecodeResult: formatDecodeResult
+  } : undefined;
+}
+
 export default (address: string | undefined, input: string | undefined): {
   supportFuncName: string,
   inputDecodeResult: any
@@ -197,7 +238,9 @@ export default (address: string | undefined, input: string | undefined): {
         case SystemContract.MasterNodeLogic:
           return decodeMasternodeLogicFunctionData(IContract, fragment, input);
         case SystemContract.Proposal:
-          return decodeProposalFunctionData(IContract,fragment,input);
+          return decodeProposalFunctionData(IContract, fragment, input);
+        case SystemContract.SAFE3:
+          return decodeSafe3FunctionData(IContract, fragment, input);
         default:
           return undefined;
       }

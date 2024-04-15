@@ -34,7 +34,7 @@ export function shouldCheck(
 }
 
 export default () => {
-  const { provider , chainId } = useWeb3React();
+  const { provider, chainId } = useWeb3React();
   const latestBlockNumber = useBlockNumber()
   const dispatch = useDispatch<AppDispatch>()
   const state = useSelector<AppState, AppState['transactions']>(state => state.transactions)
@@ -49,15 +49,16 @@ export default () => {
         return;
       }
       console.log(`Exeucte fetch Address[${addressActivityFetch.address}] activities from
-                   Block[${addressActivityFetch.blockNumberStart}] to Block[${addressActivityFetch.blockNumberEnd}]`);
+                   Block[${addressActivityFetch.blockNumberStart}] to Block[${addressActivityFetch.blockNumberEnd}] @ page = ${addressActivityFetch.current}`);
+      const newFetch = {
+        ...addressActivityFetch,
+      }
       fetchAddressActivity(addressActivityFetch)
         .then(data => {
           const { total, current, pageSize, totalPages } = data;
           const addressActivities = data.records;
           if (data.records.length > 0) {
-            const newFetch = {
-              ...addressActivityFetch,
-            }
+
             if (current < totalPages) {
               newFetch.current = newFetch.current + 1;
             } else {
@@ -71,15 +72,24 @@ export default () => {
             }
             window.electron.ipcRenderer.sendMessage(IPC_CHANNEL,
               [DBAddressActivitySignal, DB_AddressActivity_Methods.saveOrUpdateActivities,
-              [addressActivities]
-            ]);
+                [addressActivities]
+              ]);
             setTimeout(() => {
-              dispatch( loadTransactionsAndUpdateAddressActivityFetch ({
-                addTxns:  data.records.map( Activity2Transaction ),
+              dispatch(loadTransactionsAndUpdateAddressActivityFetch({
+                addTxns: data.records.map(Activity2Transaction),
                 addressActivityFetch: newFetch
               }));
             }, 3000);
           }
+        })
+        .catch((err: any) => {
+          console.log("fetch address activities err::>" , err)
+          setTimeout(() => {
+            dispatch(loadTransactionsAndUpdateAddressActivityFetch({
+              addTxns: [],
+              addressActivityFetch: newFetch
+            }));
+          }, 3000);
         })
     }
   }, [activeAccount, addressActivityFetch]);
@@ -126,7 +136,7 @@ export default () => {
           current: 1,
           pageSize: 500
         }).then(data => {
-          console.log(`query the latest activies for :${activeAccount}, from Block:[${latestBlockNumber-10}] to Block:[${latestBlockNumber}],result:`, data.records);
+          console.log(`query the latest activies for :${activeAccount}, from Block:[${latestBlockNumber - 10}] to Block:[${latestBlockNumber}],result:`, data.records);
           if (data.records.length > 0) {
             dispatch(loadTransactionsAndUpdateAddressActivityFetch({
               addTxns: data.records.map(Activity2Transaction),

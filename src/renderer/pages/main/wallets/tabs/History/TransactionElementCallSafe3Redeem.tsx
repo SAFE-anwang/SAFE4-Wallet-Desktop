@@ -2,11 +2,9 @@
 import { Col, Row, Avatar, List, Typography, Modal, Button } from "antd";
 import { useMemo } from "react";
 import { TransactionDetails } from "../../../../../state/transactions/reducer";
-import { DB_AddressActivity_Actions } from "../../../../../../main/handlers/DBAddressActivitySingalHandler";
-import AccountManagerSafeDeposit from "./AccountManagerSafeDeposit";
-import CallSupernodeRegister from "./CallSupernodeRegister";
-import CallSupernodeAppend from "./CallSupernodeAppend";
-import CallSupernodeVote from "./CallSupernodeVote";
+import { ethers } from "ethers";
+import { publicKeyToSafe3Address } from "../../../../../utils/Safe3PrivateKey";
+import CallSafe3Redeem from "./CallSafe3Redeem";
 
 
 export default ({ transaction, setClickTransaction, support }: {
@@ -20,23 +18,23 @@ export default ({ transaction, setClickTransaction, support }: {
   const {
     status,
     call,
-    accountManagerDatas
   } = transaction;
-  const { from, to, value, input } = useMemo(() => {
+  const { safe3Address , safe4Address } = useMemo(() => {
+    const { _pubkey, _sig } = support.inputDecodeResult;
+    const publicKeyBuffer = ethers.utils.hexlify(_pubkey)
+    const safe4Address = ethers.utils.computeAddress(publicKeyBuffer);
+    const safe3Address = publicKeyToSafe3Address(_pubkey);
     return {
-      from: transaction.refFrom,
-      to: support.inputDecodeResult._dstAddr,
-      value: call?.value,
-      input: call?.input,
+      safe3Address,
+      safe4Address
     }
-  }, [transaction, call,support]);
+  }, [transaction, call, support]);
 
   return <>
     <List.Item onClick={() => { setClickTransaction(transaction) }} key={transaction.hash} className="history-element" style={{ paddingLeft: "15px", paddingRight: "15px" }}>
       {
         call && <>
-          {/* [as call] -- {value} */}
-          <CallSupernodeVote from={from} to={to} value={value} status={status}  />
+          <CallSafe3Redeem functionName={support.supportFuncName} status={status} safe4Address={safe4Address} safe3Address={safe3Address} />
         </>
       }
     </List.Item>

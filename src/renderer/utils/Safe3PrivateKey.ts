@@ -18,6 +18,10 @@ const sha256Hex = (hex: string): string => {
   return bytes ? sha256(bytes).substring(2) : "";
 }
 
+export const publicKeyToSafe3Address = ( publicKey : string ) : string => {
+  return publicKeyToAddress(publicKey , "4c");
+}
+
 /**
  * https://gobittest.appspot.com/Address
  * @param publicKey
