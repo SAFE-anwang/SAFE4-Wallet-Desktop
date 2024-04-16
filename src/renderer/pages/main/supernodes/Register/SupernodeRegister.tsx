@@ -1,21 +1,12 @@
-import { Typography, Row, Col, Button, Card, Checkbox, CheckboxProps, Divider, Input, Slider, Alert, Radio, Space } from 'antd';
-import { useEffect, useMemo, useState } from 'react';
-import { CheckboxValueType } from 'antd/es/checkbox/Group';
-import type { GetProp } from 'antd';
-import { useActiveAccountAccountRecords, useETHBalances, useWalletsActiveAccount } from '../../../../state/wallets/hooks';
-import { EmptyContract } from '../../../../constants/SystemContracts';
-import { useSelector } from 'react-redux';
-import { AppState } from '../../../../state';
+import { Typography, Row, Col, Button, Card, Divider, Input, Slider, Alert, Radio, Space } from 'antd';
+import { useEffect, useState } from 'react';
+import { useETHBalances, useWalletsActiveAccount } from '../../../../state/wallets/hooks';
 import { useMasternodeStorageContract, useMulticallContract, useSupernodeStorageContract } from '../../../../hooks/useContracts';
-import { SupernodeInfo, formatSupernodeInfo } from '../../../../structs/Supernode';
-import VoteModalConfirm from '../Vote/VoteModal-Confirm';
-import { AccountRecord } from '../../../../structs/AccountManager';
-import { LeftOutlined, LockOutlined, QuestionCircleOutlined } from '@ant-design/icons';
+import { LeftOutlined, QuestionCircleOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
-import { Currency, CurrencyAmount, JSBI } from '@uniswap/sdk';
+import { CurrencyAmount, JSBI } from '@uniswap/sdk';
 import { ethers } from 'ethers';
 import CreateModalConfirm from './CreateModal-Confirm';
-import type { RadioChangeEvent } from 'antd';
 import NumberFormat from '../../../../utils/NumberFormat';
 import { Safe4_Business_Config } from '../../../../config';
 import CallMulticallAggregate, { CallMulticallAggregateContractCall } from '../../../../state/multicall/CallMulticallAggregate';
@@ -123,11 +114,11 @@ export default () => {
     }
 
     if (createParams.createType == Supernode_Create_Type_NoUnion
-      && !balance?.greaterThan(CurrencyAmount.ether(JSBI.BigInt(ethers.utils.parseEther(Safe4_Business_Config.Supernode.Register.LockAmount + ""))))) {
+      && !balance?.greaterThan(CurrencyAmount.ether(JSBI.BigInt(ethers.utils.parseEther(Safe4_Business_Config.Supernode.Create.LockAmount + ""))))) {
       inputErrors.balance = "账户余额不足以支付超级节点创建费用";
     }
     if (createParams.createType == Supernode_create_type_Union
-      && !balance?.greaterThan(CurrencyAmount.ether(JSBI.BigInt(ethers.utils.parseEther(Safe4_Business_Config.Supernode.Register.UnionLockAmount + ""))))) {
+      && !balance?.greaterThan(CurrencyAmount.ether(JSBI.BigInt(ethers.utils.parseEther(Safe4_Business_Config.Supernode.Create.UnionLockAmount + ""))))) {
       inputErrors.balance = "账户余额不足以支付超级节点创建费用";
     }
     if (inputErrors.name || inputErrors.enode || inputErrors.description || inputErrors.balance || inputErrors.address) {
@@ -248,11 +239,11 @@ export default () => {
               <Text type='secondary'>锁仓</Text><br />
               {
                 createParams.createType == Supernode_Create_Type_NoUnion &&
-                <Text strong>{NumberFormat(Safe4_Business_Config.Supernode.Register.LockAmount)} SAFE</Text>
+                <Text strong>{NumberFormat(Safe4_Business_Config.Supernode.Create.LockAmount)} SAFE</Text>
               }
               {
                 createParams.createType == Supernode_create_type_Union &&
-                <Text strong>{NumberFormat(Safe4_Business_Config.Supernode.Register.UnionLockAmount)} SAFE</Text>
+                <Text strong>{NumberFormat(Safe4_Business_Config.Supernode.Create.UnionLockAmount)} SAFE</Text>
               }
               <br />
             </Col>

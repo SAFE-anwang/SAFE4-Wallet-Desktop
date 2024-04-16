@@ -173,7 +173,7 @@ export default function App() {
       }
       {
         !loading && !walletsKeystores && encrypt && <>
-          <Row style={{ marginTop: "15%" }}>
+          <Row style={{ marginTop: "20%" }}>
             <Card style={{ width: "400px", margin: "auto", boxShadow: "5px 5px 10px #888888" }}>
               <Row>
                 <Col span={24} style={{ textAlign: "center" }}>

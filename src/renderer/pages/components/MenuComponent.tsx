@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { AppstoreOutlined, WalletOutlined, SettingOutlined, ClusterOutlined, ApartmentOutlined , FilePptOutlined , ApiOutlined } from '@ant-design/icons';
+import { AppstoreOutlined, WalletOutlined, SettingOutlined, ClusterOutlined, ApartmentOutlined , FilePptOutlined , ApiOutlined, GiftOutlined } from '@ant-design/icons';
 import { Button, Dropdown, MenuProps, MenuTheme, Space, message } from 'antd';
 import { Menu, Switch } from 'antd';
 import { useNavigate } from 'react-router-dom';
@@ -29,8 +29,8 @@ const items: MenuItem[] = [
   getItem("主节点", '/main/masternodes', <ApartmentOutlined />),
   getItem("提案", '/main/proposals', <FilePptOutlined />),
   getItem("Safe3 资产迁移", '/main/safe3', <ApiOutlined />),
-  getItem("Test", '/main/test', <ApiOutlined />),
-  getItem('领取测试币', '/main/gettestcoin', <AppstoreOutlined />),
+  // getItem("Test", '/main/test', <ApiOutlined />),
+  getItem('领取测试币', '/main/gettestcoin', <GiftOutlined />),
 ];
 
 const bottom_items: MenuItem[] = [
