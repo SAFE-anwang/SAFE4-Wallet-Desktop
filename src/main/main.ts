@@ -82,8 +82,8 @@ const createWindow = async () => {
 
   mainWindow = new BrowserWindow({
     show: false,
-    width: 1600,
-    height: 800,
+    width: 1400,
+    height: 700,
     icon: getAssetPath('icon.png'),
     webPreferences: {
       preload: app.isPackaged
@@ -92,7 +92,7 @@ const createWindow = async () => {
       webSecurity: false
     },
   });
-  mainWindow.setMinimumSize( 1600 , 800 );
+  mainWindow.setMinimumSize( 1400 , 700 );
 
   mainWindow.loadURL(resolveHtmlPath('index.html'));
 
