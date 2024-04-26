@@ -10,7 +10,6 @@ import {
   CloseCircleTwoTone,
   GlobalOutlined
 } from '@ant-design/icons';
-import { useWeb3Hooks } from "../../../connectors/hooks";
 import { useETHBalances, useWalletsActiveAccount } from "../../../state/wallets/hooks";
 import { CurrencyAmount } from "@uniswap/sdk";
 import Safe3AssetRender, { Safe3Asset } from "./Safe3AssetRender";
@@ -219,7 +218,7 @@ export default () => {
 
       // safe3 可用资产大于零,且没有被赎回.
       if (
-        // availableSafe3Info.redeemHeight == 0 &&
+        availableSafe3Info.redeemHeight == 0 &&
         availableSafe3Info.amount.greaterThan(ZERO)
       ) {
         try {
@@ -247,7 +246,7 @@ export default () => {
 
       // safe3 锁仓资产大于零,且没有被赎回.
       if (
-        // locked.redeemHeight == 0 &&
+        locked.redeemHeight == 0 &&
         locked.txLockedAmount.greaterThan(ZERO)
       ) {
         try {
@@ -277,7 +276,7 @@ export default () => {
       // safe3 主节点
       if (
         safe3Asset.masternode
-        // && safe3Asset.masternode.redeemHeight == 0
+        && safe3Asset.masternode.redeemHeight == 0
       ) {
         try {
           let response = await safe3Contract.redeemMasterNode(
@@ -303,8 +302,6 @@ export default () => {
         console.log("无需执行迁移主节点.")
       }
       setRedeeming(false);
-    }else{
-      console.log("执行条件不足." , [ safe3Wallet, safe3Asset, safe3Contract, enode, masternodeContract, supernodeContract])
     }
   }, [ safe3Wallet, safe3Asset, safe3Contract, enode, masternodeContract, supernodeContract]);
 
@@ -329,7 +326,7 @@ export default () => {
 
             {/****************** Safe3 钱包地址 *********************/}
             <Col span={24}>
-              <Text strong type="secondary">Safe3 钱包地址:XeT5MPR5BH6i2Z66XHRXqRjVFs3iAp4Rco</Text>
+              <Text strong type="secondary">Safe3 钱包地址</Text>
             </Col>
             <Col span={24} style={{ marginTop: "5px" }}>
               <Input disabled={redeeming} size="large" onChange={(event) => {
@@ -358,7 +355,7 @@ export default () => {
             }
             {
               safe3Address && isSafe3Address(safe3Address) && <>
-                <Col span={24}>
+                <Col span={24} style={{marginTop:"5px"}}>
                   <Safe3AssetRender safe3Address={safe3Address} setSafe3Asset={setSafe3Asset} />
                 </Col>
               </>
@@ -370,10 +367,11 @@ export default () => {
               safe3Asset && <>
                 <Divider />
                 <Col span={24}>
-                  <Text strong type="secondary">Safe3 钱包私钥:XFwbwpghGT8w8uqwJmZQ4uPjiB61ZdPvcN165LDu2HttQjE8Z2KR</Text>
+                  <Text strong type="secondary">Safe3 钱包私钥</Text>
                 </Col>
                 <Col span={24} style={{ marginTop: "5px" }}>
-                  <Input disabled={redeeming} size="large" onChange={(event) => {
+                  <Input placeholder="输入钱包私钥" 
+                    disabled={redeeming} size="large" onChange={(event) => {
                     const value = event.target.value;
                     if (isSafe3DesktopExportPrivateKey(value)) {
                       setSafe3PrivateKey(value);
@@ -394,13 +392,6 @@ export default () => {
                     </Col>
                   </>
                 }
-                {
-                  <Col span={24}>
-                    <Text>
-                      {JSON.stringify(safe3Wallet)}
-                    </Text>
-                  </Col>
-                }
                 {/****************** Safe3 地址私钥 *********************/}
               </>
             }
@@ -410,7 +401,7 @@ export default () => {
                 <Divider />
                 <Col span={24}>
                   <Alert type="info" showIcon message={<>
-                    您在 Safe3 网络的资产将会迁移到该私钥对应的 Safe4 网络的钱包地址上
+                    Safe3 网络的资产将会迁移到该私钥对应的 Safe4 网络的钱包地址上
                   </>} />
                   <Col span={24} style={{ marginTop: "20px" }}>
                     <Text strong type="secondary">Safe4 钱包地址</Text>
@@ -423,7 +414,7 @@ export default () => {
                   </Col>
                   {
                     safe3Asset?.masternode
-                      // && safe3Asset.masternode.redeemHeight == 0
+                      && safe3Asset.masternode.redeemHeight == 0
                       &&
                     <>
                       <Col span={24} style={{ marginTop: "20px" }}>
@@ -450,7 +441,7 @@ export default () => {
                   <Divider />
                   <Button
                     loading={redeeming}
-                    disabled={!redeemEnable && !redeemTxHashs ? false : true}
+                    disabled={redeemEnable && !redeemTxHashs ? false : true}
                     style={{ marginTop: "20px" }} type="primary"
                     onClick={() => {
                       console.log("try do execute redeem..")
