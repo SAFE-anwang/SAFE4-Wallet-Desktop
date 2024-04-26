@@ -27,18 +27,17 @@ export interface Safe3Asset {
 }
 
 export default ({
-  safe3Address, safe3CompressAddress, setSafe3Asset
+  safe3Address, setSafe3Asset
 }: {
   safe3Address?: string,
-  safe3CompressAddress?: string,
   setSafe3Asset: (safe3Asset?: Safe3Asset) => void
 }) => {
+
   const safe3Contract = useSafe3Contract();
   const masternodeStorageContract = useMasternodeLogicContract();
   const [safe3AddressAsset, setSafe3AddressAsset] = useState<Safe3Asset>();
-  const [safe3CompressAddressAsset, setSafe3CompressAddressAsset] = useState<Safe3Asset>();
   const [safe3AddressAssetLoading, setSafe3AddressAssetLoading] = useState<boolean>(false);
-  const [safe3CompressAddressAssetLoading, setSafe3CompressAddressAssetLoading] = useState<boolean>(false);
+
   useEffect(() => {
     setSafe3Asset(undefined);
     if (safe3Address && safe3Contract) {
@@ -52,20 +51,7 @@ export default ({
     } else {
       setSafe3AddressAsset(undefined);
     }
-
-    if (safe3CompressAddress && safe3Contract) {
-      setSafe3CompressAddressAssetLoading(true);
-      loadSafe3Asset(safe3CompressAddress, (safe3Asset: Safe3Asset) => {
-        setSafe3CompressAddressAsset({
-          ...safe3Asset
-        })
-        setSafe3CompressAddressAssetLoading(false);
-      });
-    } else {
-      setSafe3CompressAddressAsset(undefined);
-    }
-
-  }, [safe3Address, safe3Contract, safe3CompressAddress]);
+  }, [safe3Address, safe3Contract]);
 
   const loadSafe3Asset = useCallback((address: string, callback: (safe3Asset: Safe3Asset) => void) => {
     if (safe3Contract && masternodeStorageContract) {
@@ -190,26 +176,10 @@ export default ({
       }
       setSafe3Asset(safe3AddressAsset);
     }
-    if (safe3CompressAddressAsset) {
-      if (safe3CompressAddressAsset.availableSafe3Info?.amount && safe3CompressAddressAsset.availableSafe3Info?.amount.greaterThan(ZERO)) {
-        setSafe3Asset(safe3CompressAddressAsset);
-        return;
-      }
-      if (safe3CompressAddressAsset.locked && safe3CompressAddressAsset.locked.lockedNum && safe3CompressAddressAsset.locked.lockedNum > 0) {
-        setSafe3Asset(safe3CompressAddressAsset);
-        return;
-      }
-    }
-  }, [safe3AddressAsset, safe3CompressAddressAsset]);
+  }, [safe3AddressAsset]);
 
   return (<>
     <Col span={12}>
-      <Col span={24}>
-        <Text strong type="secondary">Safe3 钱包地址</Text><br />
-      </Col>
-      <Col span={24}>
-        <Text strong>{safe3Address}</Text><br />
-      </Col>
       {
         safe3Address && <>
           <Spin spinning={safe3AddressAssetLoading}>
@@ -217,7 +187,9 @@ export default ({
               <Text strong type="secondary">账户余额</Text><br />
             </Col>
             <Col span={24}>
-              <Text strong>{safe3AddressAsset?.availableSafe3Info?.amount.toFixed(2)} SAFE</Text><br />
+              <Text strong delete={
+                safe3AddressAsset && safe3AddressAsset.availableSafe3Info && safe3AddressAsset.availableSafe3Info.redeemHeight > 0
+              }>{safe3AddressAsset?.availableSafe3Info?.amount.toFixed(2)} SAFE</Text><br />
             </Col>
             <Col span={24} style={{ marginTop: "5px" }}>
               <Text strong type="secondary">锁仓余额</Text>
@@ -225,59 +197,19 @@ export default ({
               <Text type="secondary">(锁仓记录:{safe3AddressAsset?.locked?.lockedNum})</Text>
             </Col>
             <Col span={24}>
-              <Text strong>{safe3AddressAsset?.locked.lockedAmount.toFixed(2)} SAFE</Text><br />
+              <Text delete={
+                safe3AddressAsset && safe3AddressAsset?.locked.redeemHeight > 0
+              } strong>{safe3AddressAsset?.locked.lockedAmount.toFixed(2)} SAFE</Text><br />
             </Col>
             {
               safe3AddressAsset?.masternode && <>
                 <Col span={24} style={{ marginTop: "5px" }}>
-
-                </Col>
-              </>
-            }
-          </Spin>
-        </>
-      }
-    </Col>
-
-    <Col span={12}>
-      <Col span={24}>
-        <Text strong type="secondary">Safe3 钱包地址[压缩公钥]</Text><br />
-      </Col>
-      <Col span={24}>
-        <Text strong>{safe3CompressAddress}</Text><br />
-      </Col>
-      {
-        safe3CompressAddress && <>
-          <Spin spinning={safe3CompressAddressAssetLoading}>
-            <Col span={24} style={{ marginTop: "5px" }}>
-              <Text strong type="secondary">可用余额</Text><br />
-            </Col>
-            <Col span={24}>
-              <Text strong delete={
-                safe3CompressAddressAsset && safe3CompressAddressAsset.availableSafe3Info && safe3CompressAddressAsset.availableSafe3Info.redeemHeight > 0
-              }>{safe3CompressAddressAsset?.availableSafe3Info?.amount.toFixed(2)} SAFE</Text><br />
-            </Col>
-            <Col span={24} style={{ marginTop: "5px" }}>
-              <Text strong type="secondary">锁仓余额</Text>
-              <Divider type="vertical" />
-              <Text type="secondary">(锁仓记录:{safe3CompressAddressAsset?.locked?.lockedNum})</Text>
-            </Col>
-            <Col span={24}>
-              <Text delete={
-                safe3CompressAddressAsset && safe3CompressAddressAsset?.locked.redeemHeight > 0
-              }>
-                <Text strong>{safe3CompressAddressAsset?.locked.txLockedAmount.toFixed(2)} SAFE</Text><br />
-              </Text>
-            </Col>
-            {
-              safe3CompressAddressAsset?.masternode && <>
-                <Col span={24} style={{ marginTop: "5px" }}>
                   <Text strong type="secondary">主节点</Text><br />
                 </Col>
                 <Text strong delete={
-                  safe3CompressAddressAsset.masternode.redeemHeight > 0
+                  safe3AddressAsset.masternode.redeemHeight > 0
                 }>
-                  {safe3CompressAddressAsset.masternode.lockedAmount.toFixed(2)} SAFE
+                  {safe3AddressAsset.masternode.lockedAmount.toFixed(2)} SAFE
                 </Text>
               </>
             }
@@ -285,6 +217,7 @@ export default ({
         </>
       }
     </Col>
+
   </>)
 
 }

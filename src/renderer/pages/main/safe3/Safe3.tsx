@@ -1,10 +1,8 @@
 
-import { Alert, Col, Row, Typography, Card, Divider, Button, Tabs, TabsProps, Input } from "antd";
-import { useNavigate } from "react-router-dom";
-import { message, Steps, theme } from 'antd';
+import { Alert, Col, Row, Typography, Card, Divider, Button, Input } from "antd";
+import { Steps } from 'antd';
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Safe3PrivateKey from "../../../utils/Safe3PrivateKey";
-import Safe3Assets, { Safe3Asset } from "./Safe3Assets";
 import { useMasternodeStorageContract, useSafe3Contract, useSupernodeStorageContract } from "../../../hooks/useContracts";
 import { ZERO } from "../../../utils/CurrentAmountUtils";
 import { ethers } from "ethers";
@@ -15,17 +13,26 @@ import {
 import { useWeb3Hooks } from "../../../connectors/hooks";
 import { useETHBalances, useWalletsActiveAccount } from "../../../state/wallets/hooks";
 import { CurrencyAmount } from "@uniswap/sdk";
+import Safe3AssetRender, { Safe3Asset } from "./Safe3AssetRender";
 
 const { Text, Title } = Typography;
 
 const base58Regex = /^[1-9A-HJ-NP-Za-km-z]{52}$/;
+const safe3AddressBase58Regex = /^X[a-zA-Z0-9]{33}$/;
 const redeemNeedAmount = "0.01";
 
 const isSafe3DesktopExportPrivateKey = (input: string) => {
   return base58Regex.test(input);
 };
+const isSafe3Address = (input: string) => {
+  return safe3AddressBase58Regex.test(input);
+}
 
 const steps = [
+  {
+    title: '资产查询',
+    content: 'First-content',
+  },
   {
     title: '验证私钥',
     content: 'First-content',
@@ -44,16 +51,17 @@ export interface TxExecuteStatus {
 
 export default () => {
 
-  const { useProvider } = useWeb3Hooks();
-  const provider = useProvider();
   const [current, setCurrent] = useState(0);
   const items = steps.map((item) => ({ key: item.title, title: item.title }));
+
+  const [safe3Address, setSafe3Address] = useState<string>();
   const [safe3PrivateKey, setSafe3PrivateKey] = useState<string>();
   const [enode, setEncode] = useState<string>();
 
   const [inputErrors, setInputErrors] = useState<{
     safe3PrivateKeyError?: string,
-    encode?: string
+    encode?: string,
+    safe3Address?: string
   }>();
 
   const [safe3Wallet, setSafe3Wallet] = useState<{
@@ -64,11 +72,12 @@ export default () => {
     safe3CompressAddress: string,
     safe4Address: string
   }>();
-
   const [safe3Asset, setSafe3Asset] = useState<Safe3Asset>();
+
   const safe3Contract = useSafe3Contract(true);
   const masternodeContract = useMasternodeStorageContract();
   const supernodeContract = useSupernodeStorageContract();
+
   const activeAccount = useWalletsActiveAccount();
   const balance = useETHBalances([activeAccount])[activeAccount];
 
@@ -80,6 +89,7 @@ export default () => {
   const [redeeming, setRedeeming] = useState<boolean>(false);
 
   // useEffect(() => {
+  // XeT5MPR5BH6i2Z66XHRXqRjVFs3iAp4Rco
   //   setSafe3PrivateKey("XFwbwpghGT8w8uqwJmZQ4uPjiB61ZdPvcN165LDu2HttQjE8Z2KR")
   // }, []);
 
@@ -95,7 +105,10 @@ export default () => {
     if (!safe3Asset) {
       return false;
     }
-    if (notEnough){
+    if (!safe3Wallet){
+      return false;
+    }
+    if (notEnough) {
       return false;
     }
     const avaiable = safe3Asset.availableSafe3Info.amount.greaterThan(ZERO) &&
@@ -103,41 +116,68 @@ export default () => {
     const locked = safe3Asset.locked.txLockedAmount.greaterThan(ZERO) && safe3Asset.locked.redeemHeight == 0;
     const masternode = safe3Asset.masternode && safe3Asset.masternode.redeemHeight == 0;
     return avaiable || locked || masternode;
-  }, [safe3Asset, notEnough]);
+  }, [safe3Asset, safe3Wallet , notEnough]);
 
   useEffect(() => {
-    if (safe3PrivateKey) {
+    setSafe3Asset(undefined);
+    setSafe3PrivateKey(undefined);
+    setInputErrors(undefined);
+    if (safe3Address) {
+      if (isSafe3Address(safe3Address)) {
+        // 合法的地址.
+      } else {
+        setInputErrors({
+          ...inputErrors,
+          safe3Address: "请输入正确的Safe3钱包地址"
+        });
+      }
+    }
+  }, [safe3Address]);
+
+  useEffect(() => {
+    setSafe3Wallet(undefined);
+    setRedeemTxHashs(undefined);
+    setEncode(undefined);
+    const safe3Address = safe3Asset?.safe3Address;
+    if (safe3PrivateKey && safe3Address) {
+      setInputErrors({
+        ...inputErrors,
+        safe3PrivateKeyError: undefined
+      });
       if (isSafe3DesktopExportPrivateKey(safe3PrivateKey)) {
-        setInputErrors(undefined);
-        setSafe3Wallet(
-          Safe3PrivateKey(safe3PrivateKey)
-        )
+        const safe3Wallet = Safe3PrivateKey(safe3PrivateKey);
+        if (safe3Wallet.safe3Address == safe3Address || safe3Wallet.safe3CompressAddress == safe3Address) {
+          setSafe3Wallet(safe3Wallet);
+        } else {
+          setInputErrors( {
+            ...inputErrors,
+            safe3PrivateKeyError: "私钥与钱包地址不匹配"
+          } );
+        }
       } else {
         setInputErrors({
           ...inputErrors,
           safe3PrivateKeyError: "请输入从 Safe3 桌面钱包导出的私钥"
-        })
-        setSafe3Wallet(undefined);
+        });
       }
-    } else {
-      setInputErrors(undefined);
-      setSafe3Wallet(undefined);
     }
-    setRedeemTxHashs(undefined);
-    setEncode(undefined);
-  }, [safe3PrivateKey]);
+  }, [safe3PrivateKey,safe3Asset]);
 
   useEffect(() => {
     if (safe3Asset) {
-      setCurrent(1)
+      if (safe3Wallet) {
+        setCurrent(2)
+      } else {
+        setCurrent(1)
+      }
     } else {
       setCurrent(0)
     }
-  }, [safe3Asset]);
+  }, [safe3Asset, safe3Wallet]);
 
   const executeRedeem = useCallback(async () => {
-    if (provider && safe3Contract && safe3Wallet && safe3Asset && masternodeContract && supernodeContract) {
-      if (safe3Asset.masternode && safe3Asset.masternode.redeemHeight == 0) {
+    if (safe3Contract && safe3Wallet && safe3Asset && masternodeContract && supernodeContract) {
+      if (safe3Asset.masternode && safe3Asset.masternode.redeemHeight != 0) {
         if (!enode) {
           setInputErrors({
             ...inputErrors,
@@ -179,7 +219,7 @@ export default () => {
 
       // safe3 可用资产大于零,且没有被赎回.
       if (
-        availableSafe3Info.redeemHeight == 0 &&
+        // availableSafe3Info.redeemHeight == 0 &&
         availableSafe3Info.amount.greaterThan(ZERO)
       ) {
         try {
@@ -207,18 +247,10 @@ export default () => {
 
       // safe3 锁仓资产大于零,且没有被赎回.
       if (
-        locked.redeemHeight == 0 &&
+        // locked.redeemHeight == 0 &&
         locked.txLockedAmount.greaterThan(ZERO)
       ) {
         try {
-          // const transactionParameters = {
-          //   to: safe3Contract.address,
-          //   data: safe3Contract.interface.encodeFunctionData("redeemLocked", [
-          //     ethers.utils.arrayify(publicKey),
-          //     ethers.utils.arrayify(signMsg)
-          //   ])
-          // };
-          // const gas = await provider.estimateGas(transactionParameters);
           let response = await safe3Contract.redeemLocked(
             ethers.utils.arrayify(publicKey),
             ethers.utils.arrayify(signMsg)
@@ -245,7 +277,7 @@ export default () => {
       // safe3 主节点
       if (
         safe3Asset.masternode
-        && safe3Asset.masternode.redeemHeight == 0
+        // && safe3Asset.masternode.redeemHeight == 0
       ) {
         try {
           let response = await safe3Contract.redeemMasterNode(
@@ -271,10 +303,13 @@ export default () => {
         console.log("无需执行迁移主节点.")
       }
       setRedeeming(false);
+    }else{
+      console.log("执行条件不足." , [ safe3Wallet, safe3Asset, safe3Contract, enode, masternodeContract, supernodeContract])
     }
-  }, [provider, safe3Wallet, safe3Asset, safe3Contract, enode, masternodeContract, supernodeContract]);
+  }, [ safe3Wallet, safe3Asset, safe3Contract, enode, masternodeContract, supernodeContract]);
 
   return (<>
+
     <Row style={{ height: "50px" }}>
       <Col span={12}>
         <Title level={4} style={{ lineHeight: "16px" }}>
@@ -287,40 +322,91 @@ export default () => {
       <div style={{ margin: "auto", width: "90%" }}>
         <Card>
           <Alert showIcon type="info" message={<>
-            <Text>使用该页面输入钱包地址私钥将 Safe3 网络的资产迁移到 Safe4 网络</Text><br />
+            <Text>将 Safe3 网络的资产迁移到 Safe4 网络 (当前测试使用 Safe3 网络 2024年之前的资产快照)</Text><br />
           </>} />
           <Steps style={{ marginTop: "20px" }} current={current} items={items} />
           <Row style={{ marginTop: "20px" }}>
+
+            {/****************** Safe3 钱包地址 *********************/}
             <Col span={24}>
-              <Text strong type="secondary">Safe3 钱包私钥</Text>
+              <Text strong type="secondary">Safe3 钱包地址:XeT5MPR5BH6i2Z66XHRXqRjVFs3iAp4Rco</Text>
             </Col>
             <Col span={24} style={{ marginTop: "5px" }}>
               <Input disabled={redeeming} size="large" onChange={(event) => {
-                const value = event.target.value;
-                if (isSafe3DesktopExportPrivateKey(value)) {
-                  setSafe3PrivateKey(value);
-                } else {
-                  setSafe3PrivateKey(undefined);
-                  setSafe3Asset(undefined);
+                setInputErrors({
+                  ...inputErrors,
+                  safe3Address: undefined
+                });
+                setSafe3Address(undefined);
+                const value = event.target.value.trim();
+                if (isSafe3Address(value)) {
+                  setSafe3Address(value);
                 }
               }} onBlur={(event) => {
-                const value = event.target.value;
-                setSafe3PrivateKey(value);
+                const value = event.target.value.trim();
+                setSafe3Address(value);
               }} />
             </Col>
             {
-              inputErrors && inputErrors.safe3PrivateKeyError && <>
+              inputErrors && inputErrors.safe3Address && <>
                 <Col span={24} style={{ marginTop: "5px" }}>
                   <Alert type="error" showIcon message={<>
-                    {inputErrors.safe3PrivateKeyError}
+                    {inputErrors.safe3Address}
                   </>} />
                 </Col>
               </>
             }
             {
-              safe3Wallet && <>
+              safe3Address && isSafe3Address(safe3Address) && <>
+                <Col span={24}>
+                  <Safe3AssetRender safe3Address={safe3Address} setSafe3Asset={setSafe3Asset} />
+                </Col>
+              </>
+            }
+            {/****************** Safe3 钱包地址 *********************/}
+
+            {/****************** Safe3 地址私钥 *********************/}
+            {
+              safe3Asset && <>
                 <Divider />
-                <Safe3Assets setSafe3Asset={setSafe3Asset} safe3Address={safe3Wallet?.safe3Address} safe3CompressAddress={safe3Wallet?.safe3CompressAddress} />
+                <Col span={24}>
+                  <Text strong type="secondary">Safe3 钱包私钥:XFwbwpghGT8w8uqwJmZQ4uPjiB61ZdPvcN165LDu2HttQjE8Z2KR</Text>
+                </Col>
+                <Col span={24} style={{ marginTop: "5px" }}>
+                  <Input disabled={redeeming} size="large" onChange={(event) => {
+                    const value = event.target.value;
+                    if (isSafe3DesktopExportPrivateKey(value)) {
+                      setSafe3PrivateKey(value);
+                    } else {
+                      setSafe3PrivateKey(undefined);
+                    }
+                  }} onBlur={(event) => {
+                    const value = event.target.value;
+                    setSafe3PrivateKey(value);
+                  }} />
+                </Col>
+                {
+                  inputErrors && inputErrors.safe3PrivateKeyError && <>
+                    <Col span={24} style={{ marginTop: "5px" }}>
+                      <Alert type="error" showIcon message={<>
+                        {inputErrors.safe3PrivateKeyError}
+                      </>} />
+                    </Col>
+                  </>
+                }
+                {
+                  <Col span={24}>
+                    <Text>
+                      {JSON.stringify(safe3Wallet)}
+                    </Text>
+                  </Col>
+                }
+                {/****************** Safe3 地址私钥 *********************/}
+              </>
+            }
+
+            {
+              safe3Wallet && <>
                 <Divider />
                 <Col span={24}>
                   <Alert type="info" showIcon message={<>
@@ -336,7 +422,9 @@ export default () => {
                     }} style={{ marginLeft: "10px" }} size="small" icon={<GlobalOutlined />} />
                   </Col>
                   {
-                    safe3Asset?.masternode && safe3Asset.masternode.redeemHeight == 0 &&
+                    safe3Asset?.masternode
+                      // && safe3Asset.masternode.redeemHeight == 0
+                      &&
                     <>
                       <Col span={24} style={{ marginTop: "20px" }}>
                         <Text strong type="secondary">Safe4 主节点 ENODE</Text><br />
@@ -357,15 +445,15 @@ export default () => {
                           </Col>
                         </>
                       }
-
                     </>
                   }
                   <Divider />
                   <Button
                     loading={redeeming}
-                    disabled={redeemEnable && !redeemTxHashs ? false : true}
+                    disabled={!redeemEnable && !redeemTxHashs ? false : true}
                     style={{ marginTop: "20px" }} type="primary"
                     onClick={() => {
+                      console.log("try do execute redeem..")
                       executeRedeem();
                     }}>
                     迁移
