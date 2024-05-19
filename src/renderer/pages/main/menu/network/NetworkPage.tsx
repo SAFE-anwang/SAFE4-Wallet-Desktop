@@ -8,7 +8,9 @@ import NetworkOption from './NetworkOption';
 import { isSafe4Mainnet, isSafe4Network, isSafe4Testnet } from '../../../../utils/Safe4Network';
 import { useApplicationRpcConfigs } from '../../../../state/application/hooks';
 import { useEffect, useState } from 'react';
-import { Safe4_Network_Config } from '../../../../config';
+import { IPC_CHANNEL, Safe4_Network_Config } from '../../../../config';
+import NetworkAddModal from './NetworkAddModal';
+import { RpcConfigSignal, RpcConfigSingalHandler, RpcConfig_Methods } from '../../../../../main/handlers/RpcConfigSignalHandler';
 
 const { Title, Text } = Typography;
 
@@ -17,9 +19,13 @@ export default () => {
   const navigate = useNavigate();
   const { provider, chainId, isActivating, isActive } = useWeb3React();
   const rpcConfigs = useApplicationRpcConfigs();
+
   const [endpoints, setEndpoints] = useState<{
     [endpoint: string]: number
   }>();
+  const [openAddModal ,setOpenAddModal] = useState<boolean>(false);
+
+
 
   const renderActiveStatus = () => {
     if (isActivating) {
@@ -99,8 +105,13 @@ export default () => {
           </Row>
         </Card>
         <Divider />
-        <Card>
-
+        <Card title={<>
+          <Row>
+            <Col span={24} style={{textAlign:"right"}}>
+              <Button onClick={()=>setOpenAddModal(true)}>添加</Button>
+            </Col>
+          </Row>
+        </>}>
           <Alert style={{ marginBottom: "30px" }} showIcon type='info' message={<>
             仅支持 Safe4 网络的端点服务,您也可以连接自己的 Safe4 节点.
           </>} />
@@ -110,8 +121,8 @@ export default () => {
                 return <NetworkOption endpoint={endpoint} />
               })
           }
-          {/*
-          <NetworkOption endpoint='http://172.104.162.94:8545' />
+          
+          {/* <NetworkOption endpoint='http://172.104.162.94:8545' />
           <NetworkOption endpoint='http://47.107.47.210:8545' />
           <NetworkOption endpoint='https://arb1.arbitrum.io/rpc' />
           <NetworkOption endpoint='https://polygon-rpc.com' /> */}
@@ -119,6 +130,8 @@ export default () => {
         </Card>
       </div>
     </div>
+
+    <NetworkAddModal openAddModal={openAddModal} cancel={() => {setOpenAddModal(false)}} />
 
   </>
 }
