@@ -136,6 +136,17 @@ export interface IncentivePlanVO {
   voter: number
 }
 
+export interface ContractVO {
+  address : string ,
+  creator : string ,
+  creatorBlockNumber : number,
+  creatorTransactionHash : string,
+  creatorTimestamp : number,
+  name ?: string,
+  compileType ?: string,
+	compileVersion ?: string,
+}
+
 export function AddressActivityFormat(activity: AddressActivityVO): AddressActivityVO {
   const { data } = activity;
   let _data: any;

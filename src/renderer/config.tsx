@@ -43,7 +43,7 @@ const Config = {
   "test": {
     Default_Web3_Endpoint: Safe4_Network_Config.Testnet.endpoint,
     Default_Web3_ChainId: Safe4_Network_Config.Testnet.chainId,
-    Safescan_URL: "http://safe4.anwang.com"
+    Safescan_URL: "http://127.0.0.1"
   },
   "prod": {
     Default_Web3_Endpoint: Safe4_Network_Config.Mainnet.endpoint,
@@ -52,4 +52,4 @@ const Config = {
   }
 }
 
-export default Config["prod"]
+export default Config["test"]

@@ -10,9 +10,9 @@ export const applicationDataLoaded = createAction<{
     data: string,
     keystores: string,
     database: string
-  } , 
+  } ,
   rpcConfigs : {
-    chainId : number , 
+    chainId : number ,
     endpoint : string
   }[]
 }>("application/dataLoaded")
@@ -64,3 +64,7 @@ export const applicationUpdateWeb3Rpc = createAction<{ endpoint: string, chainId
 export const applicationControlVoteProposal = createAction<number | undefined>(
   "application/controlVoteProposal"
 )
+
+export const applicationAddRpcConfig = createAction< {endpoint : string , chainId : number} >(
+  "application/addRpcConfig"
+);

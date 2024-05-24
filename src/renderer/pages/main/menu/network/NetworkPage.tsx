@@ -25,8 +25,6 @@ export default () => {
   }>();
   const [openAddModal ,setOpenAddModal] = useState<boolean>(false);
 
-
-
   const renderActiveStatus = () => {
     if (isActivating) {
       return <>
@@ -121,7 +119,7 @@ export default () => {
                 return <NetworkOption endpoint={endpoint} />
               })
           }
-          
+
           {/* <NetworkOption endpoint='http://172.104.162.94:8545' />
           <NetworkOption endpoint='http://47.107.47.210:8545' />
           <NetworkOption endpoint='https://arb1.arbitrum.io/rpc' />

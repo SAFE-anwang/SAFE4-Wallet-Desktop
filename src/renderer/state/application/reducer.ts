@@ -13,6 +13,7 @@ import {
   applicationUpdateWeb3Rpc,
   applicationUpdateAfterSetPasswordTODO,
   applicationSetPassword,
+  applicationAddRpcConfig,
 } from './action';
 
 import Config from "../../config"
@@ -62,7 +63,7 @@ export interface IApplicationState {
     [key: string]: any
   } ,
   rpcConfigs ?: {
-    chainId : number , 
+    chainId : number ,
     endpoint : string
   }[],
   encrypt ?: {
@@ -207,6 +208,10 @@ export default createReducer(initialState, (builder) => {
 
     .addCase(applicationUpdateWeb3Rpc, (state, { payload }) => {
       state.blockchain.web3rpc = payload;
+    })
+
+    .addCase(applicationAddRpcConfig,( state , {payload} ) => {
+      state.rpcConfigs?.push(payload);
     })
 
 })
