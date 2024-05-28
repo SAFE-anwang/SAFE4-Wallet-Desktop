@@ -5,11 +5,17 @@ import { ContractVO } from '../../../services';
 import { ColumnsType } from 'antd/es/table';
 import AddressView from '../../components/AddressView';
 import { DateTimeFormat } from '../../../utils/DateUtils';
+import { useDispatch } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
+import { applicationControlContractVO } from '../../../state/application/action';
 const { Title, Text } = Typography;
 
 const Supernode_Page_Size = 10;
 
 export default () => {
+
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
 
   const [contractVOs, setContractVOs] = useState<ContractVO[]>([]);
   const [pagination, setPagination] = useState<{
@@ -48,9 +54,14 @@ export default () => {
         const { } = contractVO;
         const _addr = address.substring(0, 10) + "...." + address.substring(address.length - 8);
         return <>
-          <AddressView address={_addr}></AddressView>
+          <Row>
+            <Col span={24} style={{ width: "80px" }}>
+              <AddressView address={_addr}></AddressView>
+            </Col>
+          </Row>
         </>
       },
+      width: "80px"
     },
     {
       title: '创建账户',
@@ -61,42 +72,51 @@ export default () => {
         const _addr = creator ? creator.substring(0, 10) + "...." + creator.substring(creator.length - 8) : "";
         return <>
           <Row>
-            <Col>
+            <Col span={24} style={{ width: "80px" }}>
               <AddressView address={_addr}></AddressView>
             </Col>
           </Row>
         </>
       },
+      width: "80px"
     },
     {
       title: '部署时间',
       dataIndex: 'creatorTimestamp',
       key: 'creatorTimestamp',
-      render: (creatorTimestamp, supernodeVO: ContractVO) => {
-        const { } = supernodeVO;
+      render: (creatorTimestamp, contractVO: ContractVO) => {
+        const { creator } = contractVO;
         return <>
           <Row>
-            <Col>
-              <Text>   {DateTimeFormat(creatorTimestamp * 1000)} </Text>
+            <Col span={24} style={{ width: "60px" }}>
+              {
+                creator && <Text>{DateTimeFormat(creatorTimestamp * 1000)}</Text>
+              }
             </Col>
           </Row>
         </>
       },
+      width: "60px"
     },
     {
       title: '合约名称',
       dataIndex: 'name',
       key: 'name',
-      render: (name, supernodeVO: ContractVO) => {
-        const { } = supernodeVO;
+      render: (name, contractVO: ContractVO) => {
+        const { } = contractVO;
         return <>
           <Row>
-            <Col>
+            <Col span={24} style={{ width: "80px" }}>
               <Text>{name}</Text>
+              <Button style={{float:"right"}} onClick={() => {
+                dispatch( applicationControlContractVO(contractVO) )
+                navigate("/main/contracts/detail")
+              }}>查看</Button>
             </Col>
           </Row>
         </>
       },
+      width: "100px"
     },
   ];
 

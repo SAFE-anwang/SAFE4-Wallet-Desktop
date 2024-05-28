@@ -147,6 +147,13 @@ export interface ContractVO {
 	compileVersion ?: string,
 }
 
+export interface ContractCompileVO {
+  address : string ,
+  name ?: string,
+  abi ?: string
+}
+
+
 export function AddressActivityFormat(activity: AddressActivityVO): AddressActivityVO {
   const { data } = activity;
   let _data: any;

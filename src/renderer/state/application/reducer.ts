@@ -14,9 +14,11 @@ import {
   applicationUpdateAfterSetPasswordTODO,
   applicationSetPassword,
   applicationAddRpcConfig,
+  applicationControlContractVO,
 } from './action';
 
 import Config from "../../config"
+import { ContractVO } from '../../services';
 
 export const enum AfterSetPasswordTODO {
   CREATE = "create",
@@ -40,7 +42,7 @@ export interface IApplicationState {
       address?: string
     },
     //
-    afterSetPasswordTODO :AfterSetPasswordTODO
+    afterSetPasswordTODO: AfterSetPasswordTODO
   }
   control: {
     vote?: string,
@@ -48,29 +50,30 @@ export interface IApplicationState {
     masternodeAppend?: string,
     proposalId?: number,
     walletTab?: string,
+    contractVO?: ContractVO
   }
   supernodeAddresses: string[],
   blockchain: {
     networkId: "SAFE4",
     blockNumber: number,
     timestamp: number,
-    web3rpc ?: {
+    web3rpc?: {
       chainId: number,
       endpoint: string
     }
   }
   data: {
     [key: string]: any
-  } ,
-  rpcConfigs ?: {
-    chainId : number ,
-    endpoint : string
+  },
+  rpcConfigs?: {
+    chainId: number,
+    endpoint: string
   }[],
-  encrypt ?: {
-    password ?: string ,
-    salt ?: string,
-    iv ?: string,
-    ciphertext ?: string
+  encrypt?: {
+    password?: string,
+    salt?: string,
+    iv?: string,
+    ciphertext?: string
   }
 
 }
@@ -79,7 +82,7 @@ const initialState: IApplicationState = {
   action: {
     newMnemonic: undefined,
     atCreateWallet: false,
-    afterSetPasswordTODO:AfterSetPasswordTODO.CREATE
+    afterSetPasswordTODO: AfterSetPasswordTODO.CREATE
   },
   control: {
 
@@ -97,7 +100,7 @@ const initialState: IApplicationState = {
 
 export default createReducer(initialState, (builder) => {
 
-  builder.addCase(applicationDataLoaded, (state, { payload: { path , rpcConfigs } }) => {
+  builder.addCase(applicationDataLoaded, (state, { payload: { path, rpcConfigs } }) => {
     const { resource, data, database, keystores } = path;
     state.data["resource"] = resource;
     state.data["data"] = data;
@@ -161,7 +164,7 @@ export default createReducer(initialState, (builder) => {
     .addCase(applicationSetPassword, (state, { payload }) => {
       return {
         ...state,
-        encrypt : {
+        encrypt: {
           ...state.encrypt,
           password: payload
         }
@@ -198,6 +201,16 @@ export default createReducer(initialState, (builder) => {
       }
     })
 
+    .addCase(applicationControlContractVO, (state, { payload }) => {
+      return {
+        ...state,
+        control: {
+          ...state.control,
+          contractVO : payload
+        }
+      }
+    })
+
     .addCase(applicationUpdateSupernodeAddresses, (state, { payload }) => {
       state.supernodeAddresses = payload;
     })
@@ -210,8 +223,10 @@ export default createReducer(initialState, (builder) => {
       state.blockchain.web3rpc = payload;
     })
 
-    .addCase(applicationAddRpcConfig,( state , {payload} ) => {
+    .addCase(applicationAddRpcConfig, (state, { payload }) => {
       state.rpcConfigs?.push(payload);
     })
+
+
 
 })

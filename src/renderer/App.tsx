@@ -39,6 +39,8 @@ import NetworkPage from './pages/main/menu/network/NetworkPage';
 import Storage from './pages/main/menu/storage/Storage';
 import Contracts from './pages/main/contracts/Contracts';
 import ContractCall from './pages/main/contracts/ContractCall';
+import ContractDetail from './pages/main/contracts/ContractDetail';
+import ContractDeploy from './pages/main/contracts/ContractDeploy';
 const CryptoJS = require('crypto-js');
 const { Text } = Typography;
 
@@ -258,6 +260,8 @@ export default function App() {
                     <Route path="/main/menu/storage" element={<Storage />} />
                     <Route path="/main/menu/network" element={<NetworkPage />} />
                     <Route path="/main/contracts" element={<Contracts />} />
+                    <Route path="/main/contracts/detail" element={<ContractDetail />} />
+                    <Route path="/main/contracts/deploy" element={<ContractDeploy />} />
                   </Routes>
                 </Col>
               </Row>

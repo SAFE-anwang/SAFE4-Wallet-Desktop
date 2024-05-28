@@ -1,5 +1,6 @@
 import { createAction } from '@reduxjs/toolkit';
 import { AfterSetPasswordTODO } from './reducer';
+import { ContractVO } from '../../services';
 
 export const applicationBlockchainUpdateBlockNumber = createAction<{ blockNumber: number, timestamp: number }>
   ("application/blockchainUpdateBlockNumber")
@@ -68,3 +69,7 @@ export const applicationControlVoteProposal = createAction<number | undefined>(
 export const applicationAddRpcConfig = createAction< {endpoint : string , chainId : number} >(
   "application/addRpcConfig"
 );
+
+export const applicationControlContractVO = createAction<ContractVO>(
+  "application/controlContractVO"
+)

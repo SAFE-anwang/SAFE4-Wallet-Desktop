@@ -29,7 +29,7 @@ const items: MenuItem[] = [
   getItem("主节点", '/main/masternodes', <ApartmentOutlined />),
   getItem("提案", '/main/proposals', <FilePptOutlined />),
   getItem("Safe3 资产迁移", '/main/safe3', <ApiOutlined />),
-  getItem('智能合约', '/main/contracts', <FileZipOutlined />),
+  getItem('智能合约', '/main/contracts/deploy', <FileZipOutlined />),
   // getItem("Test", '/main/test', <ApiOutlined />),
   getItem('领取测试币', '/main/gettestcoin', <GiftOutlined />),
 

@@ -1,18 +1,17 @@
 import { Interface } from "ethers/lib/utils";
-import SystemContractAbiConfig from "../../../constants/SystemContractAbiConfig"
-import { SystemContract } from "../../../constants/SystemContracts"
-import { Col, Divider, Input, Row, Typography } from "antd";
 import { CaretRightOutlined } from '@ant-design/icons';
 import type { CollapseProps } from 'antd';
 import type { CSSProperties } from 'react';
 import { Collapse, theme } from 'antd';
 import ContractFunction from "./ContractFunction";
 
-const { Text } = Typography;
+export default ( {
+  abi , address
+} : {
+  abi : string ,
+  address : string
+} ) => {
 
-export default () => {
-
-  const abi = SystemContractAbiConfig.AccountManagerABI;
   const IContract = new Interface(abi);
   const functions = IContract.functions;
 
@@ -22,7 +21,7 @@ export default () => {
       return {
         key: name,
         label: name,
-        children: <ContractFunction functionFragment={contractFunction} IContract={IContract} address={SystemContract.AccountManager} />,
+        children: <ContractFunction functionFragment={contractFunction} IContract={IContract} address={address} />,
         style: panelStyle
       }
     })

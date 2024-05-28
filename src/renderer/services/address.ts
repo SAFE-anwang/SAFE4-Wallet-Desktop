@@ -2,6 +2,7 @@ import { AddressActivityFormat, AddressActivityVO, POST, PageQueryDTO, PageRespo
 import config from "../config";
 
 const { Safescan_URL } = config;
+
 export async function fetchAddressActivity(params: { address: string, blockNumberStart: number, blockNumberEnd: number } | PageQueryDTO): Promise<PageResponseVO<AddressActivityVO>> {
   const serverResponse = await POST(`${Safescan_URL}:5005/address/activity`, params);
   if (serverResponse.data && serverResponse.data.records) {

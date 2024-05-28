@@ -43,12 +43,12 @@ const Config = {
   "test": {
     Default_Web3_Endpoint: Safe4_Network_Config.Testnet.endpoint,
     Default_Web3_ChainId: Safe4_Network_Config.Testnet.chainId,
-    Safescan_URL: "http://127.0.0.1"
+    Safescan_URL: "http://safe4.anwang.com"
   },
   "prod": {
     Default_Web3_Endpoint: Safe4_Network_Config.Mainnet.endpoint,
     Default_Web3_ChainId: Safe4_Network_Config.Mainnet.chainId,
-    Safescan_URL: "http://safe4.anwang.com"
+    Safescan_URL: "https://safe4.anwang.com"
   }
 }
 
