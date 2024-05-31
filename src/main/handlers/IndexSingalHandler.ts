@@ -48,7 +48,7 @@ export class IndexSingalHandler implements ListenSignalHandler {
     event.reply(Channel, [this.getSingal(), method, [data]])
   }
 
-  private async load() {
+  private async load() : Promise<any> {
     const { walletKeystores, encrypt } = this.loadWalletKeystores();
     const rpc_configs = await this.loadRpcConfig();
     return {

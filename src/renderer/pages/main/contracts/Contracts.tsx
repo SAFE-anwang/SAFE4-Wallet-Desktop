@@ -8,6 +8,7 @@ import { DateTimeFormat } from '../../../utils/DateUtils';
 import { useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { applicationControlContractVO } from '../../../state/application/action';
+import { FileAddOutlined } from '@ant-design/icons';
 const { Title, Text } = Typography;
 
 const Supernode_Page_Size = 10;
@@ -136,6 +137,12 @@ export default () => {
             注册成为主节点，则不能再注册成为超级节点
           </>} />
         </Card>
+
+        <Row style={{marginBottom:"20px"}}>
+          <Col span={24}>
+            <Button icon={<FileAddOutlined />} type='primary' onClick={() => navigate("/main/contracts/deploy")}>部署合约</Button>
+          </Col>
+        </Row>
 
         <Table loading={loading} onChange={(pagination) => {
           const { current, pageSize, total } = pagination;

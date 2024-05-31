@@ -1,10 +1,10 @@
 import { ContractCompileVO, ContractVO, POST, PageQueryDTO, PageResponseVO } from ".";
 import config from "../config";
 
-const { Safescan_URL } = config;
+const { Safescan_Api } = config;
 
 export async function fetchContracts(params: { address: string } | PageQueryDTO): Promise<PageResponseVO<ContractVO>> {
-  const serverResponse = await POST(`${Safescan_URL}:5005/contracts`, params);
+  const serverResponse = await POST(`${Safescan_Api}/contracts`, params);
   if (serverResponse.data && serverResponse.data.records) {
 
   } else {
@@ -14,6 +14,6 @@ export async function fetchContracts(params: { address: string } | PageQueryDTO)
 }
 
 export async function fetchContractCompile(params: { address: string }): Promise<ContractCompileVO> {
-  const serverResponse = await POST(`${Safescan_URL}:5005/contracts/${params.address}/compile`, params);
+  const serverResponse = await POST(`${Safescan_Api}/contracts/${params.address}/compile`, params);
   return serverResponse.data;
 }

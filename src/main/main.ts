@@ -38,7 +38,7 @@ const resourcePath = app.isPackaged
   ? path.join(process.resourcesPath, '')
   : path.join(__dirname, '../../');
 new ApplicationIpcManager(
-  resourcePath , app.isPackaged
+  resourcePath, app.isPackaged
 ).register(ipcMain);
 
 if (process.env.NODE_ENV === 'production') {
@@ -92,7 +92,7 @@ const createWindow = async () => {
       webSecurity: false
     },
   });
-  mainWindow.setMinimumSize( 1500 , 800 );
+  mainWindow.setMinimumSize(1500, 800);
 
   mainWindow.loadURL(resolveHtmlPath('index.html'));
 

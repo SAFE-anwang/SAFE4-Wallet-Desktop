@@ -23,6 +23,7 @@ export interface TransactionDetails {
   blockNumber?: number,
   timestamp?: number,
   status?: number,
+  action?: string,
   /** 交易的receipt */
   receipt?: SerializableTransactionReceipt,
   /**
@@ -237,6 +238,11 @@ export function Activity2Transaction(row: any): TransactionDetails {
         transfer: { ...transaction.data }
       }
     case DB_AddressActivity_Actions.Call:
+      return {
+        ...transaction,
+        call: { ...transaction.data }
+      }
+    case DB_AddressActivity_Actions.Create:
       return {
         ...transaction,
         call: { ...transaction.data }

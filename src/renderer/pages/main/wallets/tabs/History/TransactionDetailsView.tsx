@@ -1,5 +1,5 @@
-import { Row, Alert, Col, Tag, Typography, Divider, Card, Spin, Button } from "antd"
-import { LoadingOutlined, CheckCircleFilled , CloseCircleFilled , ExportOutlined } from '@ant-design/icons';
+import { Row, Alert, Col, Tag, Typography, Divider, Card, Spin, Button, Tooltip } from "antd"
+import { LoadingOutlined, CheckCircleFilled, CloseCircleFilled, ExportOutlined, GlobalOutlined } from '@ant-design/icons';
 import TokenLogo from "../../../../components/TokenLogo";
 import { TransactionDetails } from "../../../../../state/transactions/reducer";
 import { useWalletsActiveAccount } from "../../../../../state/wallets/hooks";
@@ -9,6 +9,7 @@ import { DateTimeFormat } from "../../../../../utils/DateUtils";
 import { useTransaction } from "../../../../../state/transactions/hooks";
 import { useMemo } from "react";
 import config from "../../../../../config";
+import Safescan from "../../../../components/Safescan";
 
 const { Safescan_URL } = config;
 const { Text } = Typography;
@@ -26,19 +27,19 @@ export default ({
     transfer,
     timestamp,
     addedTime
-  } = useMemo( () => {
-    if ( tx && tx.hash ){
+  } = useMemo(() => {
+    if (tx && tx.hash) {
       return tx;
     }
     return {
-      hash : undefined,
-      status : undefined,
-      receipt : undefined,
-      transfer : undefined,
-      timestamp : undefined,
-      addedTime : undefined
+      hash: undefined,
+      status: undefined,
+      receipt: undefined,
+      transfer: undefined,
+      timestamp: undefined,
+      addedTime: undefined
     }
-  } , [tx])
+  }, [tx])
   const activeAccount = useWalletsActiveAccount();
 
   return <>
@@ -64,7 +65,7 @@ export default ({
             </Spin>
             <div>
               <Text style={{ fontSize: "16px" }}>等待</Text><br />
-              <Text style={{ fontSize: "16px" }} type="secondary">{ addedTime && DateTimeFormat(addedTime)}</Text>
+              <Text style={{ fontSize: "16px" }} type="secondary">{addedTime && DateTimeFormat(addedTime)}</Text>
             </div>
           </>
         }
@@ -86,12 +87,17 @@ export default ({
 
     <Text type="secondary" style={{ fontSize: "12px" }}>详情</Text><br />
     <Card style={{ marginTop: "8px" }}>
-      <Text type="secondary">交易哈希</Text>
-      <Button onClick={() => {
-         window.open(`https://safe4.anwang.com/tx/${hash}`)
-      }} size="small" icon={<ExportOutlined />} style={{float:"right"}} />
-      <br />
-      <Text>{hash}</Text>
+      <Row>
+        <Col span={12}>
+          <Text type="secondary">交易哈希</Text>
+        </Col>
+        <Col span={12} style={{textAlign:"right"}}>
+          <Safescan url={`${Safescan_URL}/tx/${hash}`} />
+        </Col>
+        <Col span={24} style={{marginTop:"5px"}}>
+          <Text>{hash}</Text>
+        </Col>
+      </Row>
       <Divider style={{ marginTop: "10px", marginBottom: "10px" }} />
     </Card>
     <br />

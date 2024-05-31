@@ -53,6 +53,9 @@ const configuration: webpack.Configuration = {
       "stream": require.resolve("stream-browserify"),
       "path": require.resolve("path-browserify"),
       "fs": false,
+      "url": require.resolve("url"),
+      "https": require.resolve("https-browserify"),
+      "http": require.resolve("stream-http")
     },
   },
 

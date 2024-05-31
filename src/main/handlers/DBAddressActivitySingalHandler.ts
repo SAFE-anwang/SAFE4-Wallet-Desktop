@@ -13,8 +13,9 @@ export enum DB_AddressActivity_Methods {
 }
 
 export enum DB_AddressActivity_Actions {
-  Transfer = "Transfer",
-  Call = "Call",
+  Transfer = "Transfer",  // 转账
+  Call = "Call",          // 调用合约
+  Create = "Create",      // 创建合约
 
   InternalTransfer = "InternalTransfer",
   erc20Transfer = "erc20Transfer",

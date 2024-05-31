@@ -6,6 +6,7 @@ import { WalletSignalHandler } from "./handlers/WalletSignalHandler";
 import { Channels } from "./preload";
 import { Context } from "./handlers/Context";
 import { RpcConfigSingalHandler } from "./handlers/RpcConfigSignalHandler";
+import { ContractCompileHandler } from "./handlers/ContractCompileHandler";
 
 export const Channel : Channels = "ipc-example";
 
@@ -21,6 +22,7 @@ export class ApplicationIpcManager {
       this.listenSignalHandlers.push(new RpcConfigSingalHandler(indexSignalHandler.getSqlite3DB()));
     });
     this.listenSignalHandlers.push(indexSignalHandler);
+    this.listenSignalHandlers.push( new ContractCompileHandler(ctx) )
   }
 
   public register(ipcMain : Electron.IpcMain) {

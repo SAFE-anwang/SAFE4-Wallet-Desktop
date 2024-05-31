@@ -41,9 +41,10 @@ import Contracts from './pages/main/contracts/Contracts';
 import ContractCall from './pages/main/contracts/ContractCall';
 import ContractDetail from './pages/main/contracts/ContractDetail';
 import ContractDeploy from './pages/main/contracts/ContractDeploy';
+import ContractEdit from './pages/main/contracts/ContractEdit';
 const CryptoJS = require('crypto-js');
 const { Text } = Typography;
-
+import Editor, { useMonaco } from '@monaco-editor/react';
 export default function App() {
 
   const dispatch = useDispatch();
@@ -262,6 +263,7 @@ export default function App() {
                     <Route path="/main/contracts" element={<Contracts />} />
                     <Route path="/main/contracts/detail" element={<ContractDetail />} />
                     <Route path="/main/contracts/deploy" element={<ContractDeploy />} />
+                    <Route path="/main/contracts/edit" element={<ContractEdit />} />
                   </Routes>
                 </Col>
               </Row>

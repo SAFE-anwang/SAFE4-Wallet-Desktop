@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useETHBalances, useWalletsActiveAccount, useWalletsActiveKeystore, useWalletsActivePrivateKey, useWalletsActiveWallet } from '../../../state/wallets/hooks';
 import { applicationActionUpdateAtCreateWallet, applicationUpdateWalletTab } from '../../../state/application/action';
-import { SendOutlined, QrcodeOutlined, LockOutlined, MoreOutlined } from '@ant-design/icons';
+import { SendOutlined, QrcodeOutlined, LockOutlined, MoreOutlined, GlobalOutlined } from '@ant-design/icons';
 import { useBlockNumber, useTimestamp } from '../../../state/application/hooks';
 import Locked from './tabs/Locked/Locked';
 import WalletLockModal from './Lock/WalletLockModal';
@@ -14,12 +14,14 @@ import WalletSendModal from './Send/WalletSendModal';
 import { AppState } from '../../../state';
 import { DateTimeFormat } from '../../../utils/DateUtils';
 import { useWeb3React } from '@web3-react/core';
-import { Safe4_Network_Config } from '../../../config';
+import config, { Safe4_Network_Config } from '../../../config';
 import WalletKeystoreModal from './WalletKeystoreModal';
 import WalletPrivateKeyModal from './WalletPrivateKeyModal';
 import WalletMnemonicModal from './WalletMnemonicModal';
+import Safescan, { SafescanComponentType } from '../../components/Safescan';
 
-const { Title, Text, Paragraph } = Typography;
+const { Safescan_URL } = config;
+const { Title, Text, Paragraph , Link } = Typography;
 
 export default () => {
 
@@ -148,6 +150,9 @@ export default () => {
       <div style={{ margin: "auto", width: "90%" }}>
         <Row>
           <Paragraph copyable>{activeWallet?.address}</Paragraph>
+          <div style={{marginLeft:"5px"}}>
+            <Safescan url={`${Safescan_URL}/address/${activeWallet?.address}`} type={SafescanComponentType.Link} />
+          </div>
         </Row>
         <Row>
           <Col span={18}>
