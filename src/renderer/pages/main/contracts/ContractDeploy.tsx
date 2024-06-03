@@ -2,13 +2,15 @@
 import { LeftOutlined } from '@ant-design/icons';
 import { Typography, Button, Card, Divider, Statistic, Row, Col, Modal, Flex, Tooltip, Tabs, TabsProps, QRCode, Badge, Space, Alert, Table, Spin, Input } from 'antd';
 import { FunctionFragment, Interface } from 'ethers/lib/utils';
-import { RefObject, useEffect, useRef, useState } from 'react';
+import { RefObject, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ContractConstructor from './ContractConstructor';
 import { ethers } from 'ethers';
 import { useWalletsActiveSigner } from '../../../state/wallets/hooks';
 import { TransactionResponse } from '@ethersproject/providers';
 import config from '../../../config';
+import { useSelector } from 'react-redux';
+import { AppState } from '../../../state';
 
 const { Title, Text, Link } = Typography;
 
@@ -21,13 +23,27 @@ export default () => {
   const navigate = useNavigate();
   const signer = useWalletsActiveSigner();
 
+  const compile = useSelector<AppState, {
+    sourceCode: string, abi: string, bytecode: string
+  } | undefined>(state => state.application.control.compile);
+  const { abi, bytecode } = useMemo(() => {
+    if (!compile) {
+      return {
+        abi: undefined,
+        bytecode: undefined
+      }
+    }
+    return compile;
+  }, [compile]);
+  const directDeploy = useSelector<AppState, boolean | undefined>(state => state.application.control.directDeploy);
+
   const [params, setParams] = useState<{
     abi: string | undefined,
     bytecode: string | undefined,
     constructorParams: any[] | undefined
   }>({
-    abi: undefined,
-    bytecode: undefined,
+    abi,
+    bytecode,
     constructorParams: undefined
   });
   const [inputErrors, setInputErrors] = useState<{
@@ -114,18 +130,19 @@ export default () => {
     <div style={{ width: "100%", paddingTop: "40px", minWidth: "1000px" }}>
       <div style={{ margin: "auto", width: "90%" }}>
         <Card>
-
-          <Alert type='info' message={<>
-            通过智能合约编辑器 (<Link onClick={() => window.open("https://remix.ethereum.org")}>Remix</Link>) 等工具编写合约后,将合约编译出的ABI和字节码复制到输入框来部署合约.
-          </>} />
-
+          {
+            directDeploy &&
+            <Alert type='info' message={<>
+              通过智能合约编辑器 (<Link onClick={() => window.open("https://remix.ethereum.org")}>Remix</Link>) 等工具编写合约后,将合约编译出的ABI和字节码复制到输入框来部署合约.
+            </>} />
+          }
           <Spin spinning={deploying}>
             <Row style={{ marginTop: "20px" }}>
               <Col span={24}>
                 <Text strong type='secondary'>合约ABI</Text>
               </Col>
               <Col span={24} style={{ marginTop: "5px" }}>
-                <Input.TextArea onBlur={(event) => {
+                <Input.TextArea defaultValue={abi} onBlur={(event) => {
                   setParams({
                     ...params,
                     abi: event.target.value
@@ -135,7 +152,7 @@ export default () => {
                     ...inputErrors,
                     abi: undefined
                   })
-                }} style={{ minHeight: "100px" }} />
+                }} disabled={ !directDeploy } style={{ minHeight: "100px" }} />
               </Col>
               {
                 inputErrors?.abi && <Alert style={{ marginTop: "5px" }} type='error' showIcon message={inputErrors?.abi} />
@@ -145,7 +162,7 @@ export default () => {
                 <Text strong type='secondary'>合约字节码(Bytecode)</Text>
               </Col>
               <Col span={24} style={{ marginTop: "5px" }}>
-                <Input.TextArea onBlur={(event) => {
+                <Input.TextArea defaultValue={bytecode} onBlur={(event) => {
                   setParams({
                     ...params,
                     bytecode: event.target.value
@@ -155,7 +172,7 @@ export default () => {
                     ...inputErrors,
                     bytecode: undefined
                   })
-                }} style={{ minHeight: "100px" }} />
+                }} disabled={ !directDeploy }  style={{ minHeight: "100px" }} />
               </Col>
 
               {
@@ -181,7 +198,7 @@ export default () => {
                     <Row>
                       <Col span={24}>
                         <Text>交易哈希:{deployHash}</Text>
-                        <Link onClick={()=>window.open(`${config.Safescan_URL}/tx/${deployHash}`)} style={{ float: "right" }}>浏览器上查看</Link>
+                        <Link onClick={() => window.open(`${config.Safescan_URL}/tx/${deployHash}`)} style={{ float: "right" }}>浏览器上查看</Link>
                       </Col>
                     </Row>
                   </>} />

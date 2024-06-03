@@ -57,8 +57,8 @@ export class ContractCompileHandler implements ListenSignalHandler {
         }
       },
     };
-    // const path = `${this.ctx.path.data}/soljson-v0.8.17+commit.8df45f5f.js`;
-    // solc = solc.setupMethods(require(`${path}`));
+    const path = `${this.ctx.path.data}/soljson-v0.8.17+commit.8df45f5f.js`;
+    solc = solc.setupMethods(require(`${path}`));
     console.log(`Use Solc - ${solc.version()} to compile...`);
     const compileResult = solc.compile( JSON.stringify(input) );
     // console.log("compileResult :" , compileResult)

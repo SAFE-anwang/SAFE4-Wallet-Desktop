@@ -15,9 +15,10 @@ import {
   applicationSetPassword,
   applicationAddRpcConfig,
   applicationControlContractVO,
+  applicationControlCompile,
+  applicationControlDirectDeploy,
 } from './action';
 
-import Config from "../../config"
 import { ContractVO } from '../../services';
 
 export const enum AfterSetPasswordTODO {
@@ -50,7 +51,15 @@ export interface IApplicationState {
     masternodeAppend?: string,
     proposalId?: number,
     walletTab?: string,
-    contractVO?: ContractVO
+    contractVO?: ContractVO,
+
+    // 合约编译时存储的数据
+    compile?: {
+      sourceCode: string,
+      abi: string,
+      bytecode: string
+    }
+    directDeploy ?: boolean
   }
   supernodeAddresses: string[],
   blockchain: {
@@ -206,7 +215,27 @@ export default createReducer(initialState, (builder) => {
         ...state,
         control: {
           ...state.control,
-          contractVO : payload
+          contractVO: payload
+        }
+      }
+    })
+
+    .addCase(applicationControlCompile, (state, { payload }) => {
+      return {
+        ...state,
+        control: {
+          ...state.control,
+          compile: payload
+        }
+      }
+    })
+
+    .addCase(applicationControlDirectDeploy, (state, { payload }) => {
+      return {
+        ...state,
+        control: {
+          ...state.control,
+          directDeploy: payload
         }
       }
     })

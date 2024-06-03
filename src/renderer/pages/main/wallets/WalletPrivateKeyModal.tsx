@@ -14,7 +14,6 @@ import History from './tabs/History/History';
 import { useWeb3React } from '@web3-react/core';
 import { Safe4_Network_Config } from '../../../config';
 import { ethers } from 'ethers';
-import { text } from 'node:stream/consumers';
 
 const { Title, Text, Paragraph } = Typography;
 

@@ -140,7 +140,7 @@ export default () => {
 
         <Row style={{marginBottom:"20px"}}>
           <Col span={24}>
-            <Button icon={<FileAddOutlined />} type='primary' onClick={() => navigate("/main/contracts/deploy")}>部署合约</Button>
+            <Button icon={<FileAddOutlined />} type='primary' onClick={() => navigate("/main/contracts/edit")}>部署合约</Button>
           </Col>
         </Row>
 

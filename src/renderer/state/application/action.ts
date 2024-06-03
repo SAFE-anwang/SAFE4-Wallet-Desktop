@@ -73,3 +73,15 @@ export const applicationAddRpcConfig = createAction< {endpoint : string , chainI
 export const applicationControlContractVO = createAction<ContractVO>(
   "application/controlContractVO"
 )
+
+export const applicationControlCompile = createAction<{
+  sourceCode : string ,
+  abi : string ,
+  bytecode : string
+}>(
+  "application/controlCompile"
+)
+
+export const applicationControlDirectDeploy = createAction<boolean>(
+  "application/controlDirectDeploy"
+)
