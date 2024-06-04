@@ -44,7 +44,6 @@ import ContractDeploy from './pages/main/contracts/ContractDeploy';
 import ContractEdit from './pages/main/contracts/ContractEdit';
 const CryptoJS = require('crypto-js');
 const { Text } = Typography;
-import Editor, { useMonaco } from '@monaco-editor/react';
 export default function App() {
 
   const dispatch = useDispatch();

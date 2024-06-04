@@ -13,6 +13,7 @@ export enum DB_AddressActivity_Methods {
 }
 
 export enum DB_AddressActivity_Actions {
+
   Transfer = "Transfer",  // 转账
   Call = "Call",          // 调用合约
   Create = "Create",      // 创建合约
@@ -46,7 +47,8 @@ export class DBAddressActivitySingalHandler implements ListenSignalHandler {
       + " \"ref_to\" TEXT,"
       + " \"action\" TEXT,"
       + " \"data\" blob,"
-      + " \"added_time\" integer"
+      + " \"added_time\" integer,"
+      + " \"chain_id\" integer"
       + ");",
       [],
       (err: any) => {
@@ -54,8 +56,39 @@ export class DBAddressActivitySingalHandler implements ListenSignalHandler {
           console.log("[sqlite3] Create Table Address_Activities Error:", err);
           return;
         }
-        console.log("[sqlite3] Check Address_Activities Exisits.")
+        console.log("[sqlite3] Check Address_Activities Exisits.");
+        this.updateChainId();
       })
+  }
+
+  private updateChainId(){
+    this.db.all( "PRAGMA table_info(address_activities)" , [] , ( err:any , rows:any ) => {
+      let chainIdExists = false;
+      rows.forEach( (row : any) => {
+        if ( row.name == "chain_id" ){
+          chainIdExists = true;
+        }
+      });
+      if ( !chainIdExists ){
+        console.log("[sqlite3] address_activities.chain_id not exists.")
+        this.db.run( "ALTER TABLE address_activities ADD chain_id INTEGER" , ( err : any ) => {
+          if ( !err ){
+            // 更新chain_id字段为 测试链数据.
+            this.db.run( "UPDATE address_activities SET chain_id = ?" , [6666666] , ( err : any ) => {
+              if ( !err ){
+                console.log("[sqlite3] address_activities.chain_id update success..");
+              }else{
+                console.log("[sqlite3] address_activities.chain_id update testchain_id error:" , err)
+              }
+            })
+          }else{
+            console.log("[sqlite3] address_activities.chain_id update error:" , err)
+          }
+        });
+      }else{
+        console.log("[sqlite3] address_activities.chain_id exists,not need to update.")
+      }
+    })
   }
 
   getSingal(): string {

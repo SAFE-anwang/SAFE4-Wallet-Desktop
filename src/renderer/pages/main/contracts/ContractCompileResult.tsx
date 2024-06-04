@@ -12,7 +12,7 @@ export default ({
   sourceCode , compileResult,
 }: {
   sourceCode : string,
-  compileResult: any
+  compileResult: string
 }) => {
 
   const navigate = useNavigate();
@@ -58,8 +58,10 @@ export default ({
                 dispatch(applicationControlDirectDeploy(false));
                 dispatch( applicationControlCompile({
                   sourceCode,
+                  compileResult,
                   abi : JSON.stringify(abi),
-                  bytecode : bytecode.object
+                  bytecode : bytecode.object,
+                  name : contractName
                 }));
                 navigate("/main/contracts/deploy");
               }} size='small' style={{ float: "right" }}>

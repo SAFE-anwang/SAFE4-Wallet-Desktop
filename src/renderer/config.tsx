@@ -56,4 +56,4 @@ const Config = {
   }
 }
 
-export default Config["dev"]
+export default Config["test"]

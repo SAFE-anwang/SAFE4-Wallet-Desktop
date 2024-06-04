@@ -1,3 +1,4 @@
+import { ethers } from "ethers";
 import ChecksumAddress from "../utils/ChecksumAddress";
 
 export const GET = async function (url: string, params?: any): Promise<any> {
@@ -168,6 +169,14 @@ export function AddressActivityFormat(activity: AddressActivityVO): AddressActiv
     refTo: activity.refTo ? ChecksumAddress(activity.refTo) : "",
     timestamp: activity.timestamp * 1000,
     data: _data
+  }
+}
+
+export function ContractVOFormat( contractVO : ContractVO ) : ContractVO {
+  return {
+    ...contractVO,
+    address : ethers.utils.isAddress(contractVO.address)? ChecksumAddress(contractVO.address) : "",
+    creator : ethers.utils.isAddress(contractVO.creator)? ChecksumAddress(contractVO.creator) : "",
   }
 }
 

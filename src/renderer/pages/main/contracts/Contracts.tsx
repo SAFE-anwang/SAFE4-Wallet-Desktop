@@ -8,7 +8,11 @@ import { DateTimeFormat } from '../../../utils/DateUtils';
 import { useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { applicationControlContractVO } from '../../../state/application/action';
-import { FileAddOutlined } from '@ant-design/icons';
+import { FileAddOutlined, QuestionCircleFilled, QuestionCircleTwoTone, QuestionOutlined } from '@ant-design/icons';
+import { useWeb3React } from '@web3-react/core';
+import { ContractCompileSignal, ContractCompile_Methods } from '../../../../main/handlers/ContractCompileHandler';
+import { IPC_CHANNEL } from '../../../config';
+import { useWalletsList } from '../../../state/wallets/hooks';
 const { Title, Text } = Typography;
 
 const Supernode_Page_Size = 10;
@@ -17,6 +21,34 @@ export default () => {
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const { chainId } = useWeb3React();
+  const [contracts, setContracts] = useState<any[]>();
+  const walletsList = useWalletsList();
+
+  useEffect(() => {
+    if (chainId) {
+      const method = ContractCompile_Methods.getAll;
+      window.electron.ipcRenderer.sendMessage(IPC_CHANNEL, [ContractCompileSignal, method, [
+        chainId
+      ]]);
+      window.electron.ipcRenderer.once(IPC_CHANNEL, (arg) => {
+        if (arg instanceof Array && arg[0] == ContractCompileSignal && arg[1] == method) {
+          const data = arg[2][0];
+          const contracts = data.map((contractDB: any) => {
+            const { id, address, creator, chain_id, transaction_hash, source_code, abi, bytecode, name } = contractDB;
+            return {
+              id, address, creator, abi, bytecode, name,
+              chainId: chain_id,
+              transactionHash: transaction_hash,
+              sourceCode: source_code
+            }
+          });
+          console.log("load contracts from sqlite3 >>", contracts);
+          setContracts(contracts);
+        }
+      });
+    }
+  }, [chainId]);
 
   const [contractVOs, setContractVOs] = useState<ContractVO[]>([]);
   const [pagination, setPagination] = useState<{
@@ -27,13 +59,16 @@ export default () => {
   const [loading, setLoading] = useState<boolean>(false);
 
   useEffect(() => {
-    setLoading(true);
-    fetchContracts({ current: 1, pageSize: Supernode_Page_Size })
-      .then(data => {
-        const { current, pageSize, total } = data;
-        setPagination({ current, pageSize, total });
-      })
-  }, []);
+    if (contracts) {
+      setLoading(true);
+      fetchContracts({ current: 1, pageSize: Supernode_Page_Size })
+        .then(data => {
+          const { current, pageSize, total } = data;
+          setPagination({ current, pageSize, total });
+        })
+    }
+  }, [contracts]);
+
   useEffect(() => {
     if (pagination) {
       const { current, pageSize } = pagination;
@@ -71,10 +106,18 @@ export default () => {
       render: (creator, supernodeVO: ContractVO) => {
         const { } = supernodeVO;
         const _addr = creator ? creator.substring(0, 10) + "...." + creator.substring(creator.length - 8) : "";
+        let isLocalCreator = false;
+        walletsList.forEach((wallet) => {
+          if (wallet.address == creator) {
+            isLocalCreator = true;
+          }
+        })
         return <>
           <Row>
             <Col span={24} style={{ width: "80px" }}>
-              <AddressView address={_addr}></AddressView>
+              <Text italic>
+                <AddressView address={_addr}></AddressView>
+              </Text>
             </Col>
           </Row>
         </>
@@ -104,17 +147,45 @@ export default () => {
       dataIndex: 'name',
       key: 'name',
       render: (name, contractVO: ContractVO) => {
-        const { } = contractVO;
+        const { creator, creatorTransactionHash } = contractVO;
+        let dbName = undefined;
+        if (contracts) {
+          contracts.forEach(contract => {
+            if (contract.creator == creator && contract.transactionHash == creatorTransactionHash) {
+              dbName = contract.name;
+            }
+          })
+        }
         return <>
           <Row>
             <Col span={24} style={{ width: "80px" }}>
-              <Text>{name}</Text>
-              <Button style={{float:"right"}} onClick={() => {
-                dispatch( applicationControlContractVO(contractVO) )
-                navigate("/main/contracts/detail")
-              }}>查看</Button>
+              <Row>
+                <Col span={16}>
+                  {
+                    !name && dbName && <>
+                      <Col span={24} style={{ paddingTop: "5px" }}>
+                        <Tooltip title="该合约通过本地钱包部署,但未在浏览器开源合约源码">
+                          <QuestionCircleTwoTone style={{ cursor: "pointer" }} twoToneColor='#7e7e7e' />
+                        </Tooltip>
+                        <Text style={{ marginLeft: "6px" }} type='secondary' italic>{dbName}</Text>
+                      </Col>
+                    </>
+                  }
+                  {
+                    name && <>
+                      <Text>{name}</Text>
+                    </>
+                  }
+                </Col>
+                <Col span={8}>
+                  <Button style={{ float: "right" }} onClick={() => {
+                    dispatch(applicationControlContractVO(contractVO))
+                    navigate("/main/contracts/detail")
+                  }}>查看</Button>
+                </Col>
+              </Row>
             </Col>
-          </Row>
+          </Row >
         </>
       },
       width: "100px"
@@ -138,7 +209,7 @@ export default () => {
           </>} />
         </Card>
 
-        <Row style={{marginBottom:"20px"}}>
+        <Row style={{ marginBottom: "20px" }}>
           <Col span={24}>
             <Button icon={<FileAddOutlined />} type='primary' onClick={() => navigate("/main/contracts/edit")}>部署合约</Button>
           </Col>
@@ -152,7 +223,6 @@ export default () => {
             total
           })
         }} dataSource={contractVOs} columns={columns} size="large" pagination={pagination} />
-
       </div>
     </div>
 

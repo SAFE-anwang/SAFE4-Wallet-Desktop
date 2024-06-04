@@ -1,5 +1,5 @@
 import { Typography, Button, Card, Divider, Collapse, Row, Col, Modal, Flex, Tooltip, Tabs, TabsProps, QRCode, Badge, Space, Alert, Table, Spin } from 'antd';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import AceEditor from 'react-ace';
 // Import Ace Editor's theme
 import 'ace-builds/src-noconflict/theme-monokai';
@@ -10,10 +10,11 @@ import './mode-solidity'; // Adjust the path accordingly
 import { IPC_CHANNEL } from '../../../config';
 import { ContractCompileSignal, ContractCompile_Methods } from '../../../../main/handlers/ContractCompileHandler';
 import ContractCompileResult from './ContractCompileResult';
-import { ReloadOutlined } from '@ant-design/icons';
+import { LeftOutlined, ReloadOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { applicationControlDirectDeploy } from '../../../state/application/action';
+import { AppState } from '../../../state';
 
 const { Title, Text, Link } = Typography;
 
@@ -42,30 +43,18 @@ const Solidity_Template = "pragma solidity >=0.8.2 <0.9.0 ;\n\n"
 
 export default () => {
 
-  // useEffect(() => {
-  //   const method = ContractCompile_Methods.compile;
-  //   window.electron.ipcRenderer.sendMessage(IPC_CHANNEL, [ContractCompileSignal, method, [
-  //     Solidity_Template
-  //   ]]);
-  //   window.electron.ipcRenderer.once(IPC_CHANNEL, (arg) => {
-  //     if (arg instanceof Array && arg[0] == ContractCompileSignal && arg[1] == method) {
-  //       setCompileResult(arg[2]);
-  //     }
-  //   })
-  // }, []);
-
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
+  const compile = useSelector<AppState, {
+    sourceCode: string, abi: string, bytecode: string
+  } | undefined>(state => state.application.control.compile);
+
   const [compileResult, setCompileResult] = useState();
-  const [sourceCode, setSourceCode] = useState<string>(Solidity_Template);
+  const [sourceCode, setSourceCode] = useState<string>( compile ? compile.sourceCode : Solidity_Template);
   const [compiling, setCompiling] = useState<boolean>(false);
 
-  useEffect(() => {
-    console.log("source code >>", sourceCode)
-  }, [sourceCode])
-
-  const compile = useCallback(() => {
+  const doSolccompile = useCallback(() => {
     const method = ContractCompile_Methods.compile;
     setCompiling(true);
     window.electron.ipcRenderer.sendMessage(IPC_CHANNEL, [ContractCompileSignal, method, [
@@ -83,6 +72,9 @@ export default () => {
 
     <Row style={{ height: "50px" }}>
       <Col span={12}>
+        <Button style={{ marginTop: "14px", marginRight: "12px", float: "left" }} size="large" shape="circle" icon={<LeftOutlined />} onClick={() => {
+          navigate("/main/contracts")
+        }} />
         <Title level={4} style={{ lineHeight: "16px" }}>
           编辑合约
         </Title>
@@ -106,7 +98,7 @@ export default () => {
           <Spin spinning={compiling}>
             <Row>
               <Col span={24}>
-                <Button icon={<ReloadOutlined />} onClick={compile}>编译</Button>
+                <Button icon={<ReloadOutlined />} onClick={doSolccompile}>编译</Button>
               </Col>
               {
                 compileResult && <Col span={24} style={{ marginTop: "20px" }}>
@@ -133,17 +125,9 @@ export default () => {
               }}
             />
           </Spin>
-
         </Card>
-
-
       </div>
     </div>
-
-
-
-
-
   </>
 
 }

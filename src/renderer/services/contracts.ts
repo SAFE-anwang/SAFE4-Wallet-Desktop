@@ -1,4 +1,4 @@
-import { ContractCompileVO, ContractVO, POST, PageQueryDTO, PageResponseVO } from ".";
+import { ContractCompileVO, ContractVO, ContractVOFormat, POST, PageQueryDTO, PageResponseVO } from ".";
 import config from "../config";
 
 const { Safescan_Api } = config;
@@ -6,7 +6,9 @@ const { Safescan_Api } = config;
 export async function fetchContracts(params: { address: string } | PageQueryDTO): Promise<PageResponseVO<ContractVO>> {
   const serverResponse = await POST(`${Safescan_Api}/contracts`, params);
   if (serverResponse.data && serverResponse.data.records) {
-
+    serverResponse.data.records = serverResponse.data.records.map(
+      ContractVOFormat
+    )
   } else {
     throw new Error("Call SafeScan Error1:");
   }

@@ -55,9 +55,11 @@ export interface IApplicationState {
 
     // 合约编译时存储的数据
     compile?: {
+      compileResult : string,
       sourceCode: string,
       abi: string,
-      bytecode: string
+      bytecode: string,
+      name : string
     }
     directDeploy ?: boolean
   }

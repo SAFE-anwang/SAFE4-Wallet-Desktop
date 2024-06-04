@@ -20,9 +20,9 @@ export class ApplicationIpcManager {
     const indexSignalHandler = new IndexSingalHandler( ctx , () => {
       this.listenSignalHandlers.push(new DBAddressActivitySingalHandler(indexSignalHandler.getSqlite3DB()));
       this.listenSignalHandlers.push(new RpcConfigSingalHandler(indexSignalHandler.getSqlite3DB()));
+      this.listenSignalHandlers.push(new ContractCompileHandler(ctx ,indexSignalHandler.getSqlite3DB()));
     });
     this.listenSignalHandlers.push(indexSignalHandler);
-    this.listenSignalHandlers.push( new ContractCompileHandler(ctx) )
   }
 
   public register(ipcMain : Electron.IpcMain) {

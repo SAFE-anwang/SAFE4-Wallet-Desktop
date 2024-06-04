@@ -75,9 +75,11 @@ export const applicationControlContractVO = createAction<ContractVO>(
 )
 
 export const applicationControlCompile = createAction<{
+  compileResult : string,
   sourceCode : string ,
   abi : string ,
-  bytecode : string
+  bytecode : string ,
+  name : string
 }>(
   "application/controlCompile"
 )
