@@ -19,3 +19,19 @@ export async function fetchContractCompile(params: { address: string }): Promise
   const serverResponse = await POST(`${Safescan_Api}/contracts/${params.address}/compile`, params);
   return serverResponse.data;
 }
+
+
+export async function fetchContractVerifyForSingle(params: {
+  contractAddress: string ,
+  compileVersion : string ,
+  contractSourceCode : string,
+  evmVersion : string,
+  optimizerEnabled : boolean,
+  optimizerRuns : number
+}): Promise< any > {
+  const serverResponse = await POST(`${Safescan_Api}/verify/contract/compile`, {
+    ...params,
+    compileType : "single"
+  });
+  return serverResponse.data;
+}

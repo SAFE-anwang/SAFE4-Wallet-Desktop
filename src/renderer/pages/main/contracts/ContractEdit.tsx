@@ -1,4 +1,4 @@
-import { Typography, Button, Card, Divider, Collapse, Row, Col, Modal, Flex, Tooltip, Tabs, TabsProps, QRCode, Badge, Space, Alert, Table, Spin } from 'antd';
+import { Typography, Button, Card, Divider, Collapse, Row, Col, Modal, Flex, Tooltip, Tabs, TabsProps, QRCode, Badge, Space, Alert, Table, Spin, Select, Switch, InputNumber } from 'antd';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import AceEditor from 'react-ace';
 // Import Ace Editor's theme
@@ -15,6 +15,7 @@ import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { applicationControlDirectDeploy } from '../../../state/application/action';
 import { AppState } from '../../../state';
+import { EvmVersionOptions } from './Compile_Option';
 
 const { Title, Text, Link } = Typography;
 
@@ -51,14 +52,30 @@ export default () => {
   } | undefined>(state => state.application.control.compile);
 
   const [compileResult, setCompileResult] = useState();
-  const [sourceCode, setSourceCode] = useState<string>( compile ? compile.sourceCode : Solidity_Template);
+  const [sourceCode, setSourceCode] = useState<string>(compile ? compile.sourceCode : Solidity_Template);
   const [compiling, setCompiling] = useState<boolean>(false);
+
+  const [compileOption, setCompileOption] = useState<{
+    compileVersion: string,
+    evmVersion: string,
+    optimizer: {
+      enabled: boolean,
+      runs: number
+    }
+  }>({
+    compileVersion: "v0.8.17+commit.8df45f5f",
+    evmVersion: "",
+    optimizer: {
+      enabled: false,
+      runs: 200
+    }
+  });
 
   const doSolccompile = useCallback(() => {
     const method = ContractCompile_Methods.compile;
     setCompiling(true);
     window.electron.ipcRenderer.sendMessage(IPC_CHANNEL, [ContractCompileSignal, method, [
-      sourceCode
+      sourceCode , compileOption
     ]]);
     window.electron.ipcRenderer.once(IPC_CHANNEL, (arg) => {
       if (arg instanceof Array && arg[0] == ContractCompileSignal && arg[1] == method) {
@@ -66,7 +83,7 @@ export default () => {
         setCompiling(false);
       }
     })
-  }, [sourceCode]);
+  }, [sourceCode , compileOption]);
 
   return <>
 
@@ -97,8 +114,63 @@ export default () => {
 
           <Spin spinning={compiling}>
             <Row>
+
+              <Col span={8}>
+                <Text type='secondary'>Solidity 编译版本</Text><br />
+                <Select style={{ borderRadius: "8px", width: "80%" }}
+                  defaultValue={compileOption.compileVersion}
+                  disabled
+                >
+                </Select>
+              </Col>
+
+              <Col span={8}>
+                <Text type='secondary'>EVM 版本</Text><br />
+                <Select style={{ borderRadius: "8px", width: "80%" }}
+                  value={compileOption.evmVersion}
+                  options={EvmVersionOptions}
+                  onChange={(value) => {
+                    setCompileOption({
+                      ...compileOption,
+                      evmVersion: value
+                    })
+                  }}
+                >
+                </Select>
+              </Col>
+
+              <Col span={8}>
+                <Text type='secondary'>Enable optimization</Text><br />
+                <Switch style={{ marginRight: "5px" }}
+                  checkedChildren="开启" unCheckedChildren="关闭" value={compileOption.optimizer.enabled}
+                  onChange={(value) => {
+                    setCompileOption({
+                      ...compileOption,
+                      optimizer: {
+                        enabled: value,
+                        runs: compileOption.optimizer.runs
+                      }
+                    })
+                  }} />
+                <InputNumber disabled={!compileOption.optimizer.enabled}
+                  min={100} max={1000} value={compileOption.optimizer.runs} step={100}
+                  onChange={(value) => {
+                    if (value) {
+                      setCompileOption({
+                        ...compileOption,
+                        optimizer: {
+                          enabled: compileOption.optimizer.enabled,
+                          runs: value
+                        }
+                      })
+                    }
+                  }} />
+              </Col>
+
+            </Row>
+            <Row style={{ marginTop: "20px" }}>
               <Col span={24}>
-                <Button icon={<ReloadOutlined />} onClick={doSolccompile}>编译</Button>
+                <Button type='primary' icon={<ReloadOutlined />} onClick={doSolccompile}>编译</Button>
               </Col>
               {
                 compileResult && <Col span={24} style={{ marginTop: "20px" }}>

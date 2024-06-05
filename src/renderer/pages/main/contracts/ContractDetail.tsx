@@ -1,26 +1,56 @@
 
-import { LeftOutlined } from '@ant-design/icons';
+import { LeftOutlined, QuestionCircleTwoTone } from '@ant-design/icons';
 import { Typography, Button, Card, Divider, Statistic, Row, Col, Modal, Flex, Tooltip, Tabs, TabsProps, QRCode, Badge, Space, Alert, Table, Spin } from 'antd';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import ContractFunction from './ContractFunction';
 import ContractCall from './ContractCall';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { AppState } from '../../../state';
 import { ContractCompileVO, ContractVO } from '../../../services';
-import { fetchContractCompile } from '../../../services/contracts';
-import config, { Safe4_Business_Config } from '../../../config';
-
+import { fetchContractCompile, fetchContractVerifyForSingle } from '../../../services/contracts';
+import config, { IPC_CHANNEL, Safe4_Business_Config } from '../../../config';
+import { useWeb3React } from '@web3-react/core';
+import { ContractCompileSignal, ContractCompile_Methods } from '../../../../main/handlers/ContractCompileHandler';
+import { applicationControlContractVO } from '../../../state/application/action';
 
 const { Title, Text } = Typography;
 
-
 export default () => {
 
+  const { chainId } = useWeb3React();
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const contractVO = useSelector<AppState, ContractVO | undefined>(state => state.application.control.contractVO);
   const [contractCompileVO, setContractCompileVO] = useState<ContractCompileVO>();
+  const [contractLocal, setContractLocal] = useState<{
+    address: string, creator: string, abi: string, bytecode: string, name: string,
+    chainId: number, transactionHash: string, sourceCode: string
+  }>();
   const [loading, setLoading] = useState<boolean>(false);
+  const [verifying , setVerifying] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (chainId && contractVO) {
+      const address = contractVO.address;
+      const method = ContractCompile_Methods.getContract;
+      window.electron.ipcRenderer.sendMessage(IPC_CHANNEL, [ContractCompileSignal, method, [
+        chainId, address
+      ]]);
+      window.electron.ipcRenderer.once(IPC_CHANNEL, (arg) => {
+        if (arg instanceof Array && arg[0] == ContractCompileSignal && arg[1] == method) {
+          const data = arg[2][0];
+          const { id, address, creator, chain_id, transaction_hash, source_code, abi, bytecode, name } = data;
+          console.log("Local Contract :", data)
+          setContractLocal({
+            address, creator, abi, bytecode, name,
+            chainId: chain_id,
+            transactionHash: transaction_hash,
+            sourceCode: source_code
+          });
+        }
+      });
+    }
+  }, [chainId, contractVO]);
 
   useEffect(() => {
     if (contractVO) {
@@ -31,7 +61,6 @@ export default () => {
         fetchContractCompile({ address }).then(data => {
           setContractCompileVO(data);
           setLoading(false);
-          console.log("contract compile vo>> ", data);
         });
       } else {
 
@@ -39,24 +68,45 @@ export default () => {
     }
   }, [contractVO]);
 
+  const doVerifyContractLocal = useCallback( () => {
+    if ( contractVO && contractLocal && contractLocal.sourceCode ){
+      fetchContractVerifyForSingle({
+        contractAddress : contractLocal.address,
+        contractSourceCode : contractLocal.sourceCode,
+        optimizerEnabled : false,
+        optimizerRuns : 200,
+        evmVersion : "",
+        compileVersion : "v0.8.17+commit.8df45f5f"
+      }).then( ( data : any ) => {
+        if ( data.result == "err_1000" ){
+          // 合约验证通过;
+          dispatch( applicationControlContractVO({
+            ...contractVO ,
+            name : contractLocal.name
+          }));
+        }
+      })
+    }
+  } , [ contractLocal , contractVO ] );
+
   const items: TabsProps['items'] = useMemo(() => {
+    const _abi = contractCompileVO?.abi ? contractCompileVO.abi : contractLocal?.abi;
     return [
       {
         key: 'abi',
         label: 'ABI',
-        children: <>{contractCompileVO?.abi}</>,
+        children: <>{ _abi }</>,
       },
       {
         key: 'contractCall',
         label: '调用合约',
-        disabled: !(contractCompileVO && contractCompileVO.abi),
-        children: contractCompileVO && contractCompileVO.abi ? <ContractCall address={contractCompileVO.address} abi={contractCompileVO.abi} /> : <></>,
+        disabled: !( _abi ),
+        children: (contractVO && _abi ) ? <ContractCall address={contractVO.address} abi={_abi} /> : <></>,
       }
     ];
-  }, [contractCompileVO]);
+  }, [contractCompileVO , contractLocal , contractVO ]);
 
   return <>
-
     <Row style={{ height: "50px" }}>
       <Col span={12}>
         <Button style={{ marginTop: "14px", marginRight: "12px", float: "left" }} size="large" shape="circle" icon={<LeftOutlined />} onClick={() => {
@@ -93,7 +143,7 @@ export default () => {
                 <Alert showIcon type='warning' message={<>
                   <Row>
                     <Col span={24}>
-                      <Text style={{ float: "left" }}>合约未验证,通过浏览器验证合约后,所有用户都可加载合约ABI调用该合约</Text>
+                      <Text style={{ float: "left" }}>合约未在浏览器上验证源码,通过浏览器验证合约后,所有用户都可加载 合约ABI 调用该合约</Text>
                       <Button size='small' style={{ float: "right" }} onClick={() => {
                         window.open(`${config.Safescan_URL}/verifyContract?a=${contractVO?.address}`)
                       }}>
@@ -122,7 +172,18 @@ export default () => {
                 <Text type='secondary'>合约名称</Text>
               </Col>
               <Col span={24}>
-                <Text strong>{contractVO?.name}</Text>
+                {
+                  !contractVO?.name && contractLocal && contractLocal.sourceCode && <>
+                    <Tooltip title="该合约通过本地钱包部署,但未在浏览器验证合约源码,点击上传验证一键开源合约代码">
+                      <QuestionCircleTwoTone style={{ cursor: "pointer" }} twoToneColor='#7e7e7e' />
+                    </Tooltip>
+                    <Text style={{ marginLeft: "6px" }} type='secondary' italic>{contractLocal.name}</Text>
+                    <Button onClick={doVerifyContractLocal} size='small' type='primary' style={{ float: "right",marginRight:"12px" }}>上传验证</Button>
+                  </>
+                }
+                {
+                  contractVO?.name && <Text strong>{contractVO?.name}</Text>
+                }
               </Col>
             </Row>
           </Col>

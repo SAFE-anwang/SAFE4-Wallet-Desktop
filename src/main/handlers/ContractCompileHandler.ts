@@ -12,6 +12,7 @@ export enum ContractCompile_Methods {
   compile = "compile",
   save = "save",
   getAll = "getAll",
+  getContract = "getContract"
 }
 
 export class ContractCompileHandler implements ListenSignalHandler {
@@ -58,28 +59,45 @@ export class ContractCompileHandler implements ListenSignalHandler {
     const params: any[] = args[0][2];
     let data = undefined;
     if (ContractCompile_Methods.compile == method) {
-      const [sourceCode, solcVersion, option] = params;
-      const result = this.compile(sourceCode, solcVersion, option);
+      const [sourceCode, option] = params;
+      const result = this.compile(sourceCode, option);
       event.reply(Channel, [this.getSingal(), method, [result]])
     } else if (ContractCompile_Methods.save == method) {
       const contract = params[0];
       this.save(contract);
     } else if (ContractCompile_Methods.getAll == method) {
       const chainId = params[0];
-      this.getAll(chainId , ( rows : any ) => {
+      this.getAll(chainId, (rows: any) => {
         event.reply(Channel, [this.getSingal(), method, [rows]])
+      })
+    } else if (ContractCompile_Methods.getContract == method) {
+      const [chainId, address] = params;
+      this.getContract(chainId, address, (row: any) => {
+        event.reply(Channel, [this.getSingal(), method, [row]])
       })
     }
   }
 
-  private getAll( chainId : number , callback: (rows: any) => void ) {
-    this.db.all("SELECT * FROM Contracts WHERE chain_id = ?", [ chainId ],
-      ( err : any , rows : any ) => {
-        if ( !err ){
-          console.log("Load All Contracts ..." , rows.length )
+  private getContract(chainId: number, address: string, callback: ((row: any) => void)) {
+    this.db.all("SELECT * FROM Contracts WHERE chain_id = ? AND address = ?", [chainId, address],
+      (err: any, rows: any) => {
+        if (!err) {
+          console.log("Load Contract :", rows);
+          if (rows.length > 0) {
+            callback(rows[0]);
+          }
+        }
+      });
+  }
+
+  private getAll(chainId: number, callback: (rows: any) => void) {
+    this.db.all("SELECT * FROM Contracts WHERE chain_id = ?", [chainId],
+      (err: any, rows: any) => {
+        if (!err) {
+          console.log("Load All Contracts ...", rows.length)
           callback(rows);
         }
-    });
+      });
   }
 
   private save(contract: any) {
@@ -96,7 +114,7 @@ export class ContractCompileHandler implements ListenSignalHandler {
       });
   }
 
-  private compile(sourceCode: string, solcVersion: string, option: any) {
+  private compile(sourceCode: string, option: any) {
     var solc = require("solc");
     var input = {
       language: 'Solidity',
@@ -114,12 +132,23 @@ export class ContractCompileHandler implements ListenSignalHandler {
         metadata: {
           useLiteralContent: true,
           // appendCBOR:false,
+        },
+        evmVersion : undefined,
+        optimizer : {
+          enable : false,
+          runs : 200
         }
       },
     };
+    if (option.evmVersion) {
+      input.settings.evmVersion = option.evmVersion;
+    }
+    if (option.optimizer) {
+      input.settings.optimizer = option.optimizer;
+    }
     const path = `${this.ctx.path.data}/soljson-v0.8.17+commit.8df45f5f.js`;
     solc = solc.setupMethods(require(`${path}`));
-    console.log(`Use Solc - ${solc.version()} to compile...`);
+    console.log(`Use Solc - ${solc.version()} to compile ,` , option);
     const compileResult = solc.compile(JSON.stringify(input));
     // console.log("compileResult :" , compileResult)
     return compileResult;

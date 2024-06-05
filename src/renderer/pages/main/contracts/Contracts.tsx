@@ -115,9 +115,16 @@ export default () => {
         return <>
           <Row>
             <Col span={24} style={{ width: "80px" }}>
-              <Text italic>
-                <AddressView address={_addr}></AddressView>
-              </Text>
+              {
+                !isLocalCreator && <Text>
+                  <AddressView address={_addr}></AddressView>
+                </Text>
+              }
+              {
+                isLocalCreator && <Text style={{color:"#cabb30"}} italic>
+                  <AddressView address={_addr}></AddressView>
+                </Text>
+              }
             </Col>
           </Row>
         </>
@@ -193,6 +200,7 @@ export default () => {
   ];
 
   return <>
+
     <Row style={{ height: "50px" }}>
       <Col span={12}>
         <Title level={4} style={{ lineHeight: "16px" }}>
