@@ -24,10 +24,18 @@ export default () => {
   const [contractCompileVO, setContractCompileVO] = useState<ContractCompileVO>();
   const [contractLocal, setContractLocal] = useState<{
     address: string, creator: string, abi: string, bytecode: string, name: string,
-    chainId: number, transactionHash: string, sourceCode: string
+    chainId: number, transactionHash: string, sourceCode: string,
+    compileOption: {
+      compileVersion: string,
+      evmVersion: string,
+      optimizer: {
+        enabled: boolean,
+        runs: number
+      }
+    }
   }>();
   const [loading, setLoading] = useState<boolean>(false);
-  const [verifying , setVerifying] = useState<boolean>(false);
+  const [verifying, setVerifying] = useState<boolean>(false);
 
   useEffect(() => {
     if (chainId && contractVO) {
@@ -39,13 +47,14 @@ export default () => {
       window.electron.ipcRenderer.once(IPC_CHANNEL, (arg) => {
         if (arg instanceof Array && arg[0] == ContractCompileSignal && arg[1] == method) {
           const data = arg[2][0];
-          const { id, address, creator, chain_id, transaction_hash, source_code, abi, bytecode, name } = data;
+          const { id, address, creator, chain_id, transaction_hash, source_code, abi, bytecode, name, compile_option } = data;
           console.log("Local Contract :", data)
           setContractLocal({
             address, creator, abi, bytecode, name,
             chainId: chain_id,
             transactionHash: transaction_hash,
-            sourceCode: source_code
+            sourceCode: source_code,
+            compileOption: JSON.parse(compile_option)
           });
         }
       });
@@ -68,26 +77,32 @@ export default () => {
     }
   }, [contractVO]);
 
-  const doVerifyContractLocal = useCallback( () => {
-    if ( contractVO && contractLocal && contractLocal.sourceCode ){
+  const doVerifyContractLocal = useCallback(() => {
+    if (contractVO && contractLocal && contractLocal.sourceCode) {
+      setVerifying(true);
       fetchContractVerifyForSingle({
-        contractAddress : contractLocal.address,
-        contractSourceCode : contractLocal.sourceCode,
-        optimizerEnabled : false,
-        optimizerRuns : 200,
-        evmVersion : "",
-        compileVersion : "v0.8.17+commit.8df45f5f"
-      }).then( ( data : any ) => {
-        if ( data.result == "err_1000" ){
+        contractAddress: contractLocal.address,
+        contractSourceCode: contractLocal.sourceCode,
+        optimizerEnabled: contractLocal.compileOption.optimizer.enabled,
+        optimizerRuns: contractLocal.compileOption.optimizer.runs,
+        evmVersion: contractLocal.compileOption.evmVersion,
+        compileVersion: contractLocal.compileOption.compileVersion
+      }).then((data: any) => {
+        setVerifying(false);
+        if (data.result == "err_1000") {
           // 合约验证通过;
-          dispatch( applicationControlContractVO({
-            ...contractVO ,
-            name : contractLocal.name
+          dispatch(applicationControlContractVO({
+            ...contractVO,
+            name: contractLocal.name
           }));
+        } else {
+          console.log("verify result:", data)
         }
+      }).catch((err: any) => {
+        console.log("verify err:", err)
       })
     }
-  } , [ contractLocal , contractVO ] );
+  }, [contractLocal, contractVO]);
 
   const items: TabsProps['items'] = useMemo(() => {
     const _abi = contractCompileVO?.abi ? contractCompileVO.abi : contractLocal?.abi;
@@ -95,16 +110,16 @@ export default () => {
       {
         key: 'abi',
         label: 'ABI',
-        children: <>{ _abi }</>,
+        children: <>{_abi}</>,
       },
       {
         key: 'contractCall',
         label: '调用合约',
-        disabled: !( _abi ),
-        children: (contractVO && _abi ) ? <ContractCall address={contractVO.address} abi={_abi} /> : <></>,
+        disabled: !(_abi),
+        children: (contractVO && _abi) ? <ContractCall address={contractVO.address} abi={_abi} /> : <></>,
       }
     ];
-  }, [contractCompileVO , contractLocal , contractVO ]);
+  }, [contractCompileVO, contractLocal, contractVO]);
 
   return <>
     <Row style={{ height: "50px" }}>
@@ -171,19 +186,22 @@ export default () => {
               <Col span={24}>
                 <Text type='secondary'>合约名称</Text>
               </Col>
+
               <Col span={24}>
-                {
-                  !contractVO?.name && contractLocal && contractLocal.sourceCode && <>
-                    <Tooltip title="该合约通过本地钱包部署,但未在浏览器验证合约源码,点击上传验证一键开源合约代码">
-                      <QuestionCircleTwoTone style={{ cursor: "pointer" }} twoToneColor='#7e7e7e' />
-                    </Tooltip>
-                    <Text style={{ marginLeft: "6px" }} type='secondary' italic>{contractLocal.name}</Text>
-                    <Button onClick={doVerifyContractLocal} size='small' type='primary' style={{ float: "right",marginRight:"12px" }}>上传验证</Button>
-                  </>
-                }
-                {
-                  contractVO?.name && <Text strong>{contractVO?.name}</Text>
-                }
+                <Spin spinning={verifying}>
+                  {
+                    !contractVO?.name && contractLocal && contractLocal.sourceCode && <>
+                      <Tooltip title="该合约通过本地钱包部署,但未在浏览器验证合约源码,点击上传验证一键开源合约代码">
+                        <QuestionCircleTwoTone style={{ cursor: "pointer" }} twoToneColor='#7e7e7e' />
+                      </Tooltip>
+                      <Text style={{ marginLeft: "6px" }} type='secondary' italic>{contractLocal.name}</Text>
+                      <Button onClick={doVerifyContractLocal} size='small' type='primary' style={{ float: "right", marginRight: "12px" }}>上传验证</Button>
+                    </>
+                  }
+                  {
+                    contractVO?.name && <Text strong>{contractVO?.name}</Text>
+                  }
+                </Spin>
               </Col>
             </Row>
           </Col>

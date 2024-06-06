@@ -35,7 +35,7 @@ export class ContractCompileHandler implements ListenSignalHandler {
       + "\"source_code\" blob,"
       + "\"abi\" blob,"
       + "\"bytecode\" blob,"
-      + "\"compile_config\" TEXT,"
+      + "\"compile_option\" TEXT,"
       + "\"added_time\" integer"
       + ");",
       [],
@@ -101,10 +101,10 @@ export class ContractCompileHandler implements ListenSignalHandler {
   }
 
   private save(contract: any) {
-    const { address, creator, chainId, name, bytecode, abi, sourceCode, transactionHash, addedTime } = contract;
+    const { address, creator, chainId, name, bytecode, abi, sourceCode, transactionHash, addedTime , compileOption } = contract;
     console.log("Save Contract:", contract)
-    this.db.run("INSERT INTO contracts(address,creator,chain_id,name,bytecode,abi,source_code,transaction_hash,added_time) VALUES(?,?,?,?,?,?,?,?,?)",
-      [address, creator, chainId, name, bytecode, abi, sourceCode, transactionHash, addedTime],
+    this.db.run("INSERT INTO contracts(address,creator,chain_id,name,bytecode,abi,source_code,transaction_hash,added_time,compile_option) VALUES(?,?,?,?,?,?,?,?,?,?)",
+      [address, creator, chainId, name, bytecode, abi, sourceCode, transactionHash, addedTime,compileOption],
       (err: any) => {
         if (err) {
           console.log("Save Contract Error :", err)
@@ -146,8 +146,8 @@ export class ContractCompileHandler implements ListenSignalHandler {
     if (option.optimizer) {
       input.settings.optimizer = option.optimizer;
     }
-    const path = `${this.ctx.path.data}/soljson-v0.8.17+commit.8df45f5f.js`;
-    solc = solc.setupMethods(require(`${path}`));
+    // const path = `${this.ctx.path.data}/soljson-v0.8.17+commit.8df45f5f.js`;
+    // solc = solc.setupMethods(require(`${path}`));
     console.log(`Use Solc - ${solc.version()} to compile ,` , option);
     const compileResult = solc.compile(JSON.stringify(input));
     // console.log("compileResult :" , compileResult)

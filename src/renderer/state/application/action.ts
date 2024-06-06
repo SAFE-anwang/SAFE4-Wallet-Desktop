@@ -11,10 +11,10 @@ export const applicationDataLoaded = createAction<{
     data: string,
     keystores: string,
     database: string
-  } ,
-  rpcConfigs : {
-    chainId : number ,
-    endpoint : string
+  },
+  rpcConfigs: {
+    chainId: number,
+    endpoint: string
   }[]
 }>("application/dataLoaded")
 
@@ -66,7 +66,7 @@ export const applicationControlVoteProposal = createAction<number | undefined>(
   "application/controlVoteProposal"
 )
 
-export const applicationAddRpcConfig = createAction< {endpoint : string , chainId : number} >(
+export const applicationAddRpcConfig = createAction<{ endpoint: string, chainId: number }>(
   "application/addRpcConfig"
 );
 
@@ -75,11 +75,19 @@ export const applicationControlContractVO = createAction<ContractVO>(
 )
 
 export const applicationControlCompile = createAction<{
-  compileResult : string,
-  sourceCode : string ,
-  abi : string ,
-  bytecode : string ,
-  name : string
+  compileResult: string,
+  sourceCode: string,
+  abi: string,
+  bytecode: string,
+  name: string,
+  compileOption: {
+    compileVersion: string,
+    evmVersion: string,
+    optimizer: {
+      enabled: boolean,
+      runs: number
+    }
+  }
 }>(
   "application/controlCompile"
 )

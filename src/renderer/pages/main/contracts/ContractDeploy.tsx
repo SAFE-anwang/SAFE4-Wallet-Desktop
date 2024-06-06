@@ -13,6 +13,8 @@ import { useSelector } from 'react-redux';
 import { AppState } from '../../../state';
 import { ContractCompileSignal, ContractCompile_Methods } from '../../../../main/handlers/ContractCompileHandler';
 import { useWeb3React } from '@web3-react/core';
+import { useTransactionAdder } from '../../../state/transactions/hooks';
+import { DB_AddressActivity_Actions } from '../../../../main/handlers/DBAddressActivitySingalHandler';
 
 const { Title, Text, Link } = Typography;
 
@@ -25,20 +27,30 @@ const now = () => new Date().getTime()
 export default () => {
 
   const { chainId } = useWeb3React();
+  const addTransaction = useTransactionAdder();
   const navigate = useNavigate();
   const signer = useWalletsActiveSigner();
   const directDeploy = useSelector<AppState, boolean | undefined>(state => state.application.control.directDeploy);
 
   const compile = useSelector<AppState, {
-    sourceCode: string, abi: string, bytecode: string, name: string
+    sourceCode: string, abi: string, bytecode: string, name: string ,
+    compileOption : {
+      compileVersion: string,
+      evmVersion: string,
+      optimizer: {
+        enabled: boolean,
+        runs: number
+      }
+    }
   } | undefined>(state => state.application.control.compile);
-  const { abi, bytecode, name, sourceCode } = useMemo(() => {
+  const { abi, bytecode, name, sourceCode , compileOption } = useMemo(() => {
     if (!compile || directDeploy) {
       return {
         abi: undefined,
         bytecode: undefined,
         name: undefined,
-        sourceCode: undefined
+        sourceCode: undefined,
+        compileOption : undefined,
       }
     }
     return compile;
@@ -109,11 +121,21 @@ export default () => {
 
     //
     const { abi, bytecode } = params;
-    if (abi && bytecode) {
+    if (signer?.address && abi && bytecode) {
       const contractFactory = new ethers.ContractFactory(abi, bytecode, signer);
       setDeploying(true);
       contractFactory.deploy(...constructorValues).then((contract) => {
         const transactionHash = contract.deployTransaction.hash;
+        console.log("deploy transaction :" , contract.deployTransaction)
+        addTransaction({ to: contract.address }, contract.deployTransaction, {
+          call: {
+            from: signer.address,
+            to: contract.address,
+            input: contract.deployTransaction.data,
+            value: "0" ,
+            type : DB_AddressActivity_Actions.Create
+          }
+        });
 
         // 合约部署成功后,将交易哈希以及相关信息存储到 Contracts 表中.
         const method = ContractCompile_Methods.save;
@@ -126,6 +148,7 @@ export default () => {
             bytecode,
             abi,
             sourceCode,
+            compileOption: JSON.stringify(compileOption),
             transactionHash,
             addedTime : now()
           }

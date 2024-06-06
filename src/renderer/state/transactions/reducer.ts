@@ -71,7 +71,8 @@ export interface ContractCall {
   from: string,
   to: string,
   input: string,
-  value: string
+  value: string,
+  type ?:string
 }
 
 export interface Transfer {
@@ -122,7 +123,8 @@ export default createReducer(initialState, (builder) => {
       txs[hash] = {
         hash, refFrom, refTo,
         addedTime: now(),
-        transfer, call, withdrawAmount
+        transfer, call, withdrawAmount ,
+        action : call?.type
       }
       window.electron.ipcRenderer.sendMessage(IPC_CHANNEL,
         [DBAddressActivitySignal, DB_AddressActivity_Methods.saveActivity,
@@ -189,7 +191,7 @@ export default createReducer(initialState, (builder) => {
 export function Transaction2Activity(txn: TransactionDetails) {
   const { hash, refFrom, refTo, addedTime, transfer, call } = txn;
   const { action, data } = call ? {
-    action: DB_AddressActivity_Actions.Call,
+    action: call.type ? call.type : DB_AddressActivity_Actions.Call,
     data: JSON.stringify(call)
   } : {
     action: DB_AddressActivity_Actions.Transfer,

@@ -103,7 +103,7 @@ export default () => {
 
         <Card>
           <Alert type='info' showIcon message={<>
-            <Text>在编辑框中编写智能合约,点击编译按钮将其部署到 Safe4 网络 (<Link onClick={() => window.open("https://docs.soliditylang.org/en/v0.8.17/")}>Soliditiy 使用文档</Link>)</Text>
+            <Text>在编辑框中编写智能合约,点击编译按钮将其部署到 Safe4 网络 (<Link onClick={() => window.open("https://docs.soliditylang.org/zh/v0.8.17/")}>Soliditiy 使用文档</Link>)</Text>
             <br />
             <Text>已有 ABI 和合约字节码(Bytecode),也可以选择 <Link onClick={() => {
               dispatch(applicationControlDirectDeploy(true));
@@ -174,7 +174,7 @@ export default () => {
               </Col>
               {
                 compileResult && <Col span={24} style={{ marginTop: "20px" }}>
-                  <ContractCompileResult sourceCode={sourceCode} compileResult={compileResult} />
+                  <ContractCompileResult sourceCode={sourceCode} compileResult={compileResult} compileOption={compileOption} />
                 </Col>
               }
             </Row>

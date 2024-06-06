@@ -8,7 +8,7 @@ import { DateTimeFormat } from '../../../utils/DateUtils';
 import { useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { applicationControlContractVO } from '../../../state/application/action';
-import { FileAddOutlined, QuestionCircleFilled, QuestionCircleTwoTone, QuestionOutlined } from '@ant-design/icons';
+import { CheckCircleTwoTone, FileAddOutlined, QuestionCircleFilled, QuestionCircleTwoTone, QuestionOutlined, WalletTwoTone } from '@ant-design/icons';
 import { useWeb3React } from '@web3-react/core';
 import { ContractCompileSignal, ContractCompile_Methods } from '../../../../main/handlers/ContractCompileHandler';
 import { IPC_CHANNEL } from '../../../config';
@@ -88,7 +88,7 @@ export default () => {
       key: 'address',
       render: (address, contractVO: ContractVO) => {
         const { } = contractVO;
-        const _addr = address.substring(0, 10) + "...." + address.substring(address.length - 8);
+        const _addr = address.substring(0, 10) + "..." + address.substring(address.length - 8);
         return <>
           <Row>
             <Col span={24} style={{ width: "80px" }}>
@@ -105,7 +105,7 @@ export default () => {
       key: 'creator',
       render: (creator, supernodeVO: ContractVO) => {
         const { } = supernodeVO;
-        const _addr = creator ? creator.substring(0, 10) + "...." + creator.substring(creator.length - 8) : "";
+        const _addr = creator ? creator.substring(0, 10) + "..." + creator.substring(creator.length - 8) : "";
         let isLocalCreator = false;
         walletsList.forEach((wallet) => {
           if (wallet.address == creator) {
@@ -121,9 +121,16 @@ export default () => {
                 </Text>
               }
               {
-                isLocalCreator && <Text style={{color:"#cabb30"}} italic>
-                  <AddressView address={_addr}></AddressView>
-                </Text>
+                isLocalCreator && <Row>
+                  <Col span={20}>
+                    <Text style={{ color: "#4780e1e0" }} italic>
+                      <AddressView address={_addr}></AddressView>
+                    </Text>
+                  </Col>
+                  <Tooltip title="本地钱包">
+                    <WalletTwoTone style={{ float: "right" }} />
+                  </Tooltip>
+                </Row>
               }
             </Col>
           </Row>
@@ -180,7 +187,12 @@ export default () => {
                   }
                   {
                     name && <>
-                      <Text>{name}</Text>
+                      <Col span={24} style={{ paddingTop: "5px" }}>
+                        <Tooltip title="已进行开源验证的智能合约">
+                          <CheckCircleTwoTone style={{ cursor: "pointer" }} twoToneColor='#74d13be0' />
+                        </Tooltip>
+                        <Text style={{ marginLeft: "6px" }} strong>{name}</Text>
+                      </Col>
                     </>
                   }
                 </Col>

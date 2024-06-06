@@ -59,7 +59,15 @@ export interface IApplicationState {
       sourceCode: string,
       abi: string,
       bytecode: string,
-      name : string
+      name : string,
+      compileOption : {
+        compileVersion: string,
+        evmVersion: string,
+        optimizer: {
+          enabled: boolean,
+          runs: number
+        }
+      }
     }
     directDeploy ?: boolean
   }

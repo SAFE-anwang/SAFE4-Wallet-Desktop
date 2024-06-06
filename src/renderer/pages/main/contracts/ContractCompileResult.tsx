@@ -9,10 +9,18 @@ import { applicationControlCompile, applicationControlDirectDeploy } from '../..
 const { Title, Text, Paragraph } = Typography;
 
 export default ({
-  sourceCode , compileResult,
+  sourceCode , compileResult, compileOption
 }: {
   sourceCode : string,
-  compileResult: string
+  compileResult: string,
+  compileOption : {
+    compileVersion: string,
+    evmVersion: string,
+    optimizer: {
+      enabled: boolean,
+      runs: number
+    }
+  }
 }) => {
 
   const navigate = useNavigate();
@@ -61,7 +69,8 @@ export default ({
                   compileResult,
                   abi : JSON.stringify(abi),
                   bytecode : bytecode.object,
-                  name : contractName
+                  name : contractName ,
+                  compileOption
                 }));
                 navigate("/main/contracts/deploy");
               }} size='small' style={{ float: "right" }}>

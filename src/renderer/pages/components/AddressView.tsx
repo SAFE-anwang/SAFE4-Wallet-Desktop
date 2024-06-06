@@ -10,7 +10,7 @@ export default ({
   return <div style={{
     fontFamily: "SFMono-Regular,Menlo,Monaco,Consolas,\"Liberation Mono\",\"Courier New\",monospace"
   }}>
-    {address} 
+    {address}
   </div>
 
 }
