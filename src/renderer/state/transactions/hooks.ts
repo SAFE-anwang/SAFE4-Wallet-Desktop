@@ -82,6 +82,7 @@ export function useTransactionAdder(): (
       const transaction = {
         hash ,
         refFrom : from,
+        chainId : response.chainId,
         refTo : to,
         transfer,
         call,

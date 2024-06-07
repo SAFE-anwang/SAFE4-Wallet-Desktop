@@ -111,16 +111,16 @@ export class DBAddressActivitySingalHandler implements ListenSignalHandler {
         event.reply(Channel, [this.getSingal(), method, [rows]])
       });
     } else if (DB_AddressActivity_Methods.saveOrUpdateActivities == method) {
-      const addressActivities = params[0];
-      this.saveOrUpdateActivities(addressActivities)
+      const [ addressActivities , chainId ] = params;
+      this.saveOrUpdateActivities(addressActivities , chainId)
     }
   }
 
   private saveActivity(activity: any) {
-    const { hash, refFrom, refTo, action, data, addedTime } = activity;
+    const { hash, refFrom, refTo, action, data, addedTime,chainId } = activity;
     this.db.run(
-      "INSERT INTO Address_Activities(transaction_hash,ref_from,ref_to,action,data,added_time) VALUES(?,?,?,?,?,?)",
-      [hash, refFrom, refTo, action, data, addedTime],
+      "INSERT INTO Address_Activities(transaction_hash,ref_from,ref_to,action,data,added_time,chain_id) VALUES(?,?,?,?,?,?,?)",
+      [hash, refFrom, refTo, action, data, addedTime,chainId],
       (err: any) => {
         if (err) {
           console.log("Insert into Address_Activities err:", err, activity);
@@ -131,6 +131,7 @@ export class DBAddressActivitySingalHandler implements ListenSignalHandler {
   }
 
   private updateActivity(receipt: {
+    chainId : number,
     from: string
     to: string
     contractAddress: string
@@ -140,10 +141,10 @@ export class DBAddressActivitySingalHandler implements ListenSignalHandler {
     blockNumber: number
     status?: number
   }) {
-    const { transactionHash, blockNumber, status } = receipt;
+    const { transactionHash, blockNumber, status , chainId } = receipt;
     this.db.run(
-      "UPDATE Address_Activities SET status = ? , block_number = ? WHERE transaction_hash = ? ",
-      [status, blockNumber, transactionHash],
+      "UPDATE Address_Activities SET status = ? , block_number = ? WHERE chain_id = ? AND transaction_hash = ? ",
+      [status, blockNumber, chainId , transactionHash],
       (err: any) => {
         if (err) {
           console.log("Update Activities Error:", err);
@@ -171,7 +172,7 @@ export class DBAddressActivitySingalHandler implements ListenSignalHandler {
     )
   }
 
-  private saveOrUpdateActivities(addressActivities: AddressActivityVO[]) {
+  private saveOrUpdateActivities(addressActivities: AddressActivityVO[] , chainId : number) {
     console.log("saveorupdate transactions.. >>", addressActivities.length)
     for (let i in addressActivities) {
       const {
@@ -188,8 +189,8 @@ export class DBAddressActivitySingalHandler implements ListenSignalHandler {
             console.log("save activity txhash=", transactionHash)
             // do save
             this.db.run(
-              "INSERT INTO Address_Activities(block_number,transaction_hash,event_log_index,timestamp,status,ref_from,ref_to,action,data) VALUES(?,?,?,?,?,?,?,?,?)",
-              [blockNumber, transactionHash, eventLogIndex, timestamp, status, refFrom, refTo, action, JSON.stringify(data)],
+              "INSERT INTO Address_Activities(block_number,transaction_hash,event_log_index,timestamp,status,ref_from,ref_to,action,data,chain_id) VALUES(?,?,?,?,?,?,?,?,?,?)",
+              [blockNumber, transactionHash, eventLogIndex, timestamp, status, refFrom, refTo, action, JSON.stringify(data),chainId],
               (err: any) => {
                 if (err) {
                   console.log("save error:", err)

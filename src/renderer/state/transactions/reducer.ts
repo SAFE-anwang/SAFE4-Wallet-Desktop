@@ -6,6 +6,7 @@ import { DBAddressActivitySignal, DB_AddressActivity_Actions, DB_AddressActivity
 const now = () => new Date().getTime()
 
 export interface SerializableTransactionReceipt {
+  chainId : number,
   from: string
   to: string
   contractAddress: string
@@ -17,6 +18,7 @@ export interface SerializableTransactionReceipt {
 }
 
 export interface TransactionDetails {
+  chainId ?: number,
   hash: string,
   refFrom: string,
   refTo?: string,
@@ -115,7 +117,7 @@ export const initialState: {
 export default createReducer(initialState, (builder) => {
 
   builder
-    .addCase(addTransaction, ({ transactions }, { payload: { hash, refFrom, refTo, transfer, call, withdrawAmount } }) => {
+    .addCase(addTransaction, ({ transactions }, { payload: { hash, refFrom, refTo, transfer, call, withdrawAmount , chainId } }) => {
       if (transactions[hash]) {
         throw Error('Attempted to add existing transaction.')
       }
@@ -124,7 +126,8 @@ export default createReducer(initialState, (builder) => {
         hash, refFrom, refTo,
         addedTime: now(),
         transfer, call, withdrawAmount ,
-        action : call?.type
+        action : call?.type ,
+        chainId
       }
       window.electron.ipcRenderer.sendMessage(IPC_CHANNEL,
         [DBAddressActivitySignal, DB_AddressActivity_Methods.saveActivity,
@@ -189,7 +192,7 @@ export default createReducer(initialState, (builder) => {
 })
 
 export function Transaction2Activity(txn: TransactionDetails) {
-  const { hash, refFrom, refTo, addedTime, transfer, call } = txn;
+  const { chainId , hash, refFrom, refTo, addedTime, transfer, call } = txn;
   const { action, data } = call ? {
     action: call.type ? call.type : DB_AddressActivity_Actions.Call,
     data: JSON.stringify(call)
@@ -197,8 +200,10 @@ export function Transaction2Activity(txn: TransactionDetails) {
     action: DB_AddressActivity_Actions.Transfer,
     data: JSON.stringify(transfer)
   }
+  console.log("Transaction2Activity , chainId ==?" , chainId)
   return {
     hash,
+    chainId,
     refFrom,
     refTo,
     addedTime,

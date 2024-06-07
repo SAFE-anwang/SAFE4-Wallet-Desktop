@@ -72,7 +72,7 @@ export default () => {
             }
             window.electron.ipcRenderer.sendMessage(IPC_CHANNEL,
               [DBAddressActivitySignal, DB_AddressActivity_Methods.saveOrUpdateActivities,
-                [addressActivities]
+                [ addressActivities , chainId ]
               ]);
             setTimeout(() => {
               dispatch(loadTransactionsAndUpdateAddressActivityFetch({
@@ -116,6 +116,7 @@ export default () => {
                     to: receipt.to,
                     transactionHash: receipt.transactionHash,
                     transactionIndex: receipt.transactionIndex,
+                    chainId : chainId
                   }
                 })
               )

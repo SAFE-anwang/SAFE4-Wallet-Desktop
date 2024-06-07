@@ -5,6 +5,7 @@ export const addTransaction = createAction<{
   hash: string
   refFrom: string,
   refTo?: string,
+  chainId ?: number,
   // 自定义数据 ...
   transfer?: Transfer
   call ?: ContractCall,
