@@ -6,44 +6,46 @@ import { addTransaction } from "./actions";
 import { Transfer, TransactionDetails, ContractCall } from "./reducer";
 import { DateFormat } from "../../utils/DateUtils";
 import { CurrencyAmount, JSBI } from "@uniswap/sdk";
-import { ethers } from "ethers";
-
+import { TimeNodeRewardVO } from "../../services";
 
 export function useTransactionAdder2(): (
   response: {
-    from : string,
-    to :   string,
-    hash:  string
+    from: string,
+    to: string,
+    hash: string,
+    chainId: number,
   },
   customData?: {
-    transfer?: Transfer ,
-    call ?: ContractCall,
-    withdrawAmount ?: string
+    transfer?: Transfer,
+    call?: ContractCall,
+    withdrawAmount?: string
   }
 ) => void {
   const dispatch = useDispatch<AppDispatch>();
   return useCallback(
     (
       response: {
-        from : string,
-        to:string,
-        hash : string
+        from: string,
+        to: string,
+        hash: string,
+        chainId: number
       },
-      { transfer , call , withdrawAmount }:
+      { transfer, call, withdrawAmount }:
         {
-          transfer ?: Transfer ,
-          call ?: ContractCall,
-          withdrawAmount ?: string
+          transfer?: Transfer,
+          call?: ContractCall,
+          withdrawAmount?: string
         } = {}
     ) => {
-      const { from , hash } = response;
+      const { from, hash, chainId } = response;
       const { to } = transfer ? { ...transfer } :
-                      call ? { ...call }
-                       : { to:undefined } ;
+        call ? { ...call }
+          : { to: undefined };
       const transaction = {
-        hash ,
-        refFrom : from,
-        refTo : to,
+        hash,
+        chainId,
+        refFrom: from,
+        refTo: to,
         transfer,
         call,
         withdrawAmount
@@ -55,35 +57,35 @@ export function useTransactionAdder2(): (
 }
 
 export function useTransactionAdder(): (
-  request : TransactionRequest,
+  request: TransactionRequest,
   response: TransactionResponse,
   customData?: {
-    transfer?: Transfer ,
-    call ?: ContractCall,
-    withdrawAmount ?: string
+    transfer?: Transfer,
+    call?: ContractCall,
+    withdrawAmount?: string
   }
 ) => void {
   const dispatch = useDispatch<AppDispatch>();
   return useCallback(
     (
-      request : TransactionRequest,
+      request: TransactionRequest,
       response: TransactionResponse,
-      { transfer , call , withdrawAmount }:
+      { transfer, call, withdrawAmount }:
         {
-          transfer ?: Transfer ,
-          call ?: ContractCall,
-          withdrawAmount ?: string
+          transfer?: Transfer,
+          call?: ContractCall,
+          withdrawAmount?: string
         } = {}
     ) => {
-      const { from , hash } = response;
+      const { from, hash } = response;
       const { to } = transfer ? { ...transfer } :
-                      call ? { ...call }
-                           : { to:undefined } ;
+        call ? { ...call }
+          : { to: undefined };
       const transaction = {
-        hash ,
-        refFrom : from,
-        chainId : response.chainId,
-        refTo : to,
+        hash,
+        refFrom: from,
+        chainId: response.chainId,
+        refTo: to,
         transfer,
         call,
         withdrawAmount
@@ -96,6 +98,7 @@ export function useTransactionAdder(): (
 
 export function useTransactions(account?: string) {
   const transactions = useSelector((state: AppState) => state.transactions.transactions);
+  const nodeRewards = useSelector((state: AppState) => state.transactions.nodeRewards);
   const accountTransactions = useMemo(() => {
     return Object.keys(transactions)
       .filter(txHash => {
@@ -112,8 +115,8 @@ export function useTransactions(account?: string) {
   }, [account, transactions]);
   const dateTransactions: {
     [date: string]: {
-      transactions : TransactionDetails[] ,
-      systemRewardAmount : CurrencyAmount
+      transactions: TransactionDetails[],
+      systemRewardAmount: CurrencyAmount
     }
   } = {};
 
@@ -121,23 +124,37 @@ export function useTransactions(account?: string) {
     const date = transaction.timestamp ? transaction.timestamp : transaction.addedTime;
     const dateKey = DateFormat(date);
     dateTransactions[dateKey] = dateTransactions[dateKey] ?? {
-      transactions : [] ,
-      systemRewardAmount : CurrencyAmount.ether(JSBI.BigInt(0))
+      transactions: [],
+      systemRewardAmount: CurrencyAmount.ether(JSBI.BigInt(0))
     };
-    if ( transaction.systemRewardDatas ){
-      Object.keys( transaction.systemRewardDatas )
-        .forEach( eventLogIndex => {
-          if ( transaction.systemRewardDatas ){
-            const {amount} = transaction.systemRewardDatas[eventLogIndex];
-            const _amount = CurrencyAmount.ether(JSBI.BigInt( amount ));
-            dateTransactions[dateKey].systemRewardAmount =
-            dateTransactions[dateKey].systemRewardAmount.add(_amount);
+    if (transaction.systemRewardDatas) {
+      Object.keys(transaction.systemRewardDatas)
+        .forEach(eventLogIndex => {
+          if (transaction.systemRewardDatas) {
+            const { amount } = transaction.systemRewardDatas[eventLogIndex];
+            const _amount = CurrencyAmount.ether(JSBI.BigInt(amount));
+            dateTransactions[dateKey].systemRewardAmount = dateTransactions[dateKey].systemRewardAmount.add(_amount);
           }
         })
-    }else{
+    } else {
       dateTransactions[dateKey].transactions.push(transaction);
     }
   });
+  if (nodeRewards && account && nodeRewards[account]) {
+      nodeRewards[account].forEach((nodeReward: TimeNodeRewardVO) => {
+        const { rewardAmount, time } = nodeReward;
+        const dateKey = time.split(" ")[0];
+        const amount = CurrencyAmount.ether(JSBI.BigInt(rewardAmount));
+        if (!dateTransactions[dateKey]) {
+          dateTransactions[dateKey] = {
+            transactions: [],
+            systemRewardAmount: CurrencyAmount.ether(JSBI.BigInt(0))
+          };
+        }
+        dateTransactions[dateKey].systemRewardAmount = amount;
+      })
+
+  }
   return dateTransactions;
 }
 

@@ -7,6 +7,7 @@ import { Channels } from "./preload";
 import { Context } from "./handlers/Context";
 import { RpcConfigSingalHandler } from "./handlers/RpcConfigSignalHandler";
 import { ContractCompileHandler } from "./handlers/ContractCompileHandler";
+import { TimeNodeRewardHandler } from "./handlers/TimeNodeRewardHandler";
 
 export const Channel : Channels = "ipc-example";
 
@@ -21,6 +22,7 @@ export class ApplicationIpcManager {
       this.listenSignalHandlers.push(new DBAddressActivitySingalHandler(indexSignalHandler.getSqlite3DB()));
       this.listenSignalHandlers.push(new RpcConfigSingalHandler(indexSignalHandler.getSqlite3DB()));
       this.listenSignalHandlers.push(new ContractCompileHandler(ctx ,indexSignalHandler.getSqlite3DB()));
+      this.listenSignalHandlers.push(new TimeNodeRewardHandler(ctx ,indexSignalHandler.getSqlite3DB()));
     });
     this.listenSignalHandlers.push(indexSignalHandler);
   }

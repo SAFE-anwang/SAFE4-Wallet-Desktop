@@ -1,7 +1,8 @@
 import { createReducer } from "@reduxjs/toolkit"
-import { addTransaction, checkedTransaction, finalizeTransaction, loadTransactionsAndUpdateAddressActivityFetch, reloadTransactionsAndSetAddressActivityFetch } from "./actions"
+import { addTransaction, checkedTransaction, finalizeTransaction, loadTransactionsAndUpdateAddressActivityFetch, refreshAddressTimeNodeReward, reloadTransactionsAndSetAddressActivityFetch } from "./actions"
 import { IPC_CHANNEL } from "../../config"
 import { DBAddressActivitySignal, DB_AddressActivity_Actions, DB_AddressActivity_Methods } from "../../../main/handlers/DBAddressActivitySingalHandler"
+import { TimeNodeRewardVO } from "../../services"
 
 const now = () => new Date().getTime()
 
@@ -109,7 +110,12 @@ export interface TransactionState {
 
 export const initialState: {
   transactions: TransactionState,
-  addressActivityFetch?: AddressActivityFetch
+  addressActivityFetch?: AddressActivityFetch ,
+
+  nodeRewards ?: {
+    [address : string] : TimeNodeRewardVO[]
+  }
+
 } = {
   transactions: {},
 }
@@ -189,6 +195,13 @@ export default createReducer(initialState, (builder) => {
       }
     })
 
+    .addCase( refreshAddressTimeNodeReward , ( state , { payload : { chainId , address , nodeRewards } } ) => {
+      if ( !state.nodeRewards ){
+        state.nodeRewards = {};
+      }
+      state.nodeRewards[address] = nodeRewards;
+    })
+
 })
 
 export function Transaction2Activity(txn: TransactionDetails) {
@@ -200,7 +213,6 @@ export function Transaction2Activity(txn: TransactionDetails) {
     action: DB_AddressActivity_Actions.Transfer,
     data: JSON.stringify(transfer)
   }
-  console.log("Transaction2Activity , chainId ==?" , chainId)
   return {
     hash,
     chainId,

@@ -154,6 +154,15 @@ export interface ContractCompileVO {
   abi ?: string
 }
 
+export interface AddressAnalyticVO {
+  nodeRewards : TimeNodeRewardVO[]
+}
+
+export interface TimeNodeRewardVO {
+  time : string ,
+  rewardCount : number ,
+  rewardAmount : string
+}
 
 export function AddressActivityFormat(activity: AddressActivityVO): AddressActivityVO {
   const { data } = activity;

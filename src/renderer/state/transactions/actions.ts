@@ -1,5 +1,6 @@
 import { createAction } from "@reduxjs/toolkit";
 import { AddressActivityFetch, ContractCall, SerializableTransactionReceipt, TransactionDetails, Transfer } from "./reducer";
+import { TimeNodeRewardVO } from "../../services";
 
 export const addTransaction = createAction<{
   hash: string
@@ -32,4 +33,10 @@ export const finalizeTransaction = createAction<{
 export const checkedTransaction = createAction<{
   hash: string
   blockNumber: number
-}>('transactions/checkedTransaction')
+}>('transactions/checkedTransaction');
+
+export const refreshAddressTimeNodeReward = createAction<{
+  chainId : number ,
+  address : string ,
+  nodeRewards : TimeNodeRewardVO[]
+}>("transactions/refreshAddressTimeNodeReward")
