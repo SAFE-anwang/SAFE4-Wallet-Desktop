@@ -18,7 +18,6 @@ import { useWeb3React } from "@web3-react/core";
 import { AddressAnalyticVO } from "../../../../../services";
 import { TimestampTheStartOf } from "../../../../../utils/DateUtils";
 import { TimeNodeRewardSignal, TimeNodeReward_Methods } from "../../../../../../main/handlers/TimeNodeRewardHandler";
-import AddressNodeRewardsLoad from "./AddressNodeRewardsLoad";
 
 const { Text } = Typography;
 
@@ -41,10 +40,12 @@ export default () => {
       if (activeAccount != addressActivityFetch?.address) {
         window.electron.ipcRenderer.sendMessage(IPC_CHANNEL, [DBAddressActivitySignal, addressActivtiesLoadActivities, [activeAccount]]);
       }
-      // window.electron.ipcRenderer.sendMessage(IPC_CHANNEL, [TimeNodeRewardSignal, timeNodeRewardsGetAll, [activeAccount, chainId]]);
-      window.electron.ipcRenderer.once(IPC_CHANNEL, (arg) => {
+      window.electron.ipcRenderer.sendMessage(IPC_CHANNEL, [TimeNodeRewardSignal, timeNodeRewardsGetAll, [activeAccount, chainId]]);
+
+      return window.electron.ipcRenderer.on(IPC_CHANNEL, (arg) => {
         if (arg instanceof Array && arg[0] == DBAddressActivitySignal && arg[1] == addressActivtiesLoadActivities) {
           const rows = arg[2][0];
+          console.log(`Load [${activeAccount}] AddressActivities From DB : `, rows);
           let dbStoredRange = {
             start: latestBlockNumber,
             end: 1
@@ -70,64 +71,63 @@ export default () => {
             }
           }));
         }
-        // if (arg instanceof Array && arg[0] == TimeNodeRewardSignal && arg[1] == timeNodeRewardsGetAll) {
-        //   const rows = arg[2][0];
-        //   const dbTimeNodeRewardMap : {
-        //     [time in string]: string
-        //   } = {};
-        //   const dbTimeNodeRewards = rows.map((row: any) => {
-        //     dbTimeNodeRewardMap[row.time_key] = row.amount;
-        //     return {
-        //       ...row,
-        //       time: row.time_key,
-        //       rewardAmount: row.amount,
-        //       rewardCount: row.count,
-        //     }
-        //   });
-        //   console.log("dbTimeNodeRewardMap ::" , dbTimeNodeRewardMap)
-        //   // 将加载的 DB 数据更新到 state
-        //   dispatch(refreshAddressTimeNodeReward({
-        //     chainId,
-        //     address: activeAccount,
-        //     nodeRewards: dbTimeNodeRewards
-        //   }));
-        //   // 远程访问浏览器接口,获取新的数据
-        //   fetchAddressAnalytic({ address: activeAccount.toLocaleLowerCase() })
-        //     .then((data: AddressAnalyticVO) => {
-        //       const nodeRewards = data.nodeRewards;
-        //       console.log(`Query [${activeAccount}] Node Rewards : `, nodeRewards);
-        //       dispatch(refreshAddressTimeNodeReward({
-        //         chainId,
-        //         address: activeAccount,
-        //         nodeRewards: data.nodeRewards
-        //       }));
-        //       // 将访问的数据更新到数据库
-        //       const method = TimeNodeReward_Methods.saveOrUpdate;
-        //       const saveOrUpdateNodeRewards = nodeRewards.filter( nodeReward => {
-        //         const { time, rewardAmount } = nodeReward;
-        //         const _time = time.split(" ")[0];
-        //         console.log(`compare time=${_time} in map=${dbTimeNodeRewardMap[_time]} ?`)
-        //         if (!dbTimeNodeRewardMap[_time]) {
-        //           return true;
-        //         }
-        //         if (dbTimeNodeRewardMap[_time] && dbTimeNodeRewardMap[_time] != rewardAmount) {
-        //           return true;
-        //         }
-        //         return false;
-        //       }).map(nodeReward => {
-        //         return {
-        //           address: activeAccount,
-        //           amount: nodeReward.rewardAmount,
-        //           count: nodeReward.rewardCount,
-        //           time: nodeReward.time.split(" ")[0]
-        //         }
-        //       })
-        //       console.log("save or update noderewards => " , saveOrUpdateNodeRewards)
-        //       // window.electron.ipcRenderer.sendMessage(IPC_CHANNEL, [TimeNodeRewardSignal, method, [
-        //       //   saveOrUpdateNodeRewards
-        //       //   , chainId]]);
-        //     })
-        // }
+        if (arg instanceof Array && arg[0] == TimeNodeRewardSignal && arg[1] == timeNodeRewardsGetAll) {
+          const rows = arg[2][0];
+          const dbTimeNodeRewardMap: {
+            [time in string]: string
+          } = {};
+          console.log(`Load [${activeAccount}] Node Rewards From DB : `, rows);
+          const dbTimeNodeRewards = rows.map((row: any) => {
+            dbTimeNodeRewardMap[row.time_key] = row.amount;
+            return {
+              ...row,
+              time: row.time_key,
+              rewardAmount: row.amount,
+              rewardCount: row.count,
+            }
+          });
+          // 将加载的 DB 数据更新到 state
+          dispatch(refreshAddressTimeNodeReward({
+            chainId,
+            address: activeAccount,
+            nodeRewards: dbTimeNodeRewards
+          }));
+          // 远程访问浏览器接口,获取新的数据
+          fetchAddressAnalytic({ address: activeAccount.toLocaleLowerCase() })
+            .then((data: AddressAnalyticVO) => {
+              const nodeRewards = data.nodeRewards;
+              console.log(`Query-API [${activeAccount}] Node Rewards : `, nodeRewards);
+              dispatch(refreshAddressTimeNodeReward({
+                chainId,
+                address: activeAccount,
+                nodeRewards: data.nodeRewards
+              }));
+              // 将访问的数据更新到数据库
+              const method = TimeNodeReward_Methods.saveOrUpdate;
+              const saveOrUpdateNodeRewards = nodeRewards.filter(nodeReward => {
+                const { time, rewardAmount } = nodeReward;
+                const _time = time.split(" ")[0];
+                if (!dbTimeNodeRewardMap[_time]) {
+                  return true;
+                }
+                if (dbTimeNodeRewardMap[_time] && dbTimeNodeRewardMap[_time] != rewardAmount) {
+                  return true;
+                }
+                return false;
+              }).map(nodeReward => {
+                return {
+                  address: activeAccount,
+                  amount: nodeReward.rewardAmount,
+                  count: nodeReward.rewardCount,
+                  time: nodeReward.time.split(" ")[0]
+                }
+              })
+              console.log("SaveOrUpdate TimeNodeRewards => ", saveOrUpdateNodeRewards)
+              window.electron.ipcRenderer.sendMessage(IPC_CHANNEL, [TimeNodeRewardSignal, method, [
+                saveOrUpdateNodeRewards
+                , chainId]]);
+            })
+        }
       });
     }
 
@@ -149,9 +149,6 @@ export default () => {
         <Text style={{ marginLeft: "5px", float: "left" }}>显示挖矿奖励</Text>
       </Col>
     </Row>
-    {
-      // <AddressNodeRewardsLoad />
-    }
     {
       Object.keys(transactions).sort((d1, d2) => TimestampTheStartOf(d2) - TimestampTheStartOf(d1))
         .map(date => {

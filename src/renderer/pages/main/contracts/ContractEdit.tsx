@@ -54,6 +54,7 @@ export default () => {
   const [compileResult, setCompileResult] = useState();
   const [sourceCode, setSourceCode] = useState<string>(compile ? compile.sourceCode : Solidity_Template);
   const [compiling, setCompiling] = useState<boolean>(false);
+  const [solcVersionOptions, setSolcVersionOptions] = useState();
 
   const [compileOption, setCompileOption] = useState<{
     compileVersion: string,
@@ -71,11 +72,56 @@ export default () => {
     }
   });
 
+  useEffect(() => {
+    const method = ContractCompile_Methods.getSolcVersions;
+    window.electron.ipcRenderer.sendMessage(IPC_CHANNEL, [ContractCompileSignal, method, []]);
+    window.electron.ipcRenderer.once(IPC_CHANNEL, (arg) => {
+      if (arg instanceof Array && arg[0] == ContractCompileSignal && arg[1] == method) {
+        const allSolcVersions = arg[2][0];
+        const versionRegex = /soljson-v(\d+)\.(\d+)\.(\d+)\+commit\.[\da-f]+\.js/;
+        const versionOptionRegex = /v\d+\.\d+\.\d+\+commit\.[\da-f]+/;
+        const solcVersionOptions = allSolcVersions.map((solcVersion: string) => {
+          const match = solcVersion.match(versionRegex);
+          if (match) {
+            const [, major, minor, patch] = match;
+            return {
+              solcVersion,
+              version: `${major}.${minor}.${patch}`,
+              major: parseInt(major, 10),
+              minor: parseInt(minor, 10),
+              patch: parseInt(patch, 10)
+            };
+          }
+          return null;
+        }).filter(Boolean)
+          // 不使用高于 0.8.17 版本进行编译，会出问题.
+          .filter((solc: any) => (solc.major == 0 && solc.minor < 8 || (solc.major == 0 && solc.minor == 8 && solc.patch <= 17)))
+          .sort((b: any, a: any) => {
+            if (a.major !== b.major) {
+              return a.major - b.major;
+            }
+            if (a.minor !== b.minor) {
+              return a.minor - b.minor;
+            }
+            return a.patch - b.patch;
+          })
+          .map((solc: any) => {
+            const option = solc.solcVersion.match(versionOptionRegex)[0];
+            return {
+              value: option,
+              label: option
+            }
+          })
+        setSolcVersionOptions(solcVersionOptions);
+      };
+    })
+  }, []);
+
   const doSolccompile = useCallback(() => {
     const method = ContractCompile_Methods.compile;
     setCompiling(true);
     window.electron.ipcRenderer.sendMessage(IPC_CHANNEL, [ContractCompileSignal, method, [
-      sourceCode , compileOption
+      sourceCode, compileOption
     ]]);
     window.electron.ipcRenderer.once(IPC_CHANNEL, (arg) => {
       if (arg instanceof Array && arg[0] == ContractCompileSignal && arg[1] == method) {
@@ -83,7 +129,7 @@ export default () => {
         setCompiling(false);
       }
     })
-  }, [sourceCode , compileOption]);
+  }, [sourceCode, compileOption]);
 
   return <>
 
@@ -118,8 +164,14 @@ export default () => {
               <Col span={8}>
                 <Text type='secondary'>Solidity 编译版本</Text><br />
                 <Select style={{ borderRadius: "8px", width: "80%" }}
-                  defaultValue={compileOption.compileVersion}
-                  disabled
+                  value={compileOption.compileVersion}
+                  options={solcVersionOptions}
+                  onChange={(value) => {
+                    setCompileOption({
+                      ...compileOption,
+                      compileVersion: value
+                    })
+                  }}
                 >
                 </Select>
               </Col>
