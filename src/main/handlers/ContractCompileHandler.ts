@@ -175,11 +175,12 @@ export class ContractCompileHandler implements ListenSignalHandler {
     if (option.optimizer) {
       input.settings.optimizer = option.optimizer;
     }
-    const path = `${this.solcBinsAbsPath}/soljson-${option.compileVersion}.js`;
+
+    const binPath = path.join( this.solcBinsAbsPath , `soljson-${option.compileVersion}.js` );
     const currentSolcVersion = "v" + solc.version();
     if ( currentSolcVersion.indexOf( option.compileVersion ) < 0 ){
-      solc = solc.setupMethods(require(`${path}`));
-      console.log("Switch Solc Version To >>" , path );
+      solc = solc.setupMethods(require(`${binPath}`));
+      console.log("Switch Solc Version To >>" , binPath );
     }
     console.log(`Use Solc - ${solc.version()} to compile ,`, option);
     const compileResult = solc.compile(JSON.stringify(input));
