@@ -55,7 +55,8 @@ const configuration: webpack.Configuration = {
       "fs": false,
       "url": require.resolve("url"),
       "https": require.resolve("https-browserify"),
-      "http": require.resolve("stream-http")
+      "http": require.resolve("stream-http"),
+      "vm": require.resolve("vm-browserify")
     },
   },
 

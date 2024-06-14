@@ -191,7 +191,18 @@ export class ContractCompileHandler implements ListenSignalHandler {
       // console.log("Switch Solc Version To >>" , binPath );
       const _js = fs.readFileSync(binPath, "utf8");
       const _require = requireFromString(_js, '');
-      solc = solc.setupMethods(_require);
+
+      const vm = require('vm');
+      const sandbox : any = {};
+      vm.createContext(sandbox); // 创建沙箱上下文
+      // 执行文件内容，将其导出对象存储到沙箱中
+      const script = new vm.Script(_js);
+      script.runInContext(sandbox);
+      // 从沙箱中获取导出的模块
+      // const exportedModule = sandbox.module.exports;
+      console.log("exported module >>" , sandbox.Module);
+      // console.log("_require >>" , _require)
+      solc = solc.setupMethods(sandbox.Module);
       console.log("Switch Solc Version To >>", binPath);
     }
     console.log(`Use Solc - ${solc.version()} to compile ,`, option);
