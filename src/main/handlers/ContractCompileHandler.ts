@@ -21,6 +21,14 @@ export enum ContractCompile_Methods {
 const SOLC_BINS = "solc_library";
 const LIST_URI = "https://binaries.soliditylang.org/bin/list.json";
 
+
+function requireFromString(src: string, filename: string) {
+  var Module = module.constructor;
+  var m = new Module();
+  m._compile(src, filename);
+  return m.exports;
+}
+
 export class ContractCompileHandler implements ListenSignalHandler {
 
   private ctx: Context;
@@ -133,11 +141,11 @@ export class ContractCompileHandler implements ListenSignalHandler {
       });
   }
 
-  private getSolcVersions() : string[] {
+  private getSolcVersions(): string[] {
     var solc = require("solc");
     try {
       const solcBinFiles = fs.readdirSync(this.solcBinsAbsPath);
-      return solcBinFiles.filter( (fileName : string) => fileName.indexOf("downloading") < 0 );
+      return solcBinFiles.filter((fileName: string) => fileName.indexOf("downloading") < 0);
     } catch (err: any) {
       return [solc.version()];
     }
@@ -176,11 +184,15 @@ export class ContractCompileHandler implements ListenSignalHandler {
       input.settings.optimizer = option.optimizer;
     }
 
-    const binPath = path.join( this.solcBinsAbsPath , `soljson-${option.compileVersion}.js` );
+    const binPath = path.join(this.solcBinsAbsPath, `soljson-${option.compileVersion}.js`);
     const currentSolcVersion = "v" + solc.version();
-    if ( currentSolcVersion.indexOf( option.compileVersion ) < 0 ){
-      solc = solc.setupMethods(require(`${binPath}`));
-      console.log("Switch Solc Version To >>" , binPath );
+    if (currentSolcVersion.indexOf(option.compileVersion) < 0) {
+      // solc = solc.setupMethods(require(`${binPath}`));
+      // console.log("Switch Solc Version To >>" , binPath );
+      const _js = fs.readFileSync(binPath, "utf8");
+      const _require = requireFromString(_js, '');
+      solc = solc.setupMethods(_require);
+      console.log("Switch Solc Version To >>", binPath);
     }
     console.log(`Use Solc - ${solc.version()} to compile ,`, option);
     const compileResult = solc.compile(JSON.stringify(input));
@@ -240,11 +252,11 @@ export class ContractCompileHandler implements ListenSignalHandler {
   private downloadFile(fullversionjs: string) {
     const https = require("https");
     const url = `https://binaries.soliditylang.org/bin/${fullversionjs}`;
-    const destinationPath = path.join( this.solcBinsAbsPath , fullversionjs + ".downloading" );
-    const finishPath = path.join( this.solcBinsAbsPath , fullversionjs );
+    const destinationPath = path.join(this.solcBinsAbsPath, fullversionjs + ".downloading");
+    const finishPath = path.join(this.solcBinsAbsPath, fullversionjs);
     const fileStream = fs.createWriteStream(destinationPath);
     console.log(`Downloading ${fullversionjs} From ${url}`);
-    https.get(url, (response : any) => {
+    https.get(url, (response: any) => {
       // 检查响应状态码
       if (response.statusCode !== 200) {
         console.error(`Failed to download the file. Status Code: ${response.statusCode}`);
@@ -260,7 +272,7 @@ export class ContractCompileHandler implements ListenSignalHandler {
         );
         console.log(`File downloaded - ${fullversionjs} - successfully.`);
       });
-    }).on('error', (err:any) => {
+    }).on('error', (err: any) => {
       console.error(`Error downloading the file:${fullversionjs} : ${err.message}`);
     });
   }
