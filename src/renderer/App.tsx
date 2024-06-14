@@ -42,6 +42,7 @@ import ContractCall from './pages/main/contracts/ContractCall';
 import ContractDetail from './pages/main/contracts/ContractDetail';
 import ContractDeploy from './pages/main/contracts/ContractDeploy';
 import ContractEdit from './pages/main/contracts/ContractEdit';
+import { ContractCompileHandler, ContractCompileSignal, ContractCompile_Methods } from '../main/handlers/ContractCompileHandler';
 const CryptoJS = require('crypto-js');
 const { Text } = Typography;
 export default function App() {
@@ -124,7 +125,7 @@ export default function App() {
         });
         setDbRpcConfigs(rpcConfigs);
         dispatch(applicationDataLoaded({
-          path , rpcConfigs
+          path, rpcConfigs
         }));
         if (encrypt) {
           setEncrypt(encrypt);
@@ -134,6 +135,11 @@ export default function App() {
         setLoading(false);
       }
     });
+  }, []);
+
+  useEffect(() => {
+    const method = ContractCompile_Methods.syncSolcLibrary;
+    window.electron.ipcRenderer.sendMessage(IPC_CHANNEL, [ContractCompileSignal, method, []]);
   }, []);
 
   const decrypt = useCallback(() => {

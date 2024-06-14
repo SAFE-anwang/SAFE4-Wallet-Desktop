@@ -14,20 +14,14 @@ export enum ContractCompile_Methods {
   save = "save",
   getAll = "getAll",
   getContract = "getContract",
-  getSolcVersions = "getSolcVersions"
+  getSolcVersions = "getSolcVersions",
+  syncSolcLibrary = "syncSolcLibrary"
 }
 
 // data/solc_library 目录下下载保存 solc-各版本的编译执行文件
 const SOLC_BINS = "solc_library";
 const LIST_URI = "https://binaries.soliditylang.org/bin/list.json";
 
-
-function requireFromString(src: string, filename: string) {
-  var Module = module.constructor;
-  var m = new Module();
-  m._compile(src, filename);
-  return m.exports;
-}
 
 export class ContractCompileHandler implements ListenSignalHandler {
 
@@ -67,17 +61,15 @@ export class ContractCompileHandler implements ListenSignalHandler {
     if (!fs.existsSync(this.solcBinsAbsPath)) {
       // 文件夹不存在，创建文件夹
       fs.mkdirSync(this.solcBinsAbsPath);
-      console.log('文件夹 "solc-bins" 已创建:', this.solcBinsAbsPath);
+      console.log(`[solc] ${SOLC_BINS} created`);
     } else {
-      console.log('文件夹 "solc-bins" 已存在:', this.solcBinsAbsPath);
+      console.log(`[solc] ${SOLC_BINS} exists.`);
     }
-    this.syncSolcBins();
   }
 
   getSingal(): string {
     return ContractCompileSignal;
   }
-
 
   async handleOn(event: Electron.IpcMainEvent, ...args: any[]): Promise<any> {
     const method: string = args[0][1];
@@ -102,6 +94,8 @@ export class ContractCompileHandler implements ListenSignalHandler {
       })
     } else if (ContractCompile_Methods.getSolcVersions == method) {
       event.reply(Channel, [this.getSingal(), method, [this.getSolcVersions()]])
+    } else if (ContractCompile_Methods.syncSolcLibrary == method){
+      this.syncSolcLibrary();
     }
   }
 
@@ -184,37 +178,36 @@ export class ContractCompileHandler implements ListenSignalHandler {
       input.settings.optimizer = option.optimizer;
     }
 
-    const binPath = path.join(this.solcBinsAbsPath, `soljson-${option.compileVersion}.js`);
+    const solcVersionFilePath = path.join(this.solcBinsAbsPath, `soljson-${option.compileVersion}.js`);
     const currentSolcVersion = "v" + solc.version();
     if (currentSolcVersion.indexOf(option.compileVersion) < 0) {
+      // 开发环境可用，但是打包后无法导入
       // solc = solc.setupMethods(require(`${binPath}`));
       // console.log("Switch Solc Version To >>" , binPath );
-      const _js = fs.readFileSync(binPath, "utf8");
-      const _require = requireFromString(_js, '');
-
+      const _js = fs.readFileSync(solcVersionFilePath, "utf8");
+      // 也是开发环境中可用，但是打包后无法导入.
+      // const _require = requireFromString(_js, '');
+      // solc = solc.setupMethods(_require);
+      // 最后使用 vm 创建沙箱环境来导入，打包后可用.
       const vm = require('vm');
       const sandbox : any = {};
-      vm.createContext(sandbox); // 创建沙箱上下文
+      // 创建沙箱上下文
+      vm.createContext(sandbox);
       // 执行文件内容，将其导出对象存储到沙箱中
       const script = new vm.Script(_js);
       script.runInContext(sandbox);
       // 从沙箱中获取导出的模块
-      // const exportedModule = sandbox.module.exports;
-      console.log("exported module >>" , sandbox.Module);
-      // console.log("_require >>" , _require)
       solc = solc.setupMethods(sandbox.Module);
-      console.log("Switch Solc Version To >>", binPath);
+      console.log("Switch Solc Version To >>", solcVersionFilePath);
     }
     console.log(`Use Solc - ${solc.version()} to compile ,`, option);
     const compileResult = solc.compile(JSON.stringify(input));
     return compileResult;
   }
 
-  private syncSolcBins(): string[] {
-    var solc = require("solc");
+  private syncSolcLibrary() {
     const https = require("https");
     try {
-      const solcBinFiles = fs.readdirSync(this.solcBinsAbsPath);
       https.get(LIST_URI, (response: any) => {
         let data = '';
         response.on('data', (chunk: any) => {
@@ -223,7 +216,7 @@ export class ContractCompileHandler implements ListenSignalHandler {
         response.on('end', () => {
           try {
             const jsonData = JSON.parse(data);
-            console.log(`${LIST_URI} /.release = ${JSON.stringify(jsonData.releases)}`)
+            console.log(`Get ${LIST_URI} /.release success..`)
             this.download(jsonData.releases, jsonData.builds)
           } catch (error: any) {
             console.error('Error parsing JSON:', error.message);
@@ -232,10 +225,8 @@ export class ContractCompileHandler implements ListenSignalHandler {
       }).on('error', (error: any) => {
         console.error('Error making HTTPS request:', error.message);
       });
-
-      return solcBinFiles;
     } catch (err: any) {
-      return [solc.version()];
+
     }
   }
 
@@ -289,3 +280,11 @@ export class ContractCompileHandler implements ListenSignalHandler {
   }
 
 }
+
+// function requireFromString(src: string, filename: string) {
+//   var Module = module.constructor;
+//   var m = new Module();
+//   m._compile(src, filename);
+//   return m.exports;
+// }
+
