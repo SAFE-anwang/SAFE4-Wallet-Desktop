@@ -10,6 +10,7 @@ import { fetchAddressActivity } from "../../services/address";
 import { IPC_CHANNEL } from "../../config";
 import { DBAddressActivitySignal, DB_AddressActivity_Methods } from "../../../main/handlers/DBAddressActivitySingalHandler";
 import { useWeb3React } from "@web3-react/core";
+import useSafeScan from "../../hooks/useSafeScan";
 
 export function shouldCheck(
   lastBlockNumber: number,
@@ -41,6 +42,7 @@ export default () => {
   const transactions = state ? state.transactions : {};
   const activeAccount = useWalletsActiveAccount();
   const addressActivityFetch = state.addressActivityFetch;
+  const {URL,API} = useSafeScan();
 
   useEffect(() => {
     if (addressActivityFetch && addressActivityFetch?.address == activeAccount) {
@@ -53,7 +55,7 @@ export default () => {
       const newFetch = {
         ...addressActivityFetch,
       }
-      fetchAddressActivity(addressActivityFetch)
+      fetchAddressActivity(API , addressActivityFetch)
         .then(data => {
           const { total, current, pageSize, totalPages } = data;
           const addressActivities = data.records;
@@ -130,7 +132,7 @@ export default () => {
   useEffect(() => {
     if (activeAccount && latestBlockNumber > 0) {
       setTimeout(() => {
-        fetchAddressActivity({
+        fetchAddressActivity( API , {
           address: activeAccount,
           blockNumberStart: latestBlockNumber - 10,
           blockNumberEnd: latestBlockNumber,

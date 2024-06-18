@@ -16,6 +16,7 @@ import { fetchSuperNodes } from '../../../services/supernode';
 import { SuperNodeVO } from '../../../services';
 import { useBlockNumber } from '../../../state/application/hooks';
 import Supernode from './Supernode';
+import useSafeScan from '../../../hooks/useSafeScan';
 
 const { Title, Text } = Typography;
 
@@ -50,15 +51,14 @@ export default () => {
     total?: number
   }>();
   const [loading, setLoading] = useState<boolean>(false);
-
   const [openSupernodeModal, setOpenSupernodeModal] = useState<boolean>(false);
   const [openSupernodeInfo, setOpenSupernodeInfo] = useState<SupernodeInfo>();
-
+  const {URL , API} = useSafeScan();
   useEffect(() => {
     if (pagination) {
       const { current, pageSize } = pagination;
       setLoading(true);
-      fetchSuperNodes({ current, pageSize })
+      fetchSuperNodes( API , { current, pageSize })
         .then(data => {
           setSupernodeVOs(data.records);
           setLoading(false);
@@ -67,7 +67,7 @@ export default () => {
   }, [pagination, blockNumber])
   useEffect(() => {
     setLoading(true);
-    fetchSuperNodes({ current: 1, pageSize: Supernode_Page_Size })
+    fetchSuperNodes( API ,  { current: 1, pageSize: Supernode_Page_Size })
       .then(data => {
         const { current, pageSize, total } = data;
         setPagination({ current, pageSize, total });

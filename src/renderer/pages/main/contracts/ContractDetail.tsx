@@ -12,6 +12,7 @@ import config, { IPC_CHANNEL, Safe4_Business_Config } from '../../../config';
 import { useWeb3React } from '@web3-react/core';
 import { ContractCompileSignal, ContractCompile_Methods } from '../../../../main/handlers/ContractCompileHandler';
 import { applicationControlContractVO } from '../../../state/application/action';
+import useSafeScan from '../../../hooks/useSafeScan';
 
 const { Title, Text } = Typography;
 
@@ -61,13 +62,15 @@ export default () => {
     }
   }, [chainId, contractVO]);
 
+  const {API} = useSafeScan();
+
   useEffect(() => {
     if (contractVO) {
       // 存在 name 则说明这个合约已经验证了;
       if (contractVO.name) {
         const { address, name } = contractVO;
         setLoading(true);
-        fetchContractCompile({ address }).then(data => {
+        fetchContractCompile( API ,  { address }).then(data => {
           setContractCompileVO(data);
           setLoading(false);
         });
@@ -80,7 +83,7 @@ export default () => {
   const doVerifyContractLocal = useCallback(() => {
     if (contractVO && contractLocal && contractLocal.sourceCode) {
       setVerifying(true);
-      fetchContractVerifyForSingle({
+      fetchContractVerifyForSingle( API ,  {
         contractAddress: contractLocal.address,
         contractSourceCode: contractLocal.sourceCode,
         optimizerEnabled: contractLocal.compileOption.optimizer.enabled,

@@ -7,6 +7,7 @@ import { ZERO } from "../../../utils/CurrentAmountUtils";
 import { CurrencyAmount } from "@uniswap/sdk";
 import { fetchSafe3Address } from "../../../services/safe3";
 import { ethers } from "ethers";
+import useSafeScan from "../../../hooks/useSafeScan";
 
 const { Text } = Typography;
 const LockedTxLimit = 10;
@@ -37,6 +38,7 @@ export default ({
   const masternodeStorageContract = useMasternodeLogicContract();
   const [safe3AddressAsset, setSafe3AddressAsset] = useState<Safe3Asset>();
   const [safe3AddressAssetLoading, setSafe3AddressAssetLoading] = useState<boolean>(false);
+  const {API} = useSafeScan();
 
   useEffect(() => {
     setSafe3Asset(undefined);
@@ -118,7 +120,7 @@ export default ({
                     } else {
                       // 如果锁仓数据过于多,则通过浏览器接口来获取锁仓以及是否为主节点.
                       // 查询区块链浏览器接口获取它是否是主节点.
-                      fetchSafe3Address(address).then(data => {
+                      fetchSafe3Address( API , address).then(data => {
                         const { masternode, locked, mLockedAmount } = data;
                         const isMasternode = masternode;
                         const lockedAmount = CurrencyAmount.ether(ethers.utils.parseEther(locked).toBigInt());

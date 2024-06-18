@@ -10,6 +10,7 @@ import { useTransactionAdder2 } from '../../state/transactions/hooks';
 import ChecksumAddress from '../../utils/ChecksumAddress';
 import { applicationUpdateWalletTab } from '../../state/application/action';
 import { useWeb3React } from '@web3-react/core';
+import useSafeScan from '../../hooks/useSafeScan';
 
 
 const { Title, Text } = Typography;
@@ -24,11 +25,12 @@ export default () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { chainId } = useWeb3React();
+  const {API} = useSafeScan();
 
   const doFetchGetTestCoin = useCallback(() => {
     if (chainId) {
       setSending(true);
-      fetchGetTestCoin({ address: activeAccount })
+      fetchGetTestCoin( API , { address: activeAccount })
         .then(({ transactionHash, amount, address, from }: any) => {
           addTransaction({
             from: ChecksumAddress(from),
@@ -51,7 +53,7 @@ export default () => {
           setErr(err.message)
         })
     }
-  }, [activeAccount, chainId]);
+  }, [activeAccount, chainId , API]);
 
   useEffect(() => {
     setErr(undefined);

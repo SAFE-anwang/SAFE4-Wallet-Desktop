@@ -18,6 +18,7 @@ import { useWeb3React } from "@web3-react/core";
 import { AddressAnalyticVO } from "../../../../../services";
 import { TimestampTheStartOf } from "../../../../../utils/DateUtils";
 import { TimeNodeRewardSignal, TimeNodeReward_Methods } from "../../../../../../main/handlers/TimeNodeRewardHandler";
+import useSafeScan from "../../../../../hooks/useSafeScan";
 
 const { Text } = Typography;
 
@@ -31,6 +32,7 @@ export default () => {
   const dispatch = useDispatch();
   const latestBlockNumber = useBlockNumber();
   const addressActivityFetch = useSelector<AppState, AddressActivityFetch | undefined>(state => state.transactions.addressActivityFetch);
+  const { URL , API } = useSafeScan();
 
   useEffect(() => {
     const addressActivtiesLoadActivities = DB_AddressActivity_Methods.loadActivities;
@@ -93,39 +95,41 @@ export default () => {
             nodeRewards: dbTimeNodeRewards
           }));
           // 远程访问浏览器接口,获取新的数据
-          fetchAddressAnalytic({ address: activeAccount.toLocaleLowerCase() })
+          fetchAddressAnalytic( API , { address: activeAccount.toLocaleLowerCase() })
             .then((data: AddressAnalyticVO) => {
               const nodeRewards = data.nodeRewards;
               console.log(`Query-API [${activeAccount}] Node Rewards : `, nodeRewards);
-              dispatch(refreshAddressTimeNodeReward({
-                chainId,
-                address: activeAccount,
-                nodeRewards: data.nodeRewards
-              }));
-              // 将访问的数据更新到数据库
-              const method = TimeNodeReward_Methods.saveOrUpdate;
-              const saveOrUpdateNodeRewards = nodeRewards.filter(nodeReward => {
-                const { time, rewardAmount } = nodeReward;
-                const _time = time.split(" ")[0];
-                if (!dbTimeNodeRewardMap[_time]) {
-                  return true;
-                }
-                if (dbTimeNodeRewardMap[_time] && dbTimeNodeRewardMap[_time] != rewardAmount) {
-                  return true;
-                }
-                return false;
-              }).map(nodeReward => {
-                return {
+              if (nodeRewards) {
+                dispatch(refreshAddressTimeNodeReward({
+                  chainId,
                   address: activeAccount,
-                  amount: nodeReward.rewardAmount,
-                  count: nodeReward.rewardCount,
-                  time: nodeReward.time.split(" ")[0]
-                }
-              })
-              console.log("SaveOrUpdate TimeNodeRewards => ", saveOrUpdateNodeRewards)
-              window.electron.ipcRenderer.sendMessage(IPC_CHANNEL, [TimeNodeRewardSignal, method, [
-                saveOrUpdateNodeRewards
-                , chainId]]);
+                  nodeRewards: data.nodeRewards
+                }));
+                // 将访问的数据更新到数据库
+                const method = TimeNodeReward_Methods.saveOrUpdate;
+                const saveOrUpdateNodeRewards = nodeRewards.filter(nodeReward => {
+                  const { time, rewardAmount } = nodeReward;
+                  const _time = time.split(" ")[0];
+                  if (!dbTimeNodeRewardMap[_time]) {
+                    return true;
+                  }
+                  if (dbTimeNodeRewardMap[_time] && dbTimeNodeRewardMap[_time] != rewardAmount) {
+                    return true;
+                  }
+                  return false;
+                }).map(nodeReward => {
+                  return {
+                    address: activeAccount,
+                    amount: nodeReward.rewardAmount,
+                    count: nodeReward.rewardCount,
+                    time: nodeReward.time.split(" ")[0]
+                  }
+                })
+                console.log("SaveOrUpdate TimeNodeRewards => ", saveOrUpdateNodeRewards)
+                window.electron.ipcRenderer.sendMessage(IPC_CHANNEL, [TimeNodeRewardSignal, method, [
+                  saveOrUpdateNodeRewards
+                  , chainId]]);
+              }
             })
         }
       });

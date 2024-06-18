@@ -6,6 +6,7 @@ import { TransactionResponse } from "@ethersproject/providers"
 import { ethers } from "ethers"
 import { useTransactionAdder } from "../../../state/transactions/hooks"
 import { ExportOutlined } from "@ant-design/icons"
+import Safescan from "../../components/Safescan"
 
 const { Text } = Typography
 
@@ -238,9 +239,9 @@ export default ({
             {
               contractCall?.transactionHash && <>
                 {contractCall.transactionHash}
-                <Button onClick={() => {
-                  window.open(`https://safe4.anwang.com/tx/${contractCall.transactionHash}`)
-                }} size="small" icon={<ExportOutlined />} style={{ float: "right" }} />
+                <div style={{ float: "right" }}>
+                  <Safescan url={`/tx/${contractCall.transactionHash}`} />
+                </div>
               </>
             }
             {

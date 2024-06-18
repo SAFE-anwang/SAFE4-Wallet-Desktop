@@ -151,7 +151,7 @@ export default () => {
         <Row>
           <Paragraph copyable>{activeWallet?.address}</Paragraph>
           <div style={{marginLeft:"5px"}}>
-            <Safescan url={`${Safescan_URL}/address/${activeWallet?.address}`} type={SafescanComponentType.Link} />
+            <Safescan url={`/address/${activeWallet?.address}`} type={SafescanComponentType.Link} />
           </div>
         </Row>
         <Row>

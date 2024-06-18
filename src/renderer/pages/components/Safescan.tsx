@@ -1,5 +1,6 @@
 import { GlobalOutlined } from "@ant-design/icons"
 import { Button, Tooltip , Typography } from "antd"
+import useSafeScan from "../../hooks/useSafeScan";
 
 const { Link } = Typography;
 
@@ -14,7 +15,8 @@ export default ( {
   url : string ,
   type ?: SafescanComponentType
 } ) => {
-  const click = () => window.open(url);
+  const { URL , API } = useSafeScan();
+  const click = () => window.open( `${URL}${url}` );
   return <>
     <Tooltip title="在浏览器上查看">
       {

@@ -13,6 +13,7 @@ import { useWeb3React } from '@web3-react/core';
 import { ContractCompileSignal, ContractCompile_Methods } from '../../../../main/handlers/ContractCompileHandler';
 import { IPC_CHANNEL } from '../../../config';
 import { useWalletsList } from '../../../state/wallets/hooks';
+import useSafeScan from '../../../hooks/useSafeScan';
 const { Title, Text } = Typography;
 
 const Supernode_Page_Size = 10;
@@ -57,11 +58,12 @@ export default () => {
     total?: number
   }>();
   const [loading, setLoading] = useState<boolean>(false);
+  const {API} = useSafeScan();
 
   useEffect(() => {
     if (contracts) {
       setLoading(true);
-      fetchContracts({ current: 1, pageSize: Supernode_Page_Size })
+      fetchContracts( API , { current: 1, pageSize: Supernode_Page_Size })
         .then(data => {
           const { current, pageSize, total } = data;
           setPagination({ current, pageSize, total });
@@ -73,7 +75,7 @@ export default () => {
     if (pagination) {
       const { current, pageSize } = pagination;
       setLoading(true);
-      fetchContracts({ current, pageSize })
+      fetchContracts(API , { current, pageSize })
         .then(data => {
           setContractVOs(data.records);
           setLoading(false);

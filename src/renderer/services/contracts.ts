@@ -1,10 +1,8 @@
 import { ContractCompileVO, ContractVO, ContractVOFormat, POST, PageQueryDTO, PageResponseVO } from ".";
-import config from "../config";
 
-const { Safescan_Api } = config;
 
-export async function fetchContracts(params: { address: string } | PageQueryDTO): Promise<PageResponseVO<ContractVO>> {
-  const serverResponse = await POST(`${Safescan_Api}/contracts`, params);
+export async function fetchContracts( API : string , params: { address: string } | PageQueryDTO): Promise<PageResponseVO<ContractVO>> {
+  const serverResponse = await POST(`${API}/contracts`, params);
   if (serverResponse.data && serverResponse.data.records) {
     serverResponse.data.records = serverResponse.data.records.map(
       ContractVOFormat
@@ -15,13 +13,12 @@ export async function fetchContracts(params: { address: string } | PageQueryDTO)
   return serverResponse.data;
 }
 
-export async function fetchContractCompile(params: { address: string }): Promise<ContractCompileVO> {
-  const serverResponse = await POST(`${Safescan_Api}/contracts/${params.address}/compile`, params);
+export async function fetchContractCompile(API : string , params: { address: string }): Promise<ContractCompileVO> {
+  const serverResponse = await POST(`${API}/contracts/${params.address}/compile`, params);
   return serverResponse.data;
 }
 
-
-export async function fetchContractVerifyForSingle(params: {
+export async function fetchContractVerifyForSingle( API : string , params: {
   contractAddress: string ,
   compileVersion : string ,
   contractSourceCode : string,
@@ -29,7 +26,7 @@ export async function fetchContractVerifyForSingle(params: {
   optimizerEnabled : boolean,
   optimizerRuns : number
 }): Promise< any > {
-  const serverResponse = await POST(`${Safescan_Api}/verify/contract/compile`, {
+  const serverResponse = await POST(`${API}/verify/contract/compile`, {
     ...params,
     compileType : "single"
   });

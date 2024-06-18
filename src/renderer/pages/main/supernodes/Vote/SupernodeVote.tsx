@@ -1,7 +1,6 @@
 
 import { Typography, Row, Col, Button, Card, Checkbox, CheckboxProps, Divider, Alert, Tabs } from 'antd';
 import { useEffect, useMemo, useState } from 'react';
-import { CheckboxValueType } from 'antd/es/checkbox/Group';
 import type { GetProp } from 'antd';
 import { useActiveAccountAccountRecords } from '../../../../state/wallets/hooks';
 import { EmptyContract } from '../../../../constants/SystemContracts';
@@ -9,17 +8,14 @@ import { useSelector } from 'react-redux';
 import { AppState } from '../../../../state';
 import { useSupernodeStorageContract } from '../../../../hooks/useContracts';
 import { SupernodeInfo, formatSupernodeInfo } from '../../../../structs/Supernode';
-import VoteModalConfirm from './VoteModal-Confirm';
-import { AccountRecord } from '../../../../structs/AccountManager';
 import { LeftOutlined, LockOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import Supernode from '../Supernode';
-import { CurrencyAmount } from '@uniswap/sdk';
-import { ethers } from 'ethers';
 import { fetchSuperNodeAddresses } from '../../../../services/supernode';
 import type { TabsProps } from 'antd';
 import AccountRecordsVote from './AccountRecordsVote';
 import InputAmountVote from './InputAmountVote';
+import useSafeScan from '../../../../hooks/useSafeScan';
 
 const { Text, Title } = Typography;
 
@@ -30,6 +26,7 @@ export default () => {
   const supernodeStorageContract = useSupernodeStorageContract();
   const navigate = useNavigate();
   const [supernodeInfo, setSupernodeInfo] = useState<SupernodeInfo>();
+  const { URL, API } = useSafeScan();
   const items: TabsProps['items'] = [
     {
       key: 'inputAmount',
@@ -54,7 +51,7 @@ export default () => {
     }
   }, [supernodeAddr]);
   useEffect(() => {
-    fetchSuperNodeAddresses()
+    fetchSuperNodeAddresses(API)
       .then(setSupernodeAddresses)
   }, []);
 
@@ -74,7 +71,7 @@ export default () => {
     <div style={{ width: "100%", paddingTop: "40px", minWidth: "1000px" }}>
       <div style={{ margin: "auto", width: "90%" }}>
         <Row >
-          <Tabs style={{width:"100%"}} defaultActiveKey="inputAmount" items={items} />
+          <Tabs style={{ width: "100%" }} defaultActiveKey="inputAmount" items={items} />
         </Row>
         <Row>
           {

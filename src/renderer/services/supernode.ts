@@ -1,15 +1,13 @@
 import { AddressActivityFormat, AddressActivityVO, POST, PageQueryDTO, PageResponseVO, SuperNodeVO } from ".";
-import config from "../config";
 
-const { Safescan_Api } = config;
 
-export async function fetchSuperNodes( params : PageQueryDTO ) : Promise<PageResponseVO<SuperNodeVO>> {
-  const serverResponse = await POST( `${Safescan_Api}/nodes/supermasternodes` , { ...params } );
+export async function fetchSuperNodes( API : string , params : PageQueryDTO ) : Promise<PageResponseVO<SuperNodeVO>> {
+  const serverResponse = await POST( `${API}/nodes/supermasternodes` , { ...params } );
   return serverResponse.data;
 }
 
-export async function fetchSuperNodeAddresses() : Promise<string[]> {
-  const serverResponse = await POST( `${Safescan_Api}/nodes/supernodeAddresses` , {} );
+export async function fetchSuperNodeAddresses( API : string ) : Promise<string[]> {
+  const serverResponse = await POST( `${API}/nodes/supernodeAddresses` , {} );
   return serverResponse.data;
 }
 

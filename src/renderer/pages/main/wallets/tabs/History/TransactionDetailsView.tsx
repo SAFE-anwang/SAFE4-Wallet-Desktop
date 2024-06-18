@@ -92,7 +92,7 @@ export default ({
           <Text type="secondary">交易哈希</Text>
         </Col>
         <Col span={12} style={{textAlign:"right"}}>
-          <Safescan url={`${Safescan_URL}/tx/${hash}`} />
+          <Safescan url={`/tx/${hash}`} />
         </Col>
         <Col span={24} style={{marginTop:"5px"}}>
           <Text>{hash}</Text>
