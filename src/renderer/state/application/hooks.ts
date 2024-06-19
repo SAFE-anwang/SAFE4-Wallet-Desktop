@@ -71,3 +71,4 @@ export function useApplicationRpcConfigs() : { chainId : number , endpoint : str
   })
 }
 
+

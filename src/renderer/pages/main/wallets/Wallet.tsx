@@ -1,11 +1,11 @@
 
-import { Typography, Button, Divider, Statistic, Row, Col, Modal, Tabs, TabsProps, QRCode, Badge, Dropdown } from 'antd';
+import { Typography, Button, Divider, Statistic, Row, Col, Modal, Tabs, TabsProps, QRCode, Badge, Dropdown, Tooltip } from 'antd';
 import type { MenuProps } from 'antd';
 import { useEffect, useMemo, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useETHBalances, useWalletsActiveAccount, useWalletsActiveKeystore, useWalletsActivePrivateKey, useWalletsActiveWallet } from '../../../state/wallets/hooks';
 import { applicationActionUpdateAtCreateWallet, applicationUpdateWalletTab } from '../../../state/application/action';
-import { SendOutlined, QrcodeOutlined, LockOutlined, MoreOutlined, GlobalOutlined } from '@ant-design/icons';
+import { SendOutlined, QrcodeOutlined, LockOutlined, MoreOutlined, GlobalOutlined, EditOutlined } from '@ant-design/icons';
 import { useBlockNumber, useTimestamp } from '../../../state/application/hooks';
 import Locked from './tabs/Locked/Locked';
 import WalletLockModal from './Lock/WalletLockModal';
@@ -19,9 +19,10 @@ import WalletKeystoreModal from './WalletKeystoreModal';
 import WalletPrivateKeyModal from './WalletPrivateKeyModal';
 import WalletMnemonicModal from './WalletMnemonicModal';
 import Safescan, { SafescanComponentType } from '../../components/Safescan';
+import WalletEditNameModal from './WalletEditNameModal';
 
 const { Safescan_URL } = config;
-const { Title, Text, Paragraph , Link } = Typography;
+const { Title, Text, Paragraph, Link } = Typography;
 
 export default () => {
 
@@ -43,6 +44,7 @@ export default () => {
 
   const [openSendModal, setOpenSendModal] = useState<boolean>(false);
   const [openLockModal, setOpenLockMoal] = useState<boolean>(false);
+  const [openEditNameModal , setOpenEditNameModal] = useState<boolean>(true);
 
   const tabItems: TabsProps['items'] = [
     {
@@ -122,6 +124,16 @@ export default () => {
         <Title level={4} style={{ lineHeight: "16px" }}>
           钱包 <Divider type='vertical' style={{ marginLeft: "12px", marginRight: "12px" }} />
           {activeWallet?.name}
+          <span style={{ marginLeft: "20px" }}>
+            <Tooltip title="编辑钱包名称">
+              <Link style={{fontSize:"18px"}} onClick={() => {
+                console.log("hello")
+              }}>
+                <EditOutlined />
+              </Link>
+            </Tooltip>
+          </span>
+
         </Title>
 
       </Col>
@@ -150,7 +162,7 @@ export default () => {
       <div style={{ margin: "auto", width: "90%" }}>
         <Row>
           <Paragraph copyable>{activeWallet?.address}</Paragraph>
-          <div style={{marginLeft:"5px"}}>
+          <div style={{ marginLeft: "5px" }}>
             <Safescan url={`/address/${activeWallet?.address}`} type={SafescanComponentType.Link} />
           </div>
         </Row>
@@ -232,6 +244,7 @@ export default () => {
     <WalletSendModal openSendModal={openSendModal} setOpenSendModal={setOpenSendModal} />
     <WalletLockModal openLockModal={openLockModal} setOpenLockModal={setOpenLockMoal} />
 
+    <WalletEditNameModal openEditNameModal={openEditNameModal} setOpenEditNameModal={setOpenEditNameModal} />
 
   </>)
 

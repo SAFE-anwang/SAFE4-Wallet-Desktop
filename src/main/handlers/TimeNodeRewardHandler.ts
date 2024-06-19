@@ -83,13 +83,13 @@ export class TimeNodeRewardHandler implements ListenSignalHandler {
           // 同时删除 Address_Activities 中的 该地址对应的 SystemReward:
           const timestampStart = TimestampTheStartOf( time );
           const timestampEnd = TimestampTheEndOf( time );
-          // this.db.run( "DELETE FROM address_activities where timestamp >= ? and timestamp <= ? and ref_to = ? and action = ? and chain_id = ?" ,
-          // [ timestampStart , timestampEnd , address , "SystemReward:" , chainId ] ,
-          // ( err: any , rows : any ) => {
-          //   if ( !err ){
-          //     console.log(`Delete ${ address }||${chainId}@[${ DateTimeFormat(timestampStart) }~${DateTimeFormat(timestampEnd)}] : SystemRewards...`)
-          //   }
-          // })
+          this.db.run( "DELETE FROM address_activities where timestamp >= ? and timestamp <= ? and ref_to = ? and action = ? and chain_id = ?" ,
+          [ timestampStart , timestampEnd , address , "SystemReward:" , chainId ] ,
+          ( err: any , rows : any ) => {
+            if ( !err ){
+              console.log(`Delete ${ address }||${chainId}@[${ DateTimeFormat(timestampStart) }~${DateTimeFormat(timestampEnd)}] : SystemRewards...`)
+            }
+          })
         });
     });
   }

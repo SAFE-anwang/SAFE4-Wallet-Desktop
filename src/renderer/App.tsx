@@ -9,7 +9,7 @@ import { useDispatch } from 'react-redux';
 import { IndexSingal, Index_Methods } from '../main/handlers/IndexSingalHandler';
 import config, { IPC_CHANNEL } from './config';
 import { applicationDataLoaded, applicationSetPassword, applicationUpdateWeb3Rpc } from './state/application/action';
-import { walletsLoadKeystores } from './state/wallets/action';
+import { walletsLoadKeystores, walletsLoadWalletNames } from './state/wallets/action';
 import SAFE_LOGO from './assets/logo/SAFE.png'
 import { MemoryRouter as Router, Routes, Route } from 'react-router-dom';
 import MenuComponent from './pages/components/MenuComponent';
@@ -113,7 +113,8 @@ export default function App() {
           walletKeystores,
           path,
           encrypt,
-          rpc_configs
+          rpc_configs,
+          wallet_names
         } = data;
         const rpcConfigs = rpc_configs.map((rpc_config: any) => {
           const { id, chain_id, endpoint, active } = rpc_config;
@@ -123,10 +124,19 @@ export default function App() {
             active
           }
         });
+        const walletNames = wallet_names.map( ( walletName : any ) => {
+          const { address , name } = walletName;
+          return {
+            address ,
+            name ,
+            active : walletName.active == 1
+          }
+        })
         setDbRpcConfigs(rpcConfigs);
         dispatch(applicationDataLoaded({
           path, rpcConfigs
         }));
+        dispatch(walletsLoadWalletNames(walletNames));
         if (encrypt) {
           setEncrypt(encrypt);
         } else {

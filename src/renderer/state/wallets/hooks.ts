@@ -18,6 +18,12 @@ export function useWalletsList(): Wallet[] {
   });
 }
 
+export function useWalletsWalletNames() : { [address in string] : { name : string , active : boolean } } | undefined {
+  return useSelector((state: AppState) => {
+    return state.wallets.walletNames;
+  })
+}
+
 export function useWalletsKeystores(): WalletKeystore[] {
   return useSelector((state: AppState) => {
     return state.wallets.keystores;

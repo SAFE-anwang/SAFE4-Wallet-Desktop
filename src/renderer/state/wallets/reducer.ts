@@ -1,5 +1,5 @@
 import { createReducer } from '@reduxjs/toolkit';
-import { walletsInitList, walletsLoadKeystores, walletsUpdateActiveWallet } from './action';
+import { walletsInitList, walletsLoadKeystores, walletsLoadWalletNames, walletsUpdateActiveWallet } from './action';
 
 export interface WalletKeystore {
   mnemonic: string | undefined,
@@ -21,13 +21,22 @@ export interface Wallets {
   activeWallet: Wallet | null,
   keystores: WalletKeystore[],
   list: Wallet[],
+
+  walletNames: {
+    [address in string]: {
+      name: string,
+      active: boolean
+    }
+  }
+
 }
 
 const initialState: Wallets = {
   networkId: "SAFE4",
-  activeWallet : null,
+  activeWallet: null,
   keystores: [],
-  list: []
+  list: [],
+  walletNames: {}
 }
 
 
@@ -72,22 +81,24 @@ export default createReducer(initialState, (builder) => {
       list.push({
         publicKey: keystore.publicKey,
         address: keystore.address,
-        name: "Wallet-" + defaultNameTag,
+        // 默认以顺序作为钱包名称
+        name: state.walletNames[keystore.address] ? state.walletNames[keystore.address].name :
+          "Wallet-" + defaultNameTag,
       });
     }
 
     // 表示为新建钱包,则将新建的钱包作为活动钱包
     let activeWallet = state.activeWallet;
-    if ( payload.length == 1 ){
+    if (payload.length == 1) {
       const publicKey = payload[0].publicKey;
-      for( let i in list ){
-        if ( list[i].publicKey == publicKey ){
+      for (let i in list) {
+        if (list[i].publicKey == publicKey) {
           activeWallet = list[i];
         }
       }
-    }else if( !activeWallet && list.length > 0 ){
+    } else if (!activeWallet && list.length > 0) {
       // 如果没有设置默认钱包,则将导入钱包的最后一个设为默认钱包
-      activeWallet = list[list.length-1];
+      activeWallet = list[list.length - 1];
     }
 
     return {
@@ -113,18 +124,31 @@ export default createReducer(initialState, (builder) => {
     state.list = list;
   });
 
-  builder.addCase( walletsUpdateActiveWallet , (state , {payload}) => {
+  builder.addCase(walletsUpdateActiveWallet, (state, { payload }) => {
     const publicKey = payload;
     let activeWallet = null;
-    for(let i in state.list){
-      if ( state.list[i].publicKey == publicKey ){
+    for (let i in state.list) {
+      if (state.list[i].publicKey == publicKey) {
         activeWallet = state.list[i]
       }
     }
     return {
-      ...state ,
+      ...state,
       activeWallet
     }
+  })
+
+  builder.addCase(walletsLoadWalletNames, (state, { payload }) => {
+    const walletNames: {
+      [address in string]: {
+        name: string,
+        active: boolean
+      }
+    } = {};
+    payload.forEach(({ address, name, active }) => {
+      walletNames[address] = { name, active };
+    });
+    state.walletNames = walletNames;
   })
 
 });

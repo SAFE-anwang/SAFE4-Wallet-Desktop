@@ -55,12 +55,12 @@ export interface IApplicationState {
 
     // 合约编译时存储的数据
     compile?: {
-      compileResult : string,
+      compileResult: string,
       sourceCode: string,
       abi: string,
       bytecode: string,
-      name : string,
-      compileOption : {
+      name: string,
+      compileOption: {
         compileVersion: string,
         evmVersion: string,
         optimizer: {
@@ -69,7 +69,7 @@ export interface IApplicationState {
         }
       }
     }
-    directDeploy ?: boolean
+    directDeploy?: boolean
   }
   supernodeAddresses: string[],
   blockchain: {
@@ -88,6 +88,7 @@ export interface IApplicationState {
     chainId: number,
     endpoint: string
   }[],
+
   encrypt?: {
     password?: string,
     salt?: string,
@@ -265,7 +266,5 @@ export default createReducer(initialState, (builder) => {
     .addCase(applicationAddRpcConfig, (state, { payload }) => {
       state.rpcConfigs?.push(payload);
     })
-
-
 
 })

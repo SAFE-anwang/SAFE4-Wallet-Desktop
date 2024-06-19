@@ -51,13 +51,32 @@ export class IndexSingalHandler implements ListenSignalHandler {
   private async load() : Promise<any> {
     const { walletKeystores, encrypt } = this.loadWalletKeystores();
     const rpc_configs = await this.loadRpcConfig();
+    const wallet_names = await this.loadWalletNames();
     return {
       path: this.ctx.path,
       walletKeystores,
       encrypt,
       rpc_configs,
+      wallet_names
     }
   }
+
+  private loadWalletNames(): Promise<any> {
+    return new Promise((resolve, reject) => {
+      this.db.all(
+        "SELECT * FROM wallet_names",
+        [],
+        (err: any, rows: any) => {
+          if (err) {
+            reject(err)
+            return;
+          }
+          resolve(rows);
+        }
+      )
+    });
+  }
+
 
   private loadRpcConfig(): Promise<any> {
     return new Promise((resolve, reject) => {

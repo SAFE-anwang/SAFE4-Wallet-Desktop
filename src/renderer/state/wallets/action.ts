@@ -14,5 +14,10 @@ export const walletsUpdateActiveWallet = createAction<string>(
   "wallets/updateActiveWallet"
 )
 
+export const walletsLoadWalletNames = createAction<{ address: string, name: string, active: boolean }[]>(
+  "wallets/loadWalletNames"
+)
+
+
 
 
