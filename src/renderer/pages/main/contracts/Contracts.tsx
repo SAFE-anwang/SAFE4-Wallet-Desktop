@@ -14,6 +14,7 @@ import { ContractCompileSignal, ContractCompile_Methods } from '../../../../main
 import { IPC_CHANNEL } from '../../../config';
 import { useWalletsList } from '../../../state/wallets/hooks';
 import useSafeScan from '../../../hooks/useSafeScan';
+import AddressComponent from '../../components/AddressComponent';
 const { Title, Text } = Typography;
 
 const Supernode_Page_Size = 10;
@@ -58,12 +59,12 @@ export default () => {
     total?: number
   }>();
   const [loading, setLoading] = useState<boolean>(false);
-  const {API} = useSafeScan();
+  const { API } = useSafeScan();
 
   useEffect(() => {
     if (contracts) {
       setLoading(true);
-      fetchContracts( API , { current: 1, pageSize: Supernode_Page_Size })
+      fetchContracts(API, { current: 1, pageSize: Supernode_Page_Size })
         .then(data => {
           const { current, pageSize, total } = data;
           setPagination({ current, pageSize, total });
@@ -75,7 +76,7 @@ export default () => {
     if (pagination) {
       const { current, pageSize } = pagination;
       setLoading(true);
-      fetchContracts(API , { current, pageSize })
+      fetchContracts(API, { current, pageSize })
         .then(data => {
           setContractVOs(data.records);
           setLoading(false);
@@ -94,7 +95,7 @@ export default () => {
         return <>
           <Row>
             <Col span={24} style={{ width: "80px" }}>
-              <AddressView address={_addr}></AddressView>
+              <AddressComponent address={address} ellipsis copyable />
             </Col>
           </Row>
         </>
@@ -116,7 +117,7 @@ export default () => {
         })
         return <>
           <Row>
-            <Col span={24} style={{ width: "80px" }}>
+            {/* <Col span={24} style={{ width: "80px" }}>
               {
                 !isLocalCreator && <Text>
                   <AddressView address={_addr}></AddressView>
@@ -134,6 +135,9 @@ export default () => {
                   </Tooltip>
                 </Row>
               }
+            </Col> */}
+            <Col span={24} style={{ width: "80px" }}>
+              <AddressComponent address={creator} ellipsis copyable />
             </Col>
           </Row>
         </>

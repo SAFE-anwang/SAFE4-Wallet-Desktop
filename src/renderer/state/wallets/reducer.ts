@@ -1,5 +1,7 @@
 import { createReducer } from '@reduxjs/toolkit';
-import { walletsInitList, walletsLoadKeystores, walletsLoadWalletNames, walletsUpdateActiveWallet } from './action';
+import { walletsInitList, walletsLoadKeystores, walletsLoadWalletNames, walletsUpdateActiveWallet, walletsUpdateWalletName } from './action';
+import { IPC_CHANNEL } from '../../config';
+import { WalletNameSignal, WalletName_Methods } from '../../../main/handlers/WalletNameHandler';
 
 export interface WalletKeystore {
   mnemonic: string | undefined,
@@ -75,18 +77,24 @@ export default createReducer(initialState, (builder) => {
       }
     }
     const list: Wallet[] = [];
+    let walletNames = { ...state.walletNames };
     for (let i in keystores) {
       const keystore = keystores[i];
       const defaultNameTag = Number(i) + 1;
+      const { address, publicKey } = keystore;
       list.push({
         publicKey: keystore.publicKey,
         address: keystore.address,
         // 默认以顺序作为钱包名称
-        name: state.walletNames[keystore.address] ? state.walletNames[keystore.address].name :
-          "Wallet-" + defaultNameTag,
+        name: "Wallet-" + defaultNameTag,
       });
+      if (!state.walletNames[address]) {
+        walletNames[address] = {
+          name: "Wallet-" + defaultNameTag,
+          active: false
+        }
+      }
     }
-
     // 表示为新建钱包,则将新建的钱包作为活动钱包
     let activeWallet = state.activeWallet;
     if (payload.length == 1) {
@@ -97,15 +105,30 @@ export default createReducer(initialState, (builder) => {
         }
       }
     } else if (!activeWallet && list.length > 0) {
-      // 如果没有设置默认钱包,则将导入钱包的最后一个设为默认钱包
-      activeWallet = list[list.length - 1];
+      let activeAddressInNames = undefined;
+      Object.keys(walletNames).forEach(address => {
+        if (walletNames[address].active) {
+          activeAddressInNames = address;
+        }
+      });
+      if (activeAddressInNames) {
+        for (let i in list) {
+          if (list[i].address == activeAddressInNames) {
+            activeWallet = list[i];
+          }
+        }
+      } else {
+        // 如果没有设置默认钱包,则将导入钱包的最后一个设为默认钱包.
+        activeWallet = list[list.length - 1];
+      }
     }
 
     return {
       ...state,
       keystores,
       list,
-      activeWallet
+      activeWallet,
+      walletNames
     }
 
   });
@@ -144,12 +167,17 @@ export default createReducer(initialState, (builder) => {
         name: string,
         active: boolean
       }
-    } = {};
+    } = state.walletNames ?? {};
     payload.forEach(({ address, name, active }) => {
       walletNames[address] = { name, active };
     });
     state.walletNames = walletNames;
   })
+
+  builder.addCase(walletsUpdateWalletName, (state, { payload }) => {
+    const { address, name } = payload;
+    state.walletNames[address].name = name;
+  });
 
 });
 

@@ -1,11 +1,11 @@
-import React, { useEffect, useMemo } from 'react';
+import React, { useCallback, useEffect, useMemo } from 'react';
 import { PlusOutlined } from '@ant-design/icons';
 import { Divider, Input, Select, Space, Button, Typography, Row, Col } from 'antd';
 import "./comp.css";
 import { useNavigate } from 'react-router-dom';
 import { useETHBalances, useWalletsActiveWallet, useWalletsList, useWalletsWalletNames } from '../../state/wallets/hooks';
 import { useDispatch } from 'react-redux';
-import { walletsUpdateActiveWallet } from '../../state/wallets/action';
+import { walletsUpdateActiveWallet, walletsUpdateWalletName } from '../../state/wallets/action';
 import { IPC_CHANNEL } from '../../config';
 import { WalletNameSignal, WalletName_Methods } from '../../../main/handlers/WalletNameHandler';
 import useWalletName from '../../hooks/useWalletName';
@@ -19,8 +19,8 @@ export default () => {
   const activeWallet = useWalletsActiveWallet();
   const dispatch = useDispatch();
   const addressesBalances = useETHBalances(walletsList.map(wallet => wallet.address));
-  const applicationWalletNames = useWalletsWalletNames();
-  const walletName = useWalletName(activeWallet?.address);
+  const walletsWalletNames = useWalletsWalletNames();
+  const activeWalletName = useWalletName(activeWallet?.address);
 
   const items = useMemo(() => {
     let items = [];
@@ -30,8 +30,8 @@ export default () => {
       } = walletsList[i];
       const balance = addressesBalances[address];
       let _name = name;
-      if ( applicationWalletNames && applicationWalletNames[address] ){
-        _name = applicationWalletNames[address].name;
+      if (walletsWalletNames && walletsWalletNames[address]) {
+        _name = walletsWalletNames[address].name;
       }
       items.push({
         label: <>
@@ -44,27 +44,40 @@ export default () => {
       })
     }
     return items;
-  }, [walletsList, addressesBalances , applicationWalletNames]);
+  }, [walletsList, addressesBalances, walletsWalletNames]);
 
 
   const createNewWallet = (e: React.MouseEvent<HTMLButtonElement | HTMLAnchorElement>) => {
     navigate("/selectCreateWallet");
   };
+
   const switchActionWallet = (publicKey: string, e: any) => {
     dispatch(walletsUpdateActiveWallet(publicKey));
   }
 
   useEffect(() => {
+    if (activeWallet) {
+      const activeWalletAddress = walletsList.filter(wallet => wallet.publicKey == activeWallet.publicKey)[0].address;
+      if (walletsWalletNames) {
+        const walletName = { ... walletsWalletNames[activeWalletAddress] };
+        walletName.active = true;
+        const method = WalletName_Methods.saveOrUpdate;
+        window.electron.ipcRenderer.sendMessage(IPC_CHANNEL, [WalletNameSignal, method, [
+          {
+            address: activeWalletAddress,
+            name: walletName.name,
+            active: 1
+          }
+        ]]);
+      }
+    }
+  }, [activeWallet, walletsList]);
 
-  }, [walletsList]);
 
   return <>
-    {
-      JSON.stringify(applicationWalletNames)
-    }
     <Select
       className='wallet-switch-selector'
-      value={ activeWallet?.name }
+      value={activeWalletName}
       onChange={switchActionWallet}
       style={{ textAlign: "center", marginBottom: "15px", height: "50px", width: "220px", marginLeft: "5px", borderRadius: "20px" }}
       dropdownRender={(menu) => (

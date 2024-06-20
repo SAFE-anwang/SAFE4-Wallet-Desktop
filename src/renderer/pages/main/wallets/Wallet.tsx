@@ -20,6 +20,7 @@ import WalletPrivateKeyModal from './WalletPrivateKeyModal';
 import WalletMnemonicModal from './WalletMnemonicModal';
 import Safescan, { SafescanComponentType } from '../../components/Safescan';
 import WalletEditNameModal from './WalletEditNameModal';
+import useWalletName from '../../../hooks/useWalletName';
 
 const { Safescan_URL } = config;
 const { Title, Text, Paragraph, Link } = Typography;
@@ -28,12 +29,12 @@ export default () => {
 
   const dispatch = useDispatch();
   const activeWallet = useWalletsActiveWallet();
+  const activeWalletName = useWalletName( activeWallet?.address );
   const account = useWalletsActiveAccount();
   const balance = useETHBalances([account])[account];
   const latestBlockNumber = useBlockNumber();
   const timestamp = useTimestamp();
   const walletTab = useSelector<AppState, string | undefined>(state => state.application.control.walletTab);
-  const privateKey = useWalletsActivePrivateKey();
   const walletKeystore = useWalletsActiveKeystore();
   const { isActivating, isActive, chainId } = useWeb3React();
 
@@ -44,7 +45,7 @@ export default () => {
 
   const [openSendModal, setOpenSendModal] = useState<boolean>(false);
   const [openLockModal, setOpenLockMoal] = useState<boolean>(false);
-  const [openEditNameModal , setOpenEditNameModal] = useState<boolean>(true);
+  const [openEditNameModal , setOpenEditNameModal] = useState<boolean>(false);
 
   const tabItems: TabsProps['items'] = [
     {
@@ -123,11 +124,11 @@ export default () => {
       <Col span={12}>
         <Title level={4} style={{ lineHeight: "16px" }}>
           钱包 <Divider type='vertical' style={{ marginLeft: "12px", marginRight: "12px" }} />
-          {activeWallet?.name}
+          {activeWalletName}
           <span style={{ marginLeft: "20px" }}>
             <Tooltip title="编辑钱包名称">
               <Link style={{fontSize:"18px"}} onClick={() => {
-                console.log("hello")
+                setOpenEditNameModal(true);
               }}>
                 <EditOutlined />
               </Link>

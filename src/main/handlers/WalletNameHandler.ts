@@ -47,8 +47,8 @@ export class WalletNameHandler implements ListenSignalHandler {
     const params: any[] = args[0][2];
     let data = undefined;
     if (WalletName_Methods.saveOrUpdate == method) {
-      const rpcConfig = params[0];
-      data = this.saveOrUpdate(rpcConfig);
+      const walletName = params[0];
+      data = this.saveOrUpdate(walletName);
     } else if (WalletName_Methods.getAll == method) {
       this.getAll((rows: any) => {
         event.reply(Channel, [this.getSingal(), method, [rows]])

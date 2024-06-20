@@ -17,6 +17,7 @@ import { SuperNodeVO } from '../../../services';
 import { useBlockNumber } from '../../../state/application/hooks';
 import Supernode from './Supernode';
 import useSafeScan from '../../../hooks/useSafeScan';
+import AddressComponent from '../../components/AddressComponent';
 
 const { Title, Text } = Typography;
 
@@ -185,7 +186,7 @@ export default () => {
             </Col>
             <Col span={20}>
               <Text strong>
-                <AddressView address={_addr}></AddressView>
+                <AddressComponent address={addr} ellipsis copyable />
               </Text>
             </Col>
           </Row>

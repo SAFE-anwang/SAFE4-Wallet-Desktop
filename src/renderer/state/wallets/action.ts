@@ -18,6 +18,10 @@ export const walletsLoadWalletNames = createAction<{ address: string, name: stri
   "wallets/loadWalletNames"
 )
 
+export const walletsUpdateWalletName = createAction<{ address : string , name : string }>(
+  "wallets/updateWalletName"
+)
+
 
 
 

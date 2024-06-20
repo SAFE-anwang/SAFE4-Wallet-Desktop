@@ -13,6 +13,7 @@ import { applicationControlAppendMasternode } from '../../../state/application/a
 import { useWalletsActiveAccount } from '../../../state/wallets/hooks';
 import { SupernodeInfo, formatSupernodeInfo } from '../../../structs/Supernode';
 import { RenderNodeState } from '../supernodes/Supernodes';
+import AddressComponent from '../../components/AddressComponent';
 
 const { Title, Text } = Typography;
 const Masternodes_Page_Size = 10;
@@ -148,7 +149,7 @@ export default () => {
           <Row>
             <Col span={20}>
               <Text strong>
-                <AddressView address={addr}></AddressView>
+                <AddressComponent address={addr} />
               </Text>
             </Col>
           </Row>
