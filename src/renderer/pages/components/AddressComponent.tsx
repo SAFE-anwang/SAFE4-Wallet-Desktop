@@ -1,6 +1,5 @@
 import { Tooltip, Typography } from "antd";
 import useWalletName, { isLocalWallet } from "../../hooks/useWalletName";
-import { useWalletsList, useWalletsWalletNames } from "../../state/wallets/hooks";
 import { WalletTwoTone } from "@ant-design/icons";
 
 const { Title, Text, Paragraph } = Typography;

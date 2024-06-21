@@ -25,16 +25,19 @@ export default ({
   const [step, setStep] = useState(STEP_INPUT);
   const [inputParams, setInputParams] = useState<{
     to: string,
-    amount: string
+    amount: string,
+    lockDay : number | undefined
   }>({
     to: "",
-    amount: ""
+    amount: "",
+    lockDay : undefined
   });
   const [txHash , setTxHash] = useState<string>();
   const cancel = useCallback(() => {
     setInputParams({
       to: "",
-      amount: ""
+      amount: "",
+      lockDay : undefined
     });
     setStep(STEP_INPUT);
     setOpenSendModal(false);
@@ -49,9 +52,9 @@ export default ({
     <Modal footer={null} destroyOnClose title="发送" style={{height: "300px"}} open={openSendModal} onCancel={cancel}>
       <Divider />
       {
-        step == STEP_INPUT && <WalletSendModalInput goNextCallback={({to,amount}) => {
+        step == STEP_INPUT && <WalletSendModalInput goNextCallback={({to,amount , lockDay}) => {
           setInputParams({
-            to, amount
+            to, amount , lockDay
           });
           setStep(STEP_CONFIRM);
         }}/>

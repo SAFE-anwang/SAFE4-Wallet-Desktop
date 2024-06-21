@@ -1,4 +1,4 @@
-import { Button, Col, Divider, Input, Modal, Row, Typography, Space, Alert } from "antd"
+import { Button, Col, Divider, Input, Modal, Row, Typography, Space, Alert, Switch } from "antd"
 import { Children, useCallback, useEffect, useMemo, useState } from "react";
 import { MemoryRouter as Router, Routes, Route, useNavigate } from 'react-router-dom';
 import { ethers } from "ethers";
@@ -14,7 +14,8 @@ export default ({
 }: {
   goNextCallback: (inputParams: {
     to: string,
-    amount: string
+    amount: string ,
+    lockDay : number | undefined
   }) => void
 }) => {
 
@@ -33,22 +34,28 @@ export default ({
 
   const [params, setParams] = useState<{
     to: string,
-    amount: string
+    amount: string,
+    lockDay: number | undefined
   }>({
     to: "",
-    amount: ""
+    amount: "",
+    lockDay: undefined
   });
 
   const [inputErrors, setInputErrors] = useState<{
     to: string | undefined,
-    amount: string | undefined
+    amount: string | undefined,
+    lockDay: string | undefined
   }>({
     to: undefined,
-    amount: undefined
+    amount: undefined,
+    lockDay: undefined
   });
 
+  const [openSendLock, setOpenSendLock] = useState<boolean>(false);
+
   const goNext = useCallback(() => {
-    const { to, amount } = params;
+    const { to, amount , lockDay } = params;
     if (!to || !ethers.utils.isAddress(to)) {
       inputErrors.to = "请输入正确的钱包地址";
     }
@@ -57,23 +64,26 @@ export default ({
     }
     if (amount) {
       try {
-        let _amount = CurrencyAmount.ether( ethers.utils.parseEther(amount).toBigInt() );
-        if ( _amount.greaterThan(maxBalance) ){
+        let _amount = CurrencyAmount.ether(ethers.utils.parseEther(amount).toBigInt());
+        if (_amount.greaterThan(maxBalance)) {
           inputErrors.amount = "转出数量大于持有数量";
         }
-        if ( !_amount.greaterThan(ZERO) ){
+        if (!_amount.greaterThan(ZERO)) {
           inputErrors.amount = "请输入正确的数量";
         }
       } catch (error) {
         inputErrors.amount = "请输入正确的数量";
       }
     }
-    if (inputErrors.to || inputErrors.amount) {
+    if ( openSendLock && ( !lockDay || Number.isNaN(lockDay) ) ){
+      inputErrors.lockDay = "请输入锁仓天数";
+    }
+    if (inputErrors.to || inputErrors.amount || inputErrors.lockDay) {
       setInputErrors({ ...inputErrors })
       return;
     }
     goNextCallback(params);
-  }, [activeAccount, maxBalance, params]);
+  }, [activeAccount, maxBalance, params , openSendLock]);
 
   return <>
     <div style={{ minHeight: "300px" }}>
@@ -119,7 +129,7 @@ export default ({
               const toInputValue = _input.target.value;
               setInputErrors({
                 ...inputErrors,
-                amount:undefined
+                amount: undefined
               })
               setParams({
                 ...params,
@@ -129,7 +139,7 @@ export default ({
             <Button size="large" onClick={() => {
               setInputErrors({
                 ...inputErrors,
-                amount:undefined
+                amount: undefined
               })
               setParams({
                 ...params,
@@ -150,6 +160,46 @@ export default ({
         }
       </Row>
       <br />
+
+      <Row >
+        <Col span={14}>
+          <Switch size="small" checkedChildren="开启" unCheckedChildren="关闭" defaultChecked={openSendLock}
+            onClick={(value) => {
+              setOpenSendLock(value);
+              setParams({
+                ...params,
+                lockDay: undefined
+              });
+              setInputErrors({
+                ...inputErrors,
+                lockDay: undefined
+              })
+            }} />
+          <Text style={{ marginLeft: "5px" }} strong>锁仓</Text>
+          <br />
+          <Space.Compact style={{ width: '100%' }}>
+            <Input value={params.lockDay} disabled={!openSendLock} size="large" onChange={(_input) => {
+              const lockDayInputValue = _input.target.value;
+              setInputErrors({
+                ...inputErrors,
+                lockDay: undefined
+              })
+              setParams({
+                ...params,
+                lockDay: Number(lockDayInputValue)
+              })
+            }} placeholder="输入锁仓天数" />
+          </Space.Compact>
+        </Col>
+        <Col span={10}>
+
+        </Col>
+        {
+          inputErrors?.lockDay && <Alert style={{ marginTop: "5px" }} type="error" showIcon message={inputErrors.lockDay} />
+        }
+      </Row>
+
+      <Divider />
 
       <Row style={{ width: "100%", textAlign: "right" }}>
         <Col span={24}>
