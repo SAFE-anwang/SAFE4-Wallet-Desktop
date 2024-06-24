@@ -6,13 +6,16 @@ import { ethers } from "ethers";
 const { Text } = Typography;
 
 const ZERO = CurrencyAmount.ether(JSBI.BigInt(0));
+
+export interface NormalLockParams {
+  amount : string , 
+  lockDay : number
+}
+
 export default ({
   goNextCallback
 }: {
-  goNextCallback: ({ }: {
-    amount: string,
-    lockDay: number
-  }) => void
+  goNextCallback: ({}:NormalLockParams) => void
 }) => {
 
   const activeAccount = useWalletsActiveAccount();
@@ -27,10 +30,7 @@ export default ({
       ? activeAccountETHBalance.subtract(gasPay) : ZERO;
   }, [activeAccountETHBalance]);
 
-  const [params, setParams] = useState<{
-    lockDay: number,
-    amount: string
-  }>({
+  const [params, setParams] = useState<NormalLockParams>({
     lockDay: 0,
     amount: ""
   });

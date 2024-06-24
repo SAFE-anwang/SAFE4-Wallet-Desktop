@@ -10,6 +10,7 @@ import 'dayjs/locale/zh-cn';
 import { RangePickerProps } from "antd/es/date-picker";
 import dayjs from "dayjs";
 import { DateFormat, GetNextMonth } from "../../../../utils/DateUtils";
+import { formatEther } from "ethers/lib/utils";
 
 const { Text } = Typography;
 
@@ -20,13 +21,56 @@ const disabledDate: RangePickerProps['disabledDate'] = (current) => {
 };
 
 const ZERO = CurrencyAmount.ether(JSBI.BigInt(0));
+
+export interface BatchLockParams {
+  perLockAmount: string,
+  lockTimes: number,
+  startLockMonth: string,
+  periodMonth: number
+}
+
+export function BatchLockAert({
+  batchLockParams
+}: {
+  batchLockParams: BatchLockParams
+}) {
+  const { perLockAmount, lockTimes, startLockMonth, periodMonth } = batchLockParams;
+  let _totalLockAmount = "0";
+  let _perLockAmount = "0";
+  if (perLockAmount && lockTimes && lockTimes > 0) {
+    try {
+      const JSBI_PerLockAmount = JSBI.BigInt(ethers.utils.parseEther(perLockAmount).toString());
+      const JSBI_TotalLockAmount = JSBI.multiply(JSBI_PerLockAmount, JSBI.BigInt(lockTimes));
+      _totalLockAmount = CurrencyAmount.ether(JSBI_TotalLockAmount).toExact();
+      _perLockAmount = perLockAmount;
+    } catch (err: any) {
+
+    }
+  }
+  return <Alert type="warning" message={<>
+    <Row>
+      <Col span={24}>
+        <Text>
+          自 <Text strong>{startLockMonth}</Text> 开始,
+          每间隔 <Text strong>{periodMonth}</Text> 个月,
+          每次解锁 <Text strong>{_perLockAmount} </Text> SAFE
+        </Text>
+      </Col>
+      <Col span={24}>
+        <Text>
+          共解锁 <Text strong>{lockTimes}</Text> 次,
+          合计解锁 <Text strong>{_totalLockAmount} </Text> SAFE
+        </Text>
+      </Col>
+    </Row>
+  </>}></Alert>
+}
+
+
 export default ({
   goNextCallback
 }: {
-  goNextCallback: ({ }: {
-    amount: string,
-    lockDay: number
-  }) => void
+  goNextCallback: ({}:BatchLockParams) => void
 }) => {
 
   const activeAccount = useWalletsActiveAccount();
@@ -41,56 +85,74 @@ export default ({
       ? activeAccountETHBalance.subtract(gasPay) : ZERO;
   }, [activeAccountETHBalance]);
 
-  const [params, setParams] = useState<{
-    totalLockAmount: string | undefined,
-    perLockAmount: string | undefined,
-    startLockMonth: string,
-    periodMonth: number
-  }>({
-    totalLockAmount: undefined,
-    perLockAmount: undefined,
+  const [params, setParams] = useState<BatchLockParams>({
+    perLockAmount: "",
+    lockTimes: 36,
     startLockMonth: GetNextMonth(),
     periodMonth: 1
   });
   const [inputErrors, setInputErrors] = useState<{
-    totalLockAmount: string | undefined,
+    lockTimes: string | undefined,
     perLockAmount: string | undefined,
     startLockMonth: string | undefined,
     periodMonth: string | undefined,
   }>({
-    totalLockAmount: undefined,
+    lockTimes: undefined,
     perLockAmount: undefined,
     startLockMonth: undefined,
     periodMonth: undefined,
   });
+  const [totalLockAmount, setTotalLockAmount] = useState<string>("0");
 
   const goNext = useCallback(() => {
 
-  }, [activeAccount, maxBalance, params]);
+    const { perLockAmount, lockTimes, startLockMonth, periodMonth } = params;
+
+    if (!perLockAmount) {
+      inputErrors.perLockAmount = "请输入每次锁仓数量";
+    }
+    if (!lockTimes || !(lockTimes > 0)) {
+      inputErrors.lockTimes = "请输入合计锁仓次数";
+    }
+    if (!startLockMonth) {
+      inputErrors.lockTimes = "请选择锁仓起始月份";
+    }
+    if (!periodMonth || !(periodMonth > 0)) {
+      inputErrors.periodMonth = "请输入锁仓间隔月份";
+    }
+    if (perLockAmount) {
+      try {
+        let _amount = CurrencyAmount.ether(ethers.utils.parseEther(perLockAmount).toBigInt());
+        if (!_amount.greaterThan(ZERO)) {
+          inputErrors.perLockAmount = "请输入有效的数量";
+        }
+      } catch (error) {
+        inputErrors.perLockAmount = "请输入正确的数量";
+      }
+    }
+    if (inputErrors.perLockAmount || inputErrors.lockTimes || inputErrors.startLockMonth || inputErrors.periodMonth) {
+      setInputErrors({ ...inputErrors })
+      return;
+    }
+    goNextCallback(params);
+  }, [activeAccount, maxBalance, params, totalLockAmount]);
 
   useEffect(() => {
-    const DEFAULT_MONTHS = 12;
-    const { totalLockAmount, perLockAmount } = params;
-    if (totalLockAmount && !perLockAmount) {
-      //
-      const JSBI_TotalLockAmount = JSBI.BigInt(
-        ethers.utils.parseEther(totalLockAmount)
-      )
-      const JSBI_PerLockAmount = JSBI.divide(JSBI_TotalLockAmount, JSBI.BigInt(DEFAULT_MONTHS));
-      console.log("PerLockAmount ==", JSBI_PerLockAmount.toString());
-    }
-    if (!totalLockAmount && perLockAmount) {
-      console.log("try to acculate totalLockAmount")
-    }
-    if (totalLockAmount && perLockAmount) {
-
+    const { perLockAmount, lockTimes } = params;
+    if (perLockAmount && lockTimes && lockTimes > 0) {
+      try {
+        const JSBI_PerLockAmount = JSBI.BigInt(ethers.utils.parseEther(perLockAmount).toString());
+        const JSBI_TotalLockAmount = JSBI.multiply(JSBI_PerLockAmount, JSBI.BigInt(lockTimes));
+        const totalLockAmount = CurrencyAmount.ether(JSBI_TotalLockAmount);
+        setTotalLockAmount(totalLockAmount.toExact())
+      } catch (err: any) {
+        setTotalLockAmount("0")
+      }
     }
   }, [params]);
 
   return <>
     <div style={{ minHeight: "300px" }}>
-      <br />
-
       <Row >
         <Col span={14}>
           <Text strong>每次锁仓数量</Text>
@@ -116,29 +178,28 @@ export default ({
         }
       </Row>
       <br />
-
       <Row >
         <Col span={14}>
           <Text strong>合计锁仓次数</Text>
           <br />
           <Space.Compact style={{ width: '100%' }}>
-            <Input size="large" onChange={(_input) => {
-              const perLockAmountInputValue = _input.target.value;
+            <Input value={params.lockTimes} size="large" onChange={(_input) => {
+              const lockTimesInputValue = _input.target.value;
               setInputErrors({
                 ...inputErrors,
-                perLockAmount: undefined
+                lockTimes: undefined
               })
               setParams({
                 ...params,
-                perLockAmount: perLockAmountInputValue
+                lockTimes: Number(lockTimesInputValue)
               })
-            }} placeholder="输入每次锁仓数量" />
+            }} placeholder="输入合计锁仓次数" />
           </Space.Compact>
         </Col>
         <Col span={10}>
         </Col>
         {
-          inputErrors?.perLockAmount && <Alert style={{ marginTop: "5px" }} type="error" showIcon message={inputErrors.perLockAmount} />
+          inputErrors?.lockTimes && <Alert style={{ marginTop: "5px" }} type="error" showIcon message={inputErrors.lockTimes} />
         }
       </Row>
 
@@ -147,40 +208,17 @@ export default ({
         <Col span={14}>
           <Text strong>锁仓总数量</Text>
           <br />
-          <Space.Compact style={{ width: '100%' }}>
-            <Input size="large" value={params.totalLockAmount} onChange={(_input) => {
-              const totalLockAmountInputValue = _input.target.value;
-              setInputErrors({
-                ...inputErrors,
-                totalLockAmount: undefined
-              })
-              setParams({
-                ...params,
-                totalLockAmount: totalLockAmountInputValue
-              })
-            }} placeholder="输入数量" />
-            <Button size="large" onClick={() => {
-              setInputErrors({
-                ...inputErrors,
-                totalLockAmount: undefined
-              })
-              setParams({
-                ...params,
-                totalLockAmount: maxBalance.toFixed(18)
-              })
-            }}>最大</Button>
-          </Space.Compact>
+          <Text strong style={{ float: "left", fontSize: "18px", lineHeight: "36px" }}>
+            {totalLockAmount} SAFE
+          </Text>
         </Col>
         <Col span={10}>
           <Text style={{ float: "right" }} strong>可用数量</Text>
           <br />
-          <Text style={{ float: "right", fontSize: "18px", lineHeight: "36px" }}>
+          <Text type="secondary" style={{ float: "right", fontSize: "18px", lineHeight: "36px" }}>
             {activeAccountETHBalance?.toFixed(6)}
           </Text>
         </Col>
-        {
-          inputErrors?.totalLockAmount && <Alert style={{ marginTop: "5px" }} type="error" showIcon message={inputErrors.totalLockAmount} />
-        }
       </Row>
 
       <Divider />
@@ -232,6 +270,12 @@ export default ({
           inputErrors?.periodMonth && <Alert style={{ marginTop: "5px" }} type="error" showIcon message={inputErrors.periodMonth} />
         }
       </Row>
+
+      <Row style={{ marginTop: "10px" }}>
+        <BatchLockAert batchLockParams={params} />
+      </Row>
+
+
       <Divider />
       <Row style={{ width: "100%", textAlign: "right" }}>
         <Col span={24}>
