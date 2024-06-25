@@ -3,14 +3,12 @@ import { Button, Col, Divider, Input, Modal, Row, Typography, Space, Alert } fro
 import { useETHBalances, useWalletsActiveAccount } from "../../../../state/wallets/hooks";
 import { CurrencyAmount, JSBI } from "@uniswap/sdk";
 import { ethers } from "ethers";
-import type { DatePickerProps } from 'antd';
 import { DatePicker } from 'antd';
 import locale from 'antd/es/date-picker/locale/zh_CN';
 import 'dayjs/locale/zh-cn';
 import { RangePickerProps } from "antd/es/date-picker";
 import dayjs from "dayjs";
 import { DateFormat, GetNextMonth } from "../../../../utils/DateUtils";
-import { formatEther } from "ethers/lib/utils";
 
 const { Text } = Typography;
 
@@ -26,7 +24,8 @@ export interface BatchLockParams {
   perLockAmount: string,
   lockTimes: number,
   startLockMonth: string,
-  periodMonth: number
+  periodMonth: number,
+  toAddress: string
 }
 
 export function BatchLockAert({
@@ -51,7 +50,7 @@ export function BatchLockAert({
     <Row>
       <Col span={24}>
         <Text>
-          自 <Text strong>{startLockMonth}</Text> 开始,
+          自 <Text strong>{startLockMonth}-01</Text> 开始,
           每间隔 <Text strong>{periodMonth}</Text> 个月,
           每次解锁 <Text strong>{_perLockAmount} </Text> SAFE
         </Text>
@@ -70,7 +69,7 @@ export function BatchLockAert({
 export default ({
   goNextCallback
 }: {
-  goNextCallback: ({}:BatchLockParams) => void
+  goNextCallback: ({ }: BatchLockParams) => void
 }) => {
 
   const activeAccount = useWalletsActiveAccount();
@@ -89,24 +88,27 @@ export default ({
     perLockAmount: "",
     lockTimes: 36,
     startLockMonth: GetNextMonth(),
-    periodMonth: 1
+    periodMonth: 1,
+    toAddress: activeAccount
   });
   const [inputErrors, setInputErrors] = useState<{
     lockTimes: string | undefined,
     perLockAmount: string | undefined,
     startLockMonth: string | undefined,
     periodMonth: string | undefined,
+    toAddress: string | undefined,
   }>({
     lockTimes: undefined,
     perLockAmount: undefined,
     startLockMonth: undefined,
     periodMonth: undefined,
+    toAddress: undefined
   });
   const [totalLockAmount, setTotalLockAmount] = useState<string>("0");
 
   const goNext = useCallback(() => {
 
-    const { perLockAmount, lockTimes, startLockMonth, periodMonth } = params;
+    const { perLockAmount, lockTimes, startLockMonth, periodMonth, toAddress } = params;
 
     if (!perLockAmount) {
       inputErrors.perLockAmount = "请输入每次锁仓数量";
@@ -116,6 +118,9 @@ export default ({
     }
     if (!startLockMonth) {
       inputErrors.lockTimes = "请选择锁仓起始月份";
+    }
+    if (!toAddress || !ethers.utils.isAddress(toAddress)) {
+      inputErrors.toAddress = "请输入锁仓地址";
     }
     if (!periodMonth || !(periodMonth > 0)) {
       inputErrors.periodMonth = "请输入锁仓间隔月份";
@@ -130,7 +135,7 @@ export default ({
         inputErrors.perLockAmount = "请输入正确的数量";
       }
     }
-    if (inputErrors.perLockAmount || inputErrors.lockTimes || inputErrors.startLockMonth || inputErrors.periodMonth) {
+    if (inputErrors.perLockAmount || inputErrors.lockTimes || inputErrors.startLockMonth || inputErrors.periodMonth || inputErrors.toAddress) {
       setInputErrors({ ...inputErrors })
       return;
     }
@@ -221,9 +226,31 @@ export default ({
         </Col>
       </Row>
 
+      <br />
+      <Row >
+        <Col span={24}>
+          <Text strong>锁仓地址</Text>
+          <br />
+          <Input value={params.toAddress} size="large" onChange={(_input) => {
+            const toInputValue = _input.target.value;
+            setParams({
+              ...params,
+              toAddress: toInputValue
+            });
+            setInputErrors({
+              ...inputErrors,
+              toAddress: undefined
+            })
+          }} placeholder="输入锁仓地址"></Input>
+        </Col>
+        {
+          inputErrors?.toAddress && <Alert style={{ marginTop: "5px" }} type="error" showIcon message={inputErrors.toAddress} />
+        }
+      </Row>
+
       <Divider />
 
-      <Row >
+      <Row>
         <Col span={14}>
           <Text strong>锁仓起始月份</Text>
           <br />

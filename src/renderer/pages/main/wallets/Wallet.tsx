@@ -44,7 +44,7 @@ export default () => {
   const [openKeystoreModal, setOpenKeystoreModal] = useState<boolean>(false);
 
   const [openSendModal, setOpenSendModal] = useState<boolean>(false);
-  const [openLockModal, setOpenLockMoal] = useState<boolean>(true);
+  const [openLockModal, setOpenLockMoal] = useState<boolean>(false);
   const [openEditNameModal , setOpenEditNameModal] = useState<boolean>(false);
 
   const tabItems: TabsProps['items'] = [

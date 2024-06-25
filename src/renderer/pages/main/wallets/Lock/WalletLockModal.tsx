@@ -29,7 +29,7 @@ export default ({
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const [step, setStep] = useState(STEP_INPUT);
-  const [lockType, setLockType] = useState<LockType>(LockType.Batch);
+  const [lockType, setLockType] = useState<LockType>(LockType.Normal);
 
   const initInputParams = {
     normalLockParams: {
@@ -76,18 +76,6 @@ export default ({
     ]
 
   }, [step , lockType]);
-
-  // const items: TabsProps['items'] = [
-  //   {
-  //     key: LockType.Normal,
-  //     label: '锁仓',
-
-  //   },
-  //   {
-  //     key: LockType.Batch,
-  //     label: '批量锁仓'
-  //   },
-  // ];
 
   return <>
     <Modal footer={null} title={<>

@@ -8,6 +8,8 @@ import { useAccountManagerContract } from "../../../../hooks/useContracts";
 import useTransactionResponseRender from "../../../components/useTransactionResponseRender";
 import { BatchLockAert, BatchLockParams } from "./WalletBatchLockModal-Input";
 import { CurrencyAmount, JSBI } from "@uniswap/sdk";
+import { GetDiffInDays } from "../../../../utils/DateUtils";
+import AddressComponent from "../../../components/AddressComponent";
 const { Text, Link } = Typography;
 
 export default ({
@@ -15,7 +17,6 @@ export default ({
   close, setTxHash
 }: {
   batchLockParams: BatchLockParams
-  lockDay: number,
   close: () => void,
   setTxHash: (txHash: string) => void
 }) => {
@@ -31,38 +32,43 @@ export default ({
   } = useTransactionResponseRender();
 
   const totalLockAmount = useMemo(() => {
-    const { perLockAmount , lockTimes } = batchLockParams;
+    const { perLockAmount, lockTimes } = batchLockParams;
     const JSBI_PerLockAmount = JSBI.BigInt(ethers.utils.parseEther(perLockAmount).toString());
     const JSBI_TotalLockAmount = JSBI.multiply(JSBI_PerLockAmount, JSBI.BigInt(lockTimes));
     return CurrencyAmount.ether(JSBI_TotalLockAmount).toExact();
   }, [batchLockParams])
 
-  const doBatchLockTransaction = useCallback(({
-    to
-  }: {
-    to: string,
-  }) => {
+  const doBatchLockTransaction = useCallback(() => {
     if (accountManaggerContract) {
+      const { startLockMonth, periodMonth, lockTimes, perLockAmount, toAddress } = batchLockParams;
+      const _startDay = GetDiffInDays(new Date(`${startLockMonth}-01`));
+      const _spaceDay = periodMonth * 30;
+      const _times = lockTimes;
+      const JSBI_PerLockAmount = JSBI.BigInt(ethers.utils.parseEther(perLockAmount).toString());
+      const JSBI_TotalLockAmount = JSBI.multiply(JSBI_PerLockAmount, JSBI.BigInt(lockTimes));
+      /**
+       * batchDeposit(address _to, uint _times, uint _spaceDay, uint _startDay)
+       */
       setSending(true);
-      // accountManaggerContract.deposit(to, lockDay, {
-      //   value: ethers.utils.parseEther(amount),
-      // }).then((response: any) => {
-      //   const { hash, data } = response;
-      //   setTransactionResponse(response);
-      //   addTransaction({ to: accountManaggerContract.address }, response, {
-      //     call: {
-      //       from: activeAccount,
-      //       to: accountManaggerContract.address,
-      //       input: data,
-      //       value: ethers.utils.parseEther(amount).toString()
-      //     }
-      //   });
-      //   setTxHash(hash);
-      //   setSending(false);
-      // }).catch((err: any) => {
-      //   setSending(false);
-      //   setErr(err)
-      // })
+      accountManaggerContract.batchDeposit4One(toAddress, _times, _spaceDay, _startDay, {
+        value: JSBI_TotalLockAmount.toString(),
+      }).then((response: any) => {
+        const { hash, data } = response;
+        setTransactionResponse(response);
+        addTransaction({ to: accountManaggerContract.address }, response, {
+          call: {
+            from: activeAccount,
+            to: accountManaggerContract.address,
+            input: data,
+            value: JSBI_TotalLockAmount.toString()
+          }
+        });
+        setTxHash(hash);
+        setSending(false);
+      }).catch((err: any) => {
+        setSending(false);
+        setErr(err)
+      })
     }
   }, [activeAccount, accountManaggerContract, batchLockParams]);
 
@@ -73,7 +79,9 @@ export default ({
       }
       <Row >
         <Col span={24}>
-          <LockOutlined style={{ fontSize: "32px" }} />
+          {
+            activeAccount == batchLockParams.toAddress && <LockOutlined style={{ fontSize: "32px" }} />
+          }
           <Text style={{ fontSize: "32px" }} strong>{totalLockAmount} SAFE</Text>
         </Col>
       </Row>
@@ -84,7 +92,14 @@ export default ({
           <Text type="secondary">从</Text>
         </Col>
         <Col span={24} style={{ paddingLeft: "5px" }} >
-          <Text>普通账户</Text>
+          {
+            activeAccount == batchLockParams.toAddress && <Text>普通账户</Text>
+          }
+          {
+            activeAccount != batchLockParams.toAddress && <>
+              <AddressComponent address={activeAccount} />
+            </>
+          }
         </Col>
       </Row>
       <br />
@@ -93,7 +108,14 @@ export default ({
           <Text type="secondary">到</Text>
         </Col>
         <Col span={24} style={{ paddingLeft: "5px" }} >
-          <Text>锁仓账户</Text>
+          {
+            activeAccount == batchLockParams.toAddress && <Text>锁仓账户</Text>
+          }
+          {
+            activeAccount != batchLockParams.toAddress && <>
+              <AddressComponent address={batchLockParams.toAddress} />
+            </>
+          }
         </Col>
       </Row>
       <Divider />
@@ -107,9 +129,7 @@ export default ({
         <Col span={24}>
           {
             !sending && !render && <Button onClick={() => {
-              doBatchLockTransaction({
-                to: activeAccount
-              })
+              doBatchLockTransaction()
             }} disabled={sending} type="primary" style={{ float: "right" }}>
               广播交易
             </Button>

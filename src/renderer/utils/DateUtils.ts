@@ -35,6 +35,16 @@ export function GetNextMonth(): string {
   return `${year}-${formattedMonth}`;
 }
 
+export function GetDiffInDays( targetDate : Date , date ?: Date ){
+  let now = new Date();
+  now = date ? date : now;
+  // 计算两个日期之间的毫秒差
+  const diffInMilliseconds = targetDate.getTime() - now.getTime();
+  // 将毫秒差转换为天数
+  const diffInDays = Math.ceil(diffInMilliseconds / (1000 * 60 * 60 * 24));
+  return diffInDays;
+}
+
 export function DateTimeFormat(date: Date | number, pattern?: string) {
   pattern = pattern ?? DateTime_Format_Pattern;
   return format(date instanceof Number ? new Date(date) : date, pattern);
