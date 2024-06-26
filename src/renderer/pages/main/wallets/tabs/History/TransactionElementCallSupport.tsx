@@ -12,6 +12,7 @@ import TransactionElementCallMNAppend from "./TransactionElementCallMNAppend";
 import TransactionElementCallProposalVote from "./TransactionElementCallProposalVote";
 import TransactionElementCallProposalCreate from "./TransactionElementCallProposalCreate";
 import TransactionElementCallSafe3Redeem from "./TransactionElementCallSafe3Redeem";
+import TransactionELementCallAMBatchDeposit from "./TransactionElementCallAMBatchDeposit"
 
 export default ({ transaction, setClickTransaction, support }: {
   transaction: TransactionDetails,
@@ -149,6 +150,12 @@ export default ({ transaction, setClickTransaction, support }: {
         />
       case SupportAccountManagerFunctions.Withdraw:
         return <TransactionElementCallAMWithdraw
+          transaction={transaction}
+          setClickTransaction={setClickTransaction}
+          support={support}
+        />
+      case SupportAccountManagerFunctions.BatchDeposit4One:
+        return <TransactionELementCallAMBatchDeposit
           transaction={transaction}
           setClickTransaction={setClickTransaction}
           support={support}

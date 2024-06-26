@@ -6,6 +6,7 @@ export enum SupportAccountManagerFunctions {
   Deposit = "deposit",              // function deposit(address _to, uint _lockDay) external payable returns (uint);
   WithdrawByID = "withdrawByID",    // function withdrawByID(uint[] memory _ids) external returns(uint);
   Withdraw = "withdraw",            // function withdraw() external returns (uint);
+  BatchDeposit4One = "batchDeposit4One" // function batchDeposit4One(address _to, uint _times, uint _spaceDay, uint _startDay)
 }
 export enum SupportSupernodeLogicFunctions {
   Register = "register",            // function register(bool _isUnion, address _addr, uint _lockDay, string memory _name, string memory _enode, string memory _description, uint _creatorIncentive, uint _partnerIncentive, uint _voterIncentive) external payable;
@@ -173,6 +174,16 @@ function decodeAccountManagerFunctionData(
     case SupportAccountManagerFunctions.Withdraw:
       formatDecodeResult = {
 
+      }
+      break;
+    case SupportAccountManagerFunctions.BatchDeposit4One:
+      const batchDeposit4One = IContract.decodeFunctionData(fragment, input);
+      // function batchDeposit4One(address _to, uint _times, uint _spaceDay, uint _startDay)
+      formatDecodeResult = {
+        _to: batchDeposit4One[0],
+        _times: batchDeposit4One[1].toNumber(),
+        _spaceDay : batchDeposit4One[2].toNumber(),
+        _startDay : batchDeposit4One[3].toNumber()
       }
       break;
     default:

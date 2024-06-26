@@ -5,7 +5,6 @@ import EtherAmount from "../../../../../utils/EtherAmount";
 import { useWalletsActiveAccount } from "../../../../../state/wallets/hooks";
 import { useMemo } from "react";
 
-
 const { Text } = Typography;
 
 export default ({
@@ -16,24 +15,16 @@ export default ({
   value: string | undefined,
   status: number | undefined
 }) => {
-
   const activeAccount = useWalletsActiveAccount();
 
-  const { lockIntoItSelf, lockIn, lockOut } = useMemo(() => {
-
-    return {
-      lockIntoItSelf: from == activeAccount && to == activeAccount,
-      lockIn: from != activeAccount && to == activeAccount,
-      lockOut: from == activeAccount && to != activeAccount
-    }
+  const lockIntoItSelf = useMemo(() => {
+    return to == activeAccount;
   }, [to, activeAccount]);
-
-
 
   return <>
     <TransactionElementTemplate
       icon={<LockOutlined style={{ color: "black" }} />}
-      title="锁仓"
+      title="批量锁仓"
       status={status}
       description={to}
       assetFlow={<>
@@ -44,14 +35,7 @@ export default ({
           </Text>
         }
         {
-          !lockIntoItSelf && lockOut && <Text strong> <>- {value && EtherAmount({ raw: value })} SAFE</> </Text>
-        }
-        {
-          !lockIntoItSelf && lockIn &&
-          <Text type="secondary" strong>
-            <LockOutlined style={{ marginRight: "5px" }} />
-            <Text type="success" strong>+{value && EtherAmount({ raw: value, fix: 18 })} SAFE</Text>
-          </Text>
+          !lockIntoItSelf && <Text strong> <>- {value && EtherAmount({ raw: value })} SAFE</> </Text>
         }
       </>}
     />
