@@ -1,5 +1,5 @@
 import { createReducer } from "@reduxjs/toolkit"
-import { addTransaction, checkedTransaction, finalizeTransaction, loadTransactionsAndUpdateAddressActivityFetch, refreshAddressTimeNodeReward, reloadTransactionsAndSetAddressActivityFetch } from "./actions"
+import { addTransaction, checkedTransaction, clearAllTransactions, finalizeTransaction, loadTransactionsAndUpdateAddressActivityFetch, refreshAddressTimeNodeReward, reloadTransactionsAndSetAddressActivityFetch } from "./actions"
 import { IPC_CHANNEL } from "../../config"
 import { DBAddressActivitySignal, DB_AddressActivity_Actions, DB_AddressActivity_Methods } from "../../../main/handlers/DBAddressActivitySingalHandler"
 import { TimeNodeRewardVO } from "../../services"
@@ -7,7 +7,7 @@ import { TimeNodeRewardVO } from "../../services"
 const now = () => new Date().getTime()
 
 export interface SerializableTransactionReceipt {
-  chainId : number,
+  chainId: number,
   from: string
   to: string
   contractAddress: string
@@ -19,7 +19,7 @@ export interface SerializableTransactionReceipt {
 }
 
 export interface TransactionDetails {
-  chainId ?: number,
+  chainId?: number,
   hash: string,
   refFrom: string,
   refTo?: string,
@@ -75,7 +75,7 @@ export interface ContractCall {
   to: string,
   input: string,
   value: string,
-  type ?:string
+  type?: string
 }
 
 export interface Transfer {
@@ -110,10 +110,10 @@ export interface TransactionState {
 
 export const initialState: {
   transactions: TransactionState,
-  addressActivityFetch?: AddressActivityFetch ,
+  addressActivityFetch?: AddressActivityFetch,
 
-  nodeRewards ?: {
-    [address : string] : TimeNodeRewardVO[]
+  nodeRewards?: {
+    [address: string]: TimeNodeRewardVO[]
   }
 
 } = {
@@ -123,7 +123,7 @@ export const initialState: {
 export default createReducer(initialState, (builder) => {
 
   builder
-    .addCase(addTransaction, ({ transactions }, { payload: { hash, refFrom, refTo, transfer, call, withdrawAmount , chainId } }) => {
+    .addCase(addTransaction, ({ transactions }, { payload: { hash, refFrom, refTo, transfer, call, withdrawAmount, chainId } }) => {
       if (transactions[hash]) {
         throw Error('Attempted to add existing transaction.')
       }
@@ -131,8 +131,8 @@ export default createReducer(initialState, (builder) => {
       txs[hash] = {
         hash, refFrom, refTo,
         addedTime: now(),
-        transfer, call, withdrawAmount ,
-        action : call?.type ,
+        transfer, call, withdrawAmount,
+        action: call?.type,
         chainId
       }
       window.electron.ipcRenderer.sendMessage(IPC_CHANNEL,
@@ -143,10 +143,7 @@ export default createReducer(initialState, (builder) => {
       transactions = txs
     })
 
-    // .addCase(clearAllTransactions, (transactions, { payload }) => {
-    //   if (!transactions) return
-    //   transactions = {}
-    // })
+
 
     .addCase(checkedTransaction, ({ transactions }, { payload: { hash, blockNumber } }) => {
       const tx = transactions[hash]
@@ -195,17 +192,22 @@ export default createReducer(initialState, (builder) => {
       }
     })
 
-    .addCase( refreshAddressTimeNodeReward , ( state , { payload : { chainId , address , nodeRewards } } ) => {
-      if ( !state.nodeRewards ){
+    .addCase(refreshAddressTimeNodeReward, (state, { payload: { chainId, address, nodeRewards } }) => {
+      if (!state.nodeRewards) {
         state.nodeRewards = {};
       }
       state.nodeRewards[address] = nodeRewards;
     })
 
+    .addCase(clearAllTransactions, ( state , { payload }) => {
+      if (!state.transactions) return
+      state.transactions = {}
+    })
+
 })
 
 export function Transaction2Activity(txn: TransactionDetails) {
-  const { chainId , hash, refFrom, refTo, addedTime, transfer, call } = txn;
+  const { chainId, hash, refFrom, refTo, addedTime, transfer, call } = txn;
   const { action, data } = call ? {
     action: call.type ? call.type : DB_AddressActivity_Actions.Call,
     data: JSON.stringify(call)

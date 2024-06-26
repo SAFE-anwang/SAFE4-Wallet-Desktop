@@ -10,6 +10,7 @@ export enum DB_AddressActivity_Methods {
   updateActivity = "updateActivity",
   loadActivities = "loadActivities",
   saveOrUpdateActivities = "saveOrupdateActivities",
+  deleteAddressActivities = "DeleteAddressActivieis",
 }
 
 export enum DB_AddressActivity_Actions {
@@ -25,7 +26,6 @@ export enum DB_AddressActivity_Actions {
   AM_Deposit = "AccountManager:SafeDeposit",
   AM_Withdraw = "AccountManager:SafeWithdraw",
   AM_Transfer = "AccountManager:SafeTransfer",
-
   SystemReward = "SystemReward:"
 }
 
@@ -61,31 +61,31 @@ export class DBAddressActivitySingalHandler implements ListenSignalHandler {
       })
   }
 
-  private updateChainId(){
-    this.db.all( "PRAGMA table_info(address_activities)" , [] , ( err:any , rows:any ) => {
+  private updateChainId() {
+    this.db.all("PRAGMA table_info(address_activities)", [], (err: any, rows: any) => {
       let chainIdExists = false;
-      rows.forEach( (row : any) => {
-        if ( row.name == "chain_id" ){
+      rows.forEach((row: any) => {
+        if (row.name == "chain_id") {
           chainIdExists = true;
         }
       });
-      if ( !chainIdExists ){
+      if (!chainIdExists) {
         console.log("[sqlite3] address_activities.chain_id not exists.")
-        this.db.run( "ALTER TABLE address_activities ADD chain_id INTEGER" , ( err : any ) => {
-          if ( !err ){
+        this.db.run("ALTER TABLE address_activities ADD chain_id INTEGER", (err: any) => {
+          if (!err) {
             // 更新chain_id字段为 测试链数据.
-            this.db.run( "UPDATE address_activities SET chain_id = ?" , [6666666] , ( err : any ) => {
-              if ( !err ){
+            this.db.run("UPDATE address_activities SET chain_id = ?", [6666666], (err: any) => {
+              if (!err) {
                 console.log("[sqlite3] address_activities.chain_id update success..");
-              }else{
-                console.log("[sqlite3] address_activities.chain_id update testchain_id error:" , err)
+              } else {
+                console.log("[sqlite3] address_activities.chain_id update testchain_id error:", err)
               }
             })
-          }else{
-            console.log("[sqlite3] address_activities.chain_id update error:" , err)
+          } else {
+            console.log("[sqlite3] address_activities.chain_id update error:", err)
           }
         });
-      }else{
+      } else {
         console.log("[sqlite3] address_activities.chain_id exists,not need to update.")
       }
     })
@@ -111,27 +111,30 @@ export class DBAddressActivitySingalHandler implements ListenSignalHandler {
         event.reply(Channel, [this.getSingal(), method, [rows]])
       });
     } else if (DB_AddressActivity_Methods.saveOrUpdateActivities == method) {
-      const [ addressActivities , chainId ] = params;
-      this.saveOrUpdateActivities(addressActivities , chainId)
+      const [addressActivities, chainId] = params;
+      this.saveOrUpdateActivities(addressActivities, chainId)
+    } else if (DB_AddressActivity_Methods.deleteAddressActivities == method){
+      const [ address , chainId ] = params;
+      this.deleteAddressActivities( address , chainId );
     }
   }
 
   private saveActivity(activity: any) {
-    const { hash, refFrom, refTo, action, data, addedTime,chainId } = activity;
+    const { hash, refFrom, refTo, action, data, addedTime, chainId } = activity;
     this.db.run(
       "INSERT INTO Address_Activities(transaction_hash,ref_from,ref_to,action,data,added_time,chain_id) VALUES(?,?,?,?,?,?,?)",
-      [hash, refFrom, refTo, action, data, addedTime,chainId],
+      [hash, refFrom, refTo, action, data, addedTime, chainId],
       (err: any) => {
         if (err) {
           console.log("Insert into Address_Activities err:", err, activity);
           return;
         }
-        console.log("Insert into Address_Activities successed:", activity)
+        console.log("Insert into Address_Activities successed");
       });
   }
 
   private updateActivity(receipt: {
-    chainId : number,
+    chainId: number,
     from: string
     to: string
     contractAddress: string
@@ -141,10 +144,10 @@ export class DBAddressActivitySingalHandler implements ListenSignalHandler {
     blockNumber: number
     status?: number
   }) {
-    const { transactionHash, blockNumber, status , chainId } = receipt;
+    const { transactionHash, blockNumber, status, chainId } = receipt;
     this.db.run(
       "UPDATE Address_Activities SET status = ? , block_number = ? WHERE chain_id = ? AND transaction_hash = ? ",
-      [status, blockNumber, chainId , transactionHash],
+      [status, blockNumber, chainId, transactionHash],
       (err: any) => {
         if (err) {
           console.log("Update Activities Error:", err);
@@ -172,7 +175,20 @@ export class DBAddressActivitySingalHandler implements ListenSignalHandler {
     )
   }
 
-  private saveOrUpdateActivities(addressActivities: AddressActivityVO[] , chainId : number) {
+  private deleteAddressActivities(address: string , chainId : number) {
+    this.db.run(
+      "DELETE FROM address_activities WHERE (ref_from = ? or ref_to = ?) AND chain_id = ?",
+      [address, address , chainId ],
+      ( err : any , rows : any ) => {
+        if ( err ){
+          console.log(`Delete ${address}.activities Error:` , err);
+        }else{
+          console.log(`Delete ${address}.activities Success.` , rows)
+        }
+      });
+  }
+
+  private saveOrUpdateActivities(addressActivities: AddressActivityVO[], chainId: number) {
     console.log("saveorupdate transactions.. >>", addressActivities.length)
     for (let i in addressActivities) {
       const {
@@ -180,7 +196,7 @@ export class DBAddressActivitySingalHandler implements ListenSignalHandler {
       } = addressActivities[i];
       this.db.all(
         "SELECT * FROM Address_Activities WHERE action = ? AND event_log_index = ? AND transaction_hash = ?",
-        [action,eventLogIndex , transactionHash],
+        [action, eventLogIndex, transactionHash],
         (err: any, rows: any) => {
           if (err) {
             return;
@@ -190,7 +206,7 @@ export class DBAddressActivitySingalHandler implements ListenSignalHandler {
             // do save
             this.db.run(
               "INSERT INTO Address_Activities(block_number,transaction_hash,event_log_index,timestamp,status,ref_from,ref_to,action,data,chain_id) VALUES(?,?,?,?,?,?,?,?,?,?)",
-              [blockNumber, transactionHash, eventLogIndex, timestamp, status, refFrom, refTo, action, JSON.stringify(data),chainId],
+              [blockNumber, transactionHash, eventLogIndex, timestamp, status, refFrom, refTo, action, JSON.stringify(data), chainId],
               (err: any) => {
                 if (err) {
                   console.log("save error:", err)
@@ -202,7 +218,7 @@ export class DBAddressActivitySingalHandler implements ListenSignalHandler {
             console.log("update activity txhash=", transactionHash)
             this.db.run(
               "UPDATE Address_Activities Set timestamp = ? , event_log_index = ? WHERE action = ? AND transaction_hash = ? AND event_log_index = ?",
-              [timestamp, eventLogIndex , action, transactionHash],
+              [timestamp, eventLogIndex, action, transactionHash],
               (err: any) => {
                 if (err) {
                   console.log("update error!!!")

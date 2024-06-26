@@ -1,4 +1,4 @@
-import { List, Typography, Modal, Divider, Switch, Row, Col } from "antd";
+import { List, Typography, Modal, Divider, Switch, Row, Col, Button, Tooltip } from "antd";
 import TransactionElement from "./TransactionElement";
 import { useEffect, useState } from "react";
 import TransactionDetailsView from "./TransactionDetailsView";
@@ -19,6 +19,8 @@ import { AddressAnalyticVO } from "../../../../../services";
 import { TimestampTheStartOf } from "../../../../../utils/DateUtils";
 import { TimeNodeRewardSignal, TimeNodeReward_Methods } from "../../../../../../main/handlers/TimeNodeRewardHandler";
 import useSafeScan from "../../../../../hooks/useSafeScan";
+import { DeleteOutlined } from "@ant-design/icons";
+import ClearHistoryConfirmModal from "./ClearHistoryConfirmModal";
 
 const { Text } = Typography;
 
@@ -32,7 +34,12 @@ export default () => {
   const dispatch = useDispatch();
   const latestBlockNumber = useBlockNumber();
   const addressActivityFetch = useSelector<AppState, AddressActivityFetch | undefined>(state => state.transactions.addressActivityFetch);
-  const { URL , API } = useSafeScan();
+  const { URL, API } = useSafeScan();
+
+  const [openClearHistoryModal , setOpenClearHistoryModal] = useState<boolean>(false);
+
+  const [reloadHistory , setReloadHistory] = useState<boolean>(false);
+
 
   useEffect(() => {
     const addressActivtiesLoadActivities = DB_AddressActivity_Methods.loadActivities;
@@ -60,6 +67,7 @@ export default () => {
             }
             return Activity2Transaction(row);
           });
+          console.log("dbStoredRange ::" , dbStoredRange);
           dispatch(reloadTransactionsAndSetAddressActivityFetch({
             txns,
             addressActivityFetch: {
@@ -67,7 +75,7 @@ export default () => {
               blockNumberStart: dbStoredRange.end,
               blockNumberEnd: latestBlockNumber == 0 ? 99999999 : latestBlockNumber,
               current: 1,
-              pageSize: 200,
+              pageSize: 500,
               status: 0,
               dbStoredRange
             }
@@ -95,7 +103,7 @@ export default () => {
             nodeRewards: dbTimeNodeRewards
           }));
           // 远程访问浏览器接口,获取新的数据
-          fetchAddressAnalytic( API , { address: activeAccount.toLocaleLowerCase() })
+          fetchAddressAnalytic(API, { address: activeAccount.toLocaleLowerCase() })
             .then((data: AddressAnalyticVO) => {
               const nodeRewards = data.nodeRewards;
               console.log(`Query-API [${activeAccount}] Node Rewards : `, nodeRewards);
@@ -134,7 +142,6 @@ export default () => {
         }
       });
     }
-
   }, [activeAccount, chainId])
 
   const walletTab = useSelector<AppState, string | undefined>(state => state.application.control.walletTab);
@@ -147,10 +154,15 @@ export default () => {
 
   return <>
     <Row style={{ marginBottom: "20px" }}>
-      <Col span={24}>
+      <Col span={12}>
         <Switch checkedChildren="开启" unCheckedChildren="关闭" value={showNodeReward} style={{ float: "left" }}
           onChange={setShowNodeReward} />
         <Text style={{ marginLeft: "5px", float: "left" }}>显示挖矿奖励</Text>
+      </Col>
+      <Col span={12} style={{ textAlign: "right" }}>
+        <Tooltip title="清空该地址关联的历史记录,然后将自动从浏览器接口重新同步.">
+          <Button onClick={() => setOpenClearHistoryModal(true)} type="dashed" icon={<DeleteOutlined />}>清空记录</Button>
+        </Tooltip>
       </Col>
     </Row>
     {
@@ -193,6 +205,8 @@ export default () => {
       <Divider />
       {clickTransaction && <TransactionDetailsView transaction={clickTransaction} />}
     </Modal>
+
+    <ClearHistoryConfirmModal openClearHistoryModal={openClearHistoryModal} cancel={() => { setOpenClearHistoryModal(false) }}  />
 
   </>
 

@@ -1,9 +1,7 @@
 import { Tooltip, Typography } from "antd";
 import useWalletName, { isLocalWallet } from "../../hooks/useWalletName";
 import { WalletTwoTone } from "@ant-design/icons";
-
 const { Title, Text, Paragraph } = Typography;
-
 export default ({
   address,
   ellipsis,
@@ -16,7 +14,6 @@ export default ({
   const { isLocal, name } = isLocalWallet(address);
   const addressLabel = ellipsis ? address.substring(0, 10) + "..." + address.substring(address.length - 8) : address;
   return <div>
-    {isLocal}
     <Text style={{
       fontFamily: "SFMono-Regular,Menlo,Monaco,Consolas,\"Liberation Mono\",\"Courier New\",monospace",
       color: isLocal ? "#4780e1e0" : ""
