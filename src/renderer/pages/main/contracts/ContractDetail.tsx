@@ -62,7 +62,7 @@ export default () => {
     }
   }, [chainId, contractVO]);
 
-  const {API} = useSafeScan();
+  const {URL , API} = useSafeScan();
 
   useEffect(() => {
     if (contractVO) {
@@ -147,7 +147,7 @@ export default () => {
                     <Col span={24}>
                       <Text style={{ float: "left" }}>合约已通过源码验证,可在浏览器上查看合约源码了解合约执行内容.</Text>
                       <Button size='small' style={{ float: "right" }} onClick={() => {
-                        window.open(`${config.Safescan_URL}/address/${contractVO?.address}`)
+                        window.open(`${URL}/address/${contractVO?.address}`)
                       }} >
                         <Text type='success'>查看源码</Text>
                       </Button>

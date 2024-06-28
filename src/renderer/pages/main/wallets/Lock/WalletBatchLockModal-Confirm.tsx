@@ -47,7 +47,7 @@ export default ({
       const JSBI_PerLockAmount = JSBI.BigInt(ethers.utils.parseEther(perLockAmount).toString());
       const JSBI_TotalLockAmount = JSBI.multiply(JSBI_PerLockAmount, JSBI.BigInt(lockTimes));
       /**
-       * batchDeposit(address _to, uint _times, uint _spaceDay, uint _startDay)
+       * batchDeposit4One(address _to, uint _times, uint _spaceDay, uint _startDay)
        */
       setSending(true);
       accountManaggerContract.batchDeposit4One(toAddress, _times, _spaceDay, _startDay, {
