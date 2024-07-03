@@ -14,6 +14,8 @@ import AccountManagerSafeDeposit from "./AccountManagerSafeDeposit";
 import { DB_AddressActivity_Actions } from "../../../../../../main/handlers/DBAddressActivitySingalHandler";
 import TransactionElementCallSupport from "./TransactionElementCallSupport";
 import AccountManagerSafeWithdraw from "./AccountManagerSafeWithdraw";
+import SAFE_LOGO from "../../../../../assets/logo/SAFE.png";
+
 const { Text } = Typography;
 
 
@@ -24,13 +26,14 @@ export default ({ transaction, setClickTransaction }: {
   const {
     status,
     call,
-    accountManagerDatas
+    accountManagerDatas,
+    internalTransfers
   } = transaction;
-  const { from, to, value, input , action } = useMemo(() => {
+  const { from, to, value, input, action } = useMemo(() => {
     return {
       from: transaction.refFrom,
       to: transaction.refTo,
-      action : transaction.action,
+      action: transaction.action,
       value: call?.value,
       input: call?.input
     }
@@ -38,7 +41,7 @@ export default ({ transaction, setClickTransaction }: {
   const support = DecodeSupportFunction(call?.to, input);
 
   return <>
-    {/* <Text>{JSON.stringify(transaction)}</Text> */}
+    {/* <Text>{JSON.stringify(internalTransfers)}</Text> */}
     {
       support && <TransactionElementCallSupport transaction={transaction} setClickTransaction={setClickTransaction} support={support} />
     }
@@ -47,7 +50,7 @@ export default ({ transaction, setClickTransaction }: {
         <Row style={{ width: "100%" }}>
           <span style={{ width: "100%" }}>
             <TransactionElementTemplate status={status} icon={<FileDoneOutlined style={{ color: "black" }} />}
-              title={ action == "Create" ? "合约部署" : "合约调用" } description={call?.to} assetFlow={<Text strong> <>- {value && EtherAmount({ raw: value })} SAFE</> </Text>} />
+              title={action == "Create" ? "合约部署" : "合约调用"} description={call?.to} assetFlow={<Text strong> <>- {value && EtherAmount({ raw: value })} SAFE</> </Text>} />
           </span>
           {
             accountManagerDatas && Object
@@ -68,6 +71,27 @@ export default ({ transaction, setClickTransaction }: {
                 const accountManagerData = accountManagerDatas[eventLogIndex];
                 return <span style={{ width: "100%", marginTop: "20px" }}>
                   <AccountManagerSafeWithdraw from={accountManagerData.from} to={accountManagerData.to} value={accountManagerData.amount} status={1} />
+                </span>
+              })
+          }
+          {
+            internalTransfers && Object
+              .keys(internalTransfers)
+              .map(eventLogIndex => {
+                const internalTransfer = internalTransfers[eventLogIndex];
+                const { from, to, value } = internalTransfer;
+                return <span style={{ width: "100%", marginTop: "20px" }}>
+                  <TransactionElementTemplate
+                    icon={SAFE_LOGO}
+                    title="接收"
+                    status={status}
+                    description={from}
+                    assetFlow={<>
+                      <Text type="success" strong>
+                        +{value && EtherAmount({ raw: value, fix: 18 })} SAFE
+                      </Text>
+                    </>}
+                  />
                 </span>
               })
           }

@@ -49,6 +49,14 @@ export interface TransactionDetails {
     [eventLogIndex: string]: SystemRewardData
   }
   withdrawAmount?: string,
+
+  internalTransfers?: {
+    [eventLogIndex: string]: {
+      from: string,
+      to: string,
+      value: string
+    }
+  }
 }
 
 export interface SystemRewardData {
@@ -199,7 +207,7 @@ export default createReducer(initialState, (builder) => {
       state.nodeRewards[address] = nodeRewards;
     })
 
-    .addCase(clearAllTransactions, ( state , { payload }) => {
+    .addCase(clearAllTransactions, (state, { payload }) => {
       if (!state.transactions) return
       state.transactions = {}
     })
@@ -301,6 +309,17 @@ export function Activity2Transaction(row: any): TransactionDetails {
           }
         }
       }
+    case DB_AddressActivity_Actions.InternalTransfer:
+      return {
+        ...transaction,
+        internalTransfers: {
+          [transaction.eventLogIndex]: {
+            ...transaction.data,
+            action: transaction.action,
+            eventLogIndex: transaction.eventLogIndex
+          }
+        }
+      }
     case DB_AddressActivity_Actions.SystemReward:
       const _transaction =
       {
@@ -314,6 +333,7 @@ export function Activity2Transaction(row: any): TransactionDetails {
         }
       }
       return _transaction;
+
     default:
       return {
         ...transaction,
@@ -351,6 +371,15 @@ export function TransactionsCombine(transactions: TransactionState | undefined, 
             }
           });
           txns[tx.hash].systemRewardDatas = _systemRewardDatas;
+        }
+        if (tx.internalTransfers){
+          const _internalTransferDatas = txns[tx.hash].internalTransfers ? { ...txns[tx.hash].internalTransfers } : {};
+          Object.keys(tx.internalTransfers).forEach((eventLogIndex) => {
+            if (tx.internalTransfers) {
+              _internalTransferDatas[eventLogIndex] = tx.internalTransfers[eventLogIndex]
+            }
+          });
+          txns[tx.hash].internalTransfers = _internalTransferDatas;
         }
       }
     });
