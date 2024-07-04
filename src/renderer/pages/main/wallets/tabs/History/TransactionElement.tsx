@@ -5,8 +5,8 @@ import TransactionElementCall from "./TransactionElementCall";
 import { useWalletsActiveAccount } from "../../../../../state/wallets/hooks";
 import { TransactionDetails } from "../../../../../state/transactions/reducer";
 import TransactionElementSystemReward from "./TransactionElementSystemReward";
-import TransactionElementAM from "./TransactionElementAM";
 import TransactionElementInternalTransfer from "./TransactionElementInternalTransfer";
+import TransactionElements from "./TransactionElements";
 
 export default ({ transaction, setClickTransaction }: {
   transaction: TransactionDetails,
@@ -36,10 +36,7 @@ export default ({ transaction, setClickTransaction }: {
     if (!call && (accountManagerDatas || internalTransfers)) {
       return <>
         {
-          accountManagerDatas && <TransactionElementAM transaction={transaction} setClickTransaction={setClickTransaction} />
-        }
-        {
-          internalTransfers && <TransactionElementInternalTransfer transaction={transaction} setClickTransaction={setClickTransaction} />
+          <TransactionElements transaction={transaction} setClickTransaction={setClickTransaction} />
         }
       </>
     }

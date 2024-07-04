@@ -15,6 +15,7 @@ import { DB_AddressActivity_Actions } from "../../../../../../main/handlers/DBAd
 import TransactionElementCallSupport from "./TransactionElementCallSupport";
 import AccountManagerSafeWithdraw from "./AccountManagerSafeWithdraw";
 import AccountManagerSafeTransfer from "./AccountManagerSafeTransfer";
+import SAFE_LOGO from "../../../../../assets/logo/SAFE.png";
 const { Text } = Typography;
 
 
@@ -24,28 +25,60 @@ export default ({ transaction, setClickTransaction }: {
 }) => {
 
   const {
-    accountManagerDatas
+    accountManagerDatas,
+    internalTransfers,
   } = transaction;
 
-  const isFirstIndex = useCallback( ( eventLogIndex : string ) => {
-    if ( accountManagerDatas ){
+  const isFirstIndex = useCallback((eventLogIndex: string, type: string) => {
+
+    if ( internalTransfers && type != 'internal' ){
+      return false;
+    }
+    if (internalTransfers && type == 'internal') {
+      return Object.keys(internalTransfers).indexOf(eventLogIndex) == 0
+    }
+    if (!internalTransfers && accountManagerDatas && type == 'am'){
       return Object.keys(accountManagerDatas).indexOf(eventLogIndex) == 0
     }
     return false;
-  } , [accountManagerDatas])
+  }, [accountManagerDatas, internalTransfers])
 
   return <>
     {
       <List.Item onClick={() => { setClickTransaction(transaction) }} key={transaction.hash} className="history-element" style={{ paddingLeft: "15px", paddingRight: "15px" }}>
         <Row style={{ width: "100%" }}>
+
+          {
+            internalTransfers && Object
+              .keys(internalTransfers)
+              .map(eventLogIndex => {
+                const internalTransfer = internalTransfers[eventLogIndex];
+                const { from, to, value } = internalTransfer;
+                const marginTop = isFirstIndex(eventLogIndex, 'internal') ? "" : "20px";
+                return <span style={{ width: "100%", marginTop }}>
+                  <TransactionElementTemplate
+                    icon={SAFE_LOGO}
+                    title="接收"
+                    status={1}
+                    description={from}
+                    assetFlow={<>
+                      <Text type="success" strong>
+                        +{value && EtherAmount({ raw: value, fix: 18 })} SAFE
+                      </Text>
+                    </>}
+                  />
+                </span>
+              })
+          }
+
           {
             accountManagerDatas && Object
               .keys(accountManagerDatas)
               .filter(eventLogIndex => accountManagerDatas[eventLogIndex].action == DB_AddressActivity_Actions.AM_Deposit)
               .map(eventLogIndex => {
                 const accountManagerData = accountManagerDatas[eventLogIndex];
-                const marginTop = isFirstIndex(eventLogIndex) ? "" : "20px";
-                return <span style={{ width: "100%", marginTop}}>
+                const marginTop = isFirstIndex(eventLogIndex, "am") ? "" : "20px";
+                return <span style={{ width: "100%", marginTop }}>
                   <AccountManagerSafeDeposit from={accountManagerData.from} to={accountManagerData.to} value={accountManagerData.amount} status={1} />
                 </span>
               })
@@ -56,24 +89,25 @@ export default ({ transaction, setClickTransaction }: {
               .filter(eventLogIndex => accountManagerDatas[eventLogIndex].action == DB_AddressActivity_Actions.AM_Withdraw)
               .map(eventLogIndex => {
                 const accountManagerData = accountManagerDatas[eventLogIndex];
-                const marginTop = isFirstIndex(eventLogIndex) ? "" : "20px";
-                return <span style={{ width: "100%", marginTop}}>
+                const marginTop = isFirstIndex(eventLogIndex, "am") ? "" : "20px";
+                return <span style={{ width: "100%", marginTop }}>
                   <AccountManagerSafeWithdraw from={accountManagerData.from} to={accountManagerData.to} value={accountManagerData.amount} status={1} />
                 </span>
               })
           }
-          { 
+          {
             accountManagerDatas && Object
               .keys(accountManagerDatas)
               .filter(eventLogIndex => accountManagerDatas[eventLogIndex].action == DB_AddressActivity_Actions.AM_Transfer)
               .map(eventLogIndex => {
                 const accountManagerData = accountManagerDatas[eventLogIndex];
-                const marginTop = isFirstIndex(eventLogIndex) ? "" : "20px";
-                return <span style={{ width: "100%", marginTop}}>
+                const marginTop = isFirstIndex(eventLogIndex, "am") ? "" : "20px";
+                return <span style={{ width: "100%", marginTop }}>
                   <AccountManagerSafeTransfer from={accountManagerData.from} to={accountManagerData.to} value={accountManagerData.amount} status={1} />
                 </span>
               })
           }
+
         </Row>
       </List.Item>
     }

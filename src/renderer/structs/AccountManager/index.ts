@@ -11,13 +11,13 @@ import { CurrencyAmount, JSBI } from "@uniswap/sdk";
     }
 */
 export interface AccountRecord {
-    id: number,
-    addr: string,
-    amount: CurrencyAmount,
-    lockDay: number,
-    startHeight: number,
-    unlockHeight: number,
-    recordUseInfo ?: RecordUseInfo
+  id: number,
+  addr: string,
+  amount: CurrencyAmount,
+  lockDay: number,
+  startHeight: number,
+  unlockHeight: number,
+  recordUseInfo?: RecordUseInfo
 }
 /*
     struct RecordUseInfo {
@@ -30,46 +30,54 @@ export interface AccountRecord {
     }
 */
 export interface RecordUseInfo {
-    frozenAddr : string,
-    freezeHeight : number,
-    unfreezeHeight : number,
-    votedAddr : string,
-    voteHeight : number,
-    releaseHeight : number
+  frozenAddr: string,
+  freezeHeight: number,
+  unfreezeHeight: number,
+  votedAddr: string,
+  voteHeight: number,
+  releaseHeight: number
 }
 
 export function formatAccountRecord(accountRecord: any): AccountRecord {
-    const {
-        id, addr, amount, lockDay, startHeight, unlockHeight
-    } = accountRecord;
-    return {
-        id: id.toNumber(),
-        addr: addr.toString(),
-        amount: CurrencyAmount.ether(JSBI.BigInt(amount.toString())),
-        lockDay: lockDay.toNumber(),
-        startHeight: startHeight.toNumber(),
-        unlockHeight: unlockHeight.toNumber()
-    }
+  const {
+    id, addr, amount, lockDay, startHeight, unlockHeight
+  } = accountRecord;
+  let _lockDay = Number.NaN;
+  let _unlockHeight = Number.NaN;
+  try {
+    _lockDay = lockDay.toNumber()
+    _unlockHeight = unlockHeight.toNumber();
+  } catch (err) {
+
+  }
+  return {
+    id: id.toNumber(),
+    addr: addr.toString(),
+    amount: CurrencyAmount.ether(JSBI.BigInt(amount.toString())),
+    lockDay: _lockDay,
+    startHeight: startHeight.toNumber(),
+    unlockHeight: _unlockHeight
+  }
 }
 
 export function formatRecordUseInfo(recordUseInfo: any): RecordUseInfo {
-    const {
-        frozenAddr,freezeHeight,unfreezeHeight,votedAddr,voteHeight,releaseHeight
-    } = recordUseInfo;
-    return {
-        frozenAddr: frozenAddr.toString(),
-        freezeHeight: freezeHeight.toNumber(),
-        unfreezeHeight: unfreezeHeight.toNumber(),
-        votedAddr: votedAddr.toString(),
-        voteHeight: voteHeight.toNumber(),
-        releaseHeight: releaseHeight.toNumber()
-    }
+  const {
+    frozenAddr, freezeHeight, unfreezeHeight, votedAddr, voteHeight, releaseHeight
+  } = recordUseInfo;
+  return {
+    frozenAddr: frozenAddr.toString(),
+    freezeHeight: freezeHeight.toNumber(),
+    unfreezeHeight: unfreezeHeight.toNumber(),
+    votedAddr: votedAddr.toString(),
+    voteHeight: voteHeight.toNumber(),
+    releaseHeight: releaseHeight.toNumber()
+  }
 }
 
 
 export interface IdPageQuery {
-    position : number,
-    offset : number,
-    ids ?: number[],
-    result ?: any[],
+  position: number,
+  offset: number,
+  ids?: number[],
+  result?: any[],
 }
