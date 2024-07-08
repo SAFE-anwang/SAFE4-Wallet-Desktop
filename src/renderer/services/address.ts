@@ -1,4 +1,4 @@
-import { AddressActivityFormat, AddressActivityVO, AddressAnalyticVO, ApiResponse, POST, PageQueryDTO, PageResponseVO } from ".";
+import { AddressActivityFormat, AddressActivityVO, AddressAnalyticVO, ApiResponse, DateTimeNodeRewardVO, POST, PageQueryDTO, PageResponseVO } from ".";
 
 export async function fetchAddressActivity(
   API : string ,
@@ -19,5 +19,11 @@ export async function fetchAddressAnalytic( API : string , params: { address: st
   const serverResponse = await POST(`${API}/addresses/analytic/${params.address}`, params);
   return serverResponse.data;
 }
+
+export async function fetchAddressAnalyticNodeRewards( API : string , params: { address: string }): Promise<DateTimeNodeRewardVO[]> {
+  const serverResponse = await POST(`${API}/addresses/analytic/${params.address}/nodeRewards`, params);
+  return serverResponse.data;
+}
+
 
 

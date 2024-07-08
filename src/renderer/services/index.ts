@@ -164,6 +164,12 @@ export interface TimeNodeRewardVO {
   rewardAmount : string
 }
 
+export interface DateTimeNodeRewardVO {
+  date : string ,
+  amount : string ,
+  count : number
+}
+
 export function AddressActivityFormat(activity: AddressActivityVO): AddressActivityVO {
   const { data } = activity;
   let _data: any;

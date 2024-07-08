@@ -13,9 +13,9 @@ import { refreshAddressTimeNodeReward, reloadTransactionsAndSetAddressActivityFe
 import "./index.css"
 import { AppState } from "../../../../../state";
 import { ZERO } from "../../../../../utils/CurrentAmountUtils";
-import { fetchAddressAnalytic } from "../../../../../services/address";
+import { fetchAddressAnalytic, fetchAddressAnalyticNodeRewards } from "../../../../../services/address";
 import { useWeb3React } from "@web3-react/core";
-import { AddressAnalyticVO } from "../../../../../services";
+import { AddressAnalyticVO, DateTimeNodeRewardVO } from "../../../../../services";
 import { TimestampTheStartOf } from "../../../../../utils/DateUtils";
 import { TimeNodeRewardSignal, TimeNodeReward_Methods } from "../../../../../../main/handlers/TimeNodeRewardHandler";
 import useSafeScan from "../../../../../hooks/useSafeScan";
@@ -35,11 +35,7 @@ export default () => {
   const latestBlockNumber = useBlockNumber();
   const addressActivityFetch = useSelector<AppState, AddressActivityFetch | undefined>(state => state.transactions.addressActivityFetch);
   const { URL, API } = useSafeScan();
-
-  const [openClearHistoryModal , setOpenClearHistoryModal] = useState<boolean>(false);
-
-  const [reloadHistory , setReloadHistory] = useState<boolean>(false);
-
+  const [openClearHistoryModal, setOpenClearHistoryModal] = useState<boolean>(false);
 
   useEffect(() => {
     const addressActivtiesLoadActivities = DB_AddressActivity_Methods.loadActivities;
@@ -50,7 +46,6 @@ export default () => {
         window.electron.ipcRenderer.sendMessage(IPC_CHANNEL, [DBAddressActivitySignal, addressActivtiesLoadActivities, [activeAccount]]);
       }
       window.electron.ipcRenderer.sendMessage(IPC_CHANNEL, [TimeNodeRewardSignal, timeNodeRewardsGetAll, [activeAccount, chainId]]);
-
       return window.electron.ipcRenderer.on(IPC_CHANNEL, (arg) => {
         if (arg instanceof Array && arg[0] == DBAddressActivitySignal && arg[1] == addressActivtiesLoadActivities) {
           const rows = arg[2][0];
@@ -67,7 +62,7 @@ export default () => {
             }
             return Activity2Transaction(row);
           });
-          console.log("dbStoredRange ::" , dbStoredRange);
+          console.log("dbStoredRange ::", dbStoredRange);
           dispatch(reloadTransactionsAndSetAddressActivityFetch({
             txns,
             addressActivityFetch: {
@@ -84,59 +79,60 @@ export default () => {
         if (arg instanceof Array && arg[0] == TimeNodeRewardSignal && arg[1] == timeNodeRewardsGetAll) {
           const rows = arg[2][0];
           const dbTimeNodeRewardMap: {
-            [time in string]: string
+            [date in string]: string
           } = {};
-          console.log(`Load [${activeAccount}] Node Rewards From DB : `, rows);
+
           const dbTimeNodeRewards = rows.map((row: any) => {
             dbTimeNodeRewardMap[row.time_key] = row.amount;
             return {
-              ...row,
-              time: row.time_key,
-              rewardAmount: row.amount,
-              rewardCount: row.count,
+              address: activeAccount,
+              amount: row.amount,
+              count: row.count,
+              date: row.time_key
             }
           });
-          // 将加载的 DB 数据更新到 state
+          console.log(`Load [${activeAccount}] Node Rewards From DB : `, dbTimeNodeRewards);
+          // 将加载的 DB 数据更新到 state1
           dispatch(refreshAddressTimeNodeReward({
             chainId,
             address: activeAccount,
             nodeRewards: dbTimeNodeRewards
           }));
           // 远程访问浏览器接口,获取新的数据
-          fetchAddressAnalytic(API, { address: activeAccount.toLocaleLowerCase() })
-            .then((data: AddressAnalyticVO) => {
-              const nodeRewards = data.nodeRewards;
+          fetchAddressAnalyticNodeRewards(API, { address: activeAccount.toLocaleLowerCase() })
+            .then((data: DateTimeNodeRewardVO[]) => {
+              const nodeRewards = data;
               console.log(`Query-API [${activeAccount}] Node Rewards : `, nodeRewards);
               if (nodeRewards) {
-                dispatch(refreshAddressTimeNodeReward({
-                  chainId,
-                  address: activeAccount,
-                  nodeRewards: data.nodeRewards
-                }));
+                // dispatch(refreshAddressTimeNodeReward({
+                //   chainId,
+                //   address: activeAccount,
+                //   nodeRewards
+                // }));
                 // 将访问的数据更新到数据库
                 const method = TimeNodeReward_Methods.saveOrUpdate;
                 const saveOrUpdateNodeRewards = nodeRewards.filter(nodeReward => {
-                  const { time, rewardAmount } = nodeReward;
-                  const _time = time.split(" ")[0];
-                  if (!dbTimeNodeRewardMap[_time]) {
+                  const { date, amount, count } = nodeReward;
+                  if (!dbTimeNodeRewardMap[date]) {
                     return true;
                   }
-                  if (dbTimeNodeRewardMap[_time] && dbTimeNodeRewardMap[_time] != rewardAmount) {
+                  if (dbTimeNodeRewardMap[date] && dbTimeNodeRewardMap[date] != amount) {
                     return true;
                   }
                   return false;
                 }).map(nodeReward => {
+                  const { date, amount, count } = nodeReward;
                   return {
                     address: activeAccount,
-                    amount: nodeReward.rewardAmount,
-                    count: nodeReward.rewardCount,
-                    time: nodeReward.time.split(" ")[0]
+                    amount,
+                    count,
+                    time: date
                   }
                 })
                 console.log("SaveOrUpdate TimeNodeRewards => ", saveOrUpdateNodeRewards)
-                window.electron.ipcRenderer.sendMessage(IPC_CHANNEL, [TimeNodeRewardSignal, method, [
-                  saveOrUpdateNodeRewards
-                  , chainId]]);
+                // window.electron.ipcRenderer.sendMessage(IPC_CHANNEL, [TimeNodeRewardSignal, method, [
+                //   saveOrUpdateNodeRewards
+                //   , chainId]]);
               }
             })
         }
@@ -165,6 +161,7 @@ export default () => {
         </Tooltip>
       </Col>
     </Row>
+
     {
       Object.keys(transactions).sort((d1, d2) => TimestampTheStartOf(d2) - TimestampTheStartOf(d1))
         .map(date => {
@@ -206,7 +203,7 @@ export default () => {
       {clickTransaction && <TransactionDetailsView transaction={clickTransaction} />}
     </Modal>
 
-    <ClearHistoryConfirmModal openClearHistoryModal={openClearHistoryModal} cancel={() => { setOpenClearHistoryModal(false) }}  />
+    <ClearHistoryConfirmModal openClearHistoryModal={openClearHistoryModal} cancel={() => { setOpenClearHistoryModal(false) }} />
 
   </>
 

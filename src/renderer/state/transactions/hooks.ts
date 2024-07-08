@@ -6,7 +6,7 @@ import { addTransaction } from "./actions";
 import { Transfer, TransactionDetails, ContractCall } from "./reducer";
 import { DateFormat } from "../../utils/DateUtils";
 import { CurrencyAmount, JSBI } from "@uniswap/sdk";
-import { TimeNodeRewardVO } from "../../services";
+import { DateTimeNodeRewardVO, TimeNodeRewardVO } from "../../services";
 
 export function useTransactionAdder2(): (
   response: {
@@ -141,17 +141,17 @@ export function useTransactions(account?: string) {
     }
   });
   if (nodeRewards && account && nodeRewards[account]) {
-      nodeRewards[account].forEach((nodeReward: TimeNodeRewardVO) => {
-        const { rewardAmount, time } = nodeReward;
-        const dateKey = time.split(" ")[0];
-        const amount = CurrencyAmount.ether(JSBI.BigInt(rewardAmount));
+      nodeRewards[account].forEach((nodeReward: DateTimeNodeRewardVO) => {
+        const { amount, date } = nodeReward;
+        const dateKey = date;
+        const _amount = CurrencyAmount.ether(JSBI.BigInt(amount));
         if (!dateTransactions[dateKey]) {
           dateTransactions[dateKey] = {
             transactions: [],
             systemRewardAmount: CurrencyAmount.ether(JSBI.BigInt(0))
           };
         }
-        dateTransactions[dateKey].systemRewardAmount = amount;
+        dateTransactions[dateKey].systemRewardAmount = _amount;
       })
 
   }

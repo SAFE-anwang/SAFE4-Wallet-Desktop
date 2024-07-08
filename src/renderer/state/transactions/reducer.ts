@@ -2,7 +2,7 @@ import { createReducer } from "@reduxjs/toolkit"
 import { addTransaction, checkedTransaction, clearAllTransactions, finalizeTransaction, loadTransactionsAndUpdateAddressActivityFetch, refreshAddressTimeNodeReward, reloadTransactionsAndSetAddressActivityFetch } from "./actions"
 import { IPC_CHANNEL } from "../../config"
 import { DBAddressActivitySignal, DB_AddressActivity_Actions, DB_AddressActivity_Methods } from "../../../main/handlers/DBAddressActivitySingalHandler"
-import { TimeNodeRewardVO } from "../../services"
+import { DateTimeNodeRewardVO, TimeNodeRewardVO } from "../../services"
 
 const now = () => new Date().getTime()
 
@@ -121,7 +121,7 @@ export const initialState: {
   addressActivityFetch?: AddressActivityFetch,
 
   nodeRewards?: {
-    [address: string]: TimeNodeRewardVO[]
+    [address: string]: DateTimeNodeRewardVO[]
   }
 
 } = {

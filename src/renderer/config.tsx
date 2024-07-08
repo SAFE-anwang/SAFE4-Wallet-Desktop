@@ -1,6 +1,9 @@
 import { Channels } from "../main/preload";
 export const IPC_CHANNEL: Channels = "ipc-example";
 
+
+
+
 export const Safe4_Network_Config = {
   Testnet: {
     chainId: 6666666,
@@ -13,29 +16,6 @@ export const Safe4_Network_Config = {
     endpoint: "http://172.104.162.94:8545",
     Safescan_URL: "https://safe4.anwang.com",
     Safescan_Api: "https://safe4.anwang.com/5005"
-  }
-}
-
-export const Safe4_Business_Config = {
-  Masternode: {
-    Create: {
-      // 创建主节点时需要锁仓的 SAFE 数量
-      LockAmount: 1000,
-      // 众筹主节点时需要锁仓的 SAFE 数量
-      UnionLockAmount: 200,
-      // 锁仓天数
-      LockDays: 720
-    },
-  },
-  Supernode: {
-    Create: {
-      // 创建超级节点时需要锁仓的 SAFE 数量
-      LockAmount: 5000,
-      // 众筹创建超级节点时需要锁仓的 SAFE 数量
-      UnionLockAmount: 1000,
-      // 锁仓天数
-      LockDays: 720
-    }
   }
 }
 
@@ -60,4 +40,31 @@ const Config = {
   }
 }
 
-export default Config["prod"]
+
+
+export const Safe4_Business_Config = {
+  Masternode: {
+    Create: {
+      // 创建主节点时需要锁仓的 SAFE 数量
+      LockAmount: 1000,
+      // 众筹主节点时需要锁仓的 SAFE 数量
+      UnionLockAmount: 200,
+      // 锁仓天数
+      LockDays: 720
+    },
+  },
+  Supernode: {
+    Create: {
+      // 创建超级节点时需要锁仓的 SAFE 数量
+      LockAmount: 5000,
+      // 众筹创建超级节点时需要锁仓的 SAFE 数量
+      UnionLockAmount: 1000,
+      // 锁仓天数
+      LockDays: 720
+    }
+  }
+}
+
+
+
+export default Config["test"]
