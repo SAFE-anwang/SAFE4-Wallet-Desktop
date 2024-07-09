@@ -104,11 +104,11 @@ export default () => {
               const nodeRewards = data;
               console.log(`Query-API [${activeAccount}] Node Rewards : `, nodeRewards);
               if (nodeRewards) {
-                // dispatch(refreshAddressTimeNodeReward({
-                //   chainId,
-                //   address: activeAccount,
-                //   nodeRewards
-                // }));
+                dispatch(refreshAddressTimeNodeReward({
+                  chainId,
+                  address: activeAccount,
+                  nodeRewards
+                }));
                 // 将访问的数据更新到数据库
                 const method = TimeNodeReward_Methods.saveOrUpdate;
                 const saveOrUpdateNodeRewards = nodeRewards.filter(nodeReward => {
@@ -130,9 +130,9 @@ export default () => {
                   }
                 })
                 console.log("SaveOrUpdate TimeNodeRewards => ", saveOrUpdateNodeRewards)
-                // window.electron.ipcRenderer.sendMessage(IPC_CHANNEL, [TimeNodeRewardSignal, method, [
-                //   saveOrUpdateNodeRewards
-                //   , chainId]]);
+                window.electron.ipcRenderer.sendMessage(IPC_CHANNEL, [TimeNodeRewardSignal, method, [
+                  saveOrUpdateNodeRewards
+                  , chainId]]);
               }
             })
         }

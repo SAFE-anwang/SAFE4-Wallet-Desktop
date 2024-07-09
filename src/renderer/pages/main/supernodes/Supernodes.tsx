@@ -1,23 +1,12 @@
 
-import { CurrencyAmount, JSBI } from '@uniswap/sdk';
-import { Typography, Row, Col, Progress, Table, Badge, Button, Space, Card, Alert, Divider, Modal } from 'antd';
-import { ColumnsType, ColumnType } from 'antd/es/table';
+import { Typography, Row, Col, Progress, Table, Badge, Button, Space, Card, Alert, Divider, Modal, Tabs, TabsProps } from 'antd';
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useMasternodeLogicContract, useMasternodeStorageContract, useSupernodeStorageContract } from '../../../hooks/useContracts';
+import { useMasternodeStorageContract, useSupernodeStorageContract } from '../../../hooks/useContracts';
 import { formatSupernodeInfo, SupernodeInfo } from '../../../structs/Supernode';
-import AddressView from '../../components/AddressView';
-import { useDispatch } from 'react-redux';
-import { applicationControlVoteSupernode, applicationUpdateSupernodeAddresses } from '../../../state/application/action';
-import { ethers } from 'ethers';
 import { useWalletsActiveAccount } from '../../../state/wallets/hooks';
 import { MasternodeInfo, formatMasternode } from '../../../structs/Masternode';
-import { fetchSuperNodes } from '../../../services/supernode';
-import { SuperNodeVO } from '../../../services';
-import { useBlockNumber } from '../../../state/application/hooks';
-import Supernode from './Supernode';
-import useSafeScan from '../../../hooks/useSafeScan';
-import AddressComponent from '../../components/AddressComponent';
+import SupernodeList from './SupernodeList';
 
 const { Title, Text } = Typography;
 
@@ -34,46 +23,24 @@ export const RenderNodeState = (state: number) => {
   }
 }
 
-const Supernode_Page_Size = 10;
+export function toFixedNoRound(number : number, decimalPlaces : number) {
+  const str = number.toString();
+  const decimalIndex = str.indexOf('.');
+  if (decimalIndex === -1) {
+      return str;
+  }
+  const truncatedStr = str.substring(0, decimalIndex + decimalPlaces + 1);
+  return parseFloat(truncatedStr).toFixed(decimalPlaces);
+}
 
 export default () => {
+
   const navigate = useNavigate();
-  const dispatch = useDispatch();
-  const blockNumber = useBlockNumber();
   const supernodeStorageContract = useSupernodeStorageContract();
   const masternodeStorageContract = useMasternodeStorageContract();
   const activeAccount = useWalletsActiveAccount();
   const [currentSupernodeInfo, setCurrentSupernodeInfo] = useState<SupernodeInfo>();
   const [currentMasternodeInfo, setCurrentMasternodeInfo] = useState<MasternodeInfo>();
-  const [supernodeVOs, setSupernodeVOs] = useState<SuperNodeVO[]>([]);
-  const [pagination, setPagination] = useState<{
-    current?: number,
-    pageSize?: number,
-    total?: number
-  }>();
-  const [loading, setLoading] = useState<boolean>(false);
-  const [openSupernodeModal, setOpenSupernodeModal] = useState<boolean>(false);
-  const [openSupernodeInfo, setOpenSupernodeInfo] = useState<SupernodeInfo>();
-  const {URL , API} = useSafeScan();
-  useEffect(() => {
-    if (pagination) {
-      const { current, pageSize } = pagination;
-      setLoading(true);
-      fetchSuperNodes( API , { current, pageSize })
-        .then(data => {
-          setSupernodeVOs(data.records);
-          setLoading(false);
-        })
-    }
-  }, [pagination, blockNumber])
-  useEffect(() => {
-    setLoading(true);
-    fetchSuperNodes( API ,  { current: 1, pageSize: Supernode_Page_Size })
-      .then(data => {
-        const { current, pageSize, total } = data;
-        setPagination({ current, pageSize, total });
-      })
-  }, []);
 
   useEffect(() => {
     if (activeAccount && supernodeStorageContract) {
@@ -97,137 +64,16 @@ export default () => {
     }
   }, [masternodeStorageContract, activeAccount]);
 
-  const couldVote = useMemo(() => {
-    return (currentSupernodeInfo && currentSupernodeInfo.id == 0);
-  }, [currentSupernodeInfo, activeAccount]);
-
-  const columns: ColumnsType<SuperNodeVO> = [
+  const items: TabsProps['items'] = [
     {
-      title: '排名',
-      dataIndex: 'id',
-      key: '_id',
-      render: (id, supernodeVO: SuperNodeVO) => {
-        const { state, rank } = supernodeVO;
-        return <>
-          <Row>
-            <Col>
-              <Text strong>{rank}</Text>
-            </Col>
-          </Row>
-          <Row>
-            <Col>
-              <Text>{RenderNodeState(state)}</Text>
-            </Col>
-          </Row>
-        </>
-      },
-      width: "70px"
+      key: 'list',
+      label: '超级节点列表',
+      children: <SupernodeList queryMySupernodes={false} />,
     },
     {
-      title: '得票数',
-      dataIndex: 'id',
-      key: '_id',
-      render: (_, supernodeVO: SuperNodeVO) => {
-        const totalVoteNum = CurrencyAmount.ether(JSBI.BigInt(supernodeVO.totalVoteNum));
-        const totalVoteAmount = CurrencyAmount.ether(JSBI.BigInt(supernodeVO.totalVoteAmount));
-        return <>
-          <Row>
-            <Col span={12} style={{ textAlign: "left" }}>
-              <Text strong>{totalVoteNum.toFixed(2)}</Text>
-            </Col>
-            <Col span={12} style={{ textAlign: "right" }}>
-              <Text type='secondary'>[{totalVoteAmount.toFixed(2)} SAFE]</Text>
-            </Col>
-          </Row>
-          <Row>
-            <Progress percent={Number((Number(supernodeVO.voteObtainedRate) * 100).toFixed(2))} status={"normal"} />
-          </Row>
-        </>
-      },
-      width: "180px"
-    },
-    {
-      title: '名称',
-      dataIndex: 'name',
-      key: 'name',
-      render: (name, supernodeVO: SuperNodeVO) => {
-        return <>
-          <Row>
-            <Col>
-              <Text title={name} strong style={{ width: "150px" }} ellipsis>
-                {name}
-              </Text>
-            </Col>
-          </Row>
-          <Row >
-            <Col span={24}>
-              <Text title={supernodeVO.description} type='secondary' style={{ width: "150px" }} ellipsis>
-                {supernodeVO.description}
-              </Text>
-            </Col>
-          </Row>
-        </>
-      },
-      width: "180px"
-    },
-    {
-      title: '超级节点',
-      dataIndex: 'addr',
-      key: 'addr',
-      render: (addr, supernodeVO: SuperNodeVO) => {
-        const amount = CurrencyAmount.ether(JSBI.BigInt(supernodeVO.totalAmount))
-        const supernodeTarget = CurrencyAmount.ether(ethers.utils.parseEther("5000").toBigInt());
-        const couldAddPartner = supernodeTarget.greaterThan(amount);
-        const _addr = addr.substring(0, 10) + "...." + addr.substring(addr.length - 8);
-        return <>
-          <Row>
-            <Col span={4}>
-              <Text type='secondary'>地址:</Text>
-            </Col>
-            <Col span={20}>
-              <Text strong>
-                <AddressComponent address={addr} ellipsis copyable />
-              </Text>
-            </Col>
-          </Row>
-          <Row>
-            <Col span={4}>
-              <Text type='secondary'>ID:</Text>
-            </Col>
-            <Col span={20}>
-              <Text>{supernodeVO.id}</Text>
-              <Space direction='horizontal' style={{ float: "right" }}>
-                {
-                  couldAddPartner &&
-                  <Button size='small' type='primary' style={{ float: "right" }} onClick={() => {
-                    dispatch(applicationControlVoteSupernode(supernodeVO.addr));
-                    navigate("/main/supernodes/append");
-                  }}>加入合伙人</Button>
-                }
-                {
-                  couldVote && !couldAddPartner && <Button size='small' type='default' style={{ float: "right" }} onClick={() => {
-                    dispatch(applicationControlVoteSupernode(supernodeVO.addr));
-                    navigate("/main/supernodes/vote");
-                  }}>投票</Button>
-                }
-                <Button size='small' type='default' style={{ float: "right" }} onClick={() => {
-                  if (supernodeStorageContract) {
-                    supernodeStorageContract.callStatic.getInfo(supernodeVO.addr)
-                      .then(_supernodeInfo => {
-                        setOpenSupernodeInfo(formatSupernodeInfo(_supernodeInfo));
-                        setOpenSupernodeModal(true);
-                      })
-                      .catch(err => {
-                      })
-                  }
-                }}>查看</Button>
-              </Space>
-
-            </Col>
-          </Row>
-        </>
-      },
-      width: "200px"
+      key: 'myMasternodes',
+      label: '我的超级节点',
+      children: <SupernodeList queryMySupernodes={true} />,
     },
   ];
 
@@ -268,25 +114,13 @@ export default () => {
           }
         </Card>
         <br /><br />
-        <Table loading={loading} onChange={(pagination) => {
-          const { current, pageSize, total } = pagination;
-          setPagination({
-            current,
-            pageSize,
-            total
-          })
-        }} dataSource={supernodeVOs} columns={columns} size="large" pagination={pagination} />
+        <Card>
+          <Tabs items={items}></Tabs>
+        </Card>
       </div>
     </div>
 
-    <Modal open={openSupernodeModal} width={1000} footer={null} closable onCancel={() => {
-      setOpenSupernodeInfo(undefined);
-      setOpenSupernodeModal(false);
-    }}>
-      {
-        openSupernodeInfo && <Supernode supernodeInfo={openSupernodeInfo} />
-      }
-    </Modal>
+
 
   </>
 }

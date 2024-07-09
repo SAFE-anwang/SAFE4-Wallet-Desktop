@@ -121,6 +121,10 @@ export interface SupernodeInfo {
     lastRewardHeight: number,
     createHeight: number,
     updateHeight: number,
+
+    totalVoteNum ?: CurrencyAmount,
+    totalAmount  ?: CurrencyAmount
+
 }
 
 export function formatSupernodeInfo(supernodeInfo: any) : SupernodeInfo {
