@@ -115,7 +115,7 @@ export default () => {
         </Card>
         <br /><br />
         <Card>
-          <Tabs items={items} activeKey='mySupernodes'></Tabs>
+          <Tabs items={items} ></Tabs>
         </Card>
       </div>
     </div>

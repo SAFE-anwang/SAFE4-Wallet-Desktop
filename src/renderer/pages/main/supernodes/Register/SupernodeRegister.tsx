@@ -15,6 +15,8 @@ const { Text, Title } = Typography;
 export const Supernode_Create_Type_NoUnion = 1;
 export const Supernode_create_type_Union = 2;
 
+export const enodeRegex = /^enode:\/\/[0-9a-fA-F]{128}@(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}):(\d+)$/ ;
+
 const InputRules = {
   name: {
     min: 2,
@@ -89,7 +91,6 @@ export default () => {
     if (!enode) {
       inputErrors.enode = "请输入超级节点ENODE!";
     } else {
-      const enodeRegex = /^enode:\/\/[0-9a-fA-F]{128}@(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}):(\d+)$/;
       const isMatch = enodeRegex.test(enode);
       if (!isMatch) {
         inputErrors.enode = "超级节点ENODE格式不正确!";

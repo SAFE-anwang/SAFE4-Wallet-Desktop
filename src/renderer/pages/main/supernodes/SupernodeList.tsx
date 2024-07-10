@@ -15,6 +15,7 @@ import AddressComponent from '../../components/AddressComponent';
 import { Safe4_Business_Config } from '../../../config';
 import { ZERO } from '../../../utils/CurrentAmountUtils';
 import EditSupernode from './EditSupernode';
+import { useBlockNumber } from '../../../state/application/hooks';
 
 const { Title, Text } = Typography;
 
@@ -51,6 +52,7 @@ export default ({
 
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const blockNumber = useBlockNumber();
   const supernodeStorageContract = useSupernodeStorageContract();
   const supernodeVoteContract = useSupernodeVoteContract();
   const multicallContract = useMulticallContract();
@@ -79,16 +81,21 @@ export default ({
           setAllVoteNum(CurrencyAmount.ether(data));
         });
     }
-  }, [supernodeVoteContract])
+  }, [supernodeVoteContract,blockNumber])
 
   useEffect(() => {
     if (supernodeStorageContract) {
-      setSupernodes([]);
+      if ( (pagination && pagination.current && pagination.current > 1) ){
+        return;
+      } 
+      // setSupernodes([]);
       if (queryMySupernodes && activeAccount) {
         // getAddrNum4Creator
         supernodeStorageContract.callStatic.getAddrNum4Creator(activeAccount)
           .then(data => {
-            console.log(`getAddrNum4Creator |${activeAccount}| number=${data.toNumber()}`);
+            if ( data.toNumber() == 0 ){
+              setSupernodes([]);
+            }
             setPagination({
               total: data.toNumber(),
               pageSize: Supernode_Page_Size,
@@ -99,6 +106,9 @@ export default ({
         // function getNum() external view returns (uint);
         supernodeStorageContract.callStatic.getNum()
           .then(data => {
+            if ( data.toNumber() == 0 ){
+              setSupernodes([]);
+            }
             setPagination({
               total: data.toNumber(),
               pageSize: Supernode_Page_Size,
@@ -108,7 +118,7 @@ export default ({
       }
 
     }
-  }, [supernodeStorageContract, activeAccount]);
+  }, [supernodeStorageContract, activeAccount,blockNumber]);
 
   const loadSupernodeInfoList = useCallback((addresses: string[]) => {
     if (supernodeStorageContract && supernodeVoteContract && multicallContract) {
