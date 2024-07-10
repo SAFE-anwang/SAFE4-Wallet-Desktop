@@ -4,6 +4,7 @@ import { CurrencyAmount, JSBI } from "@uniswap/sdk";
 import { ColumnsType } from "antd/es/table";
 import AddressView from "../../components/AddressView";
 import { Typography, Table } from 'antd';
+import AddressComponent from "../../components/AddressComponent";
 
 const { Text } = Typography;
 
@@ -28,12 +29,12 @@ export default ({
     total?: number
   }>();
 
-  const [loading,setLoading] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(false);
 
   useEffect(() => {
     if (supernodeVoteContract) {
       // function getVoterNum(address _addr) external view returns (uint);
-      setLoading(true)
+      setVotersNumArr([]);
       supernodeVoteContract.callStatic.getVoterNum(supernodeAddr)
         .then(data => {
           const total = data.toNumber();
@@ -45,13 +46,13 @@ export default ({
           })
         })
     }
-  }, [supernodeVoteContract,supernodeAddr]);
+  }, [supernodeVoteContract, supernodeAddr]);
 
   useEffect(() => {
     if (pagination && supernodeVoteContract) {
-      setLoading(true);
-      const { current, pageSize , total } = pagination;
+      const { current, pageSize, total } = pagination;
       if (current && pageSize && total && total > 0) {
+        setLoading(true);
         // function getVoters(address _addr, uint _start, uint _count) external view returns (address[] memory, uint[] memory);
         supernodeVoteContract.callStatic.getVoters(supernodeAddr, (current - 1) * pageSize, pageSize)
           .then((data) => {
@@ -69,7 +70,7 @@ export default ({
             setVotersNumArr(votersNumArr);
             setLoading(false);
           })
-      }else{
+      } else {
         setLoading(false);
       }
     }
@@ -83,12 +84,14 @@ export default ({
       key: 'address',
       render: (addr) => {
         return <>
-          <AddressView address={addr}></AddressView>
+          <div style={{width:"70%"}}>
+            <AddressComponent address={addr} />
+          </div>
         </>
       }
     },
     {
-      title: '数量',
+      title: '得票数量',
       dataIndex: 'num',
       key: 'num',
       render: (num) => {

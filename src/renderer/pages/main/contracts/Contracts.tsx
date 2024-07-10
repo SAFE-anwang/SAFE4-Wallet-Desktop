@@ -117,25 +117,6 @@ export default () => {
         })
         return <>
           <Row>
-            {/* <Col span={24} style={{ width: "80px" }}>
-              {
-                !isLocalCreator && <Text>
-                  <AddressView address={_addr}></AddressView>
-                </Text>
-              }
-              {
-                isLocalCreator && <Row>
-                  <Col span={20}>
-                    <Text style={{ color: "#4780e1e0" }} italic>
-                      <AddressView address={_addr}></AddressView>
-                    </Text>
-                  </Col>
-                  <Tooltip title="本地钱包">
-                    <WalletTwoTone style={{ float: "right" }} />
-                  </Tooltip>
-                </Row>
-              }
-            </Col> */}
             <Col span={24} style={{ width: "80px" }}>
               <AddressComponent address={creator} ellipsis copyable />
             </Col>
@@ -160,7 +141,7 @@ export default () => {
           </Row>
         </>
       },
-      width: "60px"
+      width: "50px"
     },
     {
       title: '合约名称',
@@ -178,26 +159,31 @@ export default () => {
         }
         return <>
           <Row>
-            <Col span={24} style={{ width: "80px" }}>
+            <Col span={24} style={{ width: "100px" }}>
               <Row>
                 <Col span={16}>
                   {
                     !name && dbName && <>
-                      <Col span={24} style={{ paddingTop: "5px" }}>
+                      <Col span={2} style={{ paddingTop: "5px", float: "left" }}>
                         <Tooltip title="该合约通过本地钱包部署,但未在浏览器开源合约源码">
                           <QuestionCircleTwoTone style={{ cursor: "pointer" }} twoToneColor='#7e7e7e' />
                         </Tooltip>
-                        <Text style={{ marginLeft: "6px" }} type='secondary' italic>{dbName}</Text>
+                      </Col>
+                      <Col span={20} style={{ paddingTop: "5px", float: "left" }}>
+                        <Text title={dbName} ellipsis style={{ marginLeft: "6px" }} type='secondary' italic>{dbName}</Text>
                       </Col>
                     </>
                   }
                   {
                     name && <>
-                      <Col span={24} style={{ paddingTop: "5px" }}>
+                      <Col span={2} style={{ paddingTop: "5px" , float: "left" }}>
                         <Tooltip title="已进行开源验证的智能合约">
                           <CheckCircleTwoTone style={{ cursor: "pointer" }} twoToneColor='#74d13be0' />
                         </Tooltip>
-                        <Text style={{ marginLeft: "6px" }} strong>{name}</Text>
+
+                      </Col>
+                      <Col span={22} style={{ paddingTop: "5px", float: "left" }}>
+                        <Text title={name} style={{ marginLeft: "6px" }} strong>{name}</Text>
                       </Col>
                     </>
                   }
@@ -213,7 +199,7 @@ export default () => {
           </Row >
         </>
       },
-      width: "100px"
+      width: "120px"
     },
   ];
 

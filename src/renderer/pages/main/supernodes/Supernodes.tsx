@@ -71,7 +71,7 @@ export default () => {
       children: <SupernodeList queryMySupernodes={false} />,
     },
     {
-      key: 'myMasternodes',
+      key: 'mySupernodes',
       label: '我的超级节点',
       children: <SupernodeList queryMySupernodes={true} />,
     },
@@ -115,7 +115,7 @@ export default () => {
         </Card>
         <br /><br />
         <Card>
-          <Tabs items={items}></Tabs>
+          <Tabs items={items} activeKey='mySupernodes'></Tabs>
         </Card>
       </div>
     </div>

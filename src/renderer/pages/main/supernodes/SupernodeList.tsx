@@ -14,6 +14,7 @@ import Supernode from './Supernode';
 import AddressComponent from '../../components/AddressComponent';
 import { Safe4_Business_Config } from '../../../config';
 import { ZERO } from '../../../utils/CurrentAmountUtils';
+import EditSupernode from './EditSupernode';
 
 const { Title, Text } = Typography;
 
@@ -59,7 +60,9 @@ export default ({
 
   const [loading, setLoading] = useState<boolean>(false);
   const [openSupernodeModal, setOpenSupernodeModal] = useState<boolean>(false);
+  const [openEditSupernodeModal, setOpenEditSupernodeModal] = useState<boolean>(false);
   const [openSupernodeInfo, setOpenSupernodeInfo] = useState<SupernodeInfo>();
+  const [openEditSupernodeInfo , setOpenEditSupernodeInfo] = useState<SupernodeInfo>();
   const [allVoteNum, setAllVoteNum] = useState<CurrencyAmount>(CurrencyAmount.ether(JSBI.BigInt(1)));
 
   const [pagination, setPagination] = useState<{
@@ -80,10 +83,12 @@ export default ({
 
   useEffect(() => {
     if (supernodeStorageContract) {
-      if (queryMySupernodes) {
+      setSupernodes([]);
+      if (queryMySupernodes && activeAccount) {
         // getAddrNum4Creator
         supernodeStorageContract.callStatic.getAddrNum4Creator(activeAccount)
           .then(data => {
+            console.log(`getAddrNum4Creator |${activeAccount}| number=${data.toNumber()}`);
             setPagination({
               total: data.toNumber(),
               pageSize: Supernode_Page_Size,
@@ -150,7 +155,7 @@ export default ({
     if (pagination && supernodeStorageContract && supernodeVoteContract && multicallContract) {
       const { pageSize, current, total } = pagination;
       if (current && pageSize && total) {
-        setLoading(true);
+
         //////////////////// 正序 ////////////////////////
         let _position = (current - 1) * pageSize;
         let _offset = pageSize;
@@ -163,6 +168,10 @@ export default ({
           position = 0;
         }
         //////////////////////////////////////////////////
+        if (total == 0) {
+          return;
+        }
+        setLoading(true);
         if (queryMySupernodes) {
           // getAddrs4Creator:
           supernodeStorageContract.callStatic.getAddrs4Creator(activeAccount, _position, _offset)
@@ -177,7 +186,7 @@ export default ({
         }
       }
     }
-  }, [pagination, activeAccount])
+  }, [pagination])
 
   const couldVote = useMemo(() => {
     return (currentSupernodeInfo && currentSupernodeInfo.id == 0);
@@ -308,6 +317,13 @@ export default ({
                       })
                   }
                 }}>查看</Button>
+                {
+                  queryMySupernodes &&
+                  <Button size='small' type='default' style={{ float: "right" }} onClick={() => {
+                    setOpenEditSupernodeInfo(supernodeInfo);
+                    setOpenEditSupernodeModal(true);
+                  }}>编辑</Button>
+                }
               </Space>
 
             </Col>
@@ -327,6 +343,7 @@ export default ({
         total
       })
     }} dataSource={supernodes} columns={columns} size="large" pagination={pagination} />
+
     <Modal open={openSupernodeModal} width={1000} footer={null} closable onCancel={() => {
       setOpenSupernodeInfo(undefined);
       setOpenSupernodeModal(false);
@@ -335,5 +352,15 @@ export default ({
         openSupernodeInfo && <Supernode supernodeInfo={openSupernodeInfo} />
       }
     </Modal>
+
+    <Modal destroyOnClose open={openEditSupernodeModal} width={800} footer={null} closable onCancel={() => {
+      setOpenEditSupernodeInfo(undefined);
+      setOpenEditSupernodeModal(false);
+    }}>
+      {
+        openEditSupernodeInfo && <EditSupernode supernodeInfo={openEditSupernodeInfo} />
+      }
+    </Modal>
+
   </>
 }

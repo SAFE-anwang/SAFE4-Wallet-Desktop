@@ -8,6 +8,7 @@ import { RenderNodeState } from './Supernodes';
 import { useMulticallContract, useSupernodeVoteContract } from '../../../hooks/useContracts';
 import { useEffect, useMemo, useState } from 'react';
 import SupernodeVoters from './SupernodeVoters';
+import AddressComponent from '../../components/AddressComponent';
 
 const { Text } = Typography;
 
@@ -35,17 +36,17 @@ export default ({
   const items: TabsProps['items'] = useMemo(() => {
     return [{
       key: '1',
-        label: <>
-          创建人 <Divider type='vertical' /> 合伙人
-        </>,
-          children: <Members memberInfos={supernodeInfo.founders} />,
+      label: <>
+        创建人 <Divider type='vertical' /> 合伙人
+      </>,
+      children: <Members memberInfos={supernodeInfo.founders} />,
     },
     {
       key: '2',
-        label: <>
-          投票人
-        </>,
-          children: <SupernodeVoters supernodeAddr={supernodeInfo.addr} />,
+      label: <>
+        投票人
+      </>,
+      children: <SupernodeVoters supernodeAddr={supernodeInfo.addr} />,
     }];
   }, [supernodeInfo.addr])
 
@@ -73,8 +74,10 @@ export default ({
             <Col span={6}>
               <Text type='secondary'>节点地址:</Text>
             </Col>
-            <Col span={18}>
-              <Text strong><AddressView address={supernodeInfo.addr} /></Text>
+            <Col span={16}>
+              <Text strong>
+                <AddressComponent address={supernodeInfo.addr} />
+              </Text>
             </Col>
           </Row>
           <Row style={{ marginTop: "5px" }}>
@@ -89,9 +92,10 @@ export default ({
             <Col span={6}>
               <Text type='secondary'>创建者:</Text>
             </Col>
-            <Col span={18}>
-              <Text strong><AddressView address={supernodeInfo.creator} /></Text>
-
+            <Col span={16}>
+              <Text strong>
+                <AddressComponent address={supernodeInfo.creator} />
+              </Text>
             </Col>
           </Row>
         </Col>

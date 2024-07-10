@@ -41,6 +41,7 @@ export default ({
 
   useEffect(() => {
     if (masternodeStorageContract) {
+      setMasternodes([]);
       if (queryMyMasternodes) {
         // getAddrNum4Creator
         masternodeStorageContract.callStatic.getAddrNum4Creator(activeAccount)
@@ -70,7 +71,7 @@ export default ({
     if (pagination && masternodeStorageContract && multicallContract) {
       const { pageSize, current, total } = pagination;
       if (current && pageSize && total) {
-        setLoading(true);
+
         //////////////////// 逆序 ////////////////////////
         let _position = (current - 1) * pageSize;
         let _offset = pageSize;
@@ -83,6 +84,10 @@ export default ({
           position = 0;
         }
         //////////////////////////////////////////////////
+        if (total == 0){
+          return;
+        }
+        setLoading(true);
         if (queryMyMasternodes) {
           masternodeStorageContract.callStatic.getAddrs4Creator(activeAccount , position, offset)
             .then((addresses: any) => {
@@ -96,7 +101,7 @@ export default ({
         }
       }
     }
-  }, [pagination, activeAccount])
+  }, [pagination])
 
   const loadMasternodeInfos = useCallback((addresses: string[]) => {
     if (masternodeStorageContract && multicallContract) {

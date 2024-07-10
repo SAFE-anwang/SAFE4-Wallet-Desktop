@@ -2,6 +2,7 @@ import { Table, Typography } from "antd";
 import { ColumnsType } from "antd/es/table";
 import { MemberInfo } from "../../structs/Supernode"
 import AddressView from "./AddressView";
+import AddressComponent from "./AddressComponent";
 
 const { Text } = Typography;
 
@@ -25,7 +26,9 @@ export default ({
             key: 'addr',
             render: (addr) => {
                 return <>
-                    <AddressView address={addr}></AddressView>
+                    <div style={{width:"80%"}}>
+                      <AddressComponent address={addr} />
+                    </div>
                 </>
             }
         },

@@ -4,6 +4,7 @@ import { Typography, Row, Col, Progress, Card, Divider, TabsProps, Tabs } from '
 import AddressView from '../../components/AddressView';
 import Members from '../../components/Members';
 import { RenderNodeState } from "../supernodes/Supernodes";
+import AddressComponent from "../../components/AddressComponent";
 
 const { Text } = Typography;
 
@@ -47,17 +48,20 @@ export default ({
             <Col span={6}>
               <Text type='secondary'>节点地址:</Text>
             </Col>
-            <Col span={18}>
-              <Text strong><AddressView address={masternodeInfo.addr} /></Text>
+            <Col span={16}>
+              <Text strong>
+                <AddressComponent address={masternodeInfo.addr} />
+              </Text>
             </Col>
           </Row>
           <Row style={{ marginTop: "5px" }}>
             <Col span={6}>
               <Text type='secondary'>创建者:</Text>
             </Col>
-            <Col span={18}>
-              <Text strong><AddressView address={masternodeInfo.creator} /></Text>
-
+            <Col span={16}>
+              <Text strong>
+                <AddressComponent address={masternodeInfo.creator} />
+              </Text>
             </Col>
           </Row>
         </Col>
