@@ -222,7 +222,7 @@ export default ({
           <Row>
             <Col>
               {
-                !queryMySupernodes && <Text strong>{rank}</Text>
+                !queryMySupernodes && !queryKey && <Text strong>{rank}</Text>
               }
             </Col>
           </Row>
