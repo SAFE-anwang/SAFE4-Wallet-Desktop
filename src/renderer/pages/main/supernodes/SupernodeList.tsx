@@ -1,6 +1,6 @@
 
 import { CurrencyAmount, JSBI } from '@uniswap/sdk';
-import { Typography, Row, Col, Progress, Table, Badge, Button, Space, Card, Alert, Divider, Modal } from 'antd';
+import { Typography, Row, Col, Progress, Table, Badge, Button, Space, Card, Alert, Divider, Modal, Input } from 'antd';
 import { ColumnsType, ColumnType } from 'antd/es/table';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -64,7 +64,11 @@ export default ({
   const [openSupernodeModal, setOpenSupernodeModal] = useState<boolean>(false);
   const [openEditSupernodeModal, setOpenEditSupernodeModal] = useState<boolean>(false);
   const [openSupernodeInfo, setOpenSupernodeInfo] = useState<SupernodeInfo>();
-  const [openEditSupernodeInfo , setOpenEditSupernodeInfo] = useState<SupernodeInfo>();
+  const [openEditSupernodeInfo, setOpenEditSupernodeInfo] = useState<SupernodeInfo>();
+
+  const [queryKey, setQueryKey] = useState<string>();
+  const [queryKeyError, setQueryKeyError] = useState<string>();
+
   const [allVoteNum, setAllVoteNum] = useState<CurrencyAmount>(CurrencyAmount.ether(JSBI.BigInt(1)));
 
   const [pagination, setPagination] = useState<{
@@ -81,19 +85,18 @@ export default ({
           setAllVoteNum(CurrencyAmount.ether(data));
         });
     }
-  }, [supernodeVoteContract,blockNumber])
+  }, [supernodeVoteContract, blockNumber])
 
   useEffect(() => {
     if (supernodeStorageContract) {
-      if ( (pagination && pagination.current && pagination.current > 1) ){
+      if ((pagination && pagination.current && pagination.current > 1)) {
         return;
-      } 
-      // setSupernodes([]);
+      }
       if (queryMySupernodes && activeAccount) {
         // getAddrNum4Creator
         supernodeStorageContract.callStatic.getAddrNum4Creator(activeAccount)
           .then(data => {
-            if ( data.toNumber() == 0 ){
+            if (data.toNumber() == 0) {
               setSupernodes([]);
             }
             setPagination({
@@ -103,10 +106,14 @@ export default ({
             })
           });
       } else {
+        if (queryKey) {
+          doSearch();
+          return;
+        }
         // function getNum() external view returns (uint);
         supernodeStorageContract.callStatic.getNum()
           .then(data => {
-            if ( data.toNumber() == 0 ){
+            if (data.toNumber() == 0) {
               setSupernodes([]);
             }
             setPagination({
@@ -118,7 +125,7 @@ export default ({
       }
 
     }
-  }, [supernodeStorageContract, activeAccount,blockNumber]);
+  }, [supernodeStorageContract, activeAccount, blockNumber,queryKey]);
 
   const loadSupernodeInfoList = useCallback((addresses: string[]) => {
     if (supernodeStorageContract && supernodeVoteContract && multicallContract) {
@@ -204,7 +211,7 @@ export default ({
 
   const columns: ColumnsType<SupernodeInfo> = [
     {
-      title: queryMySupernodes ? '状态' : '排名',
+      title: (queryMySupernodes || queryKey) ? '状态' : '排名',
       dataIndex: 'id',
       key: '_id',
       render: (id, supernodeInfo: SupernodeInfo) => {
@@ -344,7 +351,69 @@ export default ({
     },
   ];
 
+  const doSearch = useCallback(async () => {
+    if (supernodeStorageContract && queryKey) {
+      if (queryKey.indexOf("0x") == 0) {
+        // do query as Address ;
+        if (ethers.utils.isAddress(queryKey)) {
+          const addr = queryKey;
+          setLoading(true);
+          const exist = await supernodeStorageContract.callStatic.exist(addr);
+          if (exist) {
+            const _supernodeInfo = await supernodeStorageContract.callStatic.getInfo(addr);
+            loadSupernodeInfoList( [_supernodeInfo.addr] )
+            setPagination(undefined);
+          } else {
+            setSupernodes([]);
+            setPagination(undefined);
+            setQueryKeyError("超级节点地址不存在");
+            setLoading(false);
+          }
+        } else {
+          setQueryKeyError("请输入合法的主节点地址");
+        }
+      } else {
+        const id = Number(queryKey);
+        if (id) {
+          setLoading(true);
+          const exist = await supernodeStorageContract.callStatic.existID(id);
+          if (exist) {
+            const _supernodeInfo = await supernodeStorageContract.callStatic.getInfoByID(id);
+            loadSupernodeInfoList( [_supernodeInfo.addr] )
+            setPagination(undefined);
+          } else {
+            setSupernodes([]);
+            setPagination(undefined);
+            setQueryKeyError("主节点ID不存在");
+            setLoading(false);
+          }
+        } else {
+          setQueryKeyError("请输入合法的主节点ID或地址");
+        }
+      }
+    }
+  }, [supernodeStorageContract, queryKey]);
+
   return <>
+
+    {
+      !queryMySupernodes &&
+      <Row style={{ marginBottom: "20px" }}>
+        <Col span={12}>
+          <Input.Search size='large' placeholder='超级节点ID｜超级节点地址' onChange={(event) => {
+            setQueryKeyError(undefined);
+            if (!event.target.value) {
+              setQueryKey(undefined);
+            }
+          }} onSearch={setQueryKey} />
+          {
+            queryKeyError &&
+            <Alert type='error' showIcon message={queryKeyError} style={{ marginTop: "5px" }} />
+          }
+        </Col>
+      </Row>
+    }
+
     <Table loading={loading} onChange={(pagination) => {
       const { current, pageSize, total } = pagination;
       setPagination({

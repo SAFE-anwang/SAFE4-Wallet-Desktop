@@ -1,4 +1,4 @@
-import { Badge, Button, Col, Row, Table, Typography } from "antd";
+import { Alert, Badge, Button, Col, Input, Row, Table, Typography } from "antd";
 import { ColumnsType } from "antd/es/table";
 import { useCallback, useEffect, useState } from "react";
 import { useDispatch } from "react-redux";
@@ -61,6 +61,8 @@ export default ({
 
   const [proposalInfos, setProposalInfos] = useState<ProposalInfo[]>();
   const [loading, setLoading] = useState<boolean>(false);
+  const [queryKey, setQueryKey] = useState<string>();
+  const [queryKeyError, setQueryKeyError] = useState<string>();
 
   const [pagination, setPagination] = useState<{
     total: number | undefined
@@ -87,6 +89,10 @@ export default ({
             })
           })
       } else {
+        if (queryKey) {
+          doSearch();
+          return;
+        }
         // function getNum() external view returns (uint);
         proposalContract.callStatic.getNum()
           .then(data => {
@@ -99,7 +105,7 @@ export default ({
           })
       }
     }
-  }, [proposalContract, activeAccount, timestamp]);
+  }, [proposalContract, activeAccount, timestamp , queryKey]);
 
   useEffect(() => {
     if (pagination && proposalContract && multicallContract) {
@@ -159,11 +165,11 @@ export default ({
       title: '提案ID',
       dataIndex: 'id',
       key: '_id',
-      render: (id , proposalInfo) => {
+      render: (id, proposalInfo) => {
         return <>
           <Row>
             <Col>
-              <Text strong style={{color: RenderTextColor(proposalInfo.state, proposalInfo.startPayTime, timestamp)}}>{id}</Text>
+              <Text strong style={{ color: RenderTextColor(proposalInfo.state, proposalInfo.startPayTime, timestamp) }}>{id}</Text>
             </Col>
           </Row>
         </>
@@ -192,7 +198,7 @@ export default ({
         return <>
           <Row>
             <Col span={24}>
-              <Text strong style={{color: RenderTextColor(proposalInfo.state, proposalInfo.startPayTime, timestamp)}} >
+              <Text strong style={{ color: RenderTextColor(proposalInfo.state, proposalInfo.startPayTime, timestamp) }} >
                 <AddressView address={_addr}></AddressView>
               </Text>
             </Col>
@@ -204,11 +210,11 @@ export default ({
       title: '标题',
       dataIndex: 'title',
       key: 'title',
-      render: (title , proposalInfo) => {
+      render: (title, proposalInfo) => {
         return <>
           <Row>
             <Col span={24}>
-              <Text strong ellipsis style={{ width: "120px" , color:RenderTextColor(proposalInfo.state, proposalInfo.startPayTime, timestamp) }}>
+              <Text strong ellipsis style={{ width: "120px", color: RenderTextColor(proposalInfo.state, proposalInfo.startPayTime, timestamp) }}>
                 {title}
               </Text>
             </Col>
@@ -220,11 +226,11 @@ export default ({
       title: '申请SAFE数量',
       dataIndex: 'payAmount',
       key: 'payAmount',
-      render: (payAmount , proposalInfo) => {
+      render: (payAmount, proposalInfo) => {
         return <>
           <Row>
             <Col span={24}>
-              <Text strong style={{color: RenderTextColor(proposalInfo.state, proposalInfo.startPayTime, timestamp)}}>
+              <Text strong style={{ color: RenderTextColor(proposalInfo.state, proposalInfo.startPayTime, timestamp) }}>
                 {payAmount.toFixed(2)} SAFE
               </Text>
             </Col>
@@ -236,11 +242,11 @@ export default ({
       title: '截止日期',
       dataIndex: 'startPayTime',
       key: 'startPayTime',
-      render: (startPayTime , proposalInfo) => {
+      render: (startPayTime, proposalInfo) => {
         return <>
           <Row>
             <Col span={24}>
-              <Text strong style={{color: RenderTextColor(proposalInfo.state, proposalInfo.startPayTime, timestamp)}}>
+              <Text strong style={{ color: RenderTextColor(proposalInfo.state, proposalInfo.startPayTime, timestamp) }}>
                 {DateTimeFormat(startPayTime * 1000)}
               </Text>
             </Col>
@@ -267,7 +273,48 @@ export default ({
     },
   ];
 
+  const doSearch = useCallback(async () => {
+    if (proposalContract && queryKey) {
+      const id = Number(queryKey);
+      if (id && id > 0) {
+        setLoading(true);
+        const proposalInfo = formatProposalInfo(await proposalContract.callStatic.getInfo( id ));
+        if ( id == proposalInfo.id ){
+          setProposalInfos([proposalInfo]);
+          setPagination(undefined);
+          setLoading(false);
+        }else{
+          setQueryKeyError("提案ID不存在")
+          setProposalInfos([]);
+          setPagination(undefined);
+          setLoading(false);
+        }
+      } else {
+        setQueryKeyError("请输入合法的提案ID");
+      }
+
+    }
+  }, [proposalContract, queryKey]);
+
   return <>
+
+    {
+      !queryMyProposals &&
+      <Row style={{ marginBottom: "20px" }}>
+        <Col span={12}>
+          <Input.Search size='large' placeholder='提案ID' onChange={(event) => {
+            setQueryKeyError(undefined);
+            if (!event.target.value) {
+              setQueryKey(undefined);
+            }
+          }} onSearch={setQueryKey} />
+          {
+            queryKeyError &&
+            <Alert type='error' showIcon message={queryKeyError} style={{ marginTop: "5px" }} />
+          }
+        </Col>
+      </Row>
+    }
 
     <Table loading={loading} onChange={(pagination) => {
       const { current, pageSize, total } = pagination;

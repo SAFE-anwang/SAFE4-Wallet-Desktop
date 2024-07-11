@@ -1,22 +1,23 @@
 
 
 
-import { Typography, Button, Card, Divider, Statistic, Row, Col, Modal, Flex, Tooltip, Tabs, TabsProps, QRCode, Badge, Space, Alert } from 'antd';
+import { Typography, Button, Card, Divider, Statistic, Row, Col, Modal, Flex, Tooltip, Tabs, TabsProps, QRCode, Badge, Space, Alert, Input } from 'antd';
 import { useMasternodeStorageContract, useMulticallContract, useSupernodeStorageContract } from '../../../hooks/useContracts';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { MasternodeInfo, formatMasternode } from '../../../structs/Masternode';
 import Table, { ColumnsType } from 'antd/es/table';
-import AddressView from '../../components/AddressView';
 import { CurrencyAmount, JSBI } from '@uniswap/sdk';
 import { ethers } from 'ethers';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { applicationControlAppendMasternode } from '../../../state/application/action';
 import { useWalletsActiveAccount } from '../../../state/wallets/hooks';
-import { SupernodeInfo, formatSupernodeInfo } from '../../../structs/Supernode';
 import { RenderNodeState } from '../supernodes/Supernodes';
 import AddressComponent from '../../components/AddressComponent';
 import { Safe4_Business_Config } from '../../../config';
+import EditMasternode from './EditMasternode';
+import { useBlockNumber } from '../../../state/application/hooks';
+import Masternode from './Masternode';
 
 const { Title, Text } = Typography;
 const Masternodes_Page_Size = 10;
@@ -32,20 +33,35 @@ export default ({
   const multicallContract = useMulticallContract();
   const [masternodes, setMasternodes] = useState<MasternodeInfo[]>();
   const [loading, setLoading] = useState<boolean>(false);
+
+  const [openEditMasternodeModal, setOpenEditMasternodeModal] = useState<boolean>(false);
+  const [openEditMasternodeInfo, setOpenEditMasternodeInfo] = useState<MasternodeInfo>();
+  const [openMasternodeModal, setOpenMasternodeModal] = useState<boolean>(false);
+  const [openMasternodeInfo, setOpenMasternodeInfo] = useState<MasternodeInfo>();
+
+  const [queryKey, setQueryKey] = useState<string>();
+  const [queryKeyError, setQueryKeyError] = useState<string>();
+
   const [pagination, setPagination] = useState<{
     total: number | undefined
     pageSize: number | undefined,
     current: number | undefined,
   }>();
   const activeAccount = useWalletsActiveAccount();
+  const blockNumber = useBlockNumber();
 
   useEffect(() => {
     if (masternodeStorageContract) {
-      setMasternodes([]);
+      if ((pagination && pagination.current && pagination.current > 1)) {
+        return;
+      }
       if (queryMyMasternodes) {
         // getAddrNum4Creator
         masternodeStorageContract.callStatic.getAddrNum4Creator(activeAccount)
           .then(data => {
+            if (data.toNumber() == 0) {
+              setMasternodes([]);
+            }
             setPagination({
               total: data.toNumber(),
               pageSize: Masternodes_Page_Size,
@@ -53,9 +69,16 @@ export default ({
             })
           })
       } else {
+        if (queryKey) {
+          doSearch();
+          return;
+        }
         // function getNum() external view returns (uint);
         masternodeStorageContract.callStatic.getNum()
           .then(data => {
+            if (data.toNumber() == 0) {
+              setMasternodes([]);
+            }
             setPagination({
               total: data.toNumber(),
               pageSize: Masternodes_Page_Size,
@@ -64,7 +87,7 @@ export default ({
           })
       }
     }
-  }, [masternodeStorageContract, activeAccount]);
+  }, [masternodeStorageContract, activeAccount, blockNumber, queryKey]);
 
 
   useEffect(() => {
@@ -84,12 +107,12 @@ export default ({
           position = 0;
         }
         //////////////////////////////////////////////////
-        if (total == 0){
+        if (total == 0) {
           return;
         }
         setLoading(true);
         if (queryMyMasternodes) {
-          masternodeStorageContract.callStatic.getAddrs4Creator(activeAccount , position, offset)
+          masternodeStorageContract.callStatic.getAddrs4Creator(activeAccount, position, offset)
             .then((addresses: any) => {
               loadMasternodeInfos(addresses);
             });
@@ -191,11 +214,26 @@ export default ({
                 <Button size='small' style={{ float: "right" }}
                   type={couldAddPartner ? "primary" : "default"}
                   onClick={() => {
-                    dispatch(applicationControlAppendMasternode(masternodeInfo.addr))
-                    navigate("/main/masternodes/append")
+                    if (couldAddPartner) {
+                      dispatch(applicationControlAppendMasternode(masternodeInfo.addr))
+                      navigate("/main/masternodes/append")
+                    } else {
+                      setOpenMasternodeInfo(masternodeInfo);
+                      setOpenMasternodeModal(true);
+                    }
                   }}>
                   {couldAddPartner ? "加入合伙人" : "查看"}
                 </Button>
+                {
+                  queryMyMasternodes &&
+                  <Button size='small' style={{ float: "right" }}
+                    onClick={() => {
+                      setOpenEditMasternodeInfo(masternodeInfo);
+                      setOpenEditMasternodeModal(true);
+                    }}>
+                    编辑
+                  </Button>
+                }
               </Space>
             </Col>
           </Row>
@@ -204,12 +242,97 @@ export default ({
     },
   ];
 
+  const doSearch = useCallback(async () => {
+    if (masternodeStorageContract && queryKey) {
+      if (queryKey.indexOf("0x") == 0) {
+        // do query as Address ;
+        if (ethers.utils.isAddress(queryKey)) {
+          const addr = queryKey;
+          setLoading(true);
+          const exist = await masternodeStorageContract.callStatic.exist(addr);
+          if (exist) {
+            const _masternodeInfo = await masternodeStorageContract.callStatic.getInfo(addr);
+            console.log(_masternodeInfo)
+            const masternodeInfo = formatMasternode(_masternodeInfo);
+            setMasternodes([masternodeInfo]);
+            setPagination(undefined);
+            setLoading(false);
+          } else {
+            setMasternodes([]);
+            setPagination(undefined);
+            setQueryKeyError("主节点地址不存在");
+            setLoading(false);
+          }
+        } else {
+          setQueryKeyError("请输入合法的主节点地址");
+        }
+      } else {
+        const id = Number(queryKey);
+        if (id) {
+          setLoading(true);
+          const exist = await masternodeStorageContract.callStatic.existID(id);
+          if (exist) {
+            const _masternodeInfo = await masternodeStorageContract.callStatic.getInfoByID(id);
+            const masternodeInfo = formatMasternode(_masternodeInfo);
+            setMasternodes([masternodeInfo]);
+            setPagination(undefined);
+            setLoading(false);
+          } else {
+            setMasternodes([]);
+            setPagination(undefined);
+            setQueryKeyError("主节点ID不存在");
+            setLoading(false);
+          }
+        } else {
+          setQueryKeyError("请输入合法的主节点ID或地址");
+        }
+      }
+    }
+  }, [masternodeStorageContract, queryKey]);
+
   return <>
+    {
+      !queryMyMasternodes &&
+      <Row style={{ marginBottom: "20px" }}>
+        <Col span={12}>
+          <Input.Search size='large' placeholder='主节点ID｜主节点地址' onChange={(event) => {
+            setQueryKeyError(undefined);
+            if (!event.target.value) {
+              setQueryKey(undefined);
+            }
+          }} onSearch={setQueryKey} />
+          {
+            queryKeyError &&
+            <Alert type='error' showIcon message={queryKeyError} style={{ marginTop: "5px" }} />
+          }
+        </Col>
+      </Row>
+    }
+
     <Table loading={loading} onChange={(pagination) => {
       const { current, pageSize, total } = pagination;
       setPagination({
         current, pageSize, total
       })
     }} dataSource={masternodes} columns={columns} size="large" pagination={pagination} />
+
+    <Modal destroyOnClose open={openMasternodeModal} width={1000} footer={null} closable onCancel={() => {
+      setOpenMasternodeInfo(undefined);
+      setOpenMasternodeModal(false);
+    }}>
+      {
+        openMasternodeInfo && <Masternode masternodeInfo={openMasternodeInfo} />
+      }
+    </Modal>
+
+    <Modal destroyOnClose open={openEditMasternodeModal} width={800} footer={null} closable onCancel={() => {
+      setOpenEditMasternodeInfo(undefined);
+      setOpenEditMasternodeModal(false);
+    }}>
+      {
+        openEditMasternodeInfo && <EditMasternode masternodeInfo={openEditMasternodeInfo} />
+      }
+    </Modal>
+
   </>
 }
