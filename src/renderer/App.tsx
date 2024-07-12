@@ -43,6 +43,7 @@ import ContractDetail from './pages/main/contracts/ContractDetail';
 import ContractDeploy from './pages/main/contracts/ContractDeploy';
 import ContractEdit from './pages/main/contracts/ContractEdit';
 import { ContractCompileHandler, ContractCompileSignal, ContractCompile_Methods } from '../main/handlers/ContractCompileHandler';
+import ModifyPassword from './pages/main/menu/password/ModifyPassword';
 const CryptoJS = require('crypto-js');
 const { Text } = Typography;
 export default function App() {
@@ -275,6 +276,7 @@ export default function App() {
                     <Route path="/main/menu" element={<Menu />} />
                     <Route path="/main/menu/storage" element={<Storage />} />
                     <Route path="/main/menu/network" element={<NetworkPage />} />
+                    <Route path="/main/menu/modifyPassword" element={<ModifyPassword />} />
                     <Route path="/main/contracts" element={<Contracts />} />
                     <Route path="/main/contracts/detail" element={<ContractDetail />} />
                     <Route path="/main/contracts/deploy" element={<ContractDeploy />} />

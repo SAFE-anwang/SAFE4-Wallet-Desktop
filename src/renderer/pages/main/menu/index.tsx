@@ -6,9 +6,10 @@ import { useDispatch } from 'react-redux';
 import { useSelector } from "react-redux"
 import { AppState } from "../../../state";
 import {
-  DatabaseOutlined, RightOutlined, WifiOutlined
+  DatabaseOutlined, RightOutlined, WalletOutlined, WifiOutlined
 } from '@ant-design/icons';
 import "./index.css"
+import { useApplicationPassword } from '../../../state/application/hooks';
 
 const { Title, Text } = Typography;
 
@@ -17,6 +18,7 @@ export default () => {
 
   const data = useSelector<AppState, { [key: string]: any }>(state => state.application.data);
   const navigate = useNavigate();
+  const password = useApplicationPassword();
 
   return (<>
     <Row style={{ height: "50px" }}>
@@ -28,7 +30,7 @@ export default () => {
     </Row>
     <div style={{ width: "100%", paddingTop: "40px" }}>
       <div style={{ margin: "auto", width: "60%" }}>
-        <Card className="menu-item-container" style={{ marginBottom: "20px"}}>
+        <Card className="menu-item-container" style={{ marginBottom: "20px" }}>
           <Row className='menu-item' onClick={() => {
             navigate("/main/menu/network")
           }}>
@@ -42,9 +44,7 @@ export default () => {
               <RightOutlined />
             </Col>
           </Row>
-
-          <Divider style={{margin:"0px 0px"}} />
-
+          <Divider style={{ margin: "0px 0px" }} />
           <Row className='menu-item' onClick={() => {
             navigate("/main/menu/storage")
           }}>
@@ -58,6 +58,23 @@ export default () => {
               <RightOutlined />
             </Col>
           </Row>
+        </Card>
+
+        <Card className="menu-item-container" style={{ marginBottom: "20px" }}>
+          <Row className='menu-item' onClick={() => {
+            navigate("/main/menu/modifyPassword")
+          }}>
+            <Col span={2} style={{ textAlign: "center" }}>
+              <WalletOutlined />
+            </Col>
+            <Col span={20}>
+              修改钱包密码
+            </Col>
+            <Col span={2} style={{ textAlign: "center" }}>
+              <RightOutlined />
+            </Col>
+          </Row>
+          <Divider style={{ margin: "0px 0px" }} />
         </Card>
 
       </div>

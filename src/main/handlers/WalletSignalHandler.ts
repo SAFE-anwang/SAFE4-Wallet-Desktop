@@ -14,7 +14,7 @@ export const Wallet_Keystore_FileName = "safe4wallet.keystores.json";
 export enum Wallet_Methods {
   generateMnemonic = "generateMnemonic",
   generateWallet = "generateWallet",
-  storeWallet = "storeWallet" 
+  storeWallet = "storeWallet"
 }
 
 export class WalletSignalHandler implements ListenSignalHandler {
@@ -64,17 +64,20 @@ export class WalletSignalHandler implements ListenSignalHandler {
       // aes by secret with random-iv(16 byte length)
       const iv = CryptoJS.lib.WordArray.random(16);
       const encrypt = CryptoJS.AES.encrypt(
-        content, aesKey, 
+        content, aesKey,
         { iv: iv, mode: CryptoJS.mode.CBC, padding: CryptoJS.pad.Pkcs7 }
       );
       const json = JSON.stringify({
-        salt : CryptoJS.enc.Hex.stringify(salt) , 
-        iv : CryptoJS.enc.Hex.stringify(iv),
-        ciphertext : encrypt.ciphertext.toString(CryptoJS.enc.Hex)
-      }); 
+        salt: CryptoJS.enc.Hex.stringify(salt),
+        iv: CryptoJS.enc.Hex.stringify(iv),
+        ciphertext: encrypt.ciphertext.toString(CryptoJS.enc.Hex)
+      });
       // base58
-      const base58Encode = base58.encode( ethers.utils.toUtf8Bytes(json) );
-      await fs.writeFileSync(this.ctx.path.keystores, base58Encode, 'utf8');
+      const base58Encode = base58.encode(ethers.utils.toUtf8Bytes(json));
+      const tempKeystoresFilePath = this.ctx.path.keystores + ".temp";
+      await fs.writeFileSync(tempKeystoresFilePath, base58Encode, 'utf8');
+      await fs.renameSync(tempKeystoresFilePath, this.ctx.path.keystores);
+      // await fs.writeFileSync(this.ctx.path.keystores, base58Encode, 'utf8');
       return {
         success: true,
         path: Wallet_Keystore_FileName
