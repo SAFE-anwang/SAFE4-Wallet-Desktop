@@ -1,9 +1,6 @@
 import { Channels } from "../main/preload";
 export const IPC_CHANNEL: Channels = "ipc-example";
 
-
-
-
 export const Safe4_Network_Config = {
   Testnet: {
     chainId: 6666666,
@@ -40,8 +37,6 @@ const Config = {
   }
 }
 
-
-
 export const Safe4_Business_Config = {
   Masternode: {
     Create: {
@@ -64,7 +59,5 @@ export const Safe4_Business_Config = {
     }
   }
 }
-
-
 
 export default Config["prod"]

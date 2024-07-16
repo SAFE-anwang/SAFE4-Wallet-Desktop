@@ -7,7 +7,7 @@ import { TransactionResponse } from "@ethersproject/providers"
 import { useWalletsActiveAccount } from "../../../state/wallets/hooks"
 import { useTransactionAdder } from "../../../state/transactions/hooks"
 import Safescan from "../../components/Safescan"
-import { enodeRegex } from "./Register/SupernodeRegister"
+import { enodeRegex, InputRules } from "./Register/SupernodeRegister"
 
 const { Text } = Typography;
 
@@ -63,6 +63,10 @@ export default ({
 
   const changeName = useCallback(() => {
     if (newName && newName != name && supernodeLogicContract) {
+      if (newName && (newName.length < InputRules.name.min || newName.length > InputRules.name.max)) {
+        setNameError(`字符长度需要大于${InputRules.name.min}且小于${InputRules.name.max}`)
+        return;
+      }
       setChangingName(true);
       supernodeLogicContract.changeName(supernodeInfo.addr, newName)
         .then((response: TransactionResponse) => {
@@ -171,6 +175,10 @@ export default ({
 
   const changeDescription = useCallback(() => {
     if (newDescription && newDescription != description && supernodeLogicContract) {
+      if (newDescription && (newDescription.length < InputRules.description.min || newDescription.length > InputRules.description.max)) {
+        setDescriptionError(`简介信息长度需要大于${InputRules.description.min}且小于${InputRules.description.max}`);
+        return;
+      }
       setChangingDescription(true);
       supernodeLogicContract.changeDescription(supernodeInfo.addr, newDescription)
         .then((response: TransactionResponse) => {
@@ -202,7 +210,7 @@ export default ({
             <Text>更新的超级节点数据在交易写入区块链后才会生效.</Text>
           </Col>
         </Row>
-      </>}/>
+      </>} />
       <Divider />
       <Row>
         <Col span={24}>
@@ -213,9 +221,10 @@ export default ({
             <Input value={newName} onChange={(event) => {
               const input = event.target.value;
               setNewName(input.trim());
+              setNameError(undefined);
             }} />
             {
-              nameError && <Alert style={{ marginTop: "5px" }} type="error" showIcon message={addrError} />
+              nameError && <Alert style={{ marginTop: "5px" }} type="error" showIcon message={nameError} />
             }
             {
               changeNameTxHash && <Alert style={{ marginTop: "5px" }} type="success" showIcon message={<>
@@ -223,7 +232,7 @@ export default ({
                   <Col span={22}>
                     交易哈希: {changeNameTxHash}
                   </Col>
-                  <Col span={2}>
+                  <Col span={2} style={{textAlign:"right"}}>
                     <Safescan url={`/tx/${changeNameTxHash}`} />
                   </Col>
                 </Row>
@@ -256,7 +265,7 @@ export default ({
                   <Col span={22}>
                     交易哈希: {changeAddrTxHash}
                   </Col>
-                  <Col span={2}>
+                  <Col span={2} style={{textAlign:"right"}}>
                     <Safescan url={`/tx/${changeAddrTxHash}`} />
                   </Col>
                 </Row>
@@ -290,7 +299,7 @@ export default ({
                   <Col span={22}>
                     交易哈希: {changeEnodeTxHash}
                   </Col>
-                  <Col span={2}>
+                  <Col span={2} style={{textAlign:"right"}}>
                     <Safescan url={`/tx/${changeEnodeTxHash}`} />
                   </Col>
                 </Row>
@@ -308,6 +317,7 @@ export default ({
             <Input.TextArea value={newDescription} style={{ minHeight: "50px" }} onChange={(event) => {
               const input = event.target.value.trim();
               setNewDescription(input);
+              setDescriptionError(undefined);
             }} />
             {
               descriptionError && <Alert style={{ marginTop: "5px" }} type="error" showIcon message={descriptionError} />
@@ -318,7 +328,7 @@ export default ({
                   <Col span={22}>
                     交易哈希: {changeDescriptionTxHash}
                   </Col>
-                  <Col span={2}>
+                  <Col span={2} style={{textAlign:"right"}}>
                     <Safescan url={`/tx/${changeDescriptionTxHash}`} />
                   </Col>
                 </Row>

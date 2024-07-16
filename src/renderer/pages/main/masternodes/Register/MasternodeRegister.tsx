@@ -15,7 +15,7 @@ const { Text, Title } = Typography;
 export const Masternode_Create_Type_NoUnion = 1;
 export const Masternode_create_type_Union = 2;
 
-const InputRules = {
+export const InputRules = {
   description: {
     min: 12,
     max: 600

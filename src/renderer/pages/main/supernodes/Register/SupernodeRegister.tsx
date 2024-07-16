@@ -17,7 +17,7 @@ export const Supernode_create_type_Union = 2;
 
 export const enodeRegex = /^enode:\/\/[0-9a-fA-F]{128}@(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}):(\d+)$/ ;
 
-const InputRules = {
+export const InputRules = {
   name: {
     min: 2,
     max: 20
@@ -86,7 +86,7 @@ export default () => {
       inputErrors.name = "请输入超级节点名称!";
     };
     if (name && (name.length < InputRules.name.min || name.length > InputRules.name.max)) {
-      inputErrors.name = `简介信息长度需要大于${InputRules.name.min}且小于${InputRules.name.max}`;
+      inputErrors.name = `字符长度需要大于${InputRules.name.min}且小于${InputRules.name.max}`;
     }
     if (!enode) {
       inputErrors.enode = "请输入超级节点ENODE!";

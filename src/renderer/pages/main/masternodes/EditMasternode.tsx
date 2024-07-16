@@ -8,6 +8,7 @@ import { TransactionResponse } from "@ethersproject/providers";
 import { enodeRegex } from "../supernodes/Register/SupernodeRegister";
 import { Alert, Button, Card, Col, Divider, Input, Row, Spin, Typography } from "antd"
 import Safescan from "../../components/Safescan";
+import { InputRules } from "./Register/MasternodeRegister";
 
 const { Text } = Typography;
 
@@ -138,6 +139,10 @@ export default ({
 
   const changeDescription = useCallback(() => {
     if (newDescription && newDescription != description && masternodeLogicContract) {
+      if (newDescription && (newDescription.length < InputRules.description.min || newDescription.length > InputRules.description.max)) {
+        setDescriptionError(`简介信息长度需要大于${InputRules.description.min}且小于${InputRules.description.max}`)
+        return;
+      }
       setChangingDescription(true);
       masternodeLogicContract.changeDescription(masternodeInfo.addr, newDescription)
         .then((response: TransactionResponse) => {
@@ -196,7 +201,7 @@ export default ({
                   <Col span={22}>
                     交易哈希: {changeAddrTxHash}
                   </Col>
-                  <Col span={2}>
+                  <Col span={2} style={{textAlign:"right"}}>
                     <Safescan url={`/tx/${changeAddrTxHash}`} />
                   </Col>
                 </Row>
@@ -230,7 +235,7 @@ export default ({
                   <Col span={22}>
                     交易哈希: {changeEnodeTxHash}
                   </Col>
-                  <Col span={2}>
+                  <Col span={2} style={{textAlign:"right"}}>
                     <Safescan url={`/tx/${changeEnodeTxHash}`} />
                   </Col>
                 </Row>
@@ -248,6 +253,7 @@ export default ({
             <Input.TextArea value={newDescription} style={{ minHeight: "50px" }} onChange={(event) => {
               const input = event.target.value.trim();
               setNewDescription(input);
+              setDescriptionError(undefined);
             }} />
             {
               descriptionError && <Alert style={{ marginTop: "5px" }} type="error" showIcon message={descriptionError} />
@@ -258,7 +264,7 @@ export default ({
                   <Col span={22}>
                     交易哈希: {changeDescriptionTxHash}
                   </Col>
-                  <Col span={2}>
+                  <Col span={2} style={{textAlign:"right"}}>
                     <Safescan url={`/tx/${changeDescriptionTxHash}`} />
                   </Col>
                 </Row>
