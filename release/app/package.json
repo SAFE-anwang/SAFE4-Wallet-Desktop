@@ -15,10 +15,15 @@
     "link-modules": "node -r ts-node/register ../../.erb/scripts/link-modules.ts"
   },
   "dependencies": {
+    "asn1": "^0.2.6",
+    "bcrypt-pbkdf": "^1.0.2",
     "bindings": "^1.5.0",
     "file-uri-to-path": "^2.0.0",
     "install": "^0.13.0",
     "prebuild-install": "^7.1.1",
-    "sqlite3": "^5.1.7"
+    "safer-buffer": "^2.1.2",
+    "sqlite3": "^5.1.7",
+    "ssh2": "^1.15.0",
+    "tweetnacl": "^1.0.3"
   }
 }

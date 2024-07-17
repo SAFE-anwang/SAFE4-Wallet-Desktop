@@ -133,6 +133,8 @@
     "ethereumjs-wallet": "^1.0.2",
     "ethers": "^5.7.2",
     "https-browserify": "^1.0.0",
+    "node-loader": "^2.0.0",
+    "os-browserify": "^0.3.0",
     "path-browserify": "^1.0.1",
     "react": "^18.2.0",
     "react-ace": "^11.0.1",
@@ -142,6 +144,8 @@
     "solc": "0.8.17",
     "source-map-support": "^0.5.21",
     "sqlite3": "^5.1.7",
+    "ssh2": "^1.15.0",
+    "ssh2-sftp-client": "^10.0.3",
     "stream-browserify": "^3.0.0",
     "stream-http": "^3.2.0",
     "tiny-secp256k1": "^2.2.1",
@@ -214,7 +218,8 @@
     "webpack-bundle-analyzer": "^4.9.1",
     "webpack-cli": "^5.1.4",
     "webpack-dev-server": "^4.15.1",
-    "webpack-merge": "^5.9.0"
+    "webpack-merge": "^5.9.0",
+    "webpack-node-externals": "^3.0.0"
   },
   "build": {
     "productName": "Safe4-Wallet-Desktop-TestNet",

@@ -9,6 +9,7 @@ import { RpcConfigSingalHandler } from "./handlers/RpcConfigSignalHandler";
 import { ContractCompileHandler } from "./handlers/ContractCompileHandler";
 import { TimeNodeRewardHandler } from "./handlers/TimeNodeRewardHandler";
 import { WalletNameHandler } from "./handlers/WalletNameHandler";
+import { SSH2SignalHandler } from "./handlers/SSH2SignalHandler";
 
 export const Channel : Channels = "ipc-example";
 
@@ -25,6 +26,8 @@ export class ApplicationIpcManager {
       this.listenSignalHandlers.push(new ContractCompileHandler(ctx ,indexSignalHandler.getSqlite3DB()));
       this.listenSignalHandlers.push(new TimeNodeRewardHandler(ctx ,indexSignalHandler.getSqlite3DB()));
       this.listenSignalHandlers.push(new WalletNameHandler(ctx ,indexSignalHandler.getSqlite3DB()));
+
+      this.listenSignalHandlers.push(new SSH2SignalHandler());
     });
     this.listenSignalHandlers.push(indexSignalHandler);
   }

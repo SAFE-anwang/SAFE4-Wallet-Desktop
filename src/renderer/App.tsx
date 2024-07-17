@@ -44,6 +44,7 @@ import ContractDeploy from './pages/main/contracts/ContractDeploy';
 import ContractEdit from './pages/main/contracts/ContractEdit';
 import { ContractCompileHandler, ContractCompileSignal, ContractCompile_Methods } from '../main/handlers/ContractCompileHandler';
 import ModifyPassword from './pages/main/menu/password/ModifyPassword';
+import TestSSH2 from './pages/main/tools/TestSSH2';
 const CryptoJS = require('crypto-js');
 const { Text } = Typography;
 export default function App() {
@@ -272,7 +273,7 @@ export default function App() {
                     <Route path="/main/proposals/vote" element={<ProposalVote />} />
                     <Route path="/main/gettestcoin" element={<GetTestCoin />} />
                     <Route path="/main/safe3" element={<Safe3 />} />
-                    <Route path="/main/test" element={<Test />} />
+                    <Route path="/main/test" element={<TestSSH2 />} />
                     <Route path="/main/menu" element={<Menu />} />
                     <Route path="/main/menu/storage" element={<Storage />} />
                     <Route path="/main/menu/network" element={<NetworkPage />} />
