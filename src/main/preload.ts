@@ -36,4 +36,9 @@ const electronHandler = {
 
 contextBridge.exposeInMainWorld('electron', electronHandler);
 
+contextBridge.exposeInMainWorld('ssh', {
+  connectSSH: (host : any, username : any, password : any) => ipcRenderer.invoke('connect-ssh', { host, username, password }),
+  execCommand: (connectionId : number, command : any) => ipcRenderer.invoke('exec-command', { connectionId, command }),
+});
+
 export type ElectronHandler = typeof electronHandler;
