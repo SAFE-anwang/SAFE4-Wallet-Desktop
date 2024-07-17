@@ -143,9 +143,6 @@
     "react-router-dom": "^6.21.1",
     "solc": "0.8.17",
     "source-map-support": "^0.5.21",
-    "sqlite3": "^5.1.7",
-    "ssh2": "^1.15.0",
-    "ssh2-sftp-client": "^10.0.3",
     "stream-browserify": "^3.0.0",
     "stream-http": "^3.2.0",
     "tiny-secp256k1": "^2.2.1",
@@ -219,7 +216,10 @@
     "webpack-cli": "^5.1.4",
     "webpack-dev-server": "^4.15.1",
     "webpack-merge": "^5.9.0",
-    "webpack-node-externals": "^3.0.0"
+    "webpack-node-externals": "^3.0.0",
+    "sqlite3": "^5.1.7",
+    "ssh2": "^1.15.0",
+    "ssh2-sftp-client": "^10.0.3"
   },
   "build": {
     "productName": "Safe4-Wallet-Desktop-TestNet",
@@ -298,5 +298,6 @@
       "src/main/**"
     ],
     "logLevel": "quiet"
-  }
+  },
+  "__npminstall_done": false
 }
