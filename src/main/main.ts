@@ -42,45 +42,42 @@ new ApplicationIpcManager(
   resourcePath, app.isPackaged
 ).register(ipcMain);
 
-const sshConnections = new Map<number, any>();
-let connectionId = 0;
+// let sshConnection : any;
 // SSH2
-ipcMain.handle('connect-ssh', async (_, { host, username, password }) => {
-  return new Promise((resolve, reject) => {
-    const conn = new ssh2.Client();
-    const id = ++connectionId;
-    conn.on('ready', () => {
-      sshConnections.set(id, conn);
-      resolve(id);
-      console.log(`Connect ${host} success , ID=${id} , connects:${Object.keys(sshConnections)}` )
-    }).on('error', (err: any) => {
-      reject(err);
-    }).connect({ host, username, password });
-  });
-});
+// ipcMain.handle('connect-ssh', async ( _ , { host, username, password }) => {
+//   return new Promise((resolve, reject) => {
+//     const conn = new ssh2.Client();
+//     console.log(`[ssh2] Connect to ${host} / ${username}`)
+//     conn.on('ready', () => {
+//       sshConnection = conn;
+//       resolve(true);
+//       console.log(`Connect ${host} success!` )
+//     }).on('error', (err: any) => {
+//       reject(err);
+//     }).connect({ host, username, password });
+//   });
+// });
 
-ipcMain.handle('exec-command', async (_, { connectionId, command }) => {
-  const conn = sshConnections.get(connectionId);
-  console.log( Object.keys(sshConnections) )
-  if (!conn) {
-    throw new Error(`Connection not found :${connectionId}`);
-  }
-  return new Promise((resolve, reject) => {
-    console.log("exec-command ::" , command);
-    conn.exec(command, (err : any, stream : any) => {
-      if (err) {
-        reject(err);
-      } else {
-        let data = '';
-        stream.on('data', (chunk : any) => {
-          data += chunk;
-        }).on('close', () => {
-          resolve(data);
-        });
-      }
-    });
-  });
-});
+// ipcMain.handle('exec-command', async (_, { command }) => {
+//   if (!sshConnection) {
+//     throw new Error(`Connection not found`);
+//   }
+//   return new Promise((resolve, reject) => {
+//     console.log("exec-command ::" , command);
+//     sshConnection.exec(command, (err : any, stream : any) => {
+//       if (err) {
+//         reject(err);
+//       } else {
+//         let data = '';
+//         stream.on('data', (chunk : any) => {
+//           data += chunk;
+//         }).on('close', () => {
+//           resolve(data);
+//         });
+//       }
+//     });
+//   });
+// });
 
 if (process.env.NODE_ENV === 'production') {
   const sourceMapSupport = require('source-map-support');

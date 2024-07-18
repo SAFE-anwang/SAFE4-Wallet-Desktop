@@ -10,6 +10,8 @@ import { ContractCompileHandler } from "./handlers/ContractCompileHandler";
 import { TimeNodeRewardHandler } from "./handlers/TimeNodeRewardHandler";
 import { WalletNameHandler } from "./handlers/WalletNameHandler";
 import { SSH2SignalHandler } from "./handlers/SSH2SignalHandler";
+import { SSH2Ipc } from "./SSH2Ipc";
+import { ipcMain } from "electron";
 
 export const Channel : Channels = "ipc-example";
 
@@ -54,5 +56,8 @@ export class ApplicationIpcManager {
         event.reply('ipc-example', msgTemplate('pong'));
       }
     });
+
+    new SSH2Ipc(ipcMain);
   }
+
 }

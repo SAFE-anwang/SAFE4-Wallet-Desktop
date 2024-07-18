@@ -7,8 +7,22 @@ import "@xterm/xterm/css/xterm.css";
 import { Terminal } from "@xterm/xterm";
 import { FitAddon } from '@xterm/addon-fit';
 
-
 const { Text } = Typography
+
+function convertSpecialCharsToLiteral(str: string) {
+  const specialCharsMap: any = {
+    '\n': '\\n',
+    '\r': '\\r',
+    '\t': '\\t',
+    '\b': '\\b',
+    '\f': '\\f',
+    '\v': '\\v',
+    '\\': '\\\\',
+    '\"': '\\"',
+    '\'': '\\\''
+  };
+  return str.split('').map(char => specialCharsMap[char] || char).join('');
+}
 
 export default () => {
 
@@ -16,17 +30,44 @@ export default () => {
   const terminalInstance = useRef<Terminal | null>(null);
 
   useEffect(() => {
+
+  }, []);
+
+
+  useEffect(() => {
+    let removeSSH2Stderr : any ;
     if (terminalRef.current) {
-      terminalInstance.current = new Terminal();
-      terminalInstance.current.open(terminalRef.current);
+      const term = new Terminal({
+        cursorBlink: true,
+        fontFamily: 'monospace',
+        fontSize: 14,
+        theme: {
+          background: '#000000', // 黑色背景
+          foreground: '#FFFFFF', // 白色文本
+          cursor: '#FFFFFF', // 白色光标
+        },
+      });
       // Optionally, fit the terminal to the container
       const fitAddon = new FitAddon();
+      terminalInstance.current = term;
       terminalInstance.current.loadAddon(fitAddon);
+      terminalInstance.current.open(terminalRef.current);
+      // fitAddon.fit();
+
+      removeSSH2Stderr = window.electron.ssh2.on((...args: any[]) => {
+        const stderr = args[0][0];
+        console.log("[ssh2-stderr] :" , stderr)
+        term.write(`\x1b[34m${stderr}\x1b[0m`);
+      })
+
     }
     return () => {
       // Cleanup and dispose the terminal instance
       if (terminalInstance.current) {
         terminalInstance.current.dispose();
+      }
+      if ( removeSSH2Stderr ){
+        removeSSH2Stderr();
       }
     };
   }, []);
@@ -54,9 +95,10 @@ export default () => {
           // 正常敲
           // Update the command buffer
           commandBuffer += data;
-          terminalInstance.current?.write(data);
+          terminalInstance.current?.write(`${data}`);
         }
       });
+      // wget -O /path/to/save/file.txt http://example.com/file.txt
     }
   }, [terminalInstance]);
 
@@ -64,10 +106,9 @@ export default () => {
     console.log("execute command :", command);
     const term = terminalInstance.current;
     if (term) {
-      window.ssh.execCommand( 4 , command )
-        .then(( data : any ) => {
-          // term.writeln(`Successed...`);
-          console.log("execute result :" , data)
+      window.electron.ssh2.shell(command)
+        .then((data: any) => {
+          term.write(`\x1b[34m${data.replace(/\n/g, '\r\n')}\x1b[0m\n`);
         })
         .catch((err: any) => {
 
@@ -84,12 +125,12 @@ export default () => {
       }
       const term = terminalInstance.current;
       term.writeln(`Connect to ${host}`);
-      window.ssh.connectSSH('47.107.47.210', 'root', 'Zy123456!')
+      window.electron.ssh2.connect('47.107.47.210', 22, 'root', 'Zy123456!')
         .then((connection: any) => {
           term.writeln(`Successed...${connection}`);
         })
         .catch((err: any) => {
-          console.log("error:" , err)
+          console.log("error:", err)
         });
     }
 
@@ -97,7 +138,7 @@ export default () => {
 
   return <>
     <Row style={{ marginTop: "50px" }}>
-      <Col span={24}>
+      <Col span={16}>
         <div ref={terminalRef} style={{ width: '100%', height: '100%', background: "black", padding: "5px" }} />
       </Col>
     </Row>
