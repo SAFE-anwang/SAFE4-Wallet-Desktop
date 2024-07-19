@@ -29,6 +29,10 @@ export default () => {
   const terminalRef = useRef<HTMLDivElement>(null);
   const terminalInstance = useRef<Terminal | null>(null);
 
+  useEffect(() => {
+
+  }, []);
+
 
   useEffect(() => {
     let removeSSH2Stderr : any ;
@@ -53,8 +57,7 @@ export default () => {
       removeSSH2Stderr = window.electron.ssh2.on((...args: any[]) => {
         const stderr = args[0][0];
         console.log("[ssh2-stderr] :" , stderr)
-        // term.write(`\x1b[34m${stderr}\x1b[0m`);
-        term.write(`${stderr}`);
+        term.write(`\x1b[34m${stderr}\x1b[0m`);
       })
 
     }
@@ -124,7 +127,7 @@ export default () => {
       term.writeln(`Connect to ${host}`);
       window.electron.ssh2.connect('47.107.47.210', 22, 'root', 'Zy123456!')
         .then((connection: any) => {
-          // term.writeln(`Successed...${connection}`);
+          term.writeln(`Successed...${connection}`);
         })
         .catch((err: any) => {
           console.log("error:", err)

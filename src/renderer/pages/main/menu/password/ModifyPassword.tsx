@@ -54,7 +54,7 @@ export default () => {
       inputErrors.inputPwd = "密码错误";
     }
     if (!PasswordRegex.test(inputNewPwd)) {
-      inputErrors.inputNewPwd = "请输入合法的密码";
+      inputErrors.inputNewPwd = "密码长度必须大于8,且必须包含大小写字母及特殊符号";
     }
     if (confirmNewPwd != inputNewPwd) {
       inputErrors.confirmNewPwd = "两次输入的新密码不一致";
