@@ -85,7 +85,18 @@ export default ({
           setAllVoteNum(CurrencyAmount.ether(data));
         });
     }
-  }, [supernodeVoteContract, blockNumber])
+  }, [supernodeVoteContract, blockNumber]);
+
+  useEffect(() => {
+    if (activeAccount && supernodeStorageContract) {
+      if (supernodeStorageContract && activeAccount) {
+        setCurrentSupernodeInfo(undefined);
+        // function getInfo(address _addr) external view returns (MasterNodeInfo memory);
+        supernodeStorageContract.callStatic.getInfo(activeAccount)
+          .then((_supernode: any) => setCurrentSupernodeInfo(formatSupernodeInfo(_supernode)))
+      }
+    }
+  }, [supernodeStorageContract, activeAccount]);
 
   useEffect(() => {
     if (supernodeStorageContract) {
