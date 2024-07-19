@@ -44,7 +44,7 @@ export default () => {
               <RightOutlined />
             </Col>
           </Row>
-          <Divider style={{ margin: "0px 0px" }} />
+          {/* <Divider style={{ margin: "0px 0px" }} />
           <Row className='menu-item' onClick={() => {
             navigate("/main/menu/storage")
           }}>
@@ -57,26 +57,25 @@ export default () => {
             <Col span={2} style={{ textAlign: "center" }}>
               <RightOutlined />
             </Col>
-          </Row>
+          </Row> */}
         </Card>
-
-        <Card className="menu-item-container" style={{ marginBottom: "20px" }}>
-          <Row className='menu-item' onClick={() => {
-            navigate("/main/menu/modifyPassword")
-          }}>
-            <Col span={2} style={{ textAlign: "center" }}>
-              <WalletOutlined />
-            </Col>
-            <Col span={20}>
-              修改钱包密码
-            </Col>
-            <Col span={2} style={{ textAlign: "center" }}>
-              <RightOutlined />
-            </Col>
-          </Row>
-          <Divider style={{ margin: "0px 0px" }} />
-        </Card>
-
+        {
+          password && <Card className="menu-item-container" style={{ marginBottom: "20px" }}>
+            <Row className='menu-item' onClick={() => {
+              navigate("/main/menu/modifyPassword")
+            }}>
+              <Col span={2} style={{ textAlign: "center" }}>
+                <WalletOutlined />
+              </Col>
+              <Col span={20}>
+                修改钱包密码
+              </Col>
+              <Col span={2} style={{ textAlign: "center" }}>
+                <RightOutlined />
+              </Col>
+            </Row>
+          </Card>
+        }
       </div>
     </div>
   </>)
