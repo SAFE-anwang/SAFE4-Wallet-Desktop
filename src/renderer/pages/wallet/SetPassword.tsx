@@ -9,9 +9,9 @@ import { applicationSetPassword } from "../../state/application/action";
 
 const { Text } = Typography;
 
-// export const PasswordRegex = /.{8,}/;
+export const PasswordRegex = /.{8,}/;
 
-export const PasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&*(),.?":{}|<>]).{8,}$/;
+// export const PasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&*(),.?":{}|<>]).{8,}$/;
 
 export default () => {
     const navigate = useNavigate();

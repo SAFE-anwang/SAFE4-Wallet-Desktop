@@ -55,23 +55,22 @@ export class SSH2Ipc {
                   if (line.indexOf(`${username}`) == 0
                     && line.indexOf(`# ${command}`) > 0 || line.indexOf(`$ ${command}`) > 0) {
                     this.commandWaitingLine = line.split(" ")[0].trim();
-                  }else if ( line.trim() != command && line.trim() != username ){
+                  } else if (line.trim() != command && line.trim() != username) {
                     event.sender.send('ssh2-stderr', [line + "\n"]);
                   }
                 });
               } else {
                 // 判断剩余的字符是否为 'root@iZwz9add4h2zp7bp5htps9Z:~#' , 如果是,则标志着命令执行结束.
                 if (lineBuffer.trim() == this.commandWaitingLine.trim()) { // Adjust this condition based on your prompt
-                  event.sender.send('ssh2-stderr', [ lineBuffer.trim() ]);
-                  stream.end();
+                  event.sender.send('ssh2-stderr', [lineBuffer.trim()]);
+                  resolve(chunkBuffer);
                 }
               }
             });
             stream.on("close", () => {
-              console.log(`[ssh2-shell/${command}] close end;`)
+              console.log(`[ssh2-shell/${command}] close;`)
             });
             stream.write(command + '\n');
-            resolve(true);
           });
         }).on('error', (err: any) => {
           reject(err);
@@ -85,33 +84,48 @@ export class SSH2Ipc {
         throw new Error(`Connection not found`);
       }
       return new Promise((resolve, reject) => {
-        console.log(`[ssh2] +++++++ {'${command}'} +++++++`);
+        console.log(`[ssh2-exec-${command}] >>>`);
         this.sshConnection.exec(command, (err: any, stream: any) => {
           if (err) {
             reject(err);
-          } else {
-            let data = '';
-            let stderrBuffer = '';
-            stream.on('data', (chunk: any) => {
-              data += chunk;
-            }).on('close', () => {
-              console.log(`${data}`);
-              console.log(`[ssh2] ------- {'${command}'} -------`);
-              resolve(data);
-            }).stderr.on('data', (chunk: any) => {
-              let chunkStr = chunk.toString();
-              let newlineIndex = chunkStr.indexOf('\n');
-              if (newlineIndex != -1) {
-                stderrBuffer += chunkStr.substring(0, newlineIndex + 1);
-                event.sender.send('ssh2-stderr', [stderrBuffer]);
-                console.log("[ssh2-stderr]:", stderrBuffer);
-                stderrBuffer = '';
-                stderrBuffer = chunkStr.substring(newlineIndex + 1);
-              } else {
-                stderrBuffer += chunk;
-              }
-            });
+            return;
           }
+          let lineBuffer = '';
+          let chunkBuffer = '';
+          // 监听数据流
+          stream.on('data', (chunk: any) => {
+            chunkBuffer += chunk;
+            lineBuffer += chunk.toString();
+            // Check for a newline character indicating the end of a line
+            if (lineBuffer.includes('\n')) {
+              const lines = lineBuffer.split('\n');
+              lineBuffer = lines.pop() || '';
+              // Process each line
+              lines.forEach(line => {
+                console.log(`[ssh2-exec-${command}] <<< ${line}`);
+                event.sender.send('ssh2-stderr', [line + "\r\n"]);
+              });
+            }
+          })
+            .on("close", () => {
+              resolve(chunkBuffer);
+              console.log(`[ssh2-exec-${command} |end ::]`);
+              event.sender.send('ssh2-stderr', [this.commandWaitingLine.trim() + " "]);
+            });
+          stream.stderr.on("data", (chunk: any) => {
+            chunkBuffer += chunk;
+            lineBuffer += chunk.toString();
+            // Check for a newline character indicating the end of a line
+            if (lineBuffer.includes('\n')) {
+              const lines = lineBuffer.split('\n');
+              lineBuffer = lines.pop() || '';
+              // Process each line
+              lines.forEach(line => {
+                console.log(`[ssh2-exec-${command}] <<< ${line}`);
+                event.sender.send('ssh2-stderr', [line + "\r\n"]);
+              });
+            }
+          })
         });
       });
     });
@@ -122,43 +136,71 @@ export class SSH2Ipc {
       }
 
       return new Promise((resolve, reject) => {
-        console.log(`[ssh2-shell->>[${command}]`);
+        console.log(`[ssh2-shell-${command}] >>>`);
         // 使用 shell 方法执行命令
         this.sshConnection.shell((err: any, stream: any) => {
           if (err) {
             reject(err);
             return;
           }
-          let data = '';
-          let stderrBuffer = '';
+          let lineBuffer = '';
+          let chunkBuffer = '';
+          let filterFirst = false;
           // 监听数据流
           stream.on('data', (chunk: any) => {
-            if (chunk.toString().trim() === command) {
-
+            lineBuffer += chunk.toString();
+            // Check for a newline character indicating the end of a line
+            if (lineBuffer.includes('\n')) {
+              const lines = lineBuffer.split('\n');
+              lineBuffer = lines.pop() || '';
+              // Process each line
+              lines.forEach(line => {
+                if (line.trim() == command) {
+                  console.log(`[ssh2-shell-${command}] cmd< ${line}`);
+                } else if (line.trim().indexOf(this.commandWaitingLine) > -1) {
+                  filterFirst = true;
+                  console.log(`[ssh2-shell-${command}] rmd< ${line}`);
+                  event.sender.send('ssh2-stderr', [line + "\n"]);
+                } else {
+                  console.log(`[ssh2-shell-${command}] <<< ${line}`);
+                  chunkBuffer += line + "\n";
+                  event.sender.send('ssh2-stderr', [line + "\n"]);
+                }
+              });
             } else {
-              console.log(`[ssh2-shell-<<]${chunk}`);
               event.sender.send('ssh2-stderr', [chunk.toString()]);
+              // 判断剩余的字符是否为 'root@iZwz9add4h2zp7bp5htps9Z:~#' , 如果是,则标志着命令执行结束.
+              if (lineBuffer.trim() == this.commandWaitingLine.trim()) { // Adjust this condition based on your prompt
+                if (!filterFirst) {
+                  filterFirst = !filterFirst;
+                  console.log(`[ssh2-shell-${command}|fil] <<${lineBuffer}`);
+                } else {
+                  console.log(`[ssh2-shell-${command}|end] ::${lineBuffer}`);
+                  resolve(chunkBuffer);
+                  event.sender.send('ssh2-stderr', [lineBuffer]);
+                }
+              }
             }
           });
           // 监听错误流
-          stream.stderr.on('data', (chunk: any) => {
-            console.log(`[ssh2] Received error: ${chunk}`);
-            let chunkStr = chunk.toString();
-            let newlineIndex = chunkStr.indexOf('\n');
-            if (newlineIndex !== -1) {
-              stderrBuffer += chunkStr.substring(0, newlineIndex + 1);
-              event.sender.send('ssh2-stderr', [stderrBuffer]);
-              console.log("[ssh2-stderr]:", stderrBuffer);
-              stderrBuffer = chunkStr.substring(newlineIndex + 1);
-            } else {
-              stderrBuffer += chunkStr;
-            }
-          });
+          // stream.stderr.on('data', (chunk: any) => {
+          //   console.log(`[ssh2] Received error: ${chunk}`);
+          //   let chunkStr = chunk.toString();
+          //   let newlineIndex = chunkStr.indexOf('\n');
+          //   if (newlineIndex !== -1) {
+          //     stderrBuffer += chunkStr.substring(0, newlineIndex + 1);
+          //     event.sender.send('ssh2-stderr', [stderrBuffer]);
+          //     console.log("[ssh2-stderr]:", stderrBuffer);
+          //     stderrBuffer = chunkStr.substring(newlineIndex + 1);
+          //   } else {
+          //     stderrBuffer += chunkStr;
+          //   }
+          // });
           // 监听流关闭事件
-          stream.on('close', () => {
-            console.log(`[ssh2] Command execution completed`);
-            resolve(data);
-          });
+          // stream.on('close', () => {
+          //   console.log(`[ssh2] Command execution completed`);
+          //   resolve(data);
+          // });
           // 发送命令并结束会话
           stream.write(command + '\n');
         });
