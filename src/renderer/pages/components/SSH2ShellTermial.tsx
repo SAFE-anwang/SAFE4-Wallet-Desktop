@@ -1,14 +1,7 @@
 import { FitAddon } from "@xterm/addon-fit";
 import { Terminal } from "@xterm/xterm";
 import { useEffect, useRef } from "react";
-
-
-export interface SSH2ConnectConfig {
-  host: string,
-  port: number,
-  username: string,
-  password: string
-}
+import { SSH2ConnectConfig } from "../../../main/SSH2Ipc";
 
 /**
  * 进行窗口输入命令交互式的终端页面.

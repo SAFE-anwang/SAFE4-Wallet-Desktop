@@ -16,6 +16,13 @@ function convertSpecialCharsToLiteral(str: string) {
   return str.split('').map(char => specialCharsMap[char] || char).join('');
 }
 
+export interface SSH2ConnectConfig {
+  host: string,
+  port: number,
+  username: string,
+  password: string
+}
+
 export class SSH2Ipc {
 
   sshConnection: any;
@@ -62,7 +69,7 @@ export class SSH2Ipc {
               } else {
                 // 判断剩余的字符是否为 'root@iZwz9add4h2zp7bp5htps9Z:~#' , 如果是,则标志着命令执行结束.
                 if (lineBuffer.trim() == this.commandWaitingLine.trim()) { // Adjust this condition based on your prompt
-                  event.sender.send('ssh2-stderr', [lineBuffer.trim()]);
+                  event.sender.send('ssh2-stderr', [lineBuffer.trim()+" "]);
                   resolve(chunkBuffer);
                 }
               }
