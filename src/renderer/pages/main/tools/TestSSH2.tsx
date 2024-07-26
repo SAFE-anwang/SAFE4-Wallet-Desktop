@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react"
 import { SSH2_Methods, SSH2SignalHandler, SSH2Singal } from "../../../../main/handlers/SSH2SignalHandler";
 import { IPC_CHANNEL } from "../../../config";
-import { Button, Col, Row, Typography } from "antd";
+import { Button, Col, Modal, Row, Typography } from "antd";
 
 import "@xterm/xterm/css/xterm.css";
 import { Terminal } from "@xterm/xterm";
@@ -10,6 +10,8 @@ import SSH2ShellTermial from "../../components/SSH2ShellTermial";
 import SSH2CMDTerminal from "../../components/SSH2CMDTerminal";
 import SSH2CMDTerminalScript from "../../components/SSH2CMDTerminalScript";
 import SSH2CMDTerminalNode from "../../components/SSH2CMDTerminalNode";
+import SSH2CMDTerminalNodeModal from "../../components/SSH2CMDTerminalNodeModal";
+import { useWalletsActivePrivateKey } from "../../../state/wallets/hooks";
 
 const { Text } = Typography
 
@@ -30,6 +32,9 @@ function convertSpecialCharsToLiteral(str: string) {
 
 export default () => {
 
+  const [openModal , setOpenModal] = useState(true);
+  const activeAccountPrivateKey = useWalletsActivePrivateKey();
+
   return <>
 
     {/* <Row style={{ marginTop: "50px" }}>
@@ -46,18 +51,27 @@ export default () => {
       </Col>
     </Row> */}
 
-    <Row style={{ marginTop: "50px" }}>
-      <Col span={24}>
-        <SSH2CMDTerminalNode />
-      </Col>
-    </Row>
+    <Button style={{ marginTop: "100px" }} onClick={()=>setOpenModal(true)}>Help</Button>
+    {
+      openModal && activeAccountPrivateKey && <SSH2CMDTerminalNodeModal openSSH2CMDTerminalNodeModal={openModal} setOpenSSH2CMDTerminalNodeModal={setOpenModal}
+        nodeAddressPrivateKey={activeAccountPrivateKey}
+        onSuccess={( enode : string , nodeAddress : string ) => {
+          console.log({
+            enode ,
+            nodeAddress
+          })
+        }}
+        onError={() => {
+
+        }}
+      />
+    }
 
     <Row style={{ marginTop: "20px" }}>
       {
         "wget -O list.json https://binaries.soliditylang.org/bin/list.json"
       }
     </Row>
-
 
     <Row style={{ marginTop: "20px" }}>
       {

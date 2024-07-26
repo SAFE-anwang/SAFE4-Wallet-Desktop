@@ -252,15 +252,12 @@ export default () => {
 
   }, [terminalInstance]);
 
-  const description = 'This is a description.';
-
   return <>
-
     <Row>
       <Col span={8}>
         {
           current < 0 &&
-          <Card title="SSH 连接" style={{ width: "95%" }}>
+          <Card title="SSH 连接" style={{ width: "95%" , height : "450px"}}>
             <Spin spinning={connecting}>
               <Row>
                 <Col span={24}>
@@ -333,7 +330,7 @@ export default () => {
 
         {
           current >= 0 &&
-          <Card title="进度" style={{ width: "95%" }}>
+          <Card title="进度" style={{ width: "95%" , height : "450px" }}>
             <Steps
               direction="vertical"
               size="small"
