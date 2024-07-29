@@ -1,11 +1,11 @@
 import { ReactNode, useCallback, useEffect, useRef, useState } from "react";
-import { SSH2ConnectConfig } from "../../../main/SSH2Ipc"
 import { Terminal } from "@xterm/xterm";
 import { FitAddon } from "@xterm/addon-fit";
 import { Button, Card, Col, Input, Row, Typography, Steps, Alert, Divider, Spin, Modal } from "antd";
 import { ethers } from "ethers";
 import { useApplicationPassword } from "../../state/application/hooks";
 import AddressComponent from "./AddressComponent";
+import { LoadingOutlined } from "@ant-design/icons";
 
 const { Text } = Typography;
 
@@ -24,17 +24,17 @@ export class CommandState {
     this.onFailure = onFailure;
   }
 
-  execute(term: Terminal, hidden ?: string ) {
+  execute(term: Terminal, hidden?: string) {
     const promise = new Promise(async (resolve, reject) => {
       setTimeout(async () => {
-        if ( hidden ){
+        if (hidden) {
           term.writeln(hidden.toString());
-        }else{
+        } else {
           term.writeln(this.command);
         }
         const data = await window.electron.ssh2.execute(this.command);
         resolve(this.handle(data));
-      }, 1000)
+      }, 500)
     });
     return promise;
   }
@@ -42,7 +42,6 @@ export class CommandState {
 }
 
 const DEFAULT_CONFIG = {
-
   // 节点程序的下载地址
   Safe4FileURL: "https://binaries.soliditylang.org/bin/list.json",
   // Safe4FileURL : "www.anwang.com/download/testnet/safe4_node/safe4-testnet.linux.v0.1.7.zip" ,
@@ -53,7 +52,6 @@ const DEFAULT_CONFIG = {
   // 默认数据文件目录
   Safe4DataDir: ".safe4/safetest",
 }
-
 
 /**
  * 进行脚本化交互的终端交互页面
@@ -78,21 +76,23 @@ export default ({
   const wallet = new ethers.Wallet(nodeAddressPrivateKey);
   const [enode, setEnode] = useState<string>();
 
-
-  const DEFAULT_STEPS = [
-    {
-      title: "等待执行",
-      description: "启动 Safe4 节点"
-    },
-    {
-      title: "等待执行",
-      description: "上传节点地址加密 Keystore 文件"
-    },
-    {
-      title: "等待执行",
-      description: "获取节点 ENODE 信息"
-    }
-  ];
+  const DEFAULT_STEPS: {
+    title: string | ReactNode,
+    description: string | ReactNode
+  }[] = [
+      {
+        title: "等待执行",
+        description: "启动 Safe4 节点"
+      },
+      {
+        title: "等待执行",
+        description: "上传节点地址加密 Keystore 文件"
+      },
+      {
+        title: "等待执行",
+        description: "获取节点 ENODE 信息"
+      }
+    ];
 
   const [steps, setSteps] = useState(DEFAULT_STEPS);
   const [current, setCurrent] = useState(-1);
@@ -107,7 +107,7 @@ export default ({
       }
       if (index == current) {
         return {
-          title: "正在执行",
+          title: <><LoadingOutlined style={{marginRight:"5px"}} />正在执行</>,
           description: description ?? step.description
         }
       }
@@ -137,6 +137,7 @@ export default ({
     password: undefined
   });
   const [connecting, setConnecting] = useState(false);
+  const [connectError, setConnectError] = useState<string>();
 
   useEffect(() => {
     let removeSSH2Stderr: any;
@@ -171,6 +172,7 @@ export default ({
       if (removeSSH2Stderr) {
         removeSSH2Stderr();
       }
+      window.electron.ssh2.close();
     };
   }, []);
 
@@ -219,7 +221,19 @@ export default ({
           afterConnect();
         })
         .catch((err: any) => {
-          console.log("error:", err)
+          console.log(err);
+          const msg = err.toString();
+          term.writeln(`\x1b[31m${msg}\x1b[0m`);
+          if (msg.indexOf("authentication") > 0) {
+            // 认证失败，账户密码错误
+            console.log("认证失败");
+            setConnectError("认证失败,请检查用户名和密码是否正确.");
+          } else if (msg.indexOf("waiting") > 0) {
+            // 连接超时
+            console.log("连接超时");
+            setConnectError("连接超时,请检查服务器IP是否正确.");
+          }
+          setConnecting(false);
         });
     }
 
@@ -297,15 +311,15 @@ export default ({
       () => console.log("")
     )
 
-    const CMD_checkKeystore : CommandState = new CommandState(
+    const CMD_checkKeystore: CommandState = new CommandState(
       `find ${Safe4DataDir}/keystore -type f -name "*${wallet.address.toLocaleLowerCase().substring(2)}*" -print -quit | grep -q '.' && echo "Keystore file exists" || echo "Keystore file does not exist"`,
-      (data : string) => {
+      (data: string) => {
         let _data = data.trim();
-        if ("Keystore file does not exist" == _data){
-          console.log("[.keystore not exists] = ",data)
+        if ("Keystore file does not exist" == _data) {
+          console.log("[.keystore not exists] = ", data)
           return false;
-        }else{
-          console.log("[.keystore exists] = ",data)
+        } else {
+          console.log("[.keystore exists] = ", data)
           return true;
         }
       },
@@ -355,21 +369,21 @@ export default ({
         updateSteps(0, "启动 Safe4 节点程序");
         const CMD_start_success = await CMD_start.execute(term);
       } else {
-        updateSteps(0 , "Safe4 节点程序已运行");
+        updateSteps(0, "Safe4 节点程序已运行");
       }
 
-      updateSteps(1 , "Safe4 节点程序已运行");
+      updateSteps(1, "Safe4 节点程序已运行");
       const CMD_checkKeystore_success = await CMD_checkKeystore.execute(term);
-      if ( ! CMD_checkKeystore_success ){
+      if (!CMD_checkKeystore_success) {
         updateSteps(1, "使用钱包密码加密节点地址 Keystore文件");
         const { address, keystore } = await outputKeyStore();
         const keystoreStr = keystore.toString().replaceAll("\"", "\\\"");
 
-        const hiddenKeystore = JSON.parse( keystore );
-        console.log("hiddenKeystore==" , hiddenKeystore);
+        const hiddenKeystore = JSON.parse(keystore);
+        console.log("hiddenKeystore==", hiddenKeystore);
         hiddenKeystore.crypto.ciphertext = "****************************************";
         const hidden = JSON.stringify(hiddenKeystore).replaceAll("\"", "\\\"");
-        console.log("hidden ==" , hidden)
+        console.log("hidden ==", hidden)
 
         const CMD_importKey: CommandState = new CommandState(
           `echo "${keystoreStr}" > ${Safe4DataDir}/keystore/UTC-${address.toLowerCase().substring(2)}`,
@@ -380,7 +394,10 @@ export default ({
           () => console.log("")
         )
         updateSteps(1, "上传节点地址 Keystore 文件");
-        const CMD_importKey_success = await CMD_importKey.execute(term , hidden);
+        const CMD_importKey_success = await CMD_importKey.execute(
+          term,
+          `echo "${hidden}" > ${Safe4DataDir}/keystore/UTC-${address.toLowerCase().substring(2)}`
+        );
       } else {
         updateSteps(1, "节点地址 Keystore 文件已存在");
       }
@@ -414,6 +431,7 @@ export default ({
                         ...inputErrors,
                         host: undefined
                       })
+                      setConnectError(undefined);
                     }} />
                     {
                       inputErrors?.host && <Alert style={{ marginTop: "5px" }} showIcon type="error" message={inputErrors?.host} />
@@ -433,6 +451,7 @@ export default ({
                         ...inputErrors,
                         username: undefined
                       })
+                      setConnectError(undefined);
                     }} />
                     {
                       inputErrors.username && <Alert style={{ marginTop: "5px" }} showIcon type="error" message={inputErrors.username} />
@@ -452,16 +471,30 @@ export default ({
                         ...inputErrors,
                         password: undefined
                       })
+                      setConnectError(undefined);
                     }} />
                     {
                       inputErrors.password && <Alert style={{ marginTop: "5px" }} showIcon type="error" message={inputErrors.password} />
                     }
                   </Col>
                 </Row>
+                {
+                  connectError && <>
+                    <Divider />
+                    <Row>
+                      <Col span={24}>
+                        <Alert type="error" showIcon message={connectError} />
+                      </Col>
+                    </Row>
+                  </>
+                }
                 <Divider />
                 <Row style={{ marginTop: "20px" }}>
                   <Col span={24}>
                     <Button onClick={doConnect} type="primary">连接</Button>
+                    <Button style={{marginLeft:"20px"}} onClick={() => {
+                      setOpenSSH2CMDTerminalNodeModal(false);
+                    }} type="default">关闭</Button>
                   </Col>
                 </Row>
               </Spin>

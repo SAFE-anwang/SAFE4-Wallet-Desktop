@@ -52,6 +52,9 @@ const electronHandler = {
         ipcRenderer.removeListener("ssh2-stderr", subscription);
       };
     },
+    close(){
+      return ipcRenderer.invoke('connect-close', {})
+    }
   }
 
 };

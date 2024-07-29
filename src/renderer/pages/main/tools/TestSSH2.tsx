@@ -32,7 +32,7 @@ function convertSpecialCharsToLiteral(str: string) {
 
 export default () => {
 
-  const [openModal , setOpenModal] = useState(true);
+  const [openModal , setOpenModal] = useState(false);
   const activeAccountPrivateKey = useWalletsActivePrivateKey();
 
   return <>

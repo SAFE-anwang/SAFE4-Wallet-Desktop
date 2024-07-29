@@ -1,3 +1,4 @@
+import { message } from 'antd';
 
 const ssh2 = require("ssh2");
 
@@ -38,7 +39,6 @@ export class SSH2Ipc {
         conn.on('ready', () => {
           this.sshConnection = conn;
           console.log(`Connect ${host} success!`);
-
           let lineBuffer = '';
           let chunkBuffer = '';
           const command = "whoami";
@@ -80,10 +80,19 @@ export class SSH2Ipc {
             stream.write(command + '\n');
           });
         }).on('error', (err: any) => {
+          console.log("[ssh2] connect error:" , err);
           reject(err);
         }).connect({ host, username, password });
 
       });
+    });
+
+    ipcMain.handle("connect-close" , () => {
+      console.log("[ssh2] handle connection close;")
+      if ( this.sshConnection ){
+        this.sshConnection.end();
+        console.log("[ssh2] connection closed;")
+      }
     });
 
     ipcMain.handle('exec-command', async (event: any, { command }: { command: string }) => {
