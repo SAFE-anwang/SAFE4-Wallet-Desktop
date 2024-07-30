@@ -1,15 +1,16 @@
 import { Typography, Row, Col, Button, Card, Checkbox, CheckboxProps, Divider, Input, Slider, Alert, Radio, Space } from 'antd';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { LeftOutlined, QuestionCircleOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { Currency, CurrencyAmount, JSBI } from '@uniswap/sdk';
 import { ethers } from 'ethers';
-import { useETHBalances, useWalletsActiveAccount } from '../../../../state/wallets/hooks';
+import { useETHBalances, useWalletsActiveAccount, useWalletsActivePrivateKey, useWalletsKeystores, useWalletsList } from '../../../../state/wallets/hooks';
 import { useMasternodeStorageContract, useMulticallContract, useSupernodeStorageContract } from '../../../../hooks/useContracts';
 import RegisterModalConfirm from './RegisterModal-Confirm';
 import NumberFormat from '../../../../utils/NumberFormat';
 import { Safe4_Business_Config } from '../../../../config';
 import CallMulticallAggregate, { CallMulticallAggregateContractCall } from '../../../../state/multicall/CallMulticallAggregate';
+import SSH2CMDTerminalNodeModal from '../../../components/SSH2CMDTerminalNodeModal';
 const { Text, Title } = Typography;
 
 export const Masternode_Create_Type_NoUnion = 1;
@@ -32,6 +33,15 @@ export default () => {
   const multicallContract = useMulticallContract();
   const [openRegisterModal, setOpenRegsterModal] = useState<boolean>(false);
   const [enodeTips, setEnodeTips] = useState<boolean>(false);
+  const [openSSH2CMDTerminalNodeModal, setOpenSSH2CMDTerminalNodeModal] = useState<boolean>(false);
+  const walletKeystores = useWalletsKeystores();
+  const [nodeAddressPrivateKey, setNodeAddressPrivateKey] = useState<string>();
+  const [helpResult, setHelpResult] = useState<
+    {
+      enode: string,
+      nodeAddress: string
+    }
+  >();
 
   const [registerParams, setRegisterParams] = useState<{
     registerType: number | 1,
@@ -54,16 +64,18 @@ export default () => {
   });
 
   useEffect(() => {
-    setRegisterParams({
-      ...registerParams,
-      address: activeAccount
-    })
+    if (!helpResult) {
+      setRegisterParams({
+        ...registerParams,
+        address: activeAccount
+      })
+    }
     setInputErrors({
       ...inputErrors,
       balance: undefined,
       address: undefined
     })
-  }, [activeAccount]);
+  }, [activeAccount, helpResult]);
 
   const [sliderVal, setSliderVal] = useState<number>(50);
   const [inputErrors, setInputErrors] = useState<{
@@ -150,10 +162,10 @@ export default () => {
       CallMulticallAggregate(multicallContract, [
         addrExistCall, addrExistInSupernodesCall, enodeExistCall, enodeExistInSupernodesCall
       ], () => {
-        const addrExistsInMasternodes : boolean = addrExistCall.result;
-        const addrExistsInSupernodes : boolean = addrExistInSupernodesCall.result;
-        const enodeExistsInMasternodes : boolean = enodeExistCall.result;
-        const enodeExistsInSupernodes : boolean = enodeExistInSupernodesCall.result;
+        const addrExistsInMasternodes: boolean = addrExistCall.result;
+        const addrExistsInSupernodes: boolean = addrExistInSupernodesCall.result;
+        const enodeExistsInMasternodes: boolean = enodeExistCall.result;
+        const enodeExistsInSupernodes: boolean = enodeExistInSupernodesCall.result;
         setChecking(false);
         if (addrExistsInMasternodes || addrExistsInSupernodes) {
           inputErrors.address = "该钱包地址已被使用";
@@ -172,6 +184,25 @@ export default () => {
 
   const [checking, setChecking] = useState<boolean>(false);
 
+  const helpToCreate = useCallback(() => {
+    const address = registerParams.address;
+    let addressInWallet = false;
+    walletKeystores.forEach(wallet => {
+      if (address == wallet.address) {
+        addressInWallet = true;
+        setNodeAddressPrivateKey(wallet.privateKey);
+      }
+    });
+    if (!addressInWallet) {
+      setInputErrors({
+        ...inputErrors,
+        address: "选择辅助创建时,主节点钱包地址必须使用钱包内管理的地址."
+      });
+      return;
+    }
+    setOpenSSH2CMDTerminalNodeModal(true);
+  }, [registerParams, walletKeystores]);
+
   return <>
     <Row style={{ height: "50px" }}>
       <Col span={8}>
@@ -187,6 +218,25 @@ export default () => {
     <Row style={{ marginTop: "20px", width: "100%" }}>
       <Card style={{ width: "100%" }}>
         <div style={{ width: "50%", margin: "auto" }}>
+          <Row style={{ marginTop: "20px", marginBottom: "20px" }}>
+            <Col span={24}>
+              <Alert type='info' showIcon message={
+                <>
+                  <Row>
+                    <Col span={24}>
+                      <Text>
+                        已有服务器,也可以选择通过 SSH 登陆来辅助创建主节点.
+                      </Text>
+                      <Button onClick={() => {
+                        helpToCreate();
+                      }} type='primary' size='small' style={{ float: "right" }}>辅助创建</Button>
+                    </Col>
+                  </Row>
+                </>
+              }></Alert>
+            </Col>
+          </Row>
+
           <Row>
             <Col span={24}>
               <Text type='secondary'>创建模式</Text><br />
@@ -236,6 +286,7 @@ export default () => {
           <Row>
             <Text type='secondary'>主节点钱包地址</Text>
             <Input status={inputErrors.address ? "error" : ""}
+              disabled={helpResult ? true : false}
               value={registerParams.address} placeholder='请输入主节点钱包地址' onChange={(event) => {
                 const inputDescription = event.target.value;
                 setInputErrors({
@@ -267,6 +318,7 @@ export default () => {
               </Col>
             }
             <Input.TextArea style={{ height: "100px" }} status={inputErrors.enode ? "error" : ""}
+              disabled={helpResult ? true : false}
               value={registerParams.enode} placeholder='输入主节点节点ENODE' onChange={(event) => {
                 const inputEnode = event.target.value;
                 setInputErrors({
@@ -346,6 +398,31 @@ export default () => {
     </Row>
 
     <RegisterModalConfirm openRegisterModal={openRegisterModal} setOpenRegisterModal={setOpenRegsterModal} registerParams={registerParams} />
+
+    {
+      nodeAddressPrivateKey && openSSH2CMDTerminalNodeModal &&
+      <SSH2CMDTerminalNodeModal openSSH2CMDTerminalNodeModal={openSSH2CMDTerminalNodeModal} setOpenSSH2CMDTerminalNodeModal={setOpenSSH2CMDTerminalNodeModal}
+        nodeAddressPrivateKey={nodeAddressPrivateKey}
+        onSuccess={(enode: string, nodeAddress: string) => {
+          setHelpResult({ enode, nodeAddress });
+          setRegisterParams({
+            ...registerParams,
+            address: nodeAddress,
+            enode
+          });
+
+          setInputErrors({
+            ...inputErrors,
+            address: undefined,
+            enode: undefined
+          })
+        }}
+        onError={() => {
+
+        }} />
+    }
+
+
   </>
 
 }

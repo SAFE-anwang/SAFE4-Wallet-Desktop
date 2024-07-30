@@ -1,6 +1,6 @@
 import { Typography, Row, Col, Button, Card, Divider, Input, Slider, Alert, Radio, Space } from 'antd';
-import { useEffect, useState } from 'react';
-import { useETHBalances, useWalletsActiveAccount } from '../../../../state/wallets/hooks';
+import { useCallback, useEffect, useState } from 'react';
+import { useETHBalances, useWalletsActiveAccount, useWalletsKeystores } from '../../../../state/wallets/hooks';
 import { useMasternodeStorageContract, useMulticallContract, useSupernodeStorageContract } from '../../../../hooks/useContracts';
 import { LeftOutlined, QuestionCircleOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
@@ -10,12 +10,13 @@ import CreateModalConfirm from './CreateModal-Confirm';
 import NumberFormat from '../../../../utils/NumberFormat';
 import { Safe4_Business_Config } from '../../../../config';
 import CallMulticallAggregate, { CallMulticallAggregateContractCall } from '../../../../state/multicall/CallMulticallAggregate';
+import SSH2CMDTerminalNodeModal from '../../../components/SSH2CMDTerminalNodeModal';
 const { Text, Title } = Typography;
 
 export const Supernode_Create_Type_NoUnion = 1;
 export const Supernode_create_type_Union = 2;
 
-export const enodeRegex = /^enode:\/\/[0-9a-fA-F]{128}@(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}):(\d+)$/ ;
+export const enodeRegex = /^enode:\/\/[0-9a-fA-F]{128}@(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}):(\d+)$/;
 
 export const InputRules = {
   name: {
@@ -38,6 +39,15 @@ export default () => {
   const balance = useETHBalances([activeAccount])[activeAccount];
   const [enodeTips, setEnodeTips] = useState<boolean>(false);
   const [checking, setChecking] = useState<boolean>(false);
+  const walletKeystores = useWalletsKeystores();
+  const [openSSH2CMDTerminalNodeModal, setOpenSSH2CMDTerminalNodeModal] = useState<boolean>(false);
+  const [nodeAddressPrivateKey, setNodeAddressPrivateKey] = useState<string>();
+  const [helpResult, setHelpResult] = useState<
+    {
+      enode: string,
+      nodeAddress: string
+    }
+  >();
 
   const [createParams, setCreateParams] = useState<{
     createType: number | 1,
@@ -132,27 +142,27 @@ export default () => {
        * function existEnode(string memory _enode) external view returns (bool);
        */
       setChecking(true);
-      const nameExistCall : CallMulticallAggregateContractCall = {
+      const nameExistCall: CallMulticallAggregateContractCall = {
         contract: supernodeStorageContract,
         functionName: "existName",
         params: [name],
       };
-      const addrExistCall : CallMulticallAggregateContractCall= {
+      const addrExistCall: CallMulticallAggregateContractCall = {
         contract: supernodeStorageContract,
         functionName: "exist",
         params: [address]
       }
-      const addrExistInMasternodesCall : CallMulticallAggregateContractCall = {
+      const addrExistInMasternodesCall: CallMulticallAggregateContractCall = {
         contract: masternodeStorageContract,
         functionName: "exist",
         params: [address]
       }
-      const enodeExistCall : CallMulticallAggregateContractCall = {
+      const enodeExistCall: CallMulticallAggregateContractCall = {
         contract: supernodeStorageContract,
         functionName: "existEnode",
         params: [enode]
       }
-      const enodeExistInMasternodeCall : CallMulticallAggregateContractCall = {
+      const enodeExistInMasternodeCall: CallMulticallAggregateContractCall = {
         contract: masternodeStorageContract,
         functionName: "existEnode",
         params: [enode]
@@ -161,11 +171,11 @@ export default () => {
         multicallContract,
         [nameExistCall, addrExistCall, addrExistInMasternodesCall, enodeExistCall, enodeExistInMasternodeCall],
         () => {
-          const nameExists : boolean = nameExistCall.result;
-          const addrExists : boolean = addrExistCall.result;
-          const addrExistsInMasternodes : boolean = addrExistInMasternodesCall.result;
-          const enodeExists : boolean = enodeExistCall.result;
-          const enodeExistsInMasternodes : boolean = enodeExistInMasternodeCall.result;
+          const nameExists: boolean = nameExistCall.result;
+          const addrExists: boolean = addrExistCall.result;
+          const addrExistsInMasternodes: boolean = addrExistInMasternodesCall.result;
+          const enodeExists: boolean = enodeExistCall.result;
+          const enodeExistsInMasternodes: boolean = enodeExistInMasternodeCall.result;
           if (nameExists) {
             inputErrors.name = "该名称已被使用";
           }
@@ -188,16 +198,37 @@ export default () => {
   const [openCreateModal, setOpenCreateModal] = useState<boolean>(false);
 
   useEffect(() => {
-    setCreateParams({
-      ...createParams,
-      address: activeAccount
-    })
+    if (!helpResult) {
+      setCreateParams({
+        ...createParams,
+        address: activeAccount
+      })
+    }
     setInputErrors({
       ...inputErrors,
       balance: undefined,
       address: undefined
     })
-  }, [activeAccount]);
+  }, [activeAccount, helpResult]);
+
+  const helpToCreate = useCallback(() => {
+    const address = createParams.address;
+    let addressInWallet = false;
+    walletKeystores.forEach(wallet => {
+      if (address == wallet.address) {
+        addressInWallet = true;
+        setNodeAddressPrivateKey(wallet.privateKey);
+      }
+    });
+    if (!addressInWallet) {
+      setInputErrors({
+        ...inputErrors,
+        address: "选择辅助创建时,超级节点钱包地址必须使用钱包内管理的地址."
+      });
+      return;
+    }
+    setOpenSSH2CMDTerminalNodeModal(true);
+  }, [createParams, walletKeystores]);
 
   return <>
     <Row style={{ height: "50px" }}>
@@ -214,6 +245,26 @@ export default () => {
     <Row style={{ marginTop: "20px", width: "100%" }}>
       <Card style={{ width: "100%" }}>
         <div style={{ width: "50%", margin: "auto" }}>
+
+          <Row style={{ marginTop: "20px", marginBottom: "20px" }}>
+            <Col span={24}>
+              <Alert type='info' showIcon message={
+                <>
+                  <Row>
+                    <Col span={24}>
+                      <Text>
+                        已有服务器,也可以选择通过 SSH 登陆来辅助创建超级节点.
+                      </Text>
+                      <Button onClick={() => {
+                        helpToCreate();
+                      }} type='primary' size='small' style={{ float: "right" }}>辅助创建</Button>
+                    </Col>
+                  </Row>
+                </>
+              }></Alert>
+            </Col>
+          </Row>
+
           <Row>
             <Col span={24}>
               <Text type='secondary'>创建模式</Text><br />
@@ -263,7 +314,8 @@ export default () => {
           <Row>
             <Col span={24}>
               <Text type='secondary'>超级节点地址</Text>
-              <Input status={inputErrors.name ? "error" : ""}
+              <Input status={inputErrors.address ? "error" : ""}
+                disabled={helpResult ? true : false}
                 value={createParams.address} placeholder='输入超级节点地址' onChange={(event) => {
                   const inputAddress = event.target.value;
                   setInputErrors({
@@ -317,7 +369,8 @@ export default () => {
                 </>} />
               </Col>
             }
-            <Input.TextArea style={{height:"100px"}} status={inputErrors.enode ? "error" : ""}
+            <Input.TextArea style={{ height: "100px" }} status={inputErrors.enode ? "error" : ""}
+              disabled={helpResult ? true : false}
               value={createParams.enode} placeholder='输入超级节点ENODE' onChange={(event) => {
                 const inputEnode = event.target.value;
                 setInputErrors({
@@ -403,7 +456,27 @@ export default () => {
       <CreateModalConfirm openCreateModal={openCreateModal} setOpenCreateModal={setOpenCreateModal} createParams={createParams} />
     }
 
+    {
+      nodeAddressPrivateKey && openSSH2CMDTerminalNodeModal &&
+      <SSH2CMDTerminalNodeModal openSSH2CMDTerminalNodeModal={openSSH2CMDTerminalNodeModal} setOpenSSH2CMDTerminalNodeModal={setOpenSSH2CMDTerminalNodeModal}
+        nodeAddressPrivateKey={nodeAddressPrivateKey}
+        onSuccess={(enode: string, nodeAddress: string) => {
+          setHelpResult({ enode, nodeAddress });
+          setCreateParams({
+            ...createParams,
+            address: nodeAddress,
+            enode
+          });
+          setInputErrors({
+            ...inputErrors,
+            address: undefined,
+            enode: undefined
+          })
+        }}
+        onError={() => {
 
+        }} />
+    }
 
   </>
 
