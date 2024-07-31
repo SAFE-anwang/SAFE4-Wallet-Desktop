@@ -62,37 +62,40 @@ export class SSH2Ipc {
                   if (line.indexOf(`${username}`) == 0
                     && line.indexOf(`# ${command}`) > 0 || line.indexOf(`$ ${command}`) > 0) {
                     this.commandWaitingLine = line.split(" ")[0].trim();
-                  } else if (line.trim() != command && line.trim() != username) {
-                    event.sender.send('ssh2-stderr', [line + "\n"]);
+                  } else if (line.trim() != command && line.trim() != username
+                    && line.trim() != "exit" && line.trim() != "logout") {
+                    if (this.commandWaitingLine != '' && line.trim().indexOf(this.commandWaitingLine) == 0) {
+
+                    }else{
+                      event.sender.send('ssh2-stderr', [line + "\n"]);
+                    }
                   }
                 });
-              } else {
-                // 判断剩余的字符是否为 'root@iZwz9add4h2zp7bp5htps9Z:~#' , 如果是,则标志着命令执行结束.
-                if (lineBuffer.trim() == this.commandWaitingLine.trim()) { // Adjust this condition based on your prompt
-                  event.sender.send('ssh2-stderr', [lineBuffer.trim()+" "]);
-                  resolve(chunkBuffer);
-                }
               }
             });
             stream.on("close", () => {
+              event.sender.send('ssh2-stderr', [this.commandWaitingLine + " "]);
+              resolve(chunkBuffer);
               console.log(`[ssh2-shell/${command}] close;`)
             });
             stream.write(command + '\n');
+            stream.write("exit\n");
           });
         }).on('error', (err: any) => {
-          console.log("[ssh2] connect error:" , err);
+          console.log("[ssh2] connect error:", err);
           reject(err);
         }).connect({ host, username, password });
 
       });
     });
 
-    ipcMain.handle("connect-close" , () => {
+    ipcMain.handle("connect-close", () => {
       console.log("[ssh2] handle connection close;")
-      if ( this.sshConnection ){
+      if (this.sshConnection) {
         this.sshConnection.end();
         console.log("[ssh2] connection closed;")
       }
+      this.commandWaitingLine = '';
     });
 
     ipcMain.handle('exec-command', async (event: any, { command }: { command: string }) => {
