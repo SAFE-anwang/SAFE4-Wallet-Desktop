@@ -43,8 +43,8 @@ export class CommandState {
 
 const DEFAULT_CONFIG = {
   // 节点程序的下载地址
-  Safe4FileURL: "https://binaries.soliditylang.org/bin/list.json",
-  // Safe4FileURL : "www.anwang.com/download/testnet/safe4_node/safe4-testnet.linux.v0.1.7.zip" ,
+  // Safe4FileURL: "https://binaries.soliditylang.org/bin/list.json",
+  Safe4FileURL : "www.anwang.com/download/testnet/safe4_node/safe4-testnet.linux.v0.1.7.zip",
   Safe4FileName: "safe4-testnet.linux.v0.1.7.zip",
   Safe4MD5Sum: "94cba5e86e7733e28227edde54f2ab91",
   // 解压后的节点程序目录
@@ -123,9 +123,9 @@ export default ({
     username: string,
     password: string,
   }>({
-    host: "47.107.47.210",
+    host: "",
     username: "root",
-    password: "Zy123456!"
+    password: ""
   });
   const [inputErrors, setInputErrors] = useState<{
     host: string | undefined,
@@ -162,6 +162,7 @@ export default ({
         const stderr = args[0][0];
         term.write(`\x1b[34m${stderr}\x1b[0m`);
       });
+
       term.write("等待连接...\r\n");
     }
     return () => {
@@ -303,7 +304,7 @@ export default ({
       () => console.log("")
     )
     const CMD_start: CommandState = new CommandState(
-      `cd ${Safe4NodeDir} && sh start.sh`,
+      `cd ${Safe4NodeDir} && sh start.sh > safe.log 2>&1`,
       () => {
         return true;
       },
@@ -364,8 +365,8 @@ export default ({
           updateSteps(0, "下载 Safe4 节点程序");
           const CMD_download_success = await CMD_download.execute(term);
         }
-        // updateSteps(0, "解压 Safe4 节点程序");
-        // const CMD_unzip_success = await CMD_unzip.execute(term);
+        updateSteps(0, "解压 Safe4 节点程序");
+        const CMD_unzip_success = await CMD_unzip.execute(term);
         updateSteps(0, "启动 Safe4 节点程序");
         const CMD_start_success = await CMD_start.execute(term);
       } else {
