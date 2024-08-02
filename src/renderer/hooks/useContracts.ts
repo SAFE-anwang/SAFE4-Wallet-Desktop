@@ -6,6 +6,7 @@ import { Contract } from '@ethersproject/contracts'
 import { useWalletsActivePrivateKey, useWalletsActiveSigner, useWalletsActiveWallet } from "../state/wallets/hooks";
 import { SysContractABI, SystemContract } from "../constants/SystemContracts";
 import { useWeb3React } from "@web3-react/core";
+import { IERC20_Interface } from "../abis";
 
 
 export function useContract(address: string | undefined, ABI: any, withSignerIfPossible = true): Contract | null {
@@ -28,6 +29,10 @@ export function useContract(address: string | undefined, ABI: any, withSignerIfP
 
 export function useMulticallContract(): Contract | null | undefined {
   return useContract( SystemContract.MultiCall , SysContractABI[SystemContract.MultiCall], false);
+}
+
+export function useIERC20Contract( address : string ,  withSignerIfPossible ?: boolean  )  : Contract | null | undefined  {
+  return useContract( address ,  IERC20_Interface , withSignerIfPossible);
 }
 
 export function useAccountManagerContract( withSignerIfPossible ?: boolean ) : Contract | null | undefined {

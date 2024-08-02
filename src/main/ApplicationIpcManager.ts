@@ -1,4 +1,3 @@
-import { resourcesPath } from "process";
 import { DBAddressActivitySingalHandler } from "./handlers/DBAddressActivitySingalHandler";
 import { IndexSingalHandler } from "./handlers/IndexSingalHandler";
 import { ListenSignalHandler } from "./handlers/ListenSignalHandler";
@@ -9,9 +8,8 @@ import { RpcConfigSingalHandler } from "./handlers/RpcConfigSignalHandler";
 import { ContractCompileHandler } from "./handlers/ContractCompileHandler";
 import { TimeNodeRewardHandler } from "./handlers/TimeNodeRewardHandler";
 import { WalletNameHandler } from "./handlers/WalletNameHandler";
-import { SSH2SignalHandler } from "./handlers/SSH2SignalHandler";
 import { SSH2Ipc } from "./SSH2Ipc";
-import { ipcMain } from "electron";
+import { ERC20TokenSignalHandler } from "./handlers/ERC20TokenSignalHandler";
 
 export const Channel : Channels = "ipc-example";
 
@@ -28,8 +26,7 @@ export class ApplicationIpcManager {
       this.listenSignalHandlers.push(new ContractCompileHandler(ctx ,indexSignalHandler.getSqlite3DB()));
       this.listenSignalHandlers.push(new TimeNodeRewardHandler(ctx ,indexSignalHandler.getSqlite3DB()));
       this.listenSignalHandlers.push(new WalletNameHandler(ctx ,indexSignalHandler.getSqlite3DB()));
-
-      this.listenSignalHandlers.push(new SSH2SignalHandler());
+      this.listenSignalHandlers.push( new ERC20TokenSignalHandler( ctx, indexSignalHandler.getSqlite3DB()));
     });
     this.listenSignalHandlers.push(indexSignalHandler);
   }

@@ -3,6 +3,14 @@ import { walletsInitList, walletsLoadKeystores, walletsLoadWalletNames, walletsU
 import { IPC_CHANNEL } from '../../config';
 import { WalletNameSignal, WalletName_Methods } from '../../../main/handlers/WalletNameHandler';
 
+export interface ERC20Token {
+  chainId : number ,
+  address : string ,
+  name    : string ,
+  symbol  : string ,
+  decimals : number
+}
+
 export interface WalletKeystore {
   mnemonic: string | undefined,
   password: string | undefined,

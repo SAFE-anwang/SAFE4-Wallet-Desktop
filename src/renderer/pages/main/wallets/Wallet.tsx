@@ -21,6 +21,7 @@ import WalletMnemonicModal from './WalletMnemonicModal';
 import Safescan, { SafescanComponentType } from '../../components/Safescan';
 import WalletEditNameModal from './WalletEditNameModal';
 import useWalletName from '../../../hooks/useWalletName';
+import IERC20Assets from './tabs/IERC20/IERC20Assets';
 
 const { Safescan_URL } = config;
 const { Title, Text, Paragraph, Link } = Typography;
@@ -52,6 +53,11 @@ export default () => {
       key: 'locked',
       label: '锁仓',
       children: <Locked />,
+    },
+    {
+      key: 'erc20',
+      label: '代币',
+      children: <IERC20Assets />,
     },
     {
       key: 'history',
