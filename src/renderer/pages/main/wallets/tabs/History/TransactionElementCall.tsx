@@ -15,6 +15,7 @@ import { DB_AddressActivity_Actions } from "../../../../../../main/handlers/DBAd
 import TransactionElementCallSupport from "./TransactionElementCallSupport";
 import AccountManagerSafeWithdraw from "./AccountManagerSafeWithdraw";
 import SAFE_LOGO from "../../../../../assets/logo/SAFE.png";
+import TransactionElementTokenTransfer from "./TransactionElementTokenTransfer";
 
 const { Text } = Typography;
 
@@ -27,21 +28,37 @@ export default ({ transaction, setClickTransaction }: {
     status,
     call,
     accountManagerDatas,
-    internalTransfers
+    internalTransfers,
+    tokenTransfers
   } = transaction;
-  const { from, to, value, input, action } = useMemo(() => {
+  const { value, input, action } = useMemo(() => {
     return {
       from: transaction.refFrom,
       to: transaction.refTo,
       action: transaction.action,
       value: call?.value,
-      input: call?.input
+      input: call?.input,
     }
   }, [transaction]);
   const support = DecodeSupportFunction(call?.to, input);
 
+  // 判断是否为调用 ERC20.transfer(to,uint256)
+  const isTokenTransfer = useMemo(() => {
+    if (call?.tokenTransfer) {
+      return true;
+    }
+    if (call?.input.indexOf("0xa9059cbb") == 0) {
+      return tokenTransfers && Object.keys(tokenTransfers).length == 1;
+    }
+    return false;
+  }, [call, tokenTransfers]);
+
+  const RenderTokenTransfer = () => {
+
+  }
+
   return <>
-    {/* <Text>{JSON.stringify(internalTransfers)}</Text> */}
+    {/* <Text>{JSON.stringify(tokenTransfers)}</Text> */}
     {
       support && <TransactionElementCallSupport transaction={transaction} setClickTransaction={setClickTransaction} support={support} />
     }
@@ -93,6 +110,18 @@ export default ({ transaction, setClickTransaction }: {
                     </>}
                   />
                 </span>
+              })
+          }
+          {
+            tokenTransfers && Object
+              .keys(tokenTransfers)
+              .map(eventLogIndex => {
+                const tokenTransfer = tokenTransfers[eventLogIndex]
+                return <>
+                  <span style={{ width: "100%", marginTop: "20px" }}>
+                    <TransactionElementTokenTransfer tokenTransfer={tokenTransfer} />
+                  </span>
+                </>
               })
           }
         </Row>

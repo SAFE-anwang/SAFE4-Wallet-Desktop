@@ -1,5 +1,5 @@
 import { createAction } from "@reduxjs/toolkit";
-import { AddressActivityFetch, ContractCall, SerializableTransactionReceipt, TransactionDetails, Transfer } from "./reducer";
+import { AddressActivityFetch, ContractCall, SerializableTransactionReceipt, TokenTransfer, TransactionDetails, Transfer } from "./reducer";
 import { DateTimeNodeRewardVO, TimeNodeRewardVO } from "../../services";
 
 export const addTransaction = createAction<{
@@ -8,7 +8,8 @@ export const addTransaction = createAction<{
   refTo?: string,
   chainId ?: number,
   // 自定义数据 ...
-  transfer?: Transfer
+  transfer?: Transfer,
+  tokenTransfer ?: TokenTransfer,
   call ?: ContractCall,
   withdrawAmount ?: string,
 }>('transactions/addTransaction')

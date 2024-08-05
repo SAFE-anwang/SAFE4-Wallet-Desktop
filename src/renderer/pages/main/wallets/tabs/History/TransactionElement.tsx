@@ -16,7 +16,7 @@ export default ({ transaction, setClickTransaction }: {
   const activeAccount = useWalletsActiveAccount();
   const ElementRender = useMemo(() => {
     const {
-      transfer, call, systemRewardDatas, accountManagerDatas, internalTransfers
+      transfer, call, systemRewardDatas, accountManagerDatas, internalTransfers , tokenTransfers
     } = transaction;
     if (transfer) {
       return <>
@@ -33,7 +33,7 @@ export default ({ transaction, setClickTransaction }: {
         <TransactionElementSystemReward transaction={transaction} setClickTransaction={setClickTransaction} />
       </>
     }
-    if (!call && (accountManagerDatas || internalTransfers)) {
+    if (!call && (accountManagerDatas || internalTransfers || tokenTransfers)) {
       return <>
         {
           <TransactionElements transaction={transaction} setClickTransaction={setClickTransaction} />

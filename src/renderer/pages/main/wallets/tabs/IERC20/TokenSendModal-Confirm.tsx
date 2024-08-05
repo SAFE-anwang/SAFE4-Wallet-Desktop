@@ -9,7 +9,6 @@ import { useAccountManagerContract, useIERC20Contract } from "../../../../../hoo
 import useTransactionResponseRender from "../../../../components/useTransactionResponseRender";
 import AddressView from "../../../../components/AddressView";
 import { Token, TokenAmount } from "@uniswap/sdk";
-import { ZERO } from "@uniswap/sdk/dist/constants";
 
 const { Text } = Typography;
 
@@ -29,7 +28,6 @@ export default ({
   const activeAccount = useWalletsActiveAccount();
   const addTransaction = useTransactionAdder();
   const IERC20Contract = useIERC20Contract( token.address , true );
-
   const {
     render,
     setTransactionResponse,
@@ -38,27 +36,36 @@ export default ({
     err
   } = useTransactionResponseRender();
   const [sending, setSending] = useState<boolean>(false);
-
   const doSendTransaction = useCallback(({ to, amount }: { to: string, amount: string }) => {
     if (signer && IERC20Contract) {
-      const value = new TokenAmount( token , ethers.utils.parseEther(amount).toBigInt() )
-      const tx = {
-        to,
-        value,
-      }
+      const { address , name , symbol , decimals } = token;
+      const value = ethers.utils.parseUnits(amount , decimals).toString();
       setSending(true);
       IERC20Contract.transfer( to , value ).then( (response:any) => {
         setSending(false);
         const {
+          data,
           hash
         } = response;
         setTxHash(hash);
         setTransactionResponse(response);
         addTransaction( {to : token.address} , response, {
-          transfer: {
+          call: {
             from: activeAccount,
-            to: tx.to,
-            value : "0"
+            to: address,
+            input: data,
+            value: "0",
+            tokenTransfer: {
+              from: activeAccount,
+              to,
+              value,
+              token : {
+                address,
+                name : name ?? "",
+                symbol : symbol ?? "",
+                decimals
+              }
+            }
           }
         });
       }).catch( (err:any) => {

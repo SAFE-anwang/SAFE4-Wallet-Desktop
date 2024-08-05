@@ -20,8 +20,8 @@ export enum DB_AddressActivity_Actions {
   Create = "Create",      // 创建合约
 
   InternalTransfer = "InternalTransfer",
-  erc20Transfer = "erc20Transfer",
-  nftTransfer = "nftTransfer",
+  TokenTransfer = "TokenTransfer",
+  nftTransfer = "NftTransfer",
 
   AM_Deposit = "AccountManager:SafeDeposit",
   AM_Withdraw = "AccountManager:SafeWithdraw",

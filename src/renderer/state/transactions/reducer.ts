@@ -47,16 +47,19 @@ export interface TransactionDetails {
   },
   systemRewardDatas?: {
     [eventLogIndex: string]: SystemRewardData
-  }
+  },
   withdrawAmount?: string,
-
   internalTransfers?: {
     [eventLogIndex: string]: {
       from: string,
       to: string,
       value: string
     }
-  }
+  },
+  tokenTransfers?: {
+    [eventLogIndex: string]: TokenTransfer
+  },
+
 }
 
 export interface SystemRewardData {
@@ -83,7 +86,8 @@ export interface ContractCall {
   to: string,
   input: string,
   value: string,
-  type?: string
+  type?: string,
+  tokenTransfer?: TokenTransfer
 }
 
 export interface Transfer {
@@ -92,10 +96,15 @@ export interface Transfer {
   value: string
 }
 
-export interface ERC20Transfer {
+export interface TokenTransfer {
   from: string,
   to: string,
-  token: string,
+  token: {
+    address: string,
+    name: string,
+    symbol: string,
+    decimals: number
+  },
   value: string
 }
 
@@ -150,8 +159,6 @@ export default createReducer(initialState, (builder) => {
       );
       transactions = txs
     })
-
-
 
     .addCase(checkedTransaction, ({ transactions }, { payload: { hash, blockNumber } }) => {
       const tx = transactions[hash]
@@ -216,13 +223,15 @@ export default createReducer(initialState, (builder) => {
 
 export function Transaction2Activity(txn: TransactionDetails) {
   const { chainId, hash, refFrom, refTo, addedTime, transfer, call } = txn;
-  const { action, data } = call ? {
-    action: call.type ? call.type : DB_AddressActivity_Actions.Call,
-    data: JSON.stringify(call)
-  } : {
-    action: DB_AddressActivity_Actions.Transfer,
-    data: JSON.stringify(transfer)
-  }
+  const { action, data } =
+    call ? {
+      action: call.type ? call.type : DB_AddressActivity_Actions.Call,
+      data: JSON.stringify(call)
+    }
+      : {
+        action: DB_AddressActivity_Actions.Transfer,
+        data: JSON.stringify(transfer)
+      }
   return {
     hash,
     chainId,
@@ -265,6 +274,17 @@ export function Activity2Transaction(row: any): TransactionDetails {
       return {
         ...transaction,
         transfer: { ...transaction.data }
+      }
+    case DB_AddressActivity_Actions.TokenTransfer:
+      return {
+        ...transaction,
+        tokenTransfers: {
+          [transaction.eventLogIndex]: {
+            ...transaction.data,
+            action: transaction.action,
+            eventLogIndex: transaction.eventLogIndex
+          }
+        }
       }
     case DB_AddressActivity_Actions.Call:
       return {
@@ -372,7 +392,7 @@ export function TransactionsCombine(transactions: TransactionState | undefined, 
           });
           txns[tx.hash].systemRewardDatas = _systemRewardDatas;
         }
-        if (tx.internalTransfers){
+        if (tx.internalTransfers) {
           const _internalTransferDatas = txns[tx.hash].internalTransfers ? { ...txns[tx.hash].internalTransfers } : {};
           Object.keys(tx.internalTransfers).forEach((eventLogIndex) => {
             if (tx.internalTransfers) {
@@ -380,6 +400,15 @@ export function TransactionsCombine(transactions: TransactionState | undefined, 
             }
           });
           txns[tx.hash].internalTransfers = _internalTransferDatas;
+        }
+        if (tx.tokenTransfers) {
+          const _tokenTransferDatas = txns[tx.hash].tokenTransfers ? { ...txns[tx.hash].tokenTransfers } : {};
+          Object.keys(tx.tokenTransfers).forEach((eventLogIndex) => {
+            if (tx.tokenTransfers) {
+              _tokenTransferDatas[eventLogIndex] = tx.tokenTransfers[eventLogIndex]
+            }
+          });
+          txns[tx.hash].tokenTransfers = _tokenTransferDatas;
         }
       }
     });

@@ -16,6 +16,7 @@ import TransactionElementCallSupport from "./TransactionElementCallSupport";
 import AccountManagerSafeWithdraw from "./AccountManagerSafeWithdraw";
 import AccountManagerSafeTransfer from "./AccountManagerSafeTransfer";
 import SAFE_LOGO from "../../../../../assets/logo/SAFE.png";
+import TransactionElementTokenTransfer from "./TransactionElementTokenTransfer";
 const { Text } = Typography;
 
 
@@ -27,27 +28,31 @@ export default ({ transaction, setClickTransaction }: {
   const {
     accountManagerDatas,
     internalTransfers,
+    tokenTransfers
   } = transaction;
 
   const isFirstIndex = useCallback((eventLogIndex: string, type: string) => {
-
-    if ( internalTransfers && type != 'internal' ){
+    if (internalTransfers && type != 'internal') {
       return false;
     }
     if (internalTransfers && type == 'internal') {
       return Object.keys(internalTransfers).indexOf(eventLogIndex) == 0
     }
-    if (!internalTransfers && accountManagerDatas && type == 'am'){
-      return Object.keys(accountManagerDatas).indexOf(eventLogIndex) == 0
+    if (!internalTransfers) {
+      if (accountManagerDatas && type == 'am') {
+        return Object.keys(accountManagerDatas).indexOf(eventLogIndex) == 0;
+      }
+      if (tokenTransfers && type == 'token') {
+        return Object.keys(tokenTransfers).indexOf(eventLogIndex) == 0
+      }
     }
     return false;
-  }, [accountManagerDatas, internalTransfers])
+  }, [accountManagerDatas, internalTransfers, tokenTransfers])
 
   return <>
     {
       <List.Item onClick={() => { setClickTransaction(transaction) }} key={transaction.hash} className="history-element" style={{ paddingLeft: "15px", paddingRight: "15px" }}>
         <Row style={{ width: "100%" }}>
-
           {
             internalTransfers && Object
               .keys(internalTransfers)
@@ -70,7 +75,6 @@ export default ({ transaction, setClickTransaction }: {
                 </span>
               })
           }
-
           {
             accountManagerDatas && Object
               .keys(accountManagerDatas)
@@ -107,7 +111,17 @@ export default ({ transaction, setClickTransaction }: {
                 </span>
               })
           }
-
+          {
+            tokenTransfers && Object
+              .keys(tokenTransfers)
+              .map(eventLogIndex => {
+                const tokenTransfer = tokenTransfers[eventLogIndex];
+                const marginTop = isFirstIndex(eventLogIndex, "token") ? "" : "20px";
+                return <span style={{ width: "100%", marginTop }}>
+                  <TransactionElementTokenTransfer tokenTransfer={tokenTransfer} />
+                </span>
+              })
+          }
         </Row>
       </List.Item>
     }

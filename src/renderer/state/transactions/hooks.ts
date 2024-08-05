@@ -3,7 +3,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, AppState } from "..";
 import { useCallback, useMemo } from "react";
 import { addTransaction } from "./actions";
-import { Transfer, TransactionDetails, ContractCall } from "./reducer";
+import { Transfer, TransactionDetails, ContractCall, TokenTransfer } from "./reducer";
 import { DateFormat } from "../../utils/DateUtils";
 import { CurrencyAmount, JSBI } from "@uniswap/sdk";
 import { DateTimeNodeRewardVO, TimeNodeRewardVO } from "../../services";
@@ -72,15 +72,19 @@ export function useTransactionAdder(): (
       response: TransactionResponse,
       { transfer, call, withdrawAmount }:
         {
-          transfer?: Transfer,
-          call?: ContractCall,
+          transfer ?: Transfer,
+          call ?: ContractCall,
           withdrawAmount?: string
         } = {}
     ) => {
       const { from, hash } = response;
-      const { to } = transfer ? { ...transfer } :
-        call ? { ...call }
-          : { to: undefined };
+      // 如果是普通转账则为到账地址
+      // 如果是代币转账,则显示为transfer(to,value)中的到账地址
+      // 如果是合约调用,则显示为合约地址
+      const { to } =
+        transfer ? { ...transfer } :
+            call ? { ...call }
+              : { to: undefined }
       const transaction = {
         hash,
         refFrom: from,
