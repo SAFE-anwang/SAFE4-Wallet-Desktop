@@ -41,4 +41,12 @@ export const refreshAddressTimeNodeReward = createAction<{
   chainId : number ,
   address : string ,
   nodeRewards : DateTimeNodeRewardVO[]
-}>("transactions/refreshAddressTimeNodeReward")
+}>("transactions/refreshAddressTimeNodeReward");
+
+export const loadERC20Tokens = createAction<{
+  [address : string] : {
+    name : string,
+    symbol : string ,
+    decimals : number
+  }
+}>("transactions/loadERC20Tokens");

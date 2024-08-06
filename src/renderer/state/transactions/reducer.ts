@@ -1,5 +1,5 @@
 import { createReducer } from "@reduxjs/toolkit"
-import { addTransaction, checkedTransaction, clearAllTransactions, finalizeTransaction, loadTransactionsAndUpdateAddressActivityFetch, refreshAddressTimeNodeReward, reloadTransactionsAndSetAddressActivityFetch } from "./actions"
+import { addTransaction, checkedTransaction, clearAllTransactions, finalizeTransaction, loadERC20Tokens, loadTransactionsAndUpdateAddressActivityFetch, refreshAddressTimeNodeReward, reloadTransactionsAndSetAddressActivityFetch } from "./actions"
 import { IPC_CHANNEL } from "../../config"
 import { DBAddressActivitySignal, DB_AddressActivity_Actions, DB_AddressActivity_Methods } from "../../../main/handlers/DBAddressActivitySingalHandler"
 import { DateTimeNodeRewardVO, TimeNodeRewardVO } from "../../services"
@@ -237,6 +237,9 @@ export default createReducer(initialState, (builder) => {
                 chainId,address,name,symbol,decimals
               }]]
             );
+            state.tokens[address] = {
+              name,symbol,decimals
+            }
           }
         });
 
@@ -257,6 +260,10 @@ export default createReducer(initialState, (builder) => {
     .addCase(clearAllTransactions, (state, { payload }) => {
       if (!state.transactions) return
       state.transactions = {}
+    })
+
+    .addCase(loadERC20Tokens , ( state , { payload } ) => {
+      state.tokens = payload;
     })
 
 })

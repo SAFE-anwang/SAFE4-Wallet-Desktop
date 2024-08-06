@@ -9,37 +9,32 @@ import { useMultipleContractSingleData } from "../../../../../state/multicall/ho
 import { ChainId, Token, TokenAmount } from "@uniswap/sdk";
 import { useTokenBalances, useWalletsActiveAccount } from "../../../../../state/wallets/hooks";
 import TokenSendModal from "./TokenSendModal";
+import { useTokens } from "../../../../../state/transactions/hooks";
 const { Text } = Typography;
 
 export default () => {
 
-  const { chainId } = useWeb3React();
   const [erc20Tokens, setERC20Tokens] = useState<Token[]>([]);
   const activeAccount = useWalletsActiveAccount();
   const [openTokenSendModal, setOpenTokenSendModal] = useState(false);
   const [selectedToken, setSelectedToken] = useState<Token>();
-
-  useEffect(() => {
-    if (chainId) {
-      const method = ERC20Tokens_Methods.getAll;
-      window.electron.ipcRenderer.sendMessage(IPC_CHANNEL, [ERC20TokensSignal, method, [chainId]]);
-      window.electron.ipcRenderer.once(IPC_CHANNEL, (arg) => {
-        if (arg instanceof Array && arg[0] == ERC20TokensSignal && arg[1] == method) {
-          const data = arg[2][0];
-          const erc20Tokens = data.map((erc20Token: any) => {
-            const { address, name, symbol, decims } = erc20Token;
-            const token = new Token(
-              ChainId.MAINNET, address, decims, symbol, name
-            );
-            return token;
-          })
-          setERC20Tokens(erc20Tokens);
-        }
-      });
-    }
-  }, [chainId]);
-
+  const tokens = useTokens();
   const tokenAmounts = useTokenBalances(activeAccount, erc20Tokens);
+
+  useEffect( () => {
+    if ( tokens ){
+      const erc20Tokens = Object.keys( tokens ).map( address => {
+        const { name , symbol , decimals } = tokens[address];
+        const token = new Token(
+          ChainId.MAINNET,
+          address , decimals,
+          symbol , name
+        );
+        return token;
+      });
+      setERC20Tokens(erc20Tokens);
+    }
+  } , [ tokens ] );
 
   return <>
     <Row>

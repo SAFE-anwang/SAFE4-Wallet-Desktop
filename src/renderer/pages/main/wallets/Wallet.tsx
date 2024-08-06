@@ -14,7 +14,7 @@ import WalletSendModal from './Send/WalletSendModal';
 import { AppState } from '../../../state';
 import { DateTimeFormat } from '../../../utils/DateUtils';
 import { useWeb3React } from '@web3-react/core';
-import config, { Safe4_Network_Config } from '../../../config';
+import config, { IPC_CHANNEL, Safe4_Network_Config } from '../../../config';
 import WalletKeystoreModal from './WalletKeystoreModal';
 import WalletPrivateKeyModal from './WalletPrivateKeyModal';
 import WalletMnemonicModal from './WalletMnemonicModal';
@@ -22,6 +22,9 @@ import Safescan, { SafescanComponentType } from '../../components/Safescan';
 import WalletEditNameModal from './WalletEditNameModal';
 import useWalletName from '../../../hooks/useWalletName';
 import IERC20Assets from './tabs/IERC20/IERC20Assets';
+import { ERC20TokensSignal, ERC20Tokens_Methods } from '../../../../main/handlers/ERC20TokenSignalHandler';
+import { ethers } from 'ethers';
+import { loadERC20Tokens } from '../../../state/transactions/actions';
 
 const { Safescan_URL } = config;
 const { Title, Text, Paragraph, Link } = Typography;
@@ -30,7 +33,7 @@ export default () => {
 
   const dispatch = useDispatch();
   const activeWallet = useWalletsActiveWallet();
-  const activeWalletName = useWalletName( activeWallet?.address );
+  const activeWalletName = useWalletName(activeWallet?.address);
   const account = useWalletsActiveAccount();
   const balance = useETHBalances([account])[account];
   const latestBlockNumber = useBlockNumber();
@@ -46,7 +49,7 @@ export default () => {
 
   const [openSendModal, setOpenSendModal] = useState<boolean>(false);
   const [openLockModal, setOpenLockMoal] = useState<boolean>(false);
-  const [openEditNameModal , setOpenEditNameModal] = useState<boolean>(false);
+  const [openEditNameModal, setOpenEditNameModal] = useState<boolean>(false);
 
   const tabItems: TabsProps['items'] = [
     {
@@ -125,6 +128,35 @@ export default () => {
     return items;
   }, [walletKeystore]);
 
+  useEffect(() => {
+    if (chainId) {
+      // 初始化加载 ERC20_Tokens 信息;
+      const method = ERC20Tokens_Methods.getAll;
+      window.electron.ipcRenderer.sendMessage(IPC_CHANNEL, [ERC20TokensSignal, method, [chainId]]);
+      window.electron.ipcRenderer.once(IPC_CHANNEL, (arg) => {
+        if (arg instanceof Array && arg[0] == ERC20TokensSignal && arg[1] == method) {
+          const data = arg[2][0];
+          const tokens: {
+            [address: string]: {
+              name: string,
+              symbol: string,
+              decimals: number
+            }
+          } = {}
+          data.forEach((erc20Token: any) => {
+            const { address, name, symbol, decims } = erc20Token;
+            tokens[ethers.utils.getAddress(address)] = {
+              name, symbol, decimals: decims
+            }
+          });
+          if ( Object.keys(tokens).length > 0 ) {
+            dispatch( loadERC20Tokens(tokens) )
+          }
+        }
+      });
+    }
+  }, [chainId]);
+
   return (<>
     <Row style={{ height: "50px" }}>
       <Col span={12}>
@@ -133,7 +165,7 @@ export default () => {
           {activeWalletName}
           <span style={{ marginLeft: "20px" }}>
             <Tooltip title="编辑钱包名称">
-              <Link style={{fontSize:"18px"}} onClick={() => {
+              <Link style={{ fontSize: "18px" }} onClick={() => {
                 setOpenEditNameModal(true);
               }}>
                 <EditOutlined />

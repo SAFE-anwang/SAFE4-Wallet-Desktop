@@ -167,3 +167,7 @@ export function useTransaction(hash: string): TransactionDetails {
   const transactions = useSelector((state: AppState) => state.transactions.transactions);
   return transactions[hash];
 }
+
+export function useTokens() : { [address : string] : { name : string , symbol : string , decimals : number } } {
+  return useSelector((state: AppState) => state.transactions.tokens);
+}
