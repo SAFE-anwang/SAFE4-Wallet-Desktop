@@ -118,7 +118,7 @@ export default ({ transaction, setClickTransaction }: {
                 const tokenTransfer = tokenTransfers[eventLogIndex];
                 const marginTop = isFirstIndex(eventLogIndex, "token") ? "" : "20px";
                 return <span style={{ width: "100%", marginTop }}>
-                  <TransactionElementTokenTransfer tokenTransfer={tokenTransfer} />
+                  <TransactionElementTokenTransfer status={1} tokenTransfer={tokenTransfer} />
                 </span>
               })
           }

@@ -3,6 +3,8 @@ import { addTransaction, checkedTransaction, clearAllTransactions, finalizeTrans
 import { IPC_CHANNEL } from "../../config"
 import { DBAddressActivitySignal, DB_AddressActivity_Actions, DB_AddressActivity_Methods } from "../../../main/handlers/DBAddressActivitySingalHandler"
 import { DateTimeNodeRewardVO, TimeNodeRewardVO } from "../../services"
+import { ethers } from "ethers"
+import { ERC20Tokens_Methods, ERC20TokensSignal } from "../../../main/handlers/ERC20TokenSignalHandler"
 
 const now = () => new Date().getTime()
 
@@ -27,6 +29,7 @@ export interface TransactionDetails {
   timestamp?: number,
   status?: number,
   action?: string,
+  data ?: any,
   /** 交易的receipt */
   receipt?: SerializableTransactionReceipt,
   /**
@@ -87,7 +90,8 @@ export interface ContractCall {
   input: string,
   value: string,
   type?: string,
-  tokenTransfer?: TokenTransfer
+  tokenTransfer?: TokenTransfer,
+  action ?: string,
 }
 
 export interface Transfer {
@@ -128,13 +132,19 @@ export interface TransactionState {
 export const initialState: {
   transactions: TransactionState,
   addressActivityFetch?: AddressActivityFetch,
-
   nodeRewards?: {
     [address: string]: DateTimeNodeRewardVO[]
+  } ,
+  tokens : {
+    [address : string] : {
+      name : string,
+      symbol : string,
+      decimals : number
+    }
   }
-
 } = {
   transactions: {},
+  tokens : {}
 }
 
 export default createReducer(initialState, (builder) => {
@@ -187,19 +197,49 @@ export default createReducer(initialState, (builder) => {
       );
     })
 
-    .addCase(reloadTransactionsAndSetAddressActivityFetch, ({ transactions }, { payload: { txns, addressActivityFetch } }) => {
+    .addCase(reloadTransactionsAndSetAddressActivityFetch, ({ transactions , tokens }, { payload: { txns, addressActivityFetch } }) => {
       transactions = TransactionsCombine(undefined, txns);
       return {
         transactions: transactions,
+        tokens,
         addressActivityFetch: {
           ...addressActivityFetch
         }
       }
     })
 
-    .addCase(loadTransactionsAndUpdateAddressActivityFetch, (state, { payload: { addTxns, addressActivityFetch } }) => {
+    .addCase(loadTransactionsAndUpdateAddressActivityFetch, (state, { payload: { chainId , addTxns, addressActivityFetch } }) => {
       if (addTxns && addTxns.length > 0) {
         state.transactions = TransactionsCombine(state.transactions, addTxns);
+        // 当有新的交易数据进来同步的时候,对数据进行一次过滤,如果数据中存在 TokenTransfer ,
+        // 则尝试更新该 Token 信息到 Erc20_Tokens 表中;
+        const tokens : {
+          [address : string] : {
+            decimals : number,
+            name : string,
+            symbol : string
+          }
+        } = {};
+        addTxns.forEach( txn => {
+          if ( txn.action && txn.action == "TokenTransfer" ){
+            const token = txn.data.token;
+            const { address , decimals , name , symbol } = token;
+            tokens[ ethers.utils.getAddress(address) ] = {
+              decimals,name,symbol
+            }
+          }
+        });
+        Object.keys( tokens ).forEach( address => {
+          if ( address && tokens[address] ){
+            const { name,symbol,decimals } = tokens[address];
+            window.electron.ipcRenderer.sendMessage(
+              IPC_CHANNEL, [ERC20TokensSignal, ERC20Tokens_Methods.save, [{
+                chainId,address,name,symbol,decimals
+              }]]
+            );
+          }
+        });
+
       }
       const nextFetch = addressActivityFetch ?? undefined;
       if (nextFetch && state.addressActivityFetch?.address == nextFetch.address) {
@@ -289,12 +329,12 @@ export function Activity2Transaction(row: any): TransactionDetails {
     case DB_AddressActivity_Actions.Call:
       return {
         ...transaction,
-        call: { ...transaction.data }
+        call: { ...transaction.data}
       }
     case DB_AddressActivity_Actions.Create:
       return {
         ...transaction,
-        call: { ...transaction.data }
+        call: { ...transaction.data,action : transaction.action}
       }
     case DB_AddressActivity_Actions.AM_Deposit:
       return {

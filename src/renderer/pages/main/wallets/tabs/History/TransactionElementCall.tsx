@@ -3,7 +3,7 @@ import { Col, Row, Avatar, List, Typography, Modal, Button } from "antd";
 import { useTransaction, useTransactions } from "../../../../../state/transactions/hooks";
 import { LoadingOutlined, FileDoneOutlined, LockOutlined } from '@ant-design/icons';
 import { Spin } from 'antd';
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { TransactionDetails } from "../../../../../state/transactions/reducer";
 import { ethers } from "ethers";
 import EtherAmount from "../../../../../utils/EtherAmount";
@@ -35,7 +35,7 @@ export default ({ transaction, setClickTransaction }: {
     return {
       from: transaction.refFrom,
       to: transaction.refTo,
-      action: transaction.action,
+      action: call?.action ? call.action : transaction.action,
       value: call?.value,
       input: call?.input,
     }
@@ -53,17 +53,29 @@ export default ({ transaction, setClickTransaction }: {
     return false;
   }, [call, tokenTransfers]);
 
-  const RenderTokenTransfer = () => {
-
-  }
+  const RenderTokenTransfer = useCallback(() => {
+    const tokenTransfer = call?.tokenTransfer ? call.tokenTransfer : tokenTransfers ? tokenTransfers[0] : undefined;
+    return <>
+      <List.Item onClick={() => { setClickTransaction(transaction) }} key={transaction.hash} className="history-element" style={{ paddingLeft: "15px", paddingRight: "15px" }}>
+        <span style={{ width: "100%" }}>
+          {tokenTransfer && <TransactionElementTokenTransfer status={status} tokenTransfer={tokenTransfer} />}
+        </span>
+      </List.Item>
+    </>
+  }, [transaction,status])
 
   return <>
-    {/* <Text>{JSON.stringify(tokenTransfers)}</Text> */}
+    {/* <Text>{JSON.stringify(transaction)}</Text> */}
     {
       support && <TransactionElementCallSupport transaction={transaction} setClickTransaction={setClickTransaction} support={support} />
     }
     {
-      !support && <List.Item onClick={() => { setClickTransaction(transaction) }} key={transaction.hash} className="history-element" style={{ paddingLeft: "15px", paddingRight: "15px" }}>
+      !support && isTokenTransfer && <>
+        {RenderTokenTransfer()}
+      </>
+    }
+    {
+      !support && !isTokenTransfer && <List.Item onClick={() => { setClickTransaction(transaction) }} key={transaction.hash} className="history-element" style={{ paddingLeft: "15px", paddingRight: "15px" }}>
         <Row style={{ width: "100%" }}>
           <span style={{ width: "100%" }}>
             <TransactionElementTemplate status={status} icon={<FileDoneOutlined style={{ color: "black" }} />}
@@ -119,7 +131,7 @@ export default ({ transaction, setClickTransaction }: {
                 const tokenTransfer = tokenTransfers[eventLogIndex]
                 return <>
                   <span style={{ width: "100%", marginTop: "20px" }}>
-                    <TransactionElementTokenTransfer tokenTransfer={tokenTransfer} />
+                    <TransactionElementTokenTransfer status={status} tokenTransfer={tokenTransfer} />
                   </span>
                 </>
               })

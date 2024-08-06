@@ -22,6 +22,7 @@ export const reloadTransactionsAndSetAddressActivityFetch = createAction<{
 }>("transactions/reloadTransactionsAndSetAddressActivityFetch");
 
 export const loadTransactionsAndUpdateAddressActivityFetch = createAction<{
+  chainId : number,
   addTxns: TransactionDetails[],
   addressActivityFetch ?: AddressActivityFetch
 }>("transactions/loadTransactionsAndUpdateAddressActivityFetch");

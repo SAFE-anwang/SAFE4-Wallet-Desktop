@@ -6,7 +6,7 @@ import { ListenSignalHandler } from "./ListenSignalHandler";
 export const ERC20TokensSignal = "DB:sqlite3/erc20Tokens";
 
 export enum ERC20Tokens_Methods {
-  saveOrUpdate = "saveOrUpdate",
+  save = "save",
   getAll = "getAll"
 }
 
@@ -50,23 +50,38 @@ export class ERC20TokenSignalHandler implements ListenSignalHandler {
     let data = undefined;
     if (ERC20Tokens_Methods.getAll == method) {
       const chainId = params[0];
-      this.getAll(chainId , (rows: any) => {
+      this.getAll(chainId, (rows: any) => {
         event.reply(Channel, [this.getSingal(), method, [rows]])
       })
-    } else if (ERC20Tokens_Methods.saveOrUpdate == method) {
-
+    } else if (ERC20Tokens_Methods.save == method) {
+      const { chainId, address, name, symbol, decimals } = params[0];
+      this.save(chainId, address, name, symbol, decimals);
     }
   }
 
-  private getAll(chainId : number , callback: (rows: any) => void) {
+  private getAll(chainId: number, callback: (rows: any) => void) {
     this.db.all("SELECT * FROM erc20_tokens where chain_id = ?", [chainId],
       (err: any, rows: any) => {
         callback(rows);
       })
   }
 
-  private saveOrUpdate() {
-
+  private save(chainId: number, address: string, name: string, symbol: string, decimals: number) {
+    this.db.all("SELECT * FROM ERC20_Tokens where address = ? and chain_id = ?", [address, chainId],
+      (err: any, rows: any) => {
+        if (rows.length == 0) {
+          this.db.run(
+            "INSERT INTO ERC20_Tokens( chain_id , address , name , symbol , decims ) VALUES( ? , ? , ? , ? , ?)",
+            [chainId, address, name, symbol, decimals],
+            (err: any) => {
+              if (!err) {
+                console.log(`[sqlite3/ERC20_Tokens] 添加新的代币${name}[${symbol}]:${decimals}:_${address}_ChainId=${chainId}`)
+              }
+            }
+          )
+        }
+      }
+    )
   }
 
 }

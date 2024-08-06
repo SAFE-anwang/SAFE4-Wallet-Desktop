@@ -45,7 +45,7 @@ export default () => {
   const {URL,API} = useSafeScan();
 
   useEffect(() => {
-    if (addressActivityFetch && addressActivityFetch?.address == activeAccount) {
+    if (chainId && addressActivityFetch && addressActivityFetch?.address == activeAccount) {
       if (addressActivityFetch.status == 1) {
         console.log(`Finish fetch Address[${addressActivityFetch.address}]`)
         return;
@@ -78,8 +78,9 @@ export default () => {
               ]);
             setTimeout(() => {
               dispatch(loadTransactionsAndUpdateAddressActivityFetch({
+                chainId,
                 addTxns: data.records.map(Activity2Transaction),
-                addressActivityFetch: newFetch
+                addressActivityFetch: newFetch,
               }));
             }, 3000);
           }
@@ -88,13 +89,14 @@ export default () => {
           console.log("fetch address activities err::>" , err)
           setTimeout(() => {
             dispatch(loadTransactionsAndUpdateAddressActivityFetch({
+              chainId,
               addTxns: [],
-              addressActivityFetch: newFetch
+              addressActivityFetch: newFetch,
             }));
           }, 3000);
         })
     }
-  }, [activeAccount, addressActivityFetch]);
+  }, [activeAccount, addressActivityFetch,chainId]);
 
 
   useEffect(() => {
@@ -130,7 +132,7 @@ export default () => {
   }, [provider, transactions, latestBlockNumber, activeAccount]);
 
   useEffect(() => {
-    if (activeAccount && latestBlockNumber > 0) {
+    if (activeAccount && latestBlockNumber > 0 && chainId ) {
       setTimeout(() => {
         fetchAddressActivity( API , {
           address: activeAccount,
@@ -142,6 +144,7 @@ export default () => {
           console.log(`query the latest activies for :${activeAccount}, from Block:[${latestBlockNumber - 10}] to Block:[${latestBlockNumber}],result:`, data.records);
           if (data.records.length > 0) {
             dispatch(loadTransactionsAndUpdateAddressActivityFetch({
+              chainId,
               addTxns: data.records.map(Activity2Transaction),
             }));
           }
@@ -149,7 +152,7 @@ export default () => {
       }, 3000);
 
     }
-  }, [activeAccount, latestBlockNumber]);
+  }, [activeAccount, latestBlockNumber,chainId]);
 
 
   return (<></>)

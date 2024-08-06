@@ -145,7 +145,6 @@ export function useTransactions(account?: string) {
     }
   });
   if (nodeRewards && account && nodeRewards[account]) {
-    console.log(">>>> nodeRewards[account]::", nodeRewards[account])
     if (nodeRewards[account] instanceof Array) {
       nodeRewards[account].forEach((nodeReward: DateTimeNodeRewardVO) => {
         const { amount, date } = nodeReward;
@@ -160,8 +159,6 @@ export function useTransactions(account?: string) {
         dateTransactions[dateKey].systemRewardAmount = _amount;
       })
     }
-
-
   }
   return dateTransactions;
 }

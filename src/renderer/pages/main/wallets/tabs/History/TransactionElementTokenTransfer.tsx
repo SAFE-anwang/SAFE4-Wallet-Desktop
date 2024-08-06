@@ -1,6 +1,7 @@
 
 import { Col, Row, Avatar, List, Typography, Modal, Button } from "antd";
 import { useTransactions } from "../../../../../state/transactions/hooks";
+import SAFE_LOGO from "../../../../../assets/logo/SAFE.png";
 import { LoadingOutlined } from '@ant-design/icons';
 import { Spin } from 'antd';
 import { useMemo, useState } from "react";
@@ -8,14 +9,16 @@ import { TokenTransfer, TransactionDetails } from "../../../../../state/transact
 import { useWalletsActiveAccount } from "../../../../../state/wallets/hooks";
 import TransactionElementTemplate from "./TransactionElementTemplate";
 import { ChainId, Token, TokenAmount } from "@uniswap/sdk";
+import { ethers } from "ethers";
 
 const { Text } = Typography;
 
 const TX_TYPE_SEND = "1";
 const TX_TYPE_RECEIVE = "2";
 
-export default ({ tokenTransfer }: {
-  tokenTransfer: TokenTransfer
+export default ({ tokenTransfer , status }: {
+  tokenTransfer: TokenTransfer ,
+  status ?: number
 }) => {
   const {
     from, to, value,
@@ -34,7 +37,7 @@ export default ({ tokenTransfer }: {
   const tokenAmount = useMemo( () => {
     const { name , symbol , address , decimals } = token;
     const tokenAmount = new TokenAmount(
-      new Token( ChainId.MAINNET , address , decimals , symbol , name  ),
+      new Token( ChainId.MAINNET , ethers.utils.getAddress(address) , decimals , symbol , name  ),
       value
     );
     return tokenAmount.toExact();
@@ -44,7 +47,7 @@ export default ({ tokenTransfer }: {
     <TransactionElementTemplate
       icon={<></>}
       title={ txType == TX_TYPE_SEND ? "发送" : "接收" }
-      status={1}
+      status={status}
       description={ txType == TX_TYPE_SEND ? to : from }
       assetFlow={<>
         <Text type={ txType == TX_TYPE_RECEIVE ? "success" : undefined } strong>
