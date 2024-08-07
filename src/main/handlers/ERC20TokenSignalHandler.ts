@@ -55,7 +55,7 @@ export class ERC20TokenSignalHandler implements ListenSignalHandler {
       })
     } else if (ERC20Tokens_Methods.save == method) {
       const { chainId, address, name, symbol, decimals } = params[0];
-      this.save(chainId, address, name, symbol, decimals);
+      this.saveOrUpdate(chainId, address, name, symbol, decimals);
     }
   }
 
@@ -66,7 +66,7 @@ export class ERC20TokenSignalHandler implements ListenSignalHandler {
       })
   }
 
-  private save(chainId: number, address: string, name: string, symbol: string, decimals: number) {
+  private saveOrUpdate(chainId: number, address: string, name: string, symbol: string, decimals: number) {
     this.db.all("SELECT * FROM ERC20_Tokens where address = ? and chain_id = ?", [address, chainId],
       (err: any, rows: any) => {
         if (rows.length == 0) {
@@ -75,7 +75,17 @@ export class ERC20TokenSignalHandler implements ListenSignalHandler {
             [chainId, address, name, symbol, decimals],
             (err: any) => {
               if (!err) {
-                console.log(`[sqlite3/ERC20_Tokens] 添加新的代币${name}[${symbol}]:${decimals}:_${address}_ChainId=${chainId}`)
+                console.log(`[sqlite3/ERC20_Tokens] Save New ERC20-Token:${name}[${symbol}]:${decimals}:_${address}_ChainId=${chainId}`)
+              }
+            }
+          )
+        } else {
+          this.db.run(
+            "UPDATE ERC20_Tokens Set name = ?,symbol = ?,decims = ? WHERE address = ? and chain_id = ?",
+            [name, symbol, decimals, address, chainId],
+            (err: any) => {
+              if (!err) {
+                console.log(`[sqlite3/ERC20_Tokens] Update ERC20-Token:${name}[${symbol}]:${decimals}:_${address}_ChainId=${chainId}`)
               }
             }
           )

@@ -14,8 +14,8 @@ import AccountManagerSafeDeposit from "./AccountManagerSafeDeposit";
 import { DB_AddressActivity_Actions } from "../../../../../../main/handlers/DBAddressActivitySingalHandler";
 import TransactionElementCallSupport from "./TransactionElementCallSupport";
 import AccountManagerSafeWithdraw from "./AccountManagerSafeWithdraw";
-import SAFE_LOGO from "../../../../../assets/logo/SAFE.png";
 import TransactionElementTokenTransfer from "./TransactionElementTokenTransfer";
+import { SAFE_LOGO } from "../../../../../assets/logo/AssetsLogo";
 
 const { Text } = Typography;
 

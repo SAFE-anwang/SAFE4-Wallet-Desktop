@@ -50,3 +50,9 @@ export const loadERC20Tokens = createAction<{
     decimals : number
   }
 }>("transactions/loadERC20Tokens");
+
+export const updateERC20Token = createAction<{
+  chainId : number, address : string,
+  name : string , symbol : string,
+  decimals : number
+}>("transactions/updateERC20Token")

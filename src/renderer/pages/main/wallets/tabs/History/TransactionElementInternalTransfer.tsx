@@ -9,7 +9,7 @@ import { ethers } from "ethers";
 import EtherAmount from "../../../../../utils/EtherAmount";
 import { useWalletsActiveAccount } from "../../../../../state/wallets/hooks";
 import TransactionElementTemplate from "./TransactionElementTemplate";
-import SAFE_LOGO from "../../../../../assets/logo/SAFE.png";
+import { SAFE_LOGO } from "../../../../../assets/logo/AssetsLogo";
 
 const { Text } = Typography;
 

@@ -1,5 +1,5 @@
 import { createReducer } from "@reduxjs/toolkit"
-import { addTransaction, checkedTransaction, clearAllTransactions, finalizeTransaction, loadERC20Tokens, loadTransactionsAndUpdateAddressActivityFetch, refreshAddressTimeNodeReward, reloadTransactionsAndSetAddressActivityFetch } from "./actions"
+import { addTransaction, checkedTransaction, clearAllTransactions, finalizeTransaction, loadERC20Tokens, loadTransactionsAndUpdateAddressActivityFetch, refreshAddressTimeNodeReward, reloadTransactionsAndSetAddressActivityFetch, updateERC20Token } from "./actions"
 import { IPC_CHANNEL } from "../../config"
 import { DBAddressActivitySignal, DB_AddressActivity_Actions, DB_AddressActivity_Methods } from "../../../main/handlers/DBAddressActivitySingalHandler"
 import { DateTimeNodeRewardVO, TimeNodeRewardVO } from "../../services"
@@ -29,7 +29,7 @@ export interface TransactionDetails {
   timestamp?: number,
   status?: number,
   action?: string,
-  data ?: any,
+  data?: any,
   /** 交易的receipt */
   receipt?: SerializableTransactionReceipt,
   /**
@@ -91,7 +91,7 @@ export interface ContractCall {
   value: string,
   type?: string,
   tokenTransfer?: TokenTransfer,
-  action ?: string,
+  action?: string,
 }
 
 export interface Transfer {
@@ -134,17 +134,17 @@ export const initialState: {
   addressActivityFetch?: AddressActivityFetch,
   nodeRewards?: {
     [address: string]: DateTimeNodeRewardVO[]
-  } ,
-  tokens : {
-    [address : string] : {
-      name : string,
-      symbol : string,
-      decimals : number
+  },
+  tokens: {
+    [address: string]: {
+      name: string,
+      symbol: string,
+      decimals: number
     }
   }
 } = {
   transactions: {},
-  tokens : {}
+  tokens: {}
 }
 
 export default createReducer(initialState, (builder) => {
@@ -197,7 +197,7 @@ export default createReducer(initialState, (builder) => {
       );
     })
 
-    .addCase(reloadTransactionsAndSetAddressActivityFetch, ({ transactions , tokens }, { payload: { txns, addressActivityFetch } }) => {
+    .addCase(reloadTransactionsAndSetAddressActivityFetch, ({ transactions, tokens }, { payload: { txns, addressActivityFetch } }) => {
       transactions = TransactionsCombine(undefined, txns);
       return {
         transactions: transactions,
@@ -208,37 +208,45 @@ export default createReducer(initialState, (builder) => {
       }
     })
 
-    .addCase(loadTransactionsAndUpdateAddressActivityFetch, (state, { payload: { chainId , addTxns, addressActivityFetch } }) => {
+    .addCase(loadTransactionsAndUpdateAddressActivityFetch, (state, { payload: { chainId, addTxns, addressActivityFetch } }) => {
       if (addTxns && addTxns.length > 0) {
         state.transactions = TransactionsCombine(state.transactions, addTxns);
         // 当有新的交易数据进来同步的时候,对数据进行一次过滤,如果数据中存在 TokenTransfer ,
         // 则尝试更新该 Token 信息到 Erc20_Tokens 表中;
-        const tokens : {
-          [address : string] : {
-            decimals : number,
-            name : string,
-            symbol : string
+        const tokens: {
+          [address: string]: {
+            decimals: number,
+            name: string,
+            symbol: string
           }
         } = {};
-        addTxns.forEach( txn => {
-          if ( txn.action && txn.action == "TokenTransfer" ){
+        addTxns.forEach(txn => {
+          if (txn.action && txn.action == "TokenTransfer") {
             const token = txn.data.token;
-            const { address , decimals , name , symbol } = token;
-            tokens[ ethers.utils.getAddress(address) ] = {
-              decimals,name,symbol
+            const { address, decimals, name, symbol } = token;
+            const checksumedAddress = ethers.utils.getAddress(address);
+            if (state.tokens[checksumedAddress]) {
+              if (decimals != state.tokens[checksumedAddress].decimals ||
+                name != state.tokens[checksumedAddress].name ||
+                symbol != state.tokens[checksumedAddress].symbol
+              ) {
+                tokens[ checksumedAddress ] = {
+                  decimals, name, symbol
+                }
+              }
             }
           }
         });
-        Object.keys( tokens ).forEach( address => {
-          if ( address && tokens[address] ){
-            const { name,symbol,decimals } = tokens[address];
+        Object.keys(tokens).forEach(address => {
+          if (address && tokens[address]) {
+            const { name, symbol, decimals } = tokens[address];
             window.electron.ipcRenderer.sendMessage(
               IPC_CHANNEL, [ERC20TokensSignal, ERC20Tokens_Methods.save, [{
-                chainId,address,name,symbol,decimals
+                chainId, address, name, symbol, decimals
               }]]
             );
             state.tokens[address] = {
-              name,symbol,decimals
+              name, symbol, decimals
             }
           }
         });
@@ -262,8 +270,15 @@ export default createReducer(initialState, (builder) => {
       state.transactions = {}
     })
 
-    .addCase(loadERC20Tokens , ( state , { payload } ) => {
+    .addCase(loadERC20Tokens, (state, { payload }) => {
       state.tokens = payload;
+    })
+
+    .addCase(updateERC20Token, (state, { payload }) => {
+      const { chainId, address, name, symbol, decimals } = payload;
+      state.tokens[address] = {
+        name, symbol, decimals
+      }
     })
 
 })
@@ -336,12 +351,12 @@ export function Activity2Transaction(row: any): TransactionDetails {
     case DB_AddressActivity_Actions.Call:
       return {
         ...transaction,
-        call: { ...transaction.data}
+        call: { ...transaction.data }
       }
     case DB_AddressActivity_Actions.Create:
       return {
         ...transaction,
-        call: { ...transaction.data,action : transaction.action}
+        call: { ...transaction.data, action: transaction.action }
       }
     case DB_AddressActivity_Actions.AM_Deposit:
       return {

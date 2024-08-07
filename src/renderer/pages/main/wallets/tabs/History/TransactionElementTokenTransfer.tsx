@@ -1,7 +1,6 @@
 
 import { Col, Row, Avatar, List, Typography, Modal, Button } from "antd";
 import { useTransactions } from "../../../../../state/transactions/hooks";
-import SAFE_LOGO from "../../../../../assets/logo/SAFE.png";
 import { LoadingOutlined } from '@ant-design/icons';
 import { Spin } from 'antd';
 import { useMemo, useState } from "react";
@@ -10,6 +9,7 @@ import { useWalletsActiveAccount } from "../../../../../state/wallets/hooks";
 import TransactionElementTemplate from "./TransactionElementTemplate";
 import { ChainId, Token, TokenAmount } from "@uniswap/sdk";
 import { ethers } from "ethers";
+import { ERC20_LOGO } from "../../../../../assets/logo/AssetsLogo";
 
 const { Text } = Typography;
 
@@ -45,7 +45,7 @@ export default ({ tokenTransfer , status }: {
 
   return <>
     <TransactionElementTemplate
-      icon={<></>}
+      icon={ ERC20_LOGO }
       title={ txType == TX_TYPE_SEND ? "发送" : "接收" }
       status={status}
       description={ txType == TX_TYPE_SEND ? to : from }

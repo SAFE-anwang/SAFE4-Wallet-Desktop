@@ -23,14 +23,14 @@ export default ({
     const ProposalRewardRender = useMemo(() => {
         if (isProposalReward) {
             return <>
-                <TransactionElementTemplate 
+                <TransactionElementTemplate
                     icon={<GiftOutlined style={{ color: "black" }} />}
                     title={ <Text type="success">提案通过</Text> }
                     status={status}
                     description={to}
                     assetFlow={<>
                         <Text type="success" strong>
-                            + 
+                            +
                             <LockFilled style={{ marginRight: "5px" , marginLeft:"5px" }} />
                             {value && EtherAmount({ raw: value, fix: 18 })} SAFE
                         </Text>
@@ -60,6 +60,6 @@ export default ({
     }, [isProposalReward])
 
     return <>
-        { isProposalReward ? ProposalRewardRender : SafeTransferRender } 
+        { isProposalReward ? ProposalRewardRender : SafeTransferRender }
     </>
 }

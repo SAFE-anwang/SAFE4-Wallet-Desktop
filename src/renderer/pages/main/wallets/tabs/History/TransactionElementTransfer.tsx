@@ -1,7 +1,6 @@
 
 import { Col, Row, Avatar, List, Typography, Modal, Button } from "antd";
 import { useTransactions } from "../../../../../state/transactions/hooks";
-import SAFE_LOGO from "../../../../../assets/logo/SAFE.png";
 import { LoadingOutlined } from '@ant-design/icons';
 import { Spin } from 'antd';
 import { useMemo, useState } from "react";
@@ -9,6 +8,7 @@ import { TransactionDetails } from "../../../../../state/transactions/reducer";
 import { ethers } from "ethers";
 import EtherAmount from "../../../../../utils/EtherAmount";
 import { useWalletsActiveAccount } from "../../../../../state/wallets/hooks";
+import { SAFE_LOGO } from "../../../../../assets/logo/AssetsLogo";
 
 const { Text } = Typography;
 
@@ -49,7 +49,7 @@ export default ({ transaction , setClickTransaction }: {
                 </Spin>
               }
               {
-                status && <Avatar style={{marginTop:"8px"}} src={SAFE_LOGO} />
+                status && <Avatar style={{ marginTop:"8px" }} src={SAFE_LOGO} />
               }
             </span>
           </>
