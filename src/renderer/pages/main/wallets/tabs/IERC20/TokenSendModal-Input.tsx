@@ -1,14 +1,13 @@
-import { Button, Col, Divider, Input, Modal, Row, Typography, Space, Alert, Switch } from "antd"
-import { Children, useCallback, useEffect, useMemo, useState } from "react";
-import { MemoryRouter as Router, Routes, Route, useNavigate } from 'react-router-dom';
+import { Button, Col, Divider, Input, Row, Typography, Space, Alert } from "antd"
+import { useCallback, useState } from "react";
 import { ethers } from "ethers";
 import { CurrencyAmount, JSBI, Token, TokenAmount } from "@uniswap/sdk";
-import { useETHBalances, useTokenBalance, useWalletsActiveAccount } from "../../../../../state/wallets/hooks";
+import { useTokenBalance, useWalletsActiveAccount } from "../../../../../state/wallets/hooks";
 import AddressView from "../../../../components/AddressView";
 
 const { Text } = Typography;
-
 const ZERO = CurrencyAmount.ether(JSBI.BigInt(0));
+
 export default ({
   token,
   goNextCallback
@@ -30,7 +29,6 @@ export default ({
     to: "",
     amount: "",
   });
-
   const [inputErrors, setInputErrors] = useState<{
     to: string | undefined,
     amount: string | undefined,
@@ -49,7 +47,7 @@ export default ({
     }
     if (amount) {
       try {
-        let _amount = new TokenAmount( token , ethers.utils.parseEther(amount).toBigInt() );
+        let _amount = new TokenAmount(token, ethers.utils.parseUnits(amount, token.decimals).toBigInt());
         if (!_amount.greaterThan(ZERO)) {
           inputErrors.amount = "请输入正确的数量";
         }
@@ -62,12 +60,22 @@ export default ({
       return;
     }
     goNextCallback(params);
-  }, [activeAccount, activeAccountTokenAmount, params ]);
+  }, [activeAccount, activeAccountTokenAmount, params]);
 
   return <>
     <div style={{ minHeight: "300px" }}>
       <Alert showIcon type="info" message={`将账户中的代币 ${token.symbol} 发送到指定钱包地址`} />
       <br />
+      <Row >
+        <Col span={24}>
+          <Text type="secondary">代币合约地址</Text>
+          <br />
+          <Text style={{ fontSize: "18px" }}>
+            <AddressView address={token.address}></AddressView>
+          </Text>
+        </Col>
+      </Row>
+      <Divider />
       <Row >
         <Col span={24}>
           <Text strong>从</Text>
@@ -124,7 +132,7 @@ export default ({
                 })
                 setParams({
                   ...params,
-                  amount: activeAccountTokenAmount.toFixed( token.decimals )
+                  amount: activeAccountTokenAmount.toExact()
                 })
               }}>最大</Button>
             }

@@ -18,7 +18,6 @@ export default ({
 
   const [inputRpc, setInputRpc] = useState<string>();
   const [inputRpcError,setInputRpcError] = useState<string>();
-
   const dispatch = useDispatch();
   const [chainId, setChainId] = useState<number | undefined>();
   const [name, setName] = useState<string>();
@@ -34,7 +33,7 @@ export default ({
       setActiveStatus(undefined);
       setInputRpcError(undefined);
     }
-  }, [inputRpc])
+  }, [inputRpc]);
 
   const renderActiveStatus = () => {
     if (!activeStatus || activeStatus.isActiving) {
@@ -86,7 +85,7 @@ export default ({
           isActive: true,
           isActiving: false
         });
-        if (!isSafe4Network(chainId)) {
+        if (isSafe4Network(chainId)) {
           const method = RpcConfig_Methods.saveOrUpdate;
           window.electron.ipcRenderer.sendMessage(IPC_CHANNEL, [RpcConfigSignal, method,
             [

@@ -1,11 +1,11 @@
 
-import { Button, Col, Divider, Row, Typography, Alert } from "antd"
-import { useCallback, useMemo, useState } from "react";
+import { Button, Col, Divider, Row, Typography } from "antd"
+import { useCallback, useState } from "react";
 import { ethers } from "ethers";
-import { LockOutlined, SendOutlined } from '@ant-design/icons';
+import { SendOutlined } from '@ant-design/icons';
 import { useWalletsActiveAccount, useWalletsActiveSigner } from "../../../../../state/wallets/hooks";
 import { useTransactionAdder } from "../../../../../state/transactions/hooks";
-import { useAccountManagerContract, useIERC20Contract } from "../../../../../hooks/useContracts";
+import { useIERC20Contract } from "../../../../../hooks/useContracts";
 import useTransactionResponseRender from "../../../../components/useTransactionResponseRender";
 import AddressView from "../../../../components/AddressView";
 import { Token, TokenAmount } from "@uniswap/sdk";
@@ -17,7 +17,7 @@ export default ({
   to, amount,
   setTxHash, close
 }: {
-  token : Token,
+  token: Token,
   to: string,
   amount: string,
   setTxHash: (txHash: string) => void
@@ -27,7 +27,7 @@ export default ({
   const signer = useWalletsActiveSigner();
   const activeAccount = useWalletsActiveAccount();
   const addTransaction = useTransactionAdder();
-  const IERC20Contract = useIERC20Contract( token.address , true );
+  const IERC20Contract = useIERC20Contract(token.address, true);
   const {
     render,
     setTransactionResponse,
@@ -36,12 +36,13 @@ export default ({
     err
   } = useTransactionResponseRender();
   const [sending, setSending] = useState<boolean>(false);
+
   const doSendTransaction = useCallback(({ to, amount }: { to: string, amount: string }) => {
     if (signer && IERC20Contract) {
-      const { address , name , symbol , decimals } = token;
-      const value = ethers.utils.parseUnits(amount , decimals).toString();
+      const { address, name, symbol, decimals } = token;
+      const value = ethers.utils.parseUnits(amount, decimals).toString();
       setSending(true);
-      IERC20Contract.transfer( to , value ).then( (response:any) => {
+      IERC20Contract.transfer(to, value).then((response: any) => {
         setSending(false);
         const {
           data,
@@ -49,7 +50,7 @@ export default ({
         } = response;
         setTxHash(hash);
         setTransactionResponse(response);
-        addTransaction( {to : token.address} , response, {
+        addTransaction({ to: token.address }, response, {
           call: {
             from: activeAccount,
             to: address,
@@ -59,16 +60,16 @@ export default ({
               from: activeAccount,
               to,
               value,
-              token : {
+              token: {
                 address,
-                name : name ?? "",
-                symbol : symbol ?? "",
+                name: name ?? "",
+                symbol: symbol ?? "",
                 decimals
               }
             }
           }
         });
-      }).catch( (err:any) => {
+      }).catch((err: any) => {
         setSending(false);
         setErr(err)
       })
@@ -82,10 +83,21 @@ export default ({
       }
       <Row >
         <Col span={24}>
-          <Text style={{ fontSize: "32px" }} strong>{amount} SAFE</Text>
+          <Text style={{ fontSize: "32px" }} strong>{amount} {token.symbol}</Text>
         </Col>
       </Row>
       <br />
+
+      <Row >
+        <Col span={24}>
+          <Text type="secondary">代币合约地址</Text>
+          <br />
+          <Text style={{ fontSize: "18px" }}>
+            <AddressView address={token.address} />
+          </Text>
+        </Col>
+      </Row>
+      <Divider />
       <Row >
         <Col span={24}>
           <Text strong>从</Text>

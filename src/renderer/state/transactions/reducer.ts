@@ -230,9 +230,13 @@ export default createReducer(initialState, (builder) => {
                 name != state.tokens[checksumedAddress].name ||
                 symbol != state.tokens[checksumedAddress].symbol
               ) {
-                tokens[ checksumedAddress ] = {
+                tokens[checksumedAddress] = {
                   decimals, name, symbol
                 }
+              }
+            } else {
+              tokens[checksumedAddress] = {
+                decimals, name, symbol
               }
             }
           }

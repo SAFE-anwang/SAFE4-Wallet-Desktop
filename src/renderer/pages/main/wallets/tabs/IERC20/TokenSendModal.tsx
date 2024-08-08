@@ -47,7 +47,7 @@ export default ({
   }, [txHash]);
 
   return <>
-    <Modal footer={null} destroyOnClose title="发送" style={{height: "300px"}} open={openSendModal} onCancel={cancel}>
+    <Modal footer={null} destroyOnClose title="发送代币" style={{height: "300px"}} open={openSendModal} onCancel={cancel}>
       <Divider />
       {
         step == STEP_INPUT && <TokenSendModalInput token={token} goNextCallback={({to,amount}) => {
