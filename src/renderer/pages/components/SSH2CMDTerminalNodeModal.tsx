@@ -5,7 +5,7 @@ import { Button, Card, Col, Input, Row, Typography, Steps, Alert, Divider, Spin,
 import { ethers } from "ethers";
 import { useApplicationPassword } from "../../state/application/hooks";
 import AddressComponent from "./AddressComponent";
-import { LoadingOutlined } from "@ant-design/icons";
+import { ClockCircleTwoTone, CloseCircleTwoTone, LoadingOutlined } from "@ant-design/icons";
 
 const { Text } = Typography;
 
@@ -25,15 +25,19 @@ export class CommandState {
   }
 
   execute(term: Terminal, hidden?: string) {
-    const promise = new Promise(async (resolve, reject) => {
+    const promise = new Promise<boolean>(async (resolve, reject) => {
       setTimeout(async () => {
         if (hidden) {
           term.writeln(hidden.toString());
         } else {
           term.writeln(this.command);
         }
-        const data = await window.electron.ssh2.execute(this.command);
-        resolve(this.handle(data));
+        try {
+          const data = await window.electron.ssh2.execute(this.command);
+          resolve(this.handle(data));
+        } catch (err: any) {
+          reject(err);
+        }
       }, 500)
     });
     return promise;
@@ -44,7 +48,7 @@ export class CommandState {
 const DEFAULT_CONFIG = {
   // 节点程序的下载地址
   // Safe4FileURL: "https://binaries.soliditylang.org/bin/list.json",
-  Safe4FileURL : "www.anwang.com/download/testnet/safe4_node/safe4-testnet.linux.v0.1.7.zip",
+  Safe4FileURL: "www.anwang.com/download/testnet/safe4_node/safe4-testnet.linux.v0.1.7.zip",
   Safe4FileName: "safe4-testnet.linux.v0.1.7.zip",
   Safe4MD5Sum: "94cba5e86e7733e28227edde54f2ab91",
   // 解压后的节点程序目录
@@ -75,6 +79,7 @@ export default ({
   const password = useApplicationPassword();
   const wallet = new ethers.Wallet(nodeAddressPrivateKey);
   const [enode, setEnode] = useState<string>();
+  const [scriptError, setScriptError] = useState<string>();
 
   const DEFAULT_STEPS: {
     title: string | ReactNode,
@@ -96,7 +101,7 @@ export default ({
 
   const [steps, setSteps] = useState(DEFAULT_STEPS);
   const [current, setCurrent] = useState(-1);
-  const updateSteps = useCallback((current: number, description?: string) => {
+  const updateSteps = useCallback((current: number, description?: string, error?: string) => {
     setCurrent(current);
     const _steps = steps.map((step, index) => {
       if (index < current) {
@@ -106,9 +111,16 @@ export default ({
         }
       }
       if (index == current) {
-        return {
-          title: <><LoadingOutlined style={{marginRight:"5px"}} />正在执行</>,
-          description: description ?? step.description
+        if (!error) {
+          return {
+            title: <><LoadingOutlined style={{ marginRight: "5px" }} />正在执行</>,
+            description: description ?? step.description
+          }
+        } else {
+          return {
+            title: <Text type="danger">执行失败</Text>,
+            description: <Text type="danger"><CloseCircleTwoTone twoToneColor="red" style={{ marginRight: "5px" }} />{error ?? step.description}</Text>
+          }
         }
       }
       return {
@@ -162,7 +174,6 @@ export default ({
         const stderr = args[0][0];
         term.write(`\x1b[34m${stderr}\x1b[0m`);
       });
-
       term.write("等待连接...\r\n");
     }
     return () => {
@@ -251,12 +262,18 @@ export default ({
       Safe4NodeDir
     } = DEFAULT_CONFIG;
 
+    let _Safe4DataDir = Safe4DataDir;
     const CMD_psSafe4: CommandState = new CommandState(
       "ps aux| grep geth | grep -v grep",
       (data: string) => {
         if (data) {
           console.log("[.ps]=", data);
-          console.log("[.ps]", "Safe4 节点进程存在;")
+          console.log("[.ps]", "Safe4 节点进程存在;");
+          const match = data.match(/--datadir\s+([^\s]+)/);
+          if (match) {
+            console.log("--datadir:", match[1]);
+            _Safe4DataDir = match[1];
+          }
           return true;
         }
         console.log("[.ps]=", data);
@@ -312,46 +329,7 @@ export default ({
       () => console.log("")
     )
 
-    const CMD_checkKeystore: CommandState = new CommandState(
-      `find ${Safe4DataDir}/keystore -type f -name "*${wallet.address.toLocaleLowerCase().substring(2)}*" -print -quit | grep -q '.' && echo "Keystore file exists" || echo "Keystore file does not exist"`,
-      (data: string) => {
-        let _data = data.trim();
-        if ("Keystore file does not exist" == _data) {
-          console.log("[.keystore not exists] = ", data)
-          return false;
-        } else {
-          console.log("[.keystore exists] = ", data)
-          return true;
-        }
-      },
-      () => console.log(""),
-      () => console.log("")
-    )
 
-    const CMD_exportEnode: CommandState = new CommandState(
-      `cat ${Safe4DataDir}/geth/nodekey`,
-      (nodeKey: string) => {
-        console.log("[.cat nodekey]nodeKey=", nodeKey);
-        const wallet = new ethers.Wallet(nodeKey);
-        let publicKey = wallet.publicKey.substring(2);
-        // 如果公钥存在 04 前缀，则把它去掉.
-        if (publicKey.indexOf("04") == 0) {
-          publicKey = publicKey.substring(2);
-        }
-        // enode://d39fc9ed12000b2ea3b5463936958702f20a939405aae28e39463c8b66d78bb07baf7fe59370f6037849f2bd363b1bee3301d6b0bf8349abfbcafb5fccdceab2@172.105.24.28:30303
-        // enode://{publicKey}@{ip}:30303
-        console.log({
-          privateKey: nodeKey,
-          publicKey: publicKey
-        });
-        const enode = `enode://${publicKey}@${inputParams.host}:30303`;
-        console.log("[.cat nodekey]enode=", enode)
-        setEnode(enode);
-        return true;
-      },
-      () => console.log(""),
-      () => console.log("")
-    )
 
     if (term) {
       updateSteps(0, "检查 Safe4 进程是否运行");
@@ -372,20 +350,74 @@ export default ({
       } else {
         updateSteps(0, "Safe4 节点程序已运行");
       }
-
       updateSteps(1, "Safe4 节点程序已运行");
-      const CMD_checkKeystore_success = await CMD_checkKeystore.execute(term);
+
+      //
+      const CMD_checkKeystore: CommandState = new CommandState(
+        `find ${_Safe4DataDir}/keystore -type f -name "*${wallet.address.toLocaleLowerCase().substring(2)}*" -print -quit | grep -q '.' && echo "Keystore file exists" || echo "Keystore file does not exist"`,
+        (data: string) => {
+          let _data = data.trim();
+          if (_data.indexOf("Keystore file does not exist") > -1) {
+            if ("Keystore file does not exist" == _data) {
+              console.log("[.keystore not exists] = ", data);
+              return false;
+            }
+            throw new Error(data.replace("Keystore file does not exist", ""));
+          } else {
+            console.log("[.keystore exists] = ", data)
+            return true;
+          }
+        },
+        () => console.log(""),
+        () => console.log("")
+      )
+
+      const CMD_exportEnode: CommandState = new CommandState(
+        `cat ${_Safe4DataDir}/geth/nodekey`,
+        (nodeKey: string) => {
+          console.log("[.cat nodekey]nodeKey=", nodeKey);
+          try {
+            const wallet = new ethers.Wallet(nodeKey);
+            let publicKey = wallet.publicKey.substring(2);
+            // 如果公钥存在 04 前缀，则把它去掉.
+            if (publicKey.indexOf("04") == 0) {
+              publicKey = publicKey.substring(2);
+            }
+            // enode://d39fc9ed12000b2ea3b5463936958702f20a939405aae28e39463c8b66d78bb07baf7fe59370f6037849f2bd363b1bee3301d6b0bf8349abfbcafb5fccdceab2@172.105.24.28:30303
+            // enode://{publicKey}@{ip}:30303
+            console.log({
+              privateKey: nodeKey,
+              publicKey: publicKey
+            });
+            const enode = `enode://${publicKey}@${inputParams.host}:30303`;
+            console.log("[.cat nodekey]enode=", enode)
+            setEnode(enode);
+            return true;
+          } catch (err) {
+            return false;
+          }
+        },
+        () => console.log(""),
+        () => console.log("")
+      )
+
+      let CMD_checkKeystore_success = false;
+      try {
+        CMD_checkKeystore_success = await CMD_checkKeystore.execute(term);
+      } catch (error) {
+        console.log("error:", error);
+        updateSteps(1, "", "无法定位 keystore 文件目录位置");
+        return;
+      }
       if (!CMD_checkKeystore_success) {
         updateSteps(1, "使用钱包密码加密节点地址 Keystore文件");
         const { address, keystore } = await outputKeyStore();
         const keystoreStr = keystore.toString().replaceAll("\"", "\\\"");
-
         const hiddenKeystore = JSON.parse(keystore);
         console.log("hiddenKeystore==", hiddenKeystore);
         hiddenKeystore.crypto.ciphertext = "****************************************";
         const hidden = JSON.stringify(hiddenKeystore).replaceAll("\"", "\\\"");
         console.log("hidden ==", hidden)
-
         const CMD_importKey: CommandState = new CommandState(
           `echo "${keystoreStr}" > ${Safe4DataDir}/keystore/UTC-${address.toLowerCase().substring(2)}`,
           () => {
@@ -404,7 +436,12 @@ export default ({
       }
       updateSteps(2);
       const CMD_catNodeKey_success = await CMD_exportEnode.execute(term);
-      updateSteps(3);
+      if (CMD_catNodeKey_success) {
+        updateSteps(3);
+      } else {
+        updateSteps(2, "", "无法获取 ENODE 值");
+        setScriptError("无法获取 ENODE 值");
+      }
     }
 
   }, [terminalInstance, inputParams, wallet]);
@@ -493,7 +530,7 @@ export default ({
                 <Row style={{ marginTop: "20px" }}>
                   <Col span={24}>
                     <Button onClick={doConnect} type="primary">连接</Button>
-                    <Button style={{marginLeft:"20px"}} onClick={() => {
+                    <Button style={{ marginLeft: "20px" }} onClick={() => {
                       setOpenSSH2CMDTerminalNodeModal(false);
                     }} type="default">关闭</Button>
                   </Col>
@@ -531,12 +568,14 @@ export default ({
               </Row>
 
               <Row>
-                <Button type="primary" disabled={current < steps.length} onClick={() => {
-                  if (enode) {
-                    onSuccess(enode, wallet.address)
-                  }
-                  setOpenSSH2CMDTerminalNodeModal(false);
-                }}>返回</Button>
+                <Button type={!scriptError ? "primary" : "default"}
+                  disabled={!scriptError && current < steps.length}
+                  onClick={() => {
+                    if (enode) {
+                      onSuccess(enode, wallet.address)
+                    }
+                    setOpenSSH2CMDTerminalNodeModal(false);
+                  }}>返回</Button>
               </Row>
             </Card>
           }
