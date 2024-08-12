@@ -7,6 +7,9 @@ import { TransactionDetails } from "../../../../../state/transactions/reducer";
 import TransactionElementSystemReward from "./TransactionElementSystemReward";
 import TransactionElementInternalTransfer from "./TransactionElementInternalTransfer";
 import TransactionElements from "./TransactionElements";
+import { Typography } from "antd";
+
+const { Text } = Typography;
 
 export default ({ transaction, setClickTransaction }: {
   transaction: TransactionDetails,
@@ -16,7 +19,7 @@ export default ({ transaction, setClickTransaction }: {
   const activeAccount = useWalletsActiveAccount();
   const ElementRender = useMemo(() => {
     const {
-      transfer, call, systemRewardDatas, accountManagerDatas, internalTransfers , tokenTransfers
+      transfer, call, systemRewardDatas, accountManagerDatas, internalTransfers, tokenTransfers
     } = transaction;
     if (transfer) {
       return <>
@@ -40,7 +43,11 @@ export default ({ transaction, setClickTransaction }: {
         }
       </>
     }
-    return <>  </>
+    return <>
+      {/* <Text>
+        {JSON.stringify(transaction)}
+      </Text> */}
+    </>
   }, [activeAccount, transaction])
 
   return <>

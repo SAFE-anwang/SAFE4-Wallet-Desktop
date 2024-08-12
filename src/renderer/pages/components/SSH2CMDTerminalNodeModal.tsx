@@ -6,6 +6,8 @@ import { ethers } from "ethers";
 import { useApplicationPassword } from "../../state/application/hooks";
 import AddressComponent from "./AddressComponent";
 import { ClockCircleTwoTone, CloseCircleTwoTone, LoadingOutlined } from "@ant-design/icons";
+import { formatDate } from "date-fns";
+import { DateTimeFormat } from "../../utils/DateUtils";
 
 const { Text } = Typography;
 
@@ -48,9 +50,9 @@ export class CommandState {
 const DEFAULT_CONFIG = {
   // 节点程序的下载地址
   // Safe4FileURL: "https://binaries.soliditylang.org/bin/list.json",
-  Safe4FileURL: "www.anwang.com/download/testnet/safe4_node/safe4-testnet.linux.v0.1.7.zip",
-  Safe4FileName: "safe4-testnet.linux.v0.1.7.zip",
-  Safe4MD5Sum: "94cba5e86e7733e28227edde54f2ab91",
+  Safe4FileURL: "https://www.anwang.com/download/testnet/safe4_node/safe4-testnet.linux.v0.1.7.tar.gz",
+  Safe4FileName: "safe4-testnet.linux.v0.1.7.tar.gz",
+  Safe4MD5Sum: "020c64d3ae684a29d2231dcd3c6f1c66",
   // 解压后的节点程序目录
   Safe4NodeDir: "safe4-testnet-v0.1.7",
   // 默认数据文件目录
@@ -313,7 +315,7 @@ export default ({
       () => console.log()
     )
     const CMD_unzip: CommandState = new CommandState(
-      `unzip -o ${Safe4FileName}`,
+      `tar -zxvf ${Safe4FileName}`,
       () => {
         return true;
       },
@@ -321,15 +323,13 @@ export default ({
       () => console.log("")
     )
     const CMD_start: CommandState = new CommandState(
-      `cd ${Safe4NodeDir} && sh start.sh > safe.log 2>&1`,
+      `cd ${Safe4NodeDir} && sh start.sh ${inputParams.host} > safe.log 2>&1`,
       () => {
         return true;
       },
       () => console.log(""),
       () => console.log("")
     )
-
-
 
     if (term) {
       updateSteps(0, "检查 Safe4 进程是否运行");
@@ -418,8 +418,12 @@ export default ({
         hiddenKeystore.crypto.ciphertext = "****************************************";
         const hidden = JSON.stringify(hiddenKeystore).replaceAll("\"", "\\\"");
         console.log("hidden ==", hidden)
+
+        const DateStr = DateTimeFormat(new Date(), "yyyy-MM-dd\'T'\HH-mm-ss.sss\'Z\'");
+        const targetFile = `${_Safe4DataDir}/keystore/UTC--${DateStr}--${address.toLowerCase().substring(2)}`;
+
         const CMD_importKey: CommandState = new CommandState(
-          `echo "${keystoreStr}" > ${Safe4DataDir}/keystore/UTC-${address.toLowerCase().substring(2)}`,
+          `echo "${keystoreStr}" > ${targetFile}`,
           () => {
             return true;
           },
@@ -429,7 +433,7 @@ export default ({
         updateSteps(1, "上传节点地址 Keystore 文件");
         const CMD_importKey_success = await CMD_importKey.execute(
           term,
-          `echo "${hidden}" > ${Safe4DataDir}/keystore/UTC-${address.toLowerCase().substring(2)}`
+          `echo "${hidden}" > ${targetFile}`
         );
       } else {
         updateSteps(1, "节点地址 Keystore 文件已存在");

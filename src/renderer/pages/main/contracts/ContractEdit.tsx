@@ -95,7 +95,7 @@ export default () => {
           return null;
         }).filter(Boolean)
           // 不使用高于 0.8.17 版本进行编译，会出问题.
-          .filter((solc: any) => (solc.major == 0 && solc.minor < 8 || (solc.major == 0 && solc.minor == 8 && solc.patch <= 17)))
+          .filter((solc: any) => (solc.major == 0 && solc.minor < 8 && solc.minor > 4 || (solc.major == 0 && solc.minor == 8 && solc.patch <= 17)))
           .sort((b: any, a: any) => {
             if (a.major !== b.major) {
               return a.major - b.major;

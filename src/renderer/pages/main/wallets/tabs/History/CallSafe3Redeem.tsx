@@ -1,8 +1,11 @@
 import { Divider, Typography, } from "antd";
-import { ApiOutlined, ArrowRightOutlined } from '@ant-design/icons';
+import { ApiOutlined, ArrowRightOutlined, LockOutlined } from '@ant-design/icons';
 import TransactionElementTemplate from "./TransactionElementTemplate";
 import { SupportSafe3Functions } from "../../../../../constants/DecodeSupportFunction";
 import { useMemo } from "react";
+import { JSBI } from "@uniswap/sdk";
+import { useWalletsActiveAccount } from "../../../../../state/wallets/hooks";
+import EtherAmount from "../../../../../utils/EtherAmount";
 
 const { Text } = Typography;
 
@@ -10,13 +13,21 @@ export default ({
   status,
   safe4Address,
   safe3Address,
-  functionName
+  functionName,
+
+  value,
+  locked,
 }: {
   status: number | undefined,
   safe4Address: string,
   safe3Address: string,
-  functionName: string
+  functionName: string,
+
+  value: JSBI,
+  locked: JSBI,
 }) => {
+
+  const activeAccount = useWalletsActiveAccount();
 
   const _functionName = useMemo(() => {
     switch (functionName) {
@@ -29,7 +40,31 @@ export default ({
       default:
     }
     return "";
-  }, [functionName])
+  }, [functionName]);
+
+  const RenderAssetFlow = () => {
+    if (activeAccount == safe4Address) {
+      return <>
+        {
+          JSBI.greaterThan(locked, JSBI.BigInt(0)) &&
+          <Text type="secondary" strong>
+            <LockOutlined style={{ marginRight: "5px" }} />
+            <Text type="success" strong>+{locked && EtherAmount({ raw: locked.toString(), fix: 18 })} SAFE</Text>
+          </Text>
+        }
+        {
+          JSBI.greaterThan(value, JSBI.BigInt(0)) &&
+          <Text type="success" strong>
+            +{value && EtherAmount({ raw: value.toString(), fix: 18 })} SAFE
+          </Text>
+        }
+      </>
+    } else {
+      return <>
+
+      </>
+    }
+  }
 
   return <>
     <TransactionElementTemplate
@@ -43,8 +78,7 @@ export default ({
         <ArrowRightOutlined style={{ marginLeft: "5px", marginRight: "5px" }} />
         <Text >{safe4Address}</Text>
       </>}
-      assetFlow={<>
-      </>}
+      assetFlow={RenderAssetFlow()}
     />
   </>
 }

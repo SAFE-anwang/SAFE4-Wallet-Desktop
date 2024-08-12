@@ -17,12 +17,17 @@ import Safe3AssetRender, { Safe3Asset } from "./Safe3AssetRender";
 const { Text, Title } = Typography;
 
 const base58Regex = /^[1-9A-HJ-NP-Za-km-z]{52}$/;
+const evmPrivateRegex = /^(0x)?[0-9a-fA-F]{64}$/;
 const safe3AddressBase58Regex = /^X[a-zA-Z0-9]{33}$/;
 const redeemNeedAmount = "0.01";
 
 const isSafe3DesktopExportPrivateKey = (input: string) => {
   return base58Regex.test(input);
 };
+const isEVMPrivateKey = ( input: string ) => {
+  return evmPrivateRegex.test(input)
+}
+
 const isSafe3Address = (input: string) => {
   return safe3AddressBase58Regex.test(input);
 }
@@ -143,7 +148,7 @@ export default () => {
         ...inputErrors,
         safe3PrivateKeyError: undefined
       });
-      if (isSafe3DesktopExportPrivateKey(safe3PrivateKey)) {
+      if (isSafe3DesktopExportPrivateKey(safe3PrivateKey) || isEVMPrivateKey(safe3PrivateKey) ) {
         const safe3Wallet = Safe3PrivateKey(safe3PrivateKey);
         if (safe3Wallet.safe3Address == safe3Address || safe3Wallet.safe3CompressAddress == safe3Address) {
           setSafe3Wallet(safe3Wallet);
@@ -156,7 +161,7 @@ export default () => {
       } else {
         setInputErrors({
           ...inputErrors,
-          safe3PrivateKeyError: "请输入从 Safe3 桌面钱包导出的私钥"
+          safe3PrivateKeyError: "请输入该地址从 Safe3 桌面钱包导出的私钥"
         });
       }
     }
@@ -370,10 +375,10 @@ export default () => {
                   <Text strong type="secondary">Safe3 钱包私钥</Text>
                 </Col>
                 <Col span={24} style={{ marginTop: "5px" }}>
-                  <Input placeholder="输入钱包私钥" 
+                  <Input placeholder="输入钱包私钥"
                     disabled={redeeming} size="large" onChange={(event) => {
                     const value = event.target.value;
-                    if (isSafe3DesktopExportPrivateKey(value)) {
+                    if (isSafe3DesktopExportPrivateKey(value) || isEVMPrivateKey(value) ) {
                       setSafe3PrivateKey(value);
                     } else {
                       setSafe3PrivateKey(undefined);

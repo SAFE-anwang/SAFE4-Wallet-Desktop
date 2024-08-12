@@ -1,13 +1,13 @@
 import { List, Typography, Modal, Divider, Switch, Row, Col, Button, Tooltip } from "antd";
 import TransactionElement from "./TransactionElement";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import TransactionDetailsView from "./TransactionDetailsView";
 import { useDispatch, useSelector } from "react-redux";
 import { useWalletsActiveAccount } from "../../../../../state/wallets/hooks";
 import { useTransactions } from "../../../../../state/transactions/hooks";
 import { useBlockNumber } from "../../../../../state/application/hooks";
 import { Activity2Transaction, AddressActivityFetch, TransactionDetails } from "../../../../../state/transactions/reducer";
-import { DBAddressActivitySignal, DB_AddressActivity_Methods } from "../../../../../../main/handlers/DBAddressActivitySingalHandler";
+import { DBAddressActivitySignal, DB_AddressActivity_Actions, DB_AddressActivity_Methods } from "../../../../../../main/handlers/DBAddressActivitySingalHandler";
 import { IPC_CHANNEL } from "../../../../../config";
 import { refreshAddressTimeNodeReward, reloadTransactionsAndSetAddressActivityFetch } from "../../../../../state/transactions/actions";
 import "./index.css"
@@ -146,7 +146,7 @@ export default () => {
     if (appContainer) {
       appContainer.scrollTop = 0;
     }
-  }, [walletTab])
+  }, [walletTab]);
 
   return <>
     <Row style={{ marginBottom: "20px" }}>
@@ -161,9 +161,21 @@ export default () => {
         </Tooltip>
       </Col>
     </Row>
-
     {
       Object.keys(transactions).sort((d1, d2) => TimestampTheStartOf(d2) - TimestampTheStartOf(d1))
+        .filter( date => {
+          const txns =  transactions[date].transactions;
+          const rewardAmount = transactions[date].systemRewardAmount;
+          let standardTxnAcount = 0;
+          txns.forEach( txn => {
+            const { refFrom , refTo , action } = txn;
+            if ( (refFrom && refTo) || (action == DB_AddressActivity_Actions.AM_Deposit || action == DB_AddressActivity_Actions.AM_Transfer ) ){
+              standardTxnAcount ++;
+            }
+          });
+          return standardTxnAcount > 0 || rewardAmount.greaterThan(ZERO) ;
+          // return true;
+        })
         .map(date => {
           const systemRewardAmount = transactions[date].systemRewardAmount;
           return (<div key={date}>
