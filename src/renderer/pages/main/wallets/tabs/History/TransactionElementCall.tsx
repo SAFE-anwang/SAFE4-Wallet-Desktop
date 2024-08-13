@@ -54,7 +54,14 @@ export default ({ transaction, setClickTransaction }: {
   }, [call, tokenTransfers]);
 
   const RenderTokenTransfer = useCallback(() => {
-    const tokenTransfer = call?.tokenTransfer ? call.tokenTransfer : tokenTransfers ? tokenTransfers[0] : undefined;
+    let firstTokenTransfer = undefined;
+    if ( tokenTransfers ){
+      Object.keys( tokenTransfers )
+        .forEach( (eventLogIndex , index : number) => {
+          if ( index == 0 ){ firstTokenTransfer = tokenTransfers[eventLogIndex] }
+        })
+    }
+    const tokenTransfer = call?.tokenTransfer ? call.tokenTransfer : tokenTransfers ? firstTokenTransfer : undefined;
     return <>
       <List.Item onClick={() => { setClickTransaction(transaction) }} key={transaction.hash} className="history-element" style={{ paddingLeft: "15px", paddingRight: "15px" }}>
         <span style={{ width: "100%" }}>
@@ -62,7 +69,7 @@ export default ({ transaction, setClickTransaction }: {
         </span>
       </List.Item>
     </>
-  }, [transaction,status])
+  }, [transaction, status])
 
   return <>
     {/* <Text>{JSON.stringify(transaction)}</Text> */}

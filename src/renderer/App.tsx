@@ -1,4 +1,4 @@
-import { Alert, Button, Card, Col, Image, Input, Row, Spin, Typography } from 'antd';
+import { Alert, Button, Card, Col, Form, Image, Input, Row, Spin, Typography } from 'antd';
 import { useApplicationActionAtCreateWallet, useApplicationBlockchainWeb3Rpc } from './state/application/hooks';
 import { useCallback, useEffect, useState } from 'react';
 import { Web3ReactHooks, Web3ReactProvider } from '@web3-react/core'
@@ -10,7 +10,6 @@ import { IndexSingal, Index_Methods } from '../main/handlers/IndexSingalHandler'
 import config, { IPC_CHANNEL } from './config';
 import { applicationDataLoaded, applicationSetPassword, applicationUpdateWeb3Rpc } from './state/application/action';
 import { walletsLoadKeystores, walletsLoadWalletNames } from './state/wallets/action';
-import SAFE_LOGO from './assets/logo/SAFE.png'
 import { MemoryRouter as Router, Routes, Route } from 'react-router-dom';
 import MenuComponent from './pages/components/MenuComponent';
 import Index from './pages/index';
@@ -45,6 +44,7 @@ import ContractEdit from './pages/main/contracts/ContractEdit';
 import { ContractCompileHandler, ContractCompileSignal, ContractCompile_Methods } from '../main/handlers/ContractCompileHandler';
 import ModifyPassword from './pages/main/menu/password/ModifyPassword';
 import TestSSH2 from './pages/main/tools/TestSSH2';
+import { SAFE_LOGO } from './assets/logo/AssetsLogo';
 const CryptoJS = require('crypto-js');
 const { Text } = Typography;
 export default function App() {
@@ -126,12 +126,12 @@ export default function App() {
             active
           }
         });
-        const walletNames = wallet_names.map( ( walletName : any ) => {
-          const { address , name } = walletName;
+        const walletNames = wallet_names.map((walletName: any) => {
+          const { address, name } = walletName;
           return {
-            address ,
-            name ,
-            active : walletName.active == 1
+            address,
+            name,
+            active: walletName.active == 1
           }
         })
         setDbRpcConfigs(rpcConfigs);
@@ -207,23 +207,26 @@ export default function App() {
                 <Col span={24} style={{ textAlign: "center", marginTop: "10px" }}>
                   <Text type='secondary' style={{ fontSize: "18px" }}>即将进入去中心化网络</Text>
                 </Col>
+
                 <Col span={24} style={{ marginTop: "20px" }}>
-                  <Input.Password size='large' onChange={(event) => {
-                    setPassword(event.target.value);
-                    setPasswordError(undefined);
-                  }} placeholder='输入密码' />
-                  {
-                    passwordError && <>
-                      <Alert style={{ marginTop: "5px" }} type='error' showIcon message={passwordError} />
-                    </>
-                  }
+                  <Form>
+                    <Input.Password size='large' onChange={(event) => {
+                      setPassword(event.target.value);
+                      setPasswordError(undefined);
+                    }} placeholder='输入密码' />
+                    {
+                      passwordError && <>
+                        <Alert style={{ marginTop: "5px" }} type='error' showIcon message={passwordError} />
+                      </>
+                    }
+                    <Button htmlType='submit' disabled={password ? false : true} onClick={decrypt} type='primary' size='large' style={{ width: "100%", marginTop: "20px" }}>
+                      解锁
+                    </Button>
+                  </Form>
                 </Col>
-                <Button disabled={password ? false : true} onClick={decrypt} type='primary' size='large' style={{ width: "100%", marginTop: "20px" }}>
-                  解锁
-                </Button>
               </Row>
             </Card>
-          </Row>
+          </Row >
         </>
       }
       {
