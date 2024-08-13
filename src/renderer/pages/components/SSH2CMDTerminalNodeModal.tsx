@@ -307,7 +307,7 @@ export default ({
     );
 
     const CMD_download: CommandState = new CommandState(
-      `wget -O ${Safe4FileName} ${Safe4FileURL}`,
+      `wget -O ${Safe4FileName} ${Safe4FileURL} --no-check-certificate`,
       () => {
         return true;
       },
