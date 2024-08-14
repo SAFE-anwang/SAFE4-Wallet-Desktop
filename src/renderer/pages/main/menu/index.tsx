@@ -31,6 +31,22 @@ export default () => {
     <div style={{ width: "100%", paddingTop: "40px" }}>
       <div style={{ margin: "auto", width: "60%" }}>
         <Card className="menu-item-container" style={{ marginBottom: "20px" }}>
+
+          <Divider style={{ margin: "0px 0px" }} />
+          <Row className='menu-item' onClick={() => {
+            // navigate("/main/menu/storage")
+          }}>
+            <Col span={2} style={{ textAlign: "center" }}>
+              <DatabaseOutlined />
+            </Col>
+            <Col span={20}>
+              版本 v0.1.7.1
+            </Col>
+            {/* <Col span={2} style={{ textAlign: "center" }}>
+              <RightOutlined />
+            </Col> */}
+          </Row>
+          <Divider style={{ margin: "0px 0px" }} />
           <Row className='menu-item' onClick={() => {
             navigate("/main/menu/network")
           }}>
@@ -44,6 +60,7 @@ export default () => {
               <RightOutlined />
             </Col>
           </Row>
+
           {/* <Divider style={{ margin: "0px 0px" }} />
           <Row className='menu-item' onClick={() => {
             navigate("/main/menu/storage")

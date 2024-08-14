@@ -24,7 +24,7 @@ const redeemNeedAmount = "0.01";
 const isSafe3DesktopExportPrivateKey = (input: string) => {
   return base58Regex.test(input);
 };
-const isEVMPrivateKey = ( input: string ) => {
+const isEVMPrivateKey = (input: string) => {
   return evmPrivateRegex.test(input)
 }
 
@@ -109,7 +109,7 @@ export default () => {
     if (!safe3Asset) {
       return false;
     }
-    if (!safe3Wallet){
+    if (!safe3Wallet) {
       return false;
     }
     if (notEnough) {
@@ -120,7 +120,7 @@ export default () => {
     const locked = safe3Asset.locked.txLockedAmount.greaterThan(ZERO) && safe3Asset.locked.redeemHeight == 0;
     const masternode = safe3Asset.masternode && safe3Asset.masternode.redeemHeight == 0;
     return avaiable || locked || masternode;
-  }, [safe3Asset, safe3Wallet , notEnough]);
+  }, [safe3Asset, safe3Wallet, notEnough]);
 
   useEffect(() => {
     setSafe3Asset(undefined);
@@ -148,15 +148,15 @@ export default () => {
         ...inputErrors,
         safe3PrivateKeyError: undefined
       });
-      if (isSafe3DesktopExportPrivateKey(safe3PrivateKey) || isEVMPrivateKey(safe3PrivateKey) ) {
+      if (isSafe3DesktopExportPrivateKey(safe3PrivateKey) || isEVMPrivateKey(safe3PrivateKey)) {
         const safe3Wallet = Safe3PrivateKey(safe3PrivateKey);
         if (safe3Wallet.safe3Address == safe3Address || safe3Wallet.safe3CompressAddress == safe3Address) {
           setSafe3Wallet(safe3Wallet);
         } else {
-          setInputErrors( {
+          setInputErrors({
             ...inputErrors,
             safe3PrivateKeyError: "私钥与钱包地址不匹配"
-          } );
+          });
         }
       } else {
         setInputErrors({
@@ -165,7 +165,7 @@ export default () => {
         });
       }
     }
-  }, [safe3PrivateKey,safe3Asset]);
+  }, [safe3PrivateKey, safe3Asset]);
 
   useEffect(() => {
     if (safe3Asset) {
@@ -308,7 +308,7 @@ export default () => {
       }
       setRedeeming(false);
     }
-  }, [ safe3Wallet, safe3Asset, safe3Contract, enode, masternodeContract, supernodeContract]);
+  }, [safe3Wallet, safe3Asset, safe3Contract, enode, masternodeContract, supernodeContract]);
 
   return (<>
 
@@ -325,10 +325,10 @@ export default () => {
         <Card>
           <Alert showIcon type="info" message={<>
             <Text>将 Safe3 网络的资产迁移到 Safe4 网络 (当前测试使用 Safe3 网络 2024年之前的资产快照)</Text><br />
+            <Text>私钥只在当前界面用于本地验证以及数据签名.</Text><br />
           </>} />
           <Steps style={{ marginTop: "20px" }} current={current} items={items} />
           <Row style={{ marginTop: "20px" }}>
-
             {/****************** Safe3 钱包地址 *********************/}
             <Col span={24}>
               <Text strong type="secondary">Safe3 钱包地址</Text>
@@ -360,7 +360,7 @@ export default () => {
             }
             {
               safe3Address && isSafe3Address(safe3Address) && <>
-                <Col span={24} style={{marginTop:"5px"}}>
+                <Col span={24} style={{ marginTop: "5px" }}>
                   <Safe3AssetRender safe3Address={safe3Address} setSafe3Asset={setSafe3Asset} />
                 </Col>
               </>
@@ -377,16 +377,16 @@ export default () => {
                 <Col span={24} style={{ marginTop: "5px" }}>
                   <Input placeholder="输入钱包私钥"
                     disabled={redeeming} size="large" onChange={(event) => {
-                    const value = event.target.value;
-                    if (isSafe3DesktopExportPrivateKey(value) || isEVMPrivateKey(value) ) {
+                      const value = event.target.value;
+                      if (isSafe3DesktopExportPrivateKey(value) || isEVMPrivateKey(value)) {
+                        setSafe3PrivateKey(value);
+                      } else {
+                        setSafe3PrivateKey(undefined);
+                      }
+                    }} onBlur={(event) => {
+                      const value = event.target.value;
                       setSafe3PrivateKey(value);
-                    } else {
-                      setSafe3PrivateKey(undefined);
-                    }
-                  }} onBlur={(event) => {
-                    const value = event.target.value;
-                    setSafe3PrivateKey(value);
-                  }} />
+                    }} />
                 </Col>
                 {
                   inputErrors && inputErrors.safe3PrivateKeyError && <>
@@ -419,8 +419,8 @@ export default () => {
                   </Col>
                   {
                     safe3Asset?.masternode
-                      && safe3Asset.masternode.redeemHeight == 0
-                      &&
+                    && safe3Asset.masternode.redeemHeight == 0
+                    &&
                     <>
                       <Col span={24} style={{ marginTop: "20px" }}>
                         <Text strong type="secondary">Safe4 主节点 ENODE</Text><br />

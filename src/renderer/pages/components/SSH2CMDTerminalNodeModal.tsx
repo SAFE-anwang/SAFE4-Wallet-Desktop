@@ -5,8 +5,7 @@ import { Button, Card, Col, Input, Row, Typography, Steps, Alert, Divider, Spin,
 import { ethers } from "ethers";
 import { useApplicationPassword } from "../../state/application/hooks";
 import AddressComponent from "./AddressComponent";
-import { ClockCircleTwoTone, CloseCircleTwoTone, LoadingOutlined } from "@ant-design/icons";
-import { formatDate } from "date-fns";
+import { CloseCircleTwoTone, LoadingOutlined } from "@ant-design/icons";
 import { DateTimeFormat } from "../../utils/DateUtils";
 
 const { Text } = Typography;
@@ -50,8 +49,9 @@ export class CommandState {
 const DEFAULT_CONFIG = {
   // 节点程序的下载地址
   // Safe4FileURL: "https://binaries.soliditylang.org/bin/list.json",
-  Safe4FileURL: "https://www.anwang.com/download/testnet/safe4_node/safe4-testnet.linux.v0.1.7.tar.gz",
-  Safe4FileName: "safe4-testnet.linux.v0.1.7.tar.gz",
+  Safe4FileURL: "https://www.anwang.com/download/testnet/safe4_node/safe4-testnet.linux.latest.tar.gz",
+  Safe4FileMD5: "https://www.anwang.com/download/testnet/safe4_node/safe4-testnet.linux.latest.md5",
+  Safe4FileName: "safe4-testnet.linux.latest.tar.gz",
   Safe4MD5Sum: "020c64d3ae684a29d2231dcd3c6f1c66",
   // 解压后的节点程序目录
   Safe4NodeDir: "safe4-testnet-v0.1.7",
@@ -265,6 +265,9 @@ export default ({
     } = DEFAULT_CONFIG;
 
     let _Safe4DataDir = Safe4DataDir;
+    let _Safe4MD5Sum = Safe4MD5Sum;
+    let _Safe4NodeDir = Safe4NodeDir;
+
     const CMD_psSafe4: CommandState = new CommandState(
       "ps aux| grep geth | grep -v grep",
       (data: string) => {
@@ -285,26 +288,6 @@ export default ({
       () => console.log(""),
       () => console.log("")
     );
-    const CMD_checkzip: CommandState = new CommandState(
-      `[ -f ${Safe4FileName} ] && md5sum ${Safe4FileName} || echo "File does not exist"`,
-      (data: string) => {
-        if (data.trim() == "File does not exist") {
-          console.log(`[.md5] ${Safe4FileName} 文件不存在`);
-          return false;
-        } else {
-          const [md5] = data.trim().split(" ");
-          console.log(`[.md5] ${Safe4FileName} 文件存在,md5=`, md5);
-          if (Safe4MD5Sum != md5.trim()) {
-            console.log(`[.md5] ${Safe4FileName} 文件与服务器文件不一致.`);
-            return false;
-          }
-        }
-        console.log(`[.md5] ${Safe4FileName} 文件且与服务器文件一直.`);
-        return true;
-      },
-      () => console.log(""),
-      () => console.log("")
-    );
 
     const CMD_download: CommandState = new CommandState(
       `wget -O ${Safe4FileName} ${Safe4FileURL} --no-check-certificate`,
@@ -316,15 +299,9 @@ export default ({
     )
     const CMD_unzip: CommandState = new CommandState(
       `tar -zxvf ${Safe4FileName}`,
-      () => {
-        return true;
-      },
-      () => console.log(""),
-      () => console.log("")
-    )
-    const CMD_start: CommandState = new CommandState(
-      `cd ${Safe4NodeDir} && sh start.sh ${inputParams.host} > safe.log 2>&1`,
-      () => {
+      (data) => {
+        _Safe4NodeDir = data.substring(0, data.indexOf("/"));
+        console.log(`[.tar] Safe4NodeDir = ${_Safe4NodeDir} `)
         return true;
       },
       () => console.log(""),
@@ -335,6 +312,31 @@ export default ({
       updateSteps(0, "检查 Safe4 进程是否运行");
       const CMD_psSafe4_success = await CMD_psSafe4.execute(term);
       if (!CMD_psSafe4_success) {
+        try {
+          _Safe4MD5Sum = (await (await fetch(DEFAULT_CONFIG.Safe4FileMD5)).text()).trim();
+        } catch (err) {
+
+        }
+        const CMD_checkzip: CommandState = new CommandState(
+          `[ -f ${Safe4FileName} ] && md5sum ${Safe4FileName} || echo "File does not exist"`,
+          (data: string) => {
+            if (data.trim() == "File does not exist") {
+              console.log(`[.md5] ${Safe4FileName} 文件不存在`);
+              return false;
+            } else {
+              const [md5] = data.trim().split(" ");
+              console.log(`[.md5] ${Safe4FileName} 文件存在,md5=`, md5);
+              if (_Safe4MD5Sum != md5.trim()) {
+                console.log(`[.md5] ${Safe4FileName} 文件与服务器文件[${_Safe4MD5Sum}]不一致.`);
+                return false;
+              }
+            }
+            console.log(`[.md5] ${Safe4FileName} 文件且与服务器文件[${_Safe4MD5Sum}]一直.`);
+            return true;
+          },
+          () => console.log(""),
+          () => console.log("")
+        );
         // Safe4 节点进程不存在;
         updateSteps(0, "检查 Safe4 节点程序安装文件");
         const CMD_checkzip_success = await CMD_checkzip.execute(term);
@@ -346,13 +348,20 @@ export default ({
         updateSteps(0, "解压 Safe4 节点程序");
         const CMD_unzip_success = await CMD_unzip.execute(term);
         updateSteps(0, "启动 Safe4 节点程序");
+        const CMD_start: CommandState = new CommandState(
+          `cd ${_Safe4NodeDir} && sh start.sh ${inputParams.host} > safe.log 2>&1`,
+          () => {
+            return true;
+          },
+          () => console.log(""),
+          () => console.log("")
+        )
         const CMD_start_success = await CMD_start.execute(term);
       } else {
         updateSteps(0, "Safe4 节点程序已运行");
       }
       updateSteps(1, "Safe4 节点程序已运行");
 
-      //
       const CMD_checkKeystore: CommandState = new CommandState(
         `find ${_Safe4DataDir}/keystore -type f -name "*${wallet.address.toLocaleLowerCase().substring(2)}*" -print -quit | grep -q '.' && echo "Keystore file exists" || echo "Keystore file does not exist"`,
         (data: string) => {
@@ -385,10 +394,10 @@ export default ({
             }
             // enode://d39fc9ed12000b2ea3b5463936958702f20a939405aae28e39463c8b66d78bb07baf7fe59370f6037849f2bd363b1bee3301d6b0bf8349abfbcafb5fccdceab2@172.105.24.28:30303
             // enode://{publicKey}@{ip}:30303
-            console.log({
-              privateKey: nodeKey,
-              publicKey: publicKey
-            });
+            // console.log({
+            //   privateKey: nodeKey,
+            //   publicKey: publicKey
+            // });
             const enode = `enode://${publicKey}@${inputParams.host}:30303`;
             console.log("[.cat nodekey]enode=", enode)
             setEnode(enode);
@@ -447,7 +456,6 @@ export default ({
         setScriptError("无法获取 ENODE 值");
       }
     }
-
   }, [terminalInstance, inputParams, wallet]);
 
   return <>
@@ -584,13 +592,11 @@ export default ({
             </Card>
           }
         </Col>
-
         <Col span={16}>
           <Card>
             <div ref={terminalRef} style={{ width: '100%', height: '400px', background: "black", padding: "10px" }} />
           </Card>
         </Col>
-
       </Row>
     </Modal>
 
