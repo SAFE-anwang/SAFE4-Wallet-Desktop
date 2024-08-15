@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useRef, useState } from "react"
-import { SSH2_Methods, SSH2SignalHandler, SSH2Singal } from "../../../../main/handlers/SSH2SignalHandler";
 import { IPC_CHANNEL } from "../../../config";
 import { Button, Col, Modal, Row, Typography } from "antd";
 

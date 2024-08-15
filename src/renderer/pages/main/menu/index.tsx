@@ -40,7 +40,7 @@ export default () => {
               <DatabaseOutlined />
             </Col>
             <Col span={20}>
-              版本 v0.1.7.1
+              版本 v0.1.8
             </Col>
             {/* <Col span={2} style={{ textAlign: "center" }}>
               <RightOutlined />
