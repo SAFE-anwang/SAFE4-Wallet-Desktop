@@ -10,6 +10,7 @@ import { TimeNodeRewardHandler } from "./handlers/TimeNodeRewardHandler";
 import { WalletNameHandler } from "./handlers/WalletNameHandler";
 import { SSH2Ipc } from "./SSH2Ipc";
 import { ERC20TokenSignalHandler } from "./handlers/ERC20TokenSignalHandler";
+import { BDBIpc } from "./BDBIpc";
 
 export const Channel : Channels = "ipc-example";
 
@@ -17,8 +18,11 @@ export class ApplicationIpcManager {
 
   listenSignalHandlers: ListenSignalHandler[] = [];
 
+  ctx : Context;
+
   constructor( resoucePath : string , appIsPackaged : boolean ) {
     const ctx = new Context(resoucePath,appIsPackaged);
+    this.ctx = ctx;
     this.listenSignalHandlers.push(new WalletSignalHandler(ctx));
     const indexSignalHandler = new IndexSingalHandler( ctx , () => {
       this.listenSignalHandlers.push(new DBAddressActivitySingalHandler(indexSignalHandler.getSqlite3DB()));
@@ -55,6 +59,7 @@ export class ApplicationIpcManager {
     });
 
     new SSH2Ipc(ipcMain);
+    new BDBIpc(ipcMain , this.ctx);
   }
 
 }

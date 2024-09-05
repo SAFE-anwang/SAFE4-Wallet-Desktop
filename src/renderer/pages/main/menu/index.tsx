@@ -61,7 +61,7 @@ export default () => {
             </Col>
           </Row>
 
-          {/* <Divider style={{ margin: "0px 0px" }} />
+         <Divider style={{ margin: "0px 0px" }} />
           <Row className='menu-item' onClick={() => {
             navigate("/main/menu/storage")
           }}>
@@ -74,7 +74,7 @@ export default () => {
             <Col span={2} style={{ textAlign: "center" }}>
               <RightOutlined />
             </Col>
-          </Row> */}
+          </Row> 
         </Card>
         {
           password && <Card className="menu-item-container" style={{ marginBottom: "20px" }}>
