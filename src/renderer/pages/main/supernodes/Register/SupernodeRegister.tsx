@@ -1,6 +1,6 @@
-import { Typography, Row, Col, Button, Card, Divider, Input, Slider, Alert, Radio, Space } from 'antd';
+import { Typography, Row, Col, Button, Card, Divider, Input, Slider, Alert, Radio, Space, Spin } from 'antd';
 import { useCallback, useEffect, useState } from 'react';
-import { useETHBalances, useWalletsActiveAccount, useWalletsKeystores } from '../../../../state/wallets/hooks';
+import { useETHBalances, useWalletsActiveAccount, useWalletsActiveKeystore, useWalletsActiveWallet, useWalletsKeystores } from '../../../../state/wallets/hooks';
 import { useMasternodeStorageContract, useMulticallContract, useSupernodeStorageContract } from '../../../../hooks/useContracts';
 import { LeftOutlined, QuestionCircleOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
@@ -9,8 +9,11 @@ import { ethers } from 'ethers';
 import CreateModalConfirm from './CreateModal-Confirm';
 import NumberFormat from '../../../../utils/NumberFormat';
 import { Safe4_Business_Config } from '../../../../config';
-import CallMulticallAggregate, { CallMulticallAggregateContractCall } from '../../../../state/multicall/CallMulticallAggregate';
+import CallMulticallAggregate, { CallMulticallAggregateContractCall, SyncCallMulticallAggregate } from '../../../../state/multicall/CallMulticallAggregate';
 import SSH2CMDTerminalNodeModal from '../../../components/SSH2CMDTerminalNodeModal';
+import { generateSupernodeTypeChildWallets } from '../../../../utils/GenerateChildWallet';
+import CallSafe3Redeem from '../../wallets/tabs/History/CallSafe3Redeem';
+import { HDNode } from 'ethers/lib/utils';
 const { Text, Title } = Typography;
 
 export const Supernode_Create_Type_NoUnion = 1;
@@ -39,11 +42,13 @@ export default () => {
   const balance = useETHBalances([activeAccount])[activeAccount];
   const [enodeTips, setEnodeTips] = useState<boolean>(false);
   const [checking, setChecking] = useState<boolean>(false);
-  const walletKeystores = useWalletsKeystores();
+  const walletsActiveKeystore = useWalletsActiveKeystore();
   const [openSSH2CMDTerminalNodeModal, setOpenSSH2CMDTerminalNodeModal] = useState<boolean>(false);
 
   const [nodeAddressPrivateKey, setNodeAddressPrivateKey] = useState<string>();
-  const [nodeAddress , setNodeAddress] = useState<string>();
+  const [nodeAddress, setNodeAddress] = useState<string>();
+
+  const [generateChild,setGenerateChild] = useState<boolean>(false);
 
   const [helpResult, setHelpResult] = useState<
     {
@@ -219,14 +224,51 @@ export default () => {
     })
   }, [activeAccount, helpResult]);
 
-  const helpToCreate = useCallback(() => {
-    if (!nodeAddressPrivateKey) {
-      const wallet = ethers.Wallet.createRandom();
-      setNodeAddressPrivateKey(wallet.privateKey);
-      setNodeAddress(wallet.address);
+  const helpToCreate = useCallback(async () => {
+    if (!walletsActiveKeystore || !walletsActiveKeystore.mnemonic) {
+      setInputErrors({
+        ...inputErrors,
+        address: "当前账户没有助记词,无法按照BIP44规则生成子钱包,不可使用该功能"
+      })
+      return;
+    }
+    if (walletsActiveKeystore && !nodeAddressPrivateKey && masternodeStorageContract && supernodeStorageContract) {
+      setGenerateChild(true);
+      let selectHDNode : HDNode | undefined;
+      let startAddressIndex = 0;
+      const size = 100;
+      while( !selectHDNode ){
+        const HDNodes = generateSupernodeTypeChildWallets(
+          walletsActiveKeystore.mnemonic,
+          walletsActiveKeystore.password ?? "",
+          startAddressIndex, size
+        );
+        const addressHDNodeMap: {
+          [address: string]: HDNode
+        } = {};
+        HDNodes.forEach(hdNode => addressHDNodeMap[hdNode.address] = hdNode);
+        const addrExistMNSCalls: CallMulticallAggregateContractCall[] = HDNodes.map(({ address }) => {
+          return {
+            contract: masternodeStorageContract,
+            functionName: "exist",
+            params: [address]
+          }
+        });
+        await SyncCallMulticallAggregate(multicallContract, addrExistMNSCalls);
+        const notExistAddresses = addrExistMNSCalls.filter(call => !call.result).map(call => call.params[0]);
+        if (notExistAddresses && notExistAddresses[0]) {
+          selectHDNode = addressHDNodeMap[notExistAddresses[0]];
+        }else{
+          startAddressIndex += size;
+        }
+        console.log(addressHDNodeMap);
+      }
+      setNodeAddressPrivateKey(selectHDNode.privateKey);
+      setNodeAddress(selectHDNode.address);
+      setGenerateChild(false);
     }
     setOpenSSH2CMDTerminalNodeModal(true);
-  }, [createParams, walletKeystores]);
+  }, [createParams, walletsActiveKeystore, masternodeStorageContract, supernodeStorageContract]);
 
   return <>
     <Row style={{ height: "50px" }}>
@@ -325,19 +367,21 @@ export default () => {
                   </Col>
                 </Row>
               </>} />
-              <Input status={inputErrors.address ? "error" : ""}
-                disabled={helpResult ? true : false}
-                value={createParams.address} placeholder='输入超级节点地址' onChange={(event) => {
-                  const inputAddress = event.target.value;
-                  setInputErrors({
-                    ...inputErrors,
-                    address: undefined
-                  })
-                  setCreateParams({
-                    ...createParams,
-                    address: inputAddress
-                  });
-                }}></Input>
+              <Spin spinning={generateChild}>
+                <Input status={inputErrors.address ? "error" : ""}
+                  disabled={helpResult ? true : false}
+                  value={createParams.address} placeholder='输入超级节点地址' onChange={(event) => {
+                    const inputAddress = event.target.value;
+                    setInputErrors({
+                      ...inputErrors,
+                      address: undefined
+                    })
+                    setCreateParams({
+                      ...createParams,
+                      address: inputAddress
+                    });
+                  }}></Input>
+              </Spin>
               {
                 inputErrors && inputErrors.address &&
                 <Alert style={{ marginTop: "5px" }} type='error' message={inputErrors.address} showIcon></Alert>
