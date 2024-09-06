@@ -122,7 +122,7 @@ export default ({
             proposalInfo.payTimes == 1 && <>
               {
                 <>
-                  <Text>在</Text><Text strong style={{ marginLeft: "5px" }}>{DateTimeFormat(proposalInfo.endPayTime)}</Text><br />
+                  <Text>在</Text><Text strong style={{ marginLeft: "5px" }}>{DateTimeFormat(proposalInfo.endPayTime * 1000)}</Text><br />
                   <Text><Text strong>一次性</Text> 发放 </Text><Text strong style={{ marginLeft: "5px" }}>{proposalInfo.payAmount.toFixed(6)} SAFE</Text>
                 </>
               }
@@ -132,8 +132,8 @@ export default ({
             proposalInfo.payTimes > 1 && <>
               {
                 <>
-                  <Text>在</Text><Text strong style={{ marginLeft: "5px", marginRight: "5px" }}>{DateTimeFormat(proposalInfo.startPayTime)}</Text>
-                  <Text>到</Text><Text strong style={{ marginLeft: "5px" }}>{DateTimeFormat(proposalInfo.endPayTime)}</Text><br />
+                  <Text>在</Text><Text strong style={{ marginLeft: "5px", marginRight: "5px" }}>{DateTimeFormat(proposalInfo.startPayTime * 1000)}</Text>
+                  <Text>到</Text><Text strong style={{ marginLeft: "5px" }}>{DateTimeFormat(proposalInfo.endPayTime * 1000 )}</Text><br />
                   <Text><Text strong>分期{proposalInfo.payTimes}次</Text> 合计发放 </Text><Text strong style={{ marginLeft: "5px" }}>{proposalInfo.payAmount.toFixed(6)} SAFE</Text>
                 </>
               }

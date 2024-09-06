@@ -7,9 +7,6 @@ import { publicKeyToSafe3Address } from "../../../../../utils/Safe3PrivateKey";
 import CallSafe3Redeem from "./CallSafe3Redeem";
 import { JSBI } from "@uniswap/sdk";
 
-const { Text } = Typography;
-
-
 export default ({ transaction, setClickTransaction, support }: {
   transaction: TransactionDetails,
   setClickTransaction: (transaction: TransactionDetails) => void,
@@ -22,28 +19,33 @@ export default ({ transaction, setClickTransaction, support }: {
     status,
     call,
   } = transaction;
-  const { safe3Address, safe4Address } = useMemo(() => {
-    const { _pubkey, _sig } = support.inputDecodeResult;
-    const publicKeyBuffer = ethers.utils.hexlify(_pubkey)
-    let safe3Address = "Unknown";
-    let safe4Address = "Unknown";
-    try {
-      safe4Address = ethers.utils.computeAddress(publicKeyBuffer);
-    } catch (error) {
+  const mappings = useMemo(() => {
+    const { _pubkeys, _sigs } = support.inputDecodeResult;
+    let mappings: {
+      safe3Address: string,
+      safe4Address: string
+    }[] = [];
+    let safe3Address = "[无法解析]";
+    let safe4Address = "[无法解析]";
+    if (_pubkeys && _pubkeys.length > 0) {
+      mappings = _pubkeys.map( (pubkey:string) => {
+        const publicKeyBuffer = ethers.utils.hexlify(_pubkeys[0]);
+        try {
+          safe4Address = ethers.utils.computeAddress(publicKeyBuffer);
+          safe3Address = publicKeyToSafe3Address(_pubkeys[0]);
+        } catch (error) {
 
+        }
+        return {
+          safe3Address,
+          safe4Address
+        }
+      })
     }
-    try {
-      safe3Address = publicKeyToSafe3Address(_pubkey);
-    } catch (error) {
-
-    }
-    return {
-      safe3Address,
-      safe4Address
-    }
+    return mappings;
   }, [transaction, call, support]);
 
-  const [ value , locked ] = useMemo(() => {
+  const [value, locked] = useMemo(() => {
     let lockedAmount: JSBI = JSBI.BigInt(0);
     let avaialbeAmount = JSBI.BigInt(0);
     if (transaction.accountManagerDatas) {
@@ -64,14 +66,14 @@ export default ({ transaction, setClickTransaction, support }: {
           }
         })
     }
-    return [ avaialbeAmount , lockedAmount ];
+    return [avaialbeAmount, lockedAmount];
   }, [transaction]);
 
   return <>
     <List.Item onClick={() => { setClickTransaction(transaction) }} key={transaction.hash} className="history-element" style={{ paddingLeft: "15px", paddingRight: "15px" }}>
       {
         call && <>
-          <CallSafe3Redeem functionName={support.supportFuncName} status={status} safe4Address={safe4Address} safe3Address={safe3Address}
+          <CallSafe3Redeem functionName={support.supportFuncName} status={status} mappings={mappings}
             value={value} locked={locked} />
         </>
       }

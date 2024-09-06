@@ -64,9 +64,9 @@ export default ({ transaction, setClickTransaction, support }: {
 
   const CallSafe3FunsRender = (funcName: string, transaction: TransactionDetails, setClickTransaction: (transaction: TransactionDetails) => void, support: any) => {
     switch (funcName) {
-      case SupportSafe3Functions.RedeemAvailable:
-      case SupportSafe3Functions.RedeemLocked:
-      case SupportSafe3Functions.RedeemMasterNode:
+      case SupportSafe3Functions.BatchRedeemAvailable:
+      case SupportSafe3Functions.BatchRedeemLocked:
+      case SupportSafe3Functions.BatchRedeemMasterNode:
         return <TransactionElementCallSafe3Redeem
           transaction={transaction}
           setClickTransaction={setClickTransaction}

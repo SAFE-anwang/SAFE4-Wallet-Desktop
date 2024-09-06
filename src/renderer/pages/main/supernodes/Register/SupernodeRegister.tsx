@@ -41,7 +41,10 @@ export default () => {
   const [checking, setChecking] = useState<boolean>(false);
   const walletKeystores = useWalletsKeystores();
   const [openSSH2CMDTerminalNodeModal, setOpenSSH2CMDTerminalNodeModal] = useState<boolean>(false);
+
   const [nodeAddressPrivateKey, setNodeAddressPrivateKey] = useState<string>();
+  const [nodeAddress , setNodeAddress] = useState<string>();
+
   const [helpResult, setHelpResult] = useState<
     {
       enode: string,
@@ -63,7 +66,7 @@ export default () => {
   }>({
     createType: Supernode_Create_Type_NoUnion,
     name: undefined,
-    address: activeAccount,
+    address: undefined,
     enode: undefined,
     description: undefined,
     incentivePlan: {
@@ -113,9 +116,14 @@ export default () => {
         if (!ethers.utils.isAddress(address)) {
           inputErrors.address = "请输入合法的钱包地址";
         }
+        if (address == activeAccount) {
+          inputErrors.address = "不能使用当前账户作为超级节点地址";
+        }
+
       } catch (error) {
         inputErrors.address = "请输入合法的钱包地址";
       }
+
     }
     if (!description) {
       inputErrors.description = "请输入超级节点简介信息!"
@@ -201,7 +209,7 @@ export default () => {
     if (!helpResult) {
       setCreateParams({
         ...createParams,
-        address: activeAccount
+        address: undefined
       })
     }
     setInputErrors({
@@ -212,20 +220,10 @@ export default () => {
   }, [activeAccount, helpResult]);
 
   const helpToCreate = useCallback(() => {
-    const address = createParams.address;
-    let addressInWallet = false;
-    walletKeystores.forEach(wallet => {
-      if (address == wallet.address) {
-        addressInWallet = true;
-        setNodeAddressPrivateKey(wallet.privateKey);
-      }
-    });
-    if (!addressInWallet) {
-      setInputErrors({
-        ...inputErrors,
-        address: "选择辅助创建时,超级节点钱包地址必须使用钱包内管理的地址."
-      });
-      return;
+    if (!nodeAddressPrivateKey) {
+      const wallet = ethers.Wallet.createRandom();
+      setNodeAddressPrivateKey(wallet.privateKey);
+      setNodeAddress(wallet.address);
     }
     setOpenSSH2CMDTerminalNodeModal(true);
   }, [createParams, walletKeystores]);
@@ -314,6 +312,19 @@ export default () => {
           <Row>
             <Col span={24}>
               <Text type='secondary'>超级节点地址</Text>
+              <Alert style={{ marginTop: "5px", marginBottom: "5px" }} type='warning' showIcon message={<>
+                <Row>
+                  <Col span={24}>
+                    超级节点运行时，节点程序会加载超级节点地址的私钥来签名区块。
+                  </Col>
+                  <Col span={24}>
+                    如果您了解其中的风险,可以自行配置;
+                  </Col>
+                  <Col span={24}>
+                    或者您可以选择 <Text strong>辅助创建</Text> ,由钱包随机生成一个新地址，自动配置超级节点;
+                  </Col>
+                </Row>
+              </>} />
               <Input status={inputErrors.address ? "error" : ""}
                 disabled={helpResult ? true : false}
                 value={createParams.address} placeholder='输入超级节点地址' onChange={(event) => {
@@ -363,7 +374,7 @@ export default () => {
             {
               enodeTips && <Col span={24} style={{ marginBottom: "10px", marginTop: "5px" }}>
                 <Alert type='info' message={<>
-                  <Text>服务器上部署节点程序后,使用geth连接到控制台输入</Text><br />
+                  <Text>服务器上部署节点程序后,连接到节点终端输入</Text><br />
                   <Text strong code>admin.nodeInfo</Text><br />
                   获取节点的ENODE信息
                 </>} />
@@ -457,9 +468,10 @@ export default () => {
     }
 
     {
-      nodeAddressPrivateKey && openSSH2CMDTerminalNodeModal &&
+      nodeAddressPrivateKey && openSSH2CMDTerminalNodeModal && nodeAddress &&
       <SSH2CMDTerminalNodeModal openSSH2CMDTerminalNodeModal={openSSH2CMDTerminalNodeModal} setOpenSSH2CMDTerminalNodeModal={setOpenSSH2CMDTerminalNodeModal}
         nodeAddressPrivateKey={nodeAddressPrivateKey}
+        nodeAddress={nodeAddress}
         onSuccess={(enode: string, nodeAddress: string) => {
           setHelpResult({ enode, nodeAddress });
           setCreateParams({

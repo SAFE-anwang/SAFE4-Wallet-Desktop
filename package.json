@@ -174,7 +174,6 @@
     "concurrently": "^8.2.1",
     "core-js": "^3.32.2",
     "cross-env": "^7.0.3",
-    "bdb": "^1.6.0",
     "css-loader": "^6.8.1",
     "css-minimizer-webpack-plugin": "^5.0.1",
     "detect-port": "^1.5.1",

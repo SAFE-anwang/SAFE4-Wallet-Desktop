@@ -27,7 +27,12 @@ export enum SupportProposalFunctions {
 export enum SupportSafe3Functions {
   RedeemAvailable = "redeemAvailable", // function redeemAvailable(bytes memory _pubkey, bytes memory _sig) external;
   RedeemLocked = "redeemLocked",       // function redeemLocked(bytes memory _pubkey, bytes memory _sig) external;
-  RedeemMasterNode = "redeemMasterNode" // function redeemMasterNode(bytes memory _pubkey, bytes memory _sig, string memory _enode) external;
+  RedeemMasterNode = "redeemMasterNode", // function redeemMasterNode(bytes memory _pubkey, bytes memory _sig, string memory _enode) external;
+
+  BatchRedeemAvailable  = "batchRedeemAvailable" ,
+  BatchRedeemLocked     = "batchRedeemLocked" ,
+  BatchRedeemMasterNode = "batchRedeemMasterNode" ,// function batchRedeemMasterNode(bytes[] memory _pubkeys, bytes[] memory _sigs, string[] memory _enodes)
+
 }
 
 function decodeProposalFunctionData(IContract: Interface, fragment: FunctionFragment, input: string): {
@@ -205,13 +210,13 @@ function decodeSafe3FunctionData(
     case SupportSafe3Functions.RedeemAvailable:
     case SupportSafe3Functions.RedeemLocked:
     case SupportSafe3Functions.RedeemMasterNode:
-      // function redeemAvailable(bytes memory _pubkey, bytes memory _sig) external;
-      // function redeemLocked(bytes memory _pubkey, bytes memory _sig) external;
-      // function redeemMasterNode(bytes memory _pubkey, bytes memory _sig, string memory _enode) external;
+    case SupportSafe3Functions.BatchRedeemAvailable:
+    case SupportSafe3Functions.BatchRedeemLocked:
+    case SupportSafe3Functions.BatchRedeemMasterNode:
       const redeem = IContract.decodeFunctionData(fragment, input);
       formatDecodeResult = {
-        _pubkey: redeem[0],
-        _sig: redeem[1]
+        _pubkeys: redeem[0],
+        _sigs: redeem[1]
       }
       break;
     default:

@@ -10,7 +10,6 @@ import { TimeNodeRewardHandler } from "./handlers/TimeNodeRewardHandler";
 import { WalletNameHandler } from "./handlers/WalletNameHandler";
 import { SSH2Ipc } from "./SSH2Ipc";
 import { ERC20TokenSignalHandler } from "./handlers/ERC20TokenSignalHandler";
-import { BDBIpc } from "./BDBIpc";
 
 export const Channel : Channels = "ipc-example";
 
@@ -59,7 +58,6 @@ export class ApplicationIpcManager {
     });
 
     new SSH2Ipc(ipcMain);
-    new BDBIpc(ipcMain , this.ctx);
   }
 
 }

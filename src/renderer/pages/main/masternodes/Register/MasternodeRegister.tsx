@@ -35,7 +35,9 @@ export default () => {
   const [enodeTips, setEnodeTips] = useState<boolean>(false);
   const [openSSH2CMDTerminalNodeModal, setOpenSSH2CMDTerminalNodeModal] = useState<boolean>(false);
   const walletKeystores = useWalletsKeystores();
+
   const [nodeAddressPrivateKey, setNodeAddressPrivateKey] = useState<string>();
+  const [nodeAddress , setNodeAddress] = useState<string>();
   const [helpResult, setHelpResult] = useState<
     {
       enode: string,
@@ -54,7 +56,7 @@ export default () => {
     }
   }>({
     registerType: Masternode_Create_Type_NoUnion,
-    address: activeAccount,
+    address: undefined,
     enode: undefined,
     description: undefined,
     incentivePlan: {
@@ -67,7 +69,7 @@ export default () => {
     if (!helpResult) {
       setRegisterParams({
         ...registerParams,
-        address: activeAccount
+        address: undefined
       })
     }
     setInputErrors({
@@ -186,21 +188,54 @@ export default () => {
 
   const helpToCreate = useCallback(() => {
     const address = registerParams.address;
-    let addressInWallet = false;
-    walletKeystores.forEach(wallet => {
-      if (address == wallet.address) {
-        addressInWallet = true;
-        setNodeAddressPrivateKey(wallet.privateKey);
-      }
-    });
-    if (!addressInWallet) {
+    if (!address) {
       setInputErrors({
         ...inputErrors,
-        address: "选择辅助创建时,主节点钱包地址必须使用钱包内管理的地址."
-      });
+        address: "请输入主节点钱包地址"
+      })
       return;
     }
-    setOpenSSH2CMDTerminalNodeModal(true);
+    if (address) {
+      if (!ethers.utils.isAddress(address)) {
+        setInputErrors({
+          ...inputErrors,
+          address: "请输入合法的钱包地址"
+        })
+        return;
+      } else {
+        if (masternodeStorageContract && supernodeStorageContract && multicallContract) {
+          const addrExistCall: CallMulticallAggregateContractCall = {
+            contract: masternodeStorageContract,
+            functionName: "exist",
+            params: [address]
+          };
+          const addrExistInSupernodesCall: CallMulticallAggregateContractCall = {
+            contract: supernodeStorageContract,
+            functionName: "exist",
+            params: [address]
+          };
+          CallMulticallAggregate(multicallContract, [
+            addrExistCall, addrExistInSupernodesCall
+          ], () => {
+            const addrExistsInMasternodes: boolean = addrExistCall.result;
+            const addrExistsInSupernodes: boolean = addrExistInSupernodesCall.result;
+            if (addrExistsInMasternodes || addrExistsInSupernodes) {
+              if ( addrExistsInMasternodes ){
+                inputErrors.address = "该钱包地址已注册主节点";
+              } else {
+                inputErrors.address = "该钱包地址已注册超级节点";
+              }
+              setInputErrors({ ...inputErrors });
+              return;
+            }
+            setNodeAddress(address);
+            setNodeAddressPrivateKey("");
+            setOpenSSH2CMDTerminalNodeModal(true);
+          });
+        }
+      }
+    }
+
   }, [registerParams, walletKeystores]);
 
   return <>
@@ -311,7 +346,7 @@ export default () => {
             {
               enodeTips && <Col span={24} style={{ marginBottom: "10px", marginTop: "5px" }}>
                 <Alert type='info' message={<>
-                  <Text>服务器上部署节点程序后,使用geth连接到控制台输入</Text><br />
+                  <Text>服务器上部署节点程序后,连接到节点终端输入</Text><br />
                   <Text strong code>admin.nodeInfo</Text><br />
                   获取节点的ENODE信息
                 </>} />
@@ -400,9 +435,9 @@ export default () => {
     <RegisterModalConfirm openRegisterModal={openRegisterModal} setOpenRegisterModal={setOpenRegsterModal} registerParams={registerParams} />
 
     {
-      nodeAddressPrivateKey && openSSH2CMDTerminalNodeModal &&
+      openSSH2CMDTerminalNodeModal && nodeAddress &&
       <SSH2CMDTerminalNodeModal openSSH2CMDTerminalNodeModal={openSSH2CMDTerminalNodeModal} setOpenSSH2CMDTerminalNodeModal={setOpenSSH2CMDTerminalNodeModal}
-        nodeAddressPrivateKey={nodeAddressPrivateKey}
+        nodeAddress={nodeAddress}
         onSuccess={(enode: string, nodeAddress: string) => {
           setHelpResult({ enode, nodeAddress });
           setRegisterParams({
@@ -410,7 +445,6 @@ export default () => {
             address: nodeAddress,
             enode
           });
-
           setInputErrors({
             ...inputErrors,
             address: undefined,

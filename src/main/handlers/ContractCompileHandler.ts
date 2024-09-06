@@ -268,11 +268,16 @@ export class ContractCompileHandler implements ListenSignalHandler {
       response.pipe(fileStream);
       fileStream.on('finish', () => {
         fileStream.close();
-        fs.renameSync(
-          destinationPath,
-          finishPath
-        );
-        console.log(`File downloaded - ${fullversionjs} - successfully.`);
+        try {
+          fs.renameSync(
+            destinationPath,
+            finishPath
+          );
+          console.log(`File downloaded - ${fullversionjs} - successfully.`);
+        }catch(error){
+
+        }
+
       });
     }).on('error', (err: any) => {
       console.error(`Error downloading the file:${fullversionjs} : ${err.message}`);

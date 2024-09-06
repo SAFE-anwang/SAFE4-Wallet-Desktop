@@ -115,10 +115,12 @@ export default () => {
     if (notEnough) {
       return false;
     }
-    const avaiable = safe3Asset.availableSafe3Info.amount.greaterThan(ZERO) &&
-      safe3Asset.availableSafe3Info.redeemHeight == 0;
-    const locked = safe3Asset.locked.txLockedAmount.greaterThan(ZERO) && safe3Asset.locked.redeemHeight == 0;
-    const masternode = safe3Asset.masternode && safe3Asset.masternode.redeemHeight == 0;
+    const avaiable = safe3Asset.availableSafe3Info.amount.greaterThan(ZERO)
+      && safe3Asset.availableSafe3Info.redeemHeight == 0;
+    const locked = safe3Asset.locked.txLockedAmount.greaterThan(ZERO)
+      && safe3Asset.locked.redeemHeight == 0;
+    const masternode = safe3Asset.masternode
+      && safe3Asset.masternode.redeemHeight == 0;
     return avaiable || locked || masternode;
   }, [safe3Asset, safe3Wallet, notEnough]);
 
@@ -180,13 +182,19 @@ export default () => {
   }, [safe3Asset, safe3Wallet]);
 
   const executeRedeem = useCallback(async () => {
+
     if (safe3Contract && safe3Wallet && safe3Asset && masternodeContract && supernodeContract) {
-      if (safe3Asset.masternode && safe3Asset.masternode.redeemHeight != 0) {
+
+      // 存在主节点且未被迁移;
+      if (
+        safe3Asset.masternode
+        && safe3Asset.masternode.redeemHeight == 0
+      ) {
         if (!enode) {
           setInputErrors({
             ...inputErrors,
             encode: "需要输入 ENODE 来进行 Safe3 网络的主节点到 Safe4 网络的迁移"
-          })
+          });
           return;
         }
         // 如果需要输入主节点迁移地址,则必须输入后，才能一键迁移资产
@@ -227,9 +235,9 @@ export default () => {
         availableSafe3Info.amount.greaterThan(ZERO)
       ) {
         try {
-          let response = await safe3Contract.redeemAvailable(
-            ethers.utils.arrayify(publicKey),
-            ethers.utils.arrayify(signMsg)
+          let response = await safe3Contract.batchRedeemAvailable(
+            [ethers.utils.arrayify(publicKey)],
+            [ethers.utils.arrayify(signMsg)]
           );
           _redeemTxHashs.avaiable = {
             status: 1,
@@ -255,9 +263,9 @@ export default () => {
         locked.txLockedAmount.greaterThan(ZERO)
       ) {
         try {
-          let response = await safe3Contract.redeemLocked(
-            ethers.utils.arrayify(publicKey),
-            ethers.utils.arrayify(signMsg)
+          let response = await safe3Contract.batchRedeemLocked(
+            [ethers.utils.arrayify(publicKey)],
+            [ethers.utils.arrayify(signMsg)]
           );
           console.log("redeem lockeed txhash:", response.hash)
           _redeemTxHashs.locked = {
@@ -284,10 +292,10 @@ export default () => {
         && safe3Asset.masternode.redeemHeight == 0
       ) {
         try {
-          let response = await safe3Contract.redeemMasterNode(
-            ethers.utils.arrayify(publicKey),
-            ethers.utils.arrayify(signMsg),
-            enode
+          let response = await safe3Contract.batchRedeemMasterNode(
+            [ethers.utils.arrayify(publicKey)],
+            [ethers.utils.arrayify(signMsg)],
+            [enode]
           );
           _redeemTxHashs.masternode = {
             status: 1,

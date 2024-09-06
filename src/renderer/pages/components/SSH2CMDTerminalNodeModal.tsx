@@ -10,6 +10,9 @@ import { DateTimeFormat } from "../../utils/DateUtils";
 
 const { Text } = Typography;
 
+const Fake_Keystore_Template = '{"address":"ea5b0c1bfe412cea673c0db89cfa3809d6de1552","id":"29a2f2be-d6cd-44a1-b24b-ca0fda4e6112","version":3,"crypto":{"cipher":"aes-128-ctr","cipherparams":{"iv":"9c4619d2f9b2fe92713250670520202d"},"ciphertext":"00000000000000000000000000000000000000000000000000","kdf":"scrypt","kdfparams":{"salt":"b4cda799dfe9d778b1908f1d20c4028904771f99370483b763665ff77560914a","n":131072,"dklen":32,"p":1,"r":8},"mac":"31a694660911ac6903934eaa67c05a905340bfebd7209bc01830c44be3545ca8"}}';
+
+
 export class CommandState {
 
   command: string;
@@ -66,10 +69,12 @@ export default ({
   openSSH2CMDTerminalNodeModal,
   setOpenSSH2CMDTerminalNodeModal,
   nodeAddressPrivateKey,
+  nodeAddress,
   onSuccess,
   onError
 }: {
-  nodeAddressPrivateKey: string,
+  nodeAddressPrivateKey ?: string,
+  nodeAddress: string,
   openSSH2CMDTerminalNodeModal: boolean
   setOpenSSH2CMDTerminalNodeModal: (openSSH2CMDTerminalNodeModal: boolean) => void
   onSuccess: (enode: string, nodeAddress: string) => void
@@ -79,9 +84,9 @@ export default ({
   const terminalRef = useRef<HTMLDivElement>(null);
   const terminalInstance = useRef<Terminal | null>(null);
   const password = useApplicationPassword();
-  const wallet = new ethers.Wallet(nodeAddressPrivateKey);
   const [enode, setEnode] = useState<string>();
   const [scriptError, setScriptError] = useState<string>();
+  const wallet = nodeAddressPrivateKey ? new ethers.Wallet(nodeAddressPrivateKey) : undefined;
 
   const DEFAULT_STEPS: {
     title: string | ReactNode,
@@ -137,9 +142,9 @@ export default ({
     username: string,
     password: string,
   }>({
-    host: "",
+    host: "39.108.69.183",
     username: "root",
-    password: ""
+    password: "Zy123456!"
   });
   const [inputErrors, setInputErrors] = useState<{
     host: string | undefined,
@@ -191,12 +196,20 @@ export default ({
   }, []);
 
   const outputKeyStore = useCallback(async () => {
-    const keystore = await wallet.encrypt(password ? password : "");
-    return {
-      address: wallet.address,
-      keystore
+    if ( wallet ){
+      const keystore = await wallet.encrypt(password ? password : "");
+      return {
+        address: wallet.address,
+        keystore
+      }
     }
-  }, [wallet, password])
+    const fakeKeystore = JSON.parse(Fake_Keystore_Template);
+    fakeKeystore.address = nodeAddress;
+    return {
+      address : nodeAddress ,
+      keystore : JSON.stringify(fakeKeystore)
+    }
+  }, [wallet, password , nodeAddress]);
 
   const doConnect = useCallback(() => {
     const { host, username, password } = inputParams;
@@ -363,7 +376,7 @@ export default ({
       updateSteps(1, "Safe4 节点程序已运行");
 
       const CMD_checkKeystore: CommandState = new CommandState(
-        `find ${_Safe4DataDir}/keystore -type f -name "*${wallet.address.toLocaleLowerCase().substring(2)}*" -print -quit | grep -q '.' && echo "Keystore file exists" || echo "Keystore file does not exist"`,
+        `find ${_Safe4DataDir}/keystore -type f -name "*${nodeAddress.substring(2).toLocaleLowerCase()}*" -print -quit | grep -q '.' && echo "Keystore file exists" || echo "Keystore file does not exist"`,
         (data: string) => {
           let _data = data.trim();
           if (_data.indexOf("Keystore file does not exist") > -1) {
@@ -456,7 +469,7 @@ export default ({
         setScriptError("无法获取 ENODE 值");
       }
     }
-  }, [terminalInstance, inputParams, wallet]);
+  }, [terminalInstance, inputParams, wallet , nodeAddress ]);
 
   return <>
     <Modal footer={null} open={openSSH2CMDTerminalNodeModal} width={1200} destroyOnClose closable={false}>
@@ -566,7 +579,7 @@ export default ({
                   <Text type="secondary">节点地址</Text>
                 </Col>
                 <Col span={24}>
-                  <AddressComponent address={wallet.address} ellipsis />
+                  <AddressComponent address={nodeAddress} ellipsis />
                 </Col>
                 <Col span={24}>
                   <Text type="secondary">ENODE</Text>
@@ -584,7 +597,7 @@ export default ({
                   disabled={!scriptError && current < steps.length}
                   onClick={() => {
                     if (enode) {
-                      onSuccess(enode, wallet.address)
+                      onSuccess(enode, nodeAddress)
                     }
                     setOpenSSH2CMDTerminalNodeModal(false);
                   }}>返回</Button>

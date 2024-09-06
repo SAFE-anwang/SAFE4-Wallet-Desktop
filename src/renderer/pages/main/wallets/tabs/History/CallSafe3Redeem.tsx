@@ -1,4 +1,4 @@
-import { Divider, Typography, } from "antd";
+import { Col, Divider, Row, Typography, } from "antd";
 import { ApiOutlined, ArrowRightOutlined, LockOutlined } from '@ant-design/icons';
 import TransactionElementTemplate from "./TransactionElementTemplate";
 import { SupportSafe3Functions } from "../../../../../constants/DecodeSupportFunction";
@@ -11,18 +11,17 @@ const { Text } = Typography;
 
 export default ({
   status,
-  safe4Address,
-  safe3Address,
+  mappings,
   functionName,
-
   value,
   locked,
 }: {
   status: number | undefined,
-  safe4Address: string,
-  safe3Address: string,
+  mappings: {
+    safe4Address: string,
+    safe3Address: string,
+  }[]
   functionName: string,
-
   value: JSBI,
   locked: JSBI,
 }) => {
@@ -31,11 +30,11 @@ export default ({
 
   const _functionName = useMemo(() => {
     switch (functionName) {
-      case SupportSafe3Functions.RedeemAvailable:
+      case SupportSafe3Functions.BatchRedeemAvailable:
         return "迁移 Safe";
-      case SupportSafe3Functions.RedeemLocked:
+      case SupportSafe3Functions.BatchRedeemLocked:
         return "迁移 锁仓";
-      case SupportSafe3Functions.RedeemMasterNode:
+      case SupportSafe3Functions.BatchRedeemMasterNode:
         return "迁移 主节点";
       default:
     }
@@ -43,7 +42,8 @@ export default ({
   }, [functionName]);
 
   const RenderAssetFlow = () => {
-    if (activeAccount == safe4Address) {
+    const safe4Addresses = mappings.map( mapping => mapping.safe4Address );
+    if (safe4Addresses && safe4Addresses.indexOf(activeAccount) > 0 ) {
       return <>
         {
           JSBI.greaterThan(locked, JSBI.BigInt(0)) &&
@@ -74,9 +74,18 @@ export default ({
       </>}
       status={status}
       description={<>
-        <Text type="secondary">{safe3Address}</Text>
-        <ArrowRightOutlined style={{ marginLeft: "5px", marginRight: "5px" }} />
-        <Text >{safe4Address}</Text>
+        <Row>
+          {
+            mappings.map(mapping => {
+              const { safe3Address, safe4Address } = mapping;
+              return <Col key={safe3Address} span={24}>
+                <Text type="secondary">{safe3Address}</Text>
+                <ArrowRightOutlined style={{ marginLeft: "5px", marginRight: "5px" }} />
+                <Text >{safe4Address}</Text>
+              </Col>
+            })
+          }
+        </Row>
       </>}
       assetFlow={RenderAssetFlow()}
     />
