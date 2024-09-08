@@ -1,6 +1,6 @@
-import { Typography, Row, Col, Button, Card, Divider, Input, Slider, Alert, Radio, Space, Spin } from 'antd';
-import { useCallback, useEffect, useState } from 'react';
-import { useETHBalances, useWalletsActiveAccount, useWalletsActiveKeystore, useWalletsActiveWallet, useWalletsKeystores } from '../../../../state/wallets/hooks';
+import { Typography, Row, Col, Button, Card, Divider, Input, Slider, Alert, Radio, Space, Spin, Select } from 'antd';
+import { ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
+import { useActiveAccountChildWallets, useETHBalances, useWalletsActiveAccount, useWalletsActiveKeystore } from '../../../../state/wallets/hooks';
 import { useMasternodeStorageContract, useMulticallContract, useSupernodeStorageContract } from '../../../../hooks/useContracts';
 import { LeftOutlined, QuestionCircleOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
@@ -11,14 +11,13 @@ import NumberFormat from '../../../../utils/NumberFormat';
 import { Safe4_Business_Config } from '../../../../config';
 import CallMulticallAggregate, { CallMulticallAggregateContractCall, SyncCallMulticallAggregate } from '../../../../state/multicall/CallMulticallAggregate';
 import SSH2CMDTerminalNodeModal from '../../../components/SSH2CMDTerminalNodeModal';
-import { generateSupernodeTypeChildWallets } from '../../../../utils/GenerateChildWallet';
-import CallSafe3Redeem from '../../wallets/tabs/History/CallSafe3Redeem';
+import AddressComponent from '../../../components/AddressComponent';
 import { HDNode } from 'ethers/lib/utils';
+import { generateChildWallet, generateMasternodeTypeChildWallets, SupportChildWalletType } from '../../../../utils/GenerateChildWallet';
 const { Text, Title } = Typography;
 
 export const Supernode_Create_Type_NoUnion = 1;
 export const Supernode_create_type_Union = 2;
-
 export const enodeRegex = /^enode:\/\/[0-9a-fA-F]{128}@(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}):(\d+)$/;
 
 export const InputRules = {
@@ -42,13 +41,13 @@ export default () => {
   const balance = useETHBalances([activeAccount])[activeAccount];
   const [enodeTips, setEnodeTips] = useState<boolean>(false);
   const [checking, setChecking] = useState<boolean>(false);
-  const walletsActiveKeystore = useWalletsActiveKeystore();
-  const [openSSH2CMDTerminalNodeModal, setOpenSSH2CMDTerminalNodeModal] = useState<boolean>(false);
 
+  const [openSSH2CMDTerminalNodeModal, setOpenSSH2CMDTerminalNodeModal] = useState<boolean>(false);
   const [nodeAddressPrivateKey, setNodeAddressPrivateKey] = useState<string>();
   const [nodeAddress, setNodeAddress] = useState<string>();
-
-  const [generateChild,setGenerateChild] = useState<boolean>(false);
+  const [generateChild, setGenerateChild] = useState<boolean>(false);
+  const walletsActiveKeystore = useWalletsActiveKeystore();
+  const activeAccountChildWallets = useActiveAccountChildWallets(SupportChildWalletType.SN);
 
   const [helpResult, setHelpResult] = useState<
     {
@@ -56,7 +55,6 @@ export default () => {
       nodeAddress: string
     }
   >();
-
   const [createParams, setCreateParams] = useState<{
     createType: number | 1,
     name: string | undefined,
@@ -211,64 +209,86 @@ export default () => {
   const [openCreateModal, setOpenCreateModal] = useState<boolean>(false);
 
   useEffect(() => {
-    if (!helpResult) {
-      setCreateParams({
-        ...createParams,
-        address: undefined
-      })
+    if (!walletsActiveKeystore || !walletsActiveKeystore.mnemonic) {
+      // 告知用户不可使用该界面;
     }
+    setCreateParams({
+      ...createParams,
+      address: undefined,
+      enode: undefined
+    });
     setInputErrors({
       ...inputErrors,
       balance: undefined,
       address: undefined
-    })
-  }, [activeAccount, helpResult]);
+    });
+    // 清楚使用 ssh 连接后做的数据
+    setNodeAddress(undefined);
+    setNodeAddressPrivateKey(undefined);
+    setHelpResult(undefined);
+  }, [walletsActiveKeystore]);
 
-  const helpToCreate = useCallback(async () => {
-    if (!walletsActiveKeystore || !walletsActiveKeystore.mnemonic) {
-      setInputErrors({
-        ...inputErrors,
-        address: "当前账户没有助记词,无法按照BIP44规则生成子钱包,不可使用该功能"
-      })
-      return;
-    }
-    if (walletsActiveKeystore && !nodeAddressPrivateKey && masternodeStorageContract && supernodeStorageContract) {
-      setGenerateChild(true);
-      let selectHDNode : HDNode | undefined;
-      let startAddressIndex = 0;
-      const size = 100;
-      while( !selectHDNode ){
-        const HDNodes = generateSupernodeTypeChildWallets(
-          walletsActiveKeystore.mnemonic,
-          walletsActiveKeystore.password ?? "",
-          startAddressIndex, size
-        );
-        const addressHDNodeMap: {
-          [address: string]: HDNode
-        } = {};
-        HDNodes.forEach(hdNode => addressHDNodeMap[hdNode.address] = hdNode);
-        const addrExistMNSCalls: CallMulticallAggregateContractCall[] = HDNodes.map(({ address }) => {
+  const selectChildWalletOptions = useMemo(() => {
+    if (activeAccountChildWallets) {
+      const options = Object.keys(activeAccountChildWallets.wallets)
+        .map(childAddress => {
+          const { path, exist } = activeAccountChildWallets.wallets[childAddress];
           return {
-            contract: masternodeStorageContract,
-            functionName: "exist",
-            params: [address]
+            address: childAddress,
+            path,
+            exist,
+            index: path.substring(Number(path.lastIndexOf("/") + 1))
           }
-        });
-        await SyncCallMulticallAggregate(multicallContract, addrExistMNSCalls);
-        const notExistAddresses = addrExistMNSCalls.filter(call => !call.result).map(call => call.params[0]);
-        if (notExistAddresses && notExistAddresses[0]) {
-          selectHDNode = addressHDNodeMap[notExistAddresses[0]];
-        }else{
-          startAddressIndex += size;
-        }
-        console.log(addressHDNodeMap);
-      }
-      setNodeAddressPrivateKey(selectHDNode.privateKey);
-      setNodeAddress(selectHDNode.address);
-      setGenerateChild(false);
+        })
+        .sort((a: any, b: any) => (a.index - b.index))
+        .map(({ address, path, exist, index }) => {
+          return {
+            value: address,
+            label: <>
+              <Row key={address}>
+                <Col span={18}>
+                  <AddressComponent ellipsis address={address} />
+                </Col>
+                <Col span={6} style={{ textAlign: "right" }}>
+                  <Text>{path}</Text>
+                </Col>
+              </Row>
+            </>,
+            disabled: exist
+          }
+        })
+      return options;
     }
-    setOpenSSH2CMDTerminalNodeModal(true);
-  }, [createParams, walletsActiveKeystore, masternodeStorageContract, supernodeStorageContract]);
+  }, [activeAccount, activeAccountChildWallets]);
+
+  // 子钱包加载后,自动设置可用的第一个子钱包作为默认选择;
+  useEffect(() => {
+    if (!createParams.address && selectChildWalletOptions) {
+      const couldSelect = selectChildWalletOptions.filter(option => !option.disabled);
+      if (couldSelect && couldSelect.length > 0) {
+        setCreateParams({
+          ...createParams,
+          address: couldSelect[0].value
+        })
+      }
+    }
+  }, [createParams, selectChildWalletOptions])
+
+  const helpToCreate = useCallback(() => {
+    if (createParams.address && activeAccountChildWallets && activeAccountChildWallets.wallets[createParams.address]
+      && walletsActiveKeystore?.mnemonic
+    ) {
+      const path = activeAccountChildWallets.wallets[createParams.address].path;
+      const hdNode = generateChildWallet(
+        walletsActiveKeystore.mnemonic,
+        walletsActiveKeystore.password ? walletsActiveKeystore.password : "",
+        path
+      );
+      setNodeAddress(hdNode.address);
+      setNodeAddressPrivateKey(hdNode.privateKey);
+      setOpenSSH2CMDTerminalNodeModal(true);
+    }
+  }, [createParams, walletsActiveKeystore, activeAccountChildWallets]);
 
   return <>
     <Row style={{ height: "50px" }}>
@@ -357,35 +377,40 @@ export default () => {
               <Alert style={{ marginTop: "5px", marginBottom: "5px" }} type='warning' showIcon message={<>
                 <Row>
                   <Col span={24}>
-                    超级节点运行时，节点程序会加载超级节点地址的私钥来签名区块。
+                    超级节点运行时,节点程序需要加载超级节点地址的私钥来签名区块.
                   </Col>
                   <Col span={24}>
-                    如果您了解其中的风险,可以自行配置;
+                    钱包通过当前账户的种子密钥生成子地址作为超级节点地址.
                   </Col>
                   <Col span={24}>
-                    或者您可以选择 <Text strong>辅助创建</Text> ,由钱包随机生成一个新地址，自动配置超级节点;
+                    由于该超级节点的私钥会被远程存放在您的节点服务器上,<Text type='danger' strong>请避免向这个超级节点地址进行资产转账.</Text>
                   </Col>
                 </Row>
               </>} />
-              <Spin spinning={generateChild}>
-                <Input status={inputErrors.address ? "error" : ""}
-                  disabled={helpResult ? true : false}
-                  value={createParams.address} placeholder='输入超级节点地址' onChange={(event) => {
-                    const inputAddress = event.target.value;
-                    setInputErrors({
-                      ...inputErrors,
-                      address: undefined
-                    })
-                    setCreateParams({
-                      ...createParams,
-                      address: inputAddress
-                    });
-                  }}></Input>
-              </Spin>
-              {
-                inputErrors && inputErrors.address &&
-                <Alert style={{ marginTop: "5px" }} type='error' message={inputErrors.address} showIcon></Alert>
-              }
+              <Row>
+                <Col span={24}>
+                  <Select
+                    style={{
+                      width: "100%"
+                    }}
+                    placeholder="正在加载可用的超级节点地址..."
+                    options={selectChildWalletOptions}
+                    disabled={helpResult ? true : false}
+                    onChange={(value) => {
+                      setCreateParams({
+                        ...createParams,
+                        address: value
+                      })
+                    }}
+                    value={createParams.address}
+                  />
+                  {
+                    inputErrors && inputErrors.address &&
+                    <Alert style={{ marginTop: "5px" }} type='error' message={inputErrors.address} showIcon></Alert>
+                  }
+                </Col>
+              </Row>
+
             </Col>
           </Row>
           <Divider />

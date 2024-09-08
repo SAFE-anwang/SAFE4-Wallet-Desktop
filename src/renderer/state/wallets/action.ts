@@ -1,6 +1,7 @@
 import { createAction } from "@reduxjs/toolkit";
 import { WalletKeystore } from "./reducer";
 import Wallet from "ethereumjs-wallet";
+import { SupportChildWalletType } from "../../utils/GenerateChildWallet";
 
 export const walletsLoadKeystores = createAction<WalletKeystore[]>(
   "wallets/loadKeystores"
@@ -22,6 +23,15 @@ export const walletsUpdateWalletName = createAction<{ address : string , name : 
   "wallets/updateWalletName"
 )
 
-
+export const walletsUpdateWalletChildWallets = createAction<{ address : string , type : SupportChildWalletType , loading : boolean , result : {
+  map : {
+    [address : string] : {
+      path : string , 
+      exist : boolean
+    }
+  }
+} }>(
+  "wallets/updateWalletChildWallets"
+)
 
 

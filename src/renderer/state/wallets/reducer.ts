@@ -1,14 +1,15 @@
 import { createReducer } from '@reduxjs/toolkit';
-import { walletsInitList, walletsLoadKeystores, walletsLoadWalletNames, walletsUpdateActiveWallet, walletsUpdateWalletName } from './action';
+import { walletsInitList, walletsLoadKeystores, walletsLoadWalletNames, walletsUpdateActiveWallet, walletsUpdateWalletChildWallets, walletsUpdateWalletName } from './action';
 import { IPC_CHANNEL } from '../../config';
 import { WalletNameSignal, WalletName_Methods } from '../../../main/handlers/WalletNameHandler';
+import { SupportChildWalletType } from '../../utils/GenerateChildWallet';
 
 export interface ERC20Token {
-  chainId : number ,
-  address : string ,
-  name    : string ,
-  symbol  : string ,
-  decimals : number
+  chainId: number,
+  address: string,
+  name: string,
+  symbol: string,
+  decimals: number
 }
 
 export interface WalletKeystore {
@@ -37,6 +38,23 @@ export interface Wallets {
       name: string,
       active: boolean
     }
+  },
+
+  walletChildWallets: {
+    [address in string]: {
+      sn: {
+        loading: boolean,
+        wallets: {
+          [address in string]: { path: string, exist: boolean }
+        }
+      }
+      mn: {
+        loading: boolean,
+        wallets: {
+          [address in string]: { path: string, exist: boolean }
+        }
+      }
+    }
   }
 
 }
@@ -46,7 +64,8 @@ const initialState: Wallets = {
   activeWallet: null,
   keystores: [],
   list: [],
-  walletNames: {}
+  walletNames: {},
+  walletChildWallets: {}
 }
 
 
@@ -186,6 +205,40 @@ export default createReducer(initialState, (builder) => {
     const { address, name } = payload;
     state.walletNames[address].name = name;
   });
+
+  builder.addCase(walletsUpdateWalletChildWallets, (state, { payload }) => {
+    const { address, type, loading , result } = payload;
+    const _childWallets = state.walletChildWallets[address] ? { ... state.walletChildWallets[address] } : {
+      mn: {
+        loading: true,
+        wallets: {}
+      },
+      sn: {
+        loading: true,
+        wallets: {}
+      }
+    };
+    if ( type == SupportChildWalletType.SN ){
+      _childWallets.sn.loading = loading;
+    } else {
+      _childWallets.mn.loading = loading;
+    }
+    Object.keys(result.map).forEach(childAddress => {
+      if ( type == SupportChildWalletType.SN ){
+        _childWallets.sn.wallets[childAddress] = {
+          path: result.map[childAddress].path,
+          exist: result.map[childAddress].exist
+        }
+      }else{
+        _childWallets.mn.wallets[childAddress] = {
+          path: result.map[childAddress].path,
+          exist: result.map[childAddress].exist
+        }
+      }
+    });
+    state.walletChildWallets[address] = _childWallets;
+  });
+
 
 });
 
