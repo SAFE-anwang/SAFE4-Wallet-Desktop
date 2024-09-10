@@ -11,7 +11,7 @@ export interface CallMulticallAggregateContractCall {
 export function SyncCallMulticallAggregate(
   multicallContract: any,
   contractCalls: CallMulticallAggregateContractCall[]
-){
+) {
   const calls = contractCalls.map(contractCall => {
     const { contract, functionName, params } = contractCall;
     const fragment = contract.interface.getFunction(functionName);
@@ -21,7 +21,7 @@ export function SyncCallMulticallAggregate(
     ];
     return call;
   });
-  return new Promise(async ( resolve , reject ) => {
+  return new Promise(async (resolve, reject) => {
     const data = await multicallContract.callStatic.aggregate(calls);
     const { blockNumber, returnData } = data;
     contractCalls.forEach((contractCall, index) => {
@@ -31,14 +31,15 @@ export function SyncCallMulticallAggregate(
       const result = contract.interface.decodeFunctionResult(fragment, raw);
       contractCall.result = result[0];
     });
-    resolve( calls );
+    resolve(calls);
   });
 }
 
 export default (
   multicallContract: any,
   contractCalls: CallMulticallAggregateContractCall[],
-  callback: () => void
+  callback: () => void,
+  errCallback?: (err: any) => void
 ) => {
   const calls = contractCalls.map(contractCall => {
     const { contract, functionName, params } = contractCall;
@@ -59,5 +60,7 @@ export default (
       contractCall.result = result[0];
     });
     callback();
+  }).catch(( err : any ) => {
+    if ( errCallback ) errCallback(err);
   });
 }

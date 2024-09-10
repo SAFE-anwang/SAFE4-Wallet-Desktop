@@ -1,5 +1,5 @@
 import { createReducer } from '@reduxjs/toolkit';
-import { walletsInitList, walletsLoadKeystores, walletsLoadWalletNames, walletsUpdateActiveWallet, walletsUpdateWalletChildWallets, walletsUpdateWalletName } from './action';
+import { walletsInitList, walletsLoadKeystores, walletsLoadWalletNames, walletsUpdateActiveWallet, walletsUpdateUsedChildWalletAddress, walletsUpdateWalletChildWallets, walletsUpdateWalletName } from './action';
 import { IPC_CHANNEL } from '../../config';
 import { WalletNameSignal, WalletName_Methods } from '../../../main/handlers/WalletNameHandler';
 import { SupportChildWalletType } from '../../utils/GenerateChildWallet';
@@ -55,7 +55,8 @@ export interface Wallets {
         }
       }
     }
-  }
+  } ,
+  walletUsedAddress : string[],
 
 }
 
@@ -65,7 +66,8 @@ const initialState: Wallets = {
   keystores: [],
   list: [],
   walletNames: {},
-  walletChildWallets: {}
+  walletChildWallets: {},
+  walletUsedAddress:[]
 }
 
 
@@ -207,8 +209,8 @@ export default createReducer(initialState, (builder) => {
   });
 
   builder.addCase(walletsUpdateWalletChildWallets, (state, { payload }) => {
-    const { address, type, loading , result } = payload;
-    const _childWallets = state.walletChildWallets[address] ? { ... state.walletChildWallets[address] } : {
+    const { address, type, loading, result } = payload;
+    const _childWallets = state.walletChildWallets[address] ? { ...state.walletChildWallets[address] } : {
       mn: {
         loading: true,
         wallets: {}
@@ -218,27 +220,35 @@ export default createReducer(initialState, (builder) => {
         wallets: {}
       }
     };
-    if ( type == SupportChildWalletType.SN ){
+    if (type == SupportChildWalletType.SN) {
       _childWallets.sn.loading = loading;
     } else {
       _childWallets.mn.loading = loading;
     }
-    Object.keys(result.map).forEach(childAddress => {
-      if ( type == SupportChildWalletType.SN ){
-        _childWallets.sn.wallets[childAddress] = {
-          path: result.map[childAddress].path,
-          exist: result.map[childAddress].exist
+    if (result) {
+      Object.keys(result.map).forEach(childAddress => {
+        if (type == SupportChildWalletType.SN) {
+          _childWallets.sn.wallets[childAddress] = {
+            path: result.map[childAddress].path,
+            exist: result.map[childAddress].exist
+          }
+        } else {
+          _childWallets.mn.wallets[childAddress] = {
+            path: result.map[childAddress].path,
+            exist: result.map[childAddress].exist
+          }
         }
-      }else{
-        _childWallets.mn.wallets[childAddress] = {
-          path: result.map[childAddress].path,
-          exist: result.map[childAddress].exist
-        }
-      }
-    });
+      });
+    }
     state.walletChildWallets[address] = _childWallets;
   });
 
+  builder.addCase(walletsUpdateUsedChildWalletAddress, (state, { payload }) => {
+    const { address, used } = payload;
+    if ( address && used ){
+      state.walletUsedAddress.push( address );
+    }
+  });
 
 });
 

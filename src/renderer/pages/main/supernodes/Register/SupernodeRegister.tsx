@@ -163,9 +163,19 @@ export default () => {
         functionName: "exist",
         params: [address]
       }
+      const addrIsFounderCall: CallMulticallAggregateContractCall = {
+        contract: supernodeStorageContract,
+        functionName: "existFounder",
+        params: [address]
+      }
       const addrExistInMasternodesCall: CallMulticallAggregateContractCall = {
         contract: masternodeStorageContract,
         functionName: "exist",
+        params: [address]
+      }
+      const addrIsMasternodeFounderCall: CallMulticallAggregateContractCall = {
+        contract: masternodeStorageContract,
+        functionName: "existFounder",
         params: [address]
       }
       const enodeExistCall: CallMulticallAggregateContractCall = {
@@ -180,21 +190,26 @@ export default () => {
       }
       CallMulticallAggregate(
         multicallContract,
-        [nameExistCall, addrExistCall, addrExistInMasternodesCall, enodeExistCall, enodeExistInMasternodeCall],
+        [nameExistCall, addrExistCall, addrIsFounderCall , addrExistInMasternodesCall, addrIsMasternodeFounderCall, enodeExistCall, enodeExistInMasternodeCall],
         () => {
           const nameExists: boolean = nameExistCall.result;
           const addrExists: boolean = addrExistCall.result;
           const addrExistsInMasternodes: boolean = addrExistInMasternodesCall.result;
           const enodeExists: boolean = enodeExistCall.result;
           const enodeExistsInMasternodes: boolean = enodeExistInMasternodeCall.result;
+          const addrIsFounder : boolean = addrIsFounderCall.result;
+          const addrIsMasternodeFounder : boolean = addrIsMasternodeFounderCall.result;
           if (nameExists) {
-            inputErrors.name = "该名称已被使用";
+            inputErrors.name = "该名称已存在";
           }
           if (addrExists || addrExistsInMasternodes) {
-            inputErrors.address = "该地址已被使用";
+            inputErrors.address = "该地址已经是节点地址,无法使用";
+          }
+          if ( addrIsFounder || addrIsMasternodeFounder ){
+            inputErrors.address = "该地址已参与节点地址创建,无法使用"
           }
           if (enodeExists || enodeExistsInMasternodes) {
-            inputErrors.enode = "该ENODE已被使用";
+            inputErrors.enode = "该ENODE已存在";
           }
           setChecking(false);
           if (nameExists || enodeExists || enodeExistsInMasternodes || addrExists || addrExistsInMasternodes) {

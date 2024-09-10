@@ -55,11 +55,36 @@ export interface TxExecuteStatus {
 
 export default () => {
 
+  const testSign = async () => {
+
+    const privateKey = "0x7f5eb9b7027b6c138caf1c48317d75589101956a9cf370258737bed0f5613a9a";
+    const safe3Address = "XjdPHp4kmUZfiKeKqhYAegP3PbTizXBkGJ";
+    const targetSafe4Address = "0x9432920f31f9f81b8d0002231c111d7e5eb1e4e1";
+
+    // ethers.utils.arrayify(safe3Address + targetSafe4Address);
+    const combineAddress =
+    ethers.utils.toUtf8Bytes(safe3Address+targetSafe4Address)
+    console.log("combieAddress =>" , combineAddress);
+    console.log("s ::" , ethers.utils.hexValue(combineAddress))
+
+
+  }
+
+  useEffect( () => {
+
+    testSign();
+
+  } , [] );
+
+  const activeAccount = useWalletsActiveAccount();
+
   const [current, setCurrent] = useState(0);
   const items = steps.map((item) => ({ key: item.title, title: item.title }));
 
   const [safe3Address, setSafe3Address] = useState<string>();
   const [safe3PrivateKey, setSafe3PrivateKey] = useState<string>();
+  const [safe4Address, setSafe4Address] = useState<string>(activeAccount);
+
   const [enode, setEncode] = useState<string>();
 
   const [inputErrors, setInputErrors] = useState<{
@@ -67,7 +92,6 @@ export default () => {
     encode?: string,
     safe3Address?: string
   }>();
-
   const [safe3Wallet, setSafe3Wallet] = useState<{
     privateKey: string,
     publicKey: string,
@@ -77,12 +101,10 @@ export default () => {
     safe4Address: string
   }>();
   const [safe3Asset, setSafe3Asset] = useState<Safe3Asset>();
-
   const safe3Contract = useSafe3Contract(true);
   const masternodeContract = useMasternodeStorageContract();
   const supernodeContract = useSupernodeStorageContract();
 
-  const activeAccount = useWalletsActiveAccount();
   const balance = useETHBalances([activeAccount])[activeAccount];
 
   const [redeemTxHashs, setRedeemTxHashs] = useState<{
@@ -92,10 +114,10 @@ export default () => {
   }>();
   const [redeeming, setRedeeming] = useState<boolean>(false);
 
-  // useEffect(() => {
-  // XeT5MPR5BH6i2Z66XHRXqRjVFs3iAp4Rco
-  //   setSafe3PrivateKey("XFwbwpghGT8w8uqwJmZQ4uPjiB61ZdPvcN165LDu2HttQjE8Z2KR")
-  // }, []);
+  useEffect(() => {
+    setSafe3Address("XjdPHp4kmUZfiKeKqhYAegP3PbTizXBkGJ")
+    // setSafe3PrivateKey("XFwbwpghGT8w8uqwJmZQ4uPjiB61ZdPvcN165LDu2HttQjE8Z2KR")
+  }, []);
 
   const notEnough = useMemo(() => {
     const needAmount = CurrencyAmount.ether(ethers.utils.parseEther(redeemNeedAmount).toBigInt());
@@ -116,11 +138,11 @@ export default () => {
       return false;
     }
     const avaiable = safe3Asset.availableSafe3Info.amount.greaterThan(ZERO)
-      && safe3Asset.availableSafe3Info.redeemHeight == 0;
+      // && safe3Asset.availableSafe3Info.redeemHeight == 0;
     const locked = safe3Asset.locked.txLockedAmount.greaterThan(ZERO)
-      && safe3Asset.locked.redeemHeight == 0;
+      // && safe3Asset.locked.redeemHeight == 0;
     const masternode = safe3Asset.masternode
-      && safe3Asset.masternode.redeemHeight == 0;
+      // && safe3Asset.masternode.redeemHeight == 0;
     return avaiable || locked || masternode;
   }, [safe3Asset, safe3Wallet, notEnough]);
 
@@ -182,9 +204,7 @@ export default () => {
   }, [safe3Asset, safe3Wallet]);
 
   const executeRedeem = useCallback(async () => {
-
-    if (safe3Contract && safe3Wallet && safe3Asset && masternodeContract && supernodeContract) {
-
+    if (safe3Contract && safe3Wallet && safe3Asset && masternodeContract && supernodeContract && safe4Address) {
       // 存在主节点且未被迁移;
       if (
         safe3Asset.masternode
@@ -223,21 +243,36 @@ export default () => {
       const publicKey = "0x" + (safe3Wallet.safe3Address == safe3Address ? safe3Wallet.publicKey : safe3Wallet.compressPublicKey);
       const { privateKey } = safe3Wallet;
       const safe4Wallet = new ethers.Wallet(privateKey);
+
       const sha256Address = ethers.utils.sha256(ethers.utils.toUtf8Bytes(safe3Address));
       const signMsg = await safe4Wallet.signMessage(ethers.utils.arrayify(sha256Address));
+
+      const safe3AddressSign = await safe4Wallet.signMessage(
+        ethers.utils.arrayify(
+          ethers.utils.sha256(
+            ethers.utils.toUtf8Bytes(safe3Address)
+          )
+        )
+      );
+      const safe4AddressSign = await safe4Wallet.signMessage( ethers.utils.arrayify(safe4Address) );
+      const combineSign = new Uint8Array([
+        ...ethers.utils.arrayify(safe3AddressSign),
+        ...ethers.utils.arrayify(safe4AddressSign)
+      ]);
 
       setRedeeming(true);
       let _redeemTxHashs = redeemTxHashs ?? {};
 
       // safe3 可用资产大于零,且没有被赎回.
       if (
-        availableSafe3Info.redeemHeight == 0 &&
+        // availableSafe3Info.redeemHeight == 0 &&
         availableSafe3Info.amount.greaterThan(ZERO)
       ) {
         try {
           let response = await safe3Contract.batchRedeemAvailable(
             [ethers.utils.arrayify(publicKey)],
-            [ethers.utils.arrayify(signMsg)]
+            [ combineSign ],
+            safe4Address
           );
           _redeemTxHashs.avaiable = {
             status: 1,
@@ -259,13 +294,14 @@ export default () => {
 
       // safe3 锁仓资产大于零,且没有被赎回.
       if (
-        locked.redeemHeight == 0 &&
+        // locked.redeemHeight == 0 &&
         locked.txLockedAmount.greaterThan(ZERO)
       ) {
         try {
           let response = await safe3Contract.batchRedeemLocked(
             [ethers.utils.arrayify(publicKey)],
-            [ethers.utils.arrayify(signMsg)]
+            [ethers.utils.arrayify(signMsg)],
+            safe4Address
           );
           console.log("redeem lockeed txhash:", response.hash)
           _redeemTxHashs.locked = {
@@ -316,7 +352,7 @@ export default () => {
       }
       setRedeeming(false);
     }
-  }, [safe3Wallet, safe3Asset, safe3Contract, enode, masternodeContract, supernodeContract]);
+  }, [safe3Wallet, safe3Asset, safe3Contract, safe4Address, enode, masternodeContract, supernodeContract]);
 
   return (<>
 
@@ -342,7 +378,7 @@ export default () => {
               <Text strong type="secondary">Safe3 钱包地址</Text>
             </Col>
             <Col span={24} style={{ marginTop: "5px" }}>
-              <Input disabled={redeeming} size="large" onChange={(event) => {
+              <Input value={safe3Address} disabled={redeeming} size="large" onChange={(event) => {
                 setInputErrors({
                   ...inputErrors,
                   safe3Address: undefined
@@ -381,9 +417,11 @@ export default () => {
                 <Divider />
                 <Col span={24}>
                   <Text strong type="secondary">Safe3 钱包私钥</Text>
+                  <Text>0x7f5eb9b7027b6c138caf1c48317d75589101956a9cf370258737bed0f5613a9a</Text>
                 </Col>
                 <Col span={24} style={{ marginTop: "5px" }}>
                   <Input placeholder="输入钱包私钥"
+                    value={safe3PrivateKey}
                     disabled={redeeming} size="large" onChange={(event) => {
                       const value = event.target.value;
                       if (isSafe3DesktopExportPrivateKey(value) || isEVMPrivateKey(value)) {
@@ -413,17 +451,14 @@ export default () => {
               safe3Wallet && <>
                 <Divider />
                 <Col span={24}>
-                  <Alert type="info" showIcon message={<>
-                    Safe3 网络的资产将会迁移到该私钥对应的 Safe4 网络的钱包地址上
+                  <Alert type="warning" showIcon message={<>
+                    输入您的 Safe4 地址用于接收您在 Safe3 网络的资产
                   </>} />
                   <Col span={24} style={{ marginTop: "20px" }}>
                     <Text strong type="secondary">Safe4 钱包地址</Text>
                   </Col>
                   <Col span={24}>
-                    <Text strong>{safe3Wallet?.safe4Address}</Text>
-                    <Button onClick={() => {
-                      window.open(`https://safe4.anwang.com/address/${safe3Wallet?.safe4Address}`)
-                    }} style={{ marginLeft: "10px" }} size="small" icon={<GlobalOutlined />} />
+                    <Input value={safe4Address} />
                   </Col>
                   {
                     safe3Asset?.masternode

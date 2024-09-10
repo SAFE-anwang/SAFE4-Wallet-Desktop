@@ -19,19 +19,25 @@ export const walletsLoadWalletNames = createAction<{ address: string, name: stri
   "wallets/loadWalletNames"
 )
 
-export const walletsUpdateWalletName = createAction<{ address : string , name : string }>(
+export const walletsUpdateWalletName = createAction<{ address: string, name: string }>(
   "wallets/updateWalletName"
 )
 
-export const walletsUpdateWalletChildWallets = createAction<{ address : string , type : SupportChildWalletType , loading : boolean , result : {
-  map : {
-    [address : string] : {
-      path : string , 
-      exist : boolean
+export const walletsUpdateWalletChildWallets = createAction<{
+  address: string, type: SupportChildWalletType, loading: boolean, result?: {
+    map: {
+      [address: string]: {
+        path: string,
+        exist: boolean
+      }
     }
   }
-} }>(
+}>(
   "wallets/updateWalletChildWallets"
+)
+
+export const walletsUpdateUsedChildWalletAddress = createAction<{ address: string | undefined , used : boolean }>(
+  "wallets/updateUsedChildWalletAddress"
 )
 
 

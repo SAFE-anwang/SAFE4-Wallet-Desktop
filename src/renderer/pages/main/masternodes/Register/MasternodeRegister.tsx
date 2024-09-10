@@ -130,15 +130,24 @@ export default () => {
        * function existEnode(string memory _enode) external view returns (bool);
        */
       setChecking(true);
-
       const addrExistCall: CallMulticallAggregateContractCall = {
         contract: masternodeStorageContract,
         functionName: "exist",
         params: [address]
       };
+      const addrIsFounderCall : CallMulticallAggregateContractCall = {
+        contract: masternodeStorageContract,
+        functionName: "existFounder",
+        params: [address]
+      };
       const addrExistInSupernodesCall: CallMulticallAggregateContractCall = {
         contract: supernodeStorageContract,
         functionName: "exist",
+        params: [address]
+      };
+      const addrIsSupernodeFounderCall : CallMulticallAggregateContractCall = {
+        contract: supernodeStorageContract,
+        functionName: "existFounder",
         params: [address]
       };
       const enodeExistCall: CallMulticallAggregateContractCall = {
@@ -151,22 +160,29 @@ export default () => {
         functionName: "existEnode",
         params: [enode]
       }
-
       CallMulticallAggregate(multicallContract, [
-        addrExistCall, addrExistInSupernodesCall, enodeExistCall, enodeExistInSupernodesCall
+        addrExistCall, addrIsFounderCall , addrExistInSupernodesCall, addrIsSupernodeFounderCall ,
+        enodeExistCall, enodeExistInSupernodesCall
       ], () => {
         const addrExistsInMasternodes: boolean = addrExistCall.result;
         const addrExistsInSupernodes: boolean = addrExistInSupernodesCall.result;
         const enodeExistsInMasternodes: boolean = enodeExistCall.result;
         const enodeExistsInSupernodes: boolean = enodeExistInSupernodesCall.result;
+        const addrIsFounder : boolean = addrIsFounderCall.result;
+        const addrIsSupernodeFounder : boolean = addrExistInSupernodesCall.result;
         setChecking(false);
         if (addrExistsInMasternodes || addrExistsInSupernodes) {
-          inputErrors.address = "该钱包地址已被使用";
+          inputErrors.address = "该地址已经是节点地址,无法使用";
+          setInputErrors({ ...inputErrors });
+          return;
+        }
+        if ( addrIsFounder || addrIsSupernodeFounder ){
+          inputErrors.address = "该地址已参与节点地址创建,无法使用";
           setInputErrors({ ...inputErrors });
           return;
         }
         if (enodeExistsInMasternodes || enodeExistsInSupernodes) {
-          inputErrors.enode = "该ENODE已被使用";
+          inputErrors.enode = "该ENODE已存在";
           setInputErrors({ ...inputErrors });
           return;
         }
@@ -213,11 +229,20 @@ export default () => {
             value: address,
             label: <>
               <Row key={address}>
-                <Col span={18}>
-                  <AddressComponent ellipsis address={address} />
+                <Col span={16}>
+                  <Row>
+                    {
+                      exist && <Col span={4}>
+                        <Text type='secondary'>[已注册]</Text>
+                      </Col>
+                    }
+                    <Col span={20}>
+                      <AddressComponent ellipsis address={address} />
+                    </Col>
+                  </Row>
                 </Col>
-                <Col span={6} style={{ textAlign: "right" }}>
-                  <Text>{path}</Text>
+                <Col span={8} style={{ textAlign: "right", float: "right" }}>
+                  <Text type='secondary'>{path}</Text>
                 </Col>
               </Row>
             </>,
@@ -469,9 +494,7 @@ export default () => {
         </div>
       </Card>
     </Row>
-
     <RegisterModalConfirm openRegisterModal={openRegisterModal} setOpenRegisterModal={setOpenRegsterModal} registerParams={registerParams} />
-
     {
       openSSH2CMDTerminalNodeModal && nodeAddress &&
       <SSH2CMDTerminalNodeModal openSSH2CMDTerminalNodeModal={openSSH2CMDTerminalNodeModal} setOpenSSH2CMDTerminalNodeModal={setOpenSSH2CMDTerminalNodeModal}

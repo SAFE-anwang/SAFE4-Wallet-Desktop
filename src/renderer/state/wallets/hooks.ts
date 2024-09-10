@@ -416,7 +416,7 @@ export function useTokenBalance(account?: string, token?: Token): TokenAmount | 
 }
 
 /**
- * 
+ *
  * @param type mn | sn
  */
 export function useActiveAccountChildWallets(type: SupportChildWalletType) {
@@ -435,22 +435,33 @@ export function useActiveAccountChildWallets(type: SupportChildWalletType) {
     return SupportChildWalletType.SN == type ? state.wallets.walletChildWallets[activeAccountKeystore.address]?.sn
       : state.wallets.walletChildWallets[activeAccountKeystore.address]?.mn
   });
+  const walletUsedAddressed = useSelector((state: AppState) => {
+    return state.wallets.walletUsedAddress;
+  });
   const nodeStorageContract = SupportChildWalletType.SN == type ? supernodeContract : masternodeContract;
 
   useEffect(() => {
     if (activeAccountKeystore.mnemonic && multicall && nodeStorageContract) {
       let _notExistCount = (childTypeWallets && childTypeWallets.wallets) ?
         Object.keys(childTypeWallets.wallets)
-          .map(childAddress => childTypeWallets.wallets[childAddress].exist ? 0 : 1)
+          .map(childAddress => childTypeWallets.wallets[childAddress].exist || walletUsedAddressed.indexOf(childAddress) > 0 ? 0 : 1)
           .reduce((a: number, b: number) => (a + b), 0)
         : 0;
       let _startAddressIndex = (childTypeWallets && childTypeWallets.wallets) ? Object.keys(childTypeWallets.wallets).length : 0;
       if (!childTypeWallets || childTypeWallets.loading) {
         generateChildWalletsCheckResult(
           activeAccountKeystore.mnemonic, activeAccountKeystore.password ? activeAccountKeystore.password : "",
-          _startAddressIndex, size, 
+          _startAddressIndex, size,
           nodeStorageContract, multicall,
-          (result) => {
+          (err, result) => {
+            if (err) {
+              dispatch(walletsUpdateWalletChildWallets({
+                address: activeAccountKeystore.address,
+                type,
+                loading: false
+              }));
+              return;
+            }
             const payloadMap: {
               [address: string]: {
                 exist: boolean,
@@ -459,14 +470,15 @@ export function useActiveAccountChildWallets(type: SupportChildWalletType) {
             } = {};
             let notExistCount = 0;
             Object.keys(result.map).forEach(address => {
-              notExistCount += result.map[address].exist ? 0 : 1;
+              notExistCount += result.map[address].exist || walletUsedAddressed.indexOf(address) >= 0 ? 0 : 1;
               payloadMap[address] = {
-                exist: result.map[address].exist,
+                exist: result.map[address].exist || walletUsedAddressed.indexOf(address) >= 0,
                 path: result.map[address].hdNode.path
               }
             });
-            // 判断是否需要重启继续加载子钱包并验证 loading;
-            const loading = (notExistCount + _notExistCount) < size;
+            // 判断是否需要继续加载子钱包并验证 loading;
+            const loading = (notExistCount + _notExistCount) < size / 2;
+            console.log("need loading ?? >> ", (notExistCount + _notExistCount), loading)
             dispatch(walletsUpdateWalletChildWallets({
               address: activeAccountKeystore.address,
               type,
@@ -476,9 +488,36 @@ export function useActiveAccountChildWallets(type: SupportChildWalletType) {
               }
             }));
           });
+      } else {
+        // 随着用户的使用,导致当前列表的可使用数量低于 size 时,变更状态让它继续加载可用子钱包;
+        if (_notExistCount < size / 2) {
+          console.log("通知需要更新:: >>", _notExistCount)
+          dispatch(walletsUpdateWalletChildWallets({
+            address: activeAccountKeystore.address,
+            type,
+            loading: true
+          }));
+        } else {
+          // 判断是否有当前建立的,但是链上还没有更新的exist状态;
+          const _map: {
+            [address: string]: { exist: boolean, path: string }
+          } = {}
+          Object.keys(childTypeWallets.wallets)
+            .filter(childAddress => !childTypeWallets.wallets[childAddress].exist && walletUsedAddressed.indexOf(childAddress) >= 0)
+            .forEach(childAddress => {
+              _map[childAddress] = { exist: true, path: childTypeWallets.wallets[childAddress].path }
+            })
+          if (Object.keys(_map).length > 0) {
+            dispatch(walletsUpdateWalletChildWallets({
+              address: activeAccountKeystore.address,
+              type,
+              loading: false,
+              result: { map: _map }
+            }));
+          }
+        }
       }
     }
-  }, [childTypeWallets, multicall, nodeStorageContract, activeAccountKeystore])
-
+  }, [childTypeWallets, multicall, nodeStorageContract, activeAccountKeystore, walletUsedAddressed])
   return childTypeWallets;
 }

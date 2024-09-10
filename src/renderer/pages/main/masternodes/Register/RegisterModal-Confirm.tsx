@@ -12,6 +12,7 @@ import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { applicationUpdateWalletTab } from "../../../../state/application/action";
 import { Safe4_Business_Config } from "../../../../config";
+import { walletsUpdateUsedChildWalletAddress, walletsUpdateWalletChildWallets } from "../../../../state/wallets/action";
 
 const { Text } = Typography;
 
@@ -81,6 +82,10 @@ export default ({
         setTxHash(hash);
         setSending(false);
         setTransactionResponse(response);
+        dispatch(walletsUpdateUsedChildWalletAddress({
+          address ,
+          used : true
+        }));
       }).catch((err: any) => {
         setSending(false);
         setErr(err)
