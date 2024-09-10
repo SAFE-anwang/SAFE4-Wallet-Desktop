@@ -20,8 +20,8 @@ const sha256Hex = (hex: string): string => {
   return bytes ? sha256(bytes).substring(2) : "";
 }
 
-export const publicKeyToSafe3Address = ( publicKey : string ) : string => {
-  return publicKeyToAddress(publicKey , "4c");
+export const publicKeyToSafe3Address = (publicKey: string): string => {
+  return publicKeyToAddress(publicKey, "4c");
 }
 
 /**
@@ -30,59 +30,73 @@ export const publicKeyToSafe3Address = ( publicKey : string ) : string => {
  * @param networkFlag
  * @returns
  */
-const publicKeyToAddress = ( publicKey : string , networkFlag : string ) : string => {
+const publicKeyToAddress = (publicKey: string, networkFlag: string): string => {
   const sha1 = sha256Hex(publicKey)
   const wordArray = CryptoJS.enc.Hex.parse(sha1);
   const ripemd160 = CryptoJS.RIPEMD160(
     wordArray
   ).toString();
   const withNetwork = networkFlag + ripemd160;
-  const twiceSha256Hash = sha256Hex( sha256Hex(withNetwork) );
+  const twiceSha256Hash = sha256Hex(sha256Hex(withNetwork));
   const header = twiceSha256Hash.substring(0, 8);
   const beforeBase58 = withNetwork + header;
-  return base58.encode( hexToUint8Bytes(beforeBase58) );
+  return base58.encode(hexToUint8Bytes(beforeBase58));
 }
 
-const toCompressPublicKey = ( publicKey : string ) => {
+const toCompressPublicKey = (publicKey: string) => {
   const _publicKey = publicKey.substring(2);
-  const X = _publicKey.substring(0,64);
+  const X = _publicKey.substring(0, 64);
   const Y = _publicKey.substring(64);
-  const EndOfY = Y.substring( Y.length - 1 );
-  const condition = parseInt(EndOfY , 16) % 2 == 0;
-  if ( condition ){
+  const EndOfY = Y.substring(Y.length - 1);
+  const condition = parseInt(EndOfY, 16) % 2 == 0;
+  if (condition) {
     return "02" + X;
   }
   return "03" + X;
 }
 
+export async function generateRedeemSign(evmPrivateKey: string, safe3Address: string, targetSafe4Address: string) : Promise<string> {
+  const wallet = new ethers.Wallet(evmPrivateKey);
+  const safe3AddressBytes = ethers.utils.toUtf8Bytes(safe3Address);
+  const safe4AddressBytes = ethers.utils.arrayify(targetSafe4Address);
+  var mergedArray = new Uint8Array(safe3AddressBytes.length + safe4AddressBytes.length);
+  mergedArray.set(safe3AddressBytes);
+  mergedArray.set(safe4AddressBytes, safe3AddressBytes.length);
+  const sha256Address = ethers.utils.sha256(mergedArray);
+  const signMsg = await wallet.signMessage(ethers.utils.arrayify(sha256Address));
+  return new Promise<string>(( resolve , reject ) => {
+    resolve(signMsg);
+  });
+}
+
 // Example in >> XJ2M1PbCAifB8W91hcHDEho18kA2ByB4Jdmi4XBHq5sNgtuEpXr4
-export default ( Safe3PrivateKey : string) : {
-  privateKey : string,
-  publicKey  : string,
-  compressPublicKey : string,
-  safe3Address : string,
-  safe3CompressAddress : string,
-  safe4Address : string
+export default (Safe3PrivateKey: string): {
+  privateKey: string,
+  publicKey: string,
+  compressPublicKey: string,
+  safe3Address: string,
+  safe3CompressAddress: string,
+  safe4Address: string
 } => {
 
-  let privateKey : string | undefined;
-  if ( base58Regex.test( Safe3PrivateKey ) ){
+  let privateKey: string | undefined;
+  if (base58Regex.test(Safe3PrivateKey)) {
     const privateKeyDecodeHex = ethers.utils.hexValue(base58.decode(Safe3PrivateKey));
-    privateKey = privateKeyDecodeHex.substring(4,68);
-  }else{
+    privateKey = privateKeyDecodeHex.substring(4, 68);
+  } else {
     privateKey = Safe3PrivateKey;
   }
   const wallet = new ethers.Wallet(privateKey);
   const publicKey = wallet.publicKey.substring(2);
   const compressPublicKey = toCompressPublicKey(publicKey);
-  const safe3Address = publicKeyToAddress(publicKey,"4c");
-  const safe3CompressAddress = publicKeyToAddress(compressPublicKey,"4c");
+  const safe3Address = publicKeyToAddress(publicKey, "4c");
+  const safe3CompressAddress = publicKeyToAddress(compressPublicKey, "4c");
   return {
     privateKey,
     publicKey,
     compressPublicKey,
     safe3Address,
     safe3CompressAddress,
-    safe4Address : wallet.address
+    safe4Address: wallet.address
   }
 }

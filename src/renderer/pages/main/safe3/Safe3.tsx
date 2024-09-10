@@ -2,7 +2,7 @@
 import { Alert, Col, Row, Typography, Card, Divider, Button, Input } from "antd";
 import { Steps } from 'antd';
 import { useCallback, useEffect, useMemo, useState } from "react";
-import Safe3PrivateKey from "../../../utils/Safe3PrivateKey";
+import Safe3PrivateKey, { generateRedeemSign } from "../../../utils/Safe3PrivateKey";
 import { useMasternodeStorageContract, useSafe3Contract, useSupernodeStorageContract } from "../../../hooks/useContracts";
 import { ZERO } from "../../../utils/CurrentAmountUtils";
 import { ethers } from "ethers";
@@ -13,6 +13,7 @@ import {
 import { useETHBalances, useWalletsActiveAccount } from "../../../state/wallets/hooks";
 import { CurrencyAmount } from "@uniswap/sdk";
 import Safe3AssetRender, { Safe3Asset } from "./Safe3AssetRender";
+import { eth } from "web3";
 
 const { Text, Title } = Typography;
 
@@ -55,29 +56,7 @@ export interface TxExecuteStatus {
 
 export default () => {
 
-  const testSign = async () => {
-
-    const privateKey = "0x7f5eb9b7027b6c138caf1c48317d75589101956a9cf370258737bed0f5613a9a";
-    const safe3Address = "XjdPHp4kmUZfiKeKqhYAegP3PbTizXBkGJ";
-    const targetSafe4Address = "0x9432920f31f9f81b8d0002231c111d7e5eb1e4e1";
-
-    // ethers.utils.arrayify(safe3Address + targetSafe4Address);
-    const combineAddress =
-    ethers.utils.toUtf8Bytes(safe3Address+targetSafe4Address)
-    console.log("combieAddress =>" , combineAddress);
-    console.log("s ::" , ethers.utils.hexValue(combineAddress))
-
-
-  }
-
-  useEffect( () => {
-
-    testSign();
-
-  } , [] );
-
   const activeAccount = useWalletsActiveAccount();
-
   const [current, setCurrent] = useState(0);
   const items = steps.map((item) => ({ key: item.title, title: item.title }));
 
@@ -115,8 +94,7 @@ export default () => {
   const [redeeming, setRedeeming] = useState<boolean>(false);
 
   useEffect(() => {
-    setSafe3Address("XjdPHp4kmUZfiKeKqhYAegP3PbTizXBkGJ")
-    // setSafe3PrivateKey("XFwbwpghGT8w8uqwJmZQ4uPjiB61ZdPvcN165LDu2HttQjE8Z2KR")
+    setSafe3Address("XrXjCsaeFCyKvRGKvtxqhFrxGPNKFVBsBf")
   }, []);
 
   const notEnough = useMemo(() => {
@@ -138,11 +116,11 @@ export default () => {
       return false;
     }
     const avaiable = safe3Asset.availableSafe3Info.amount.greaterThan(ZERO)
-      // && safe3Asset.availableSafe3Info.redeemHeight == 0;
+    // && safe3Asset.availableSafe3Info.redeemHeight == 0;
     const locked = safe3Asset.locked.txLockedAmount.greaterThan(ZERO)
-      // && safe3Asset.locked.redeemHeight == 0;
+    // && safe3Asset.locked.redeemHeight == 0;
     const masternode = safe3Asset.masternode
-      // && safe3Asset.masternode.redeemHeight == 0;
+    // && safe3Asset.masternode.redeemHeight == 0;
     return avaiable || locked || masternode;
   }, [safe3Asset, safe3Wallet, notEnough]);
 
@@ -242,24 +220,7 @@ export default () => {
       const { safe3Address, availableSafe3Info, locked, masternode } = safe3Asset;
       const publicKey = "0x" + (safe3Wallet.safe3Address == safe3Address ? safe3Wallet.publicKey : safe3Wallet.compressPublicKey);
       const { privateKey } = safe3Wallet;
-      const safe4Wallet = new ethers.Wallet(privateKey);
-
-      const sha256Address = ethers.utils.sha256(ethers.utils.toUtf8Bytes(safe3Address));
-      const signMsg = await safe4Wallet.signMessage(ethers.utils.arrayify(sha256Address));
-
-      const safe3AddressSign = await safe4Wallet.signMessage(
-        ethers.utils.arrayify(
-          ethers.utils.sha256(
-            ethers.utils.toUtf8Bytes(safe3Address)
-          )
-        )
-      );
-      const safe4AddressSign = await safe4Wallet.signMessage( ethers.utils.arrayify(safe4Address) );
-      const combineSign = new Uint8Array([
-        ...ethers.utils.arrayify(safe3AddressSign),
-        ...ethers.utils.arrayify(safe4AddressSign)
-      ]);
-
+      const signMsg = await generateRedeemSign( privateKey , safe3Address , safe4Address );
       setRedeeming(true);
       let _redeemTxHashs = redeemTxHashs ?? {};
 
@@ -271,7 +232,7 @@ export default () => {
         try {
           let response = await safe3Contract.batchRedeemAvailable(
             [ethers.utils.arrayify(publicKey)],
-            [ combineSign ],
+            [ethers.utils.arrayify(signMsg)],
             safe4Address
           );
           _redeemTxHashs.avaiable = {
@@ -417,7 +378,7 @@ export default () => {
                 <Divider />
                 <Col span={24}>
                   <Text strong type="secondary">Safe3 钱包私钥</Text>
-                  <Text>0x7f5eb9b7027b6c138caf1c48317d75589101956a9cf370258737bed0f5613a9a</Text>
+                  <Text>0x9c814b54f6e3eb8105e2fbf37babd312f376d592d74e7cfc5137490959863524</Text>
                 </Col>
                 <Col span={24} style={{ marginTop: "5px" }}>
                   <Input placeholder="输入钱包私钥"
