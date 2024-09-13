@@ -1,7 +1,6 @@
 import { MasternodeInfo } from "../../../structs/Masternode"
 import { CurrencyAmount, JSBI } from '@uniswap/sdk';
 import { Typography, Row, Col, Progress, Card, Divider, TabsProps, Tabs } from 'antd';
-import AddressView from '../../components/AddressView';
 import Members from '../../components/Members';
 import { RenderNodeState } from "../supernodes/Supernodes";
 import AddressComponent from "../../components/AddressComponent";

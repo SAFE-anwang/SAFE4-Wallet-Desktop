@@ -1,5 +1,5 @@
 
-import { Typography, Row, Col, Button, Card, Checkbox, CheckboxProps, Divider, Space, Input, Slider, InputNumber, Alert } from 'antd';
+import { Typography, Row, Col, Button, Card, Checkbox, CheckboxProps, Divider, Space, Input, Slider, InputNumber, Alert, Spin } from 'antd';
 import { useEffect, useMemo, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { LeftOutlined, LockOutlined } from '@ant-design/icons';
@@ -12,6 +12,7 @@ import { useETHBalances, useWalletsActiveAccount } from '../../../../state/walle
 import { MasternodeInfo, formatMasternode } from '../../../../structs/Masternode';
 import AppendModalConfirm from './AppendModal-Confirm';
 import Masternode from '../Masternode';
+import useAddrNodeInfo from '../../../../hooks/useAddrIsNode';
 
 const { Text, Title } = Typography;
 
@@ -23,6 +24,7 @@ export default () => {
   const activeAccount = useWalletsActiveAccount();
   const balance = useETHBalances([activeAccount])[activeAccount];
   const [masternodeInfo, setMasternodeInfo] = useState<MasternodeInfo>();
+  const activeAccountNodeInfo = useAddrNodeInfo(activeAccount);
 
   useEffect(() => {
     if (masternodeAppend && masternodeStorageContract) {
@@ -104,7 +106,7 @@ export default () => {
         {
           params && params.left > 0 && <>
             <Row>
-              <Card title="通过锁仓SAFE来成为这个主节点的合伙人" style={{ width: "100%" , marginBottom:"50px" }}>
+              <Card title="通过锁仓SAFE来成为这个主节点的合伙人" style={{ width: "100%", marginBottom: "50px" }}>
                 <>
                   <Row>
                     <Col span={24}>
@@ -114,7 +116,7 @@ export default () => {
                       <Text style={{ fontSize: "20px" }} strong>{params?.left} SAFE</Text>
                     </Col>
                   </Row>
-                  <Divider style={{marginTop:"5px",marginBottom:"15px"}} />
+                  <Divider style={{ marginTop: "5px", marginBottom: "15px" }} />
                   <Row >
                     <Col span={10}>
                       <Text strong>锁仓数量</Text>
@@ -139,7 +141,7 @@ export default () => {
                       }
                       <br />
                       {
-                        notEnoughError && <Alert showIcon type='error' message={notEnoughError} style={{marginBottom:"20px"}} />
+                        notEnoughError && <Alert showIcon type='error' message={notEnoughError} style={{ marginBottom: "20px" }} />
                       }
                     </Col>
                     <Col span={14}>
@@ -150,10 +152,23 @@ export default () => {
                       </Text>
                     </Col>
                   </Row>
-                  <Divider style={{marginTop:"0px"}} />
-                  <Button type='primary' onClick={nextClick}>
-                    成为合伙人
-                  </Button>
+                  <Divider style={{ marginTop: "0px" }} />
+                  <Spin spinning={activeAccountNodeInfo == undefined}>
+                    <Button disabled={activeAccountNodeInfo?.isNode} type='primary' onClick={nextClick}>
+                      成为合伙人
+                    </Button>
+                    {
+                      activeAccountNodeInfo?.isNode &&
+                      <Alert style={{ marginTop: "5px" }} type='warning' showIcon message={<>
+                        {
+                          activeAccountNodeInfo.isMN && "已经是主节点"
+                        }
+                        {
+                          activeAccountNodeInfo.isSN && "已经是超级节点"
+                        }
+                      </>} />
+                    }
+                  </Spin>
                 </>
               </Card>
             </Row>

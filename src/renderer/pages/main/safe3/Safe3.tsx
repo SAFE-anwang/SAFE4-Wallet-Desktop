@@ -8,12 +8,10 @@ import { ZERO } from "../../../utils/CurrentAmountUtils";
 import { ethers } from "ethers";
 import {
   CloseCircleTwoTone,
-  GlobalOutlined
 } from '@ant-design/icons';
 import { useETHBalances, useWalletsActiveAccount } from "../../../state/wallets/hooks";
 import { CurrencyAmount } from "@uniswap/sdk";
 import Safe3AssetRender, { Safe3Asset } from "./Safe3AssetRender";
-import { eth } from "web3";
 
 const { Text, Title } = Typography;
 
@@ -62,15 +60,14 @@ export default () => {
 
   const [safe3Address, setSafe3Address] = useState<string>();
   const [safe3PrivateKey, setSafe3PrivateKey] = useState<string>();
-  const [safe4Address, setSafe4Address] = useState<string>(activeAccount);
-
-  const [enode, setEncode] = useState<string>();
+  const [safe4TargetAddress, setSafe4TargetAddress] = useState<string>(activeAccount);
 
   const [inputErrors, setInputErrors] = useState<{
     safe3PrivateKeyError?: string,
-    encode?: string,
-    safe3Address?: string
+    safe3Address?: string,
+    safe4TargetAddress?: string
   }>();
+
   const [safe3Wallet, setSafe3Wallet] = useState<{
     privateKey: string,
     publicKey: string,
@@ -83,19 +80,13 @@ export default () => {
   const safe3Contract = useSafe3Contract(true);
   const masternodeContract = useMasternodeStorageContract();
   const supernodeContract = useSupernodeStorageContract();
-
   const balance = useETHBalances([activeAccount])[activeAccount];
-
   const [redeemTxHashs, setRedeemTxHashs] = useState<{
     avaiable?: TxExecuteStatus,
     locked?: TxExecuteStatus,
     masternode?: TxExecuteStatus
   }>();
   const [redeeming, setRedeeming] = useState<boolean>(false);
-
-  useEffect(() => {
-    setSafe3Address("XrXjCsaeFCyKvRGKvtxqhFrxGPNKFVBsBf")
-  }, []);
 
   const notEnough = useMemo(() => {
     const needAmount = CurrencyAmount.ether(ethers.utils.parseEther(redeemNeedAmount).toBigInt());
@@ -105,7 +96,14 @@ export default () => {
     return needAmount.greaterThan(balance);
   }, [activeAccount, balance]);
 
+  const warningSafe4TargetAddress = useMemo(() => {
+    return activeAccount != safe4TargetAddress;
+  }, [activeAccount, safe4TargetAddress]);
+
   const redeemEnable = useMemo(() => {
+    if ( inputErrors?.safe3Address || inputErrors?.safe3PrivateKeyError || inputErrors?.safe4TargetAddress ){
+      return false;
+    }
     if (!safe3Asset) {
       return false;
     }
@@ -116,13 +114,13 @@ export default () => {
       return false;
     }
     const avaiable = safe3Asset.availableSafe3Info.amount.greaterThan(ZERO)
-    // && safe3Asset.availableSafe3Info.redeemHeight == 0;
+    && safe3Asset.availableSafe3Info.redeemHeight == 0;
     const locked = safe3Asset.locked.txLockedAmount.greaterThan(ZERO)
-    // && safe3Asset.locked.redeemHeight == 0;
+    && safe3Asset.locked.redeemHeight == 0;
     const masternode = safe3Asset.masternode
-    // && safe3Asset.masternode.redeemHeight == 0;
+    && safe3Asset.masternode.redeemHeight == 0;
     return avaiable || locked || masternode;
-  }, [safe3Asset, safe3Wallet, notEnough]);
+  }, [safe3Asset, safe3Wallet, notEnough,inputErrors]);
 
   useEffect(() => {
     setSafe3Asset(undefined);
@@ -143,7 +141,6 @@ export default () => {
   useEffect(() => {
     setSafe3Wallet(undefined);
     setRedeemTxHashs(undefined);
-    setEncode(undefined);
     const safe3Address = safe3Asset?.safe3Address;
     if (safe3PrivateKey && safe3Address) {
       setInputErrors({
@@ -169,6 +166,13 @@ export default () => {
     }
   }, [safe3PrivateKey, safe3Asset]);
 
+  useEffect( ()=>{
+    // 当用户切换用户时 , 将所有输入重置;
+    setSafe3Address(undefined);
+    setSafe3PrivateKey(undefined);
+    setSafe4TargetAddress(activeAccount);
+  } , [ activeAccount ] );
+
   useEffect(() => {
     if (safe3Asset) {
       if (safe3Wallet) {
@@ -182,48 +186,16 @@ export default () => {
   }, [safe3Asset, safe3Wallet]);
 
   const executeRedeem = useCallback(async () => {
-    if (safe3Contract && safe3Wallet && safe3Asset && masternodeContract && supernodeContract && safe4Address) {
-      // 存在主节点且未被迁移;
-      if (
-        safe3Asset.masternode
-        && safe3Asset.masternode.redeemHeight == 0
-      ) {
-        if (!enode) {
-          setInputErrors({
-            ...inputErrors,
-            encode: "需要输入 ENODE 来进行 Safe3 网络的主节点到 Safe4 网络的迁移"
-          });
-          return;
-        }
-        // 如果需要输入主节点迁移地址,则必须输入后，才能一键迁移资产
-        const enodeRegex = /^enode:\/\/[0-9a-fA-F]{128}@(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}):(\d+)$/;
-        const isMatch = enodeRegex.test(enode);
-        if (!isMatch) {
-          setInputErrors({
-            ...inputErrors,
-            encode: "需要输入合法的 ENODE 来进行 Safe3 网络的主节点到 Safe4 网络的迁移"
-          })
-          return;
-        }
-        const enodeExistInMasternodes = await masternodeContract.callStatic.existEnode(enode);
-        const enodeExistInSupernodes = await supernodeContract.callStatic.existEnode(enode);
-        if (enodeExistInMasternodes || enodeExistInSupernodes) {
-          setInputErrors({
-            ...inputErrors,
-            encode: "该ENODE已被使用"
-          })
-          return;
-        }
-        setInputErrors(undefined);
+    if (safe4TargetAddress && safe3Wallet && safe3Asset && masternodeContract && supernodeContract && safe3Contract) {
+      if ( !ethers.utils.isAddress(safe4TargetAddress) ){
+        return;
       }
-
-      const { safe3Address, availableSafe3Info, locked, masternode } = safe3Asset;
+      const { safe3Address, availableSafe3Info, locked } = safe3Asset;
       const publicKey = "0x" + (safe3Wallet.safe3Address == safe3Address ? safe3Wallet.publicKey : safe3Wallet.compressPublicKey);
       const { privateKey } = safe3Wallet;
-      const signMsg = await generateRedeemSign( privateKey , safe3Address , safe4Address );
+      const signMsg = await generateRedeemSign(privateKey, safe3Address, safe4TargetAddress);
       setRedeeming(true);
       let _redeemTxHashs = redeemTxHashs ?? {};
-
       // safe3 可用资产大于零,且没有被赎回.
       if (
         // availableSafe3Info.redeemHeight == 0 &&
@@ -233,7 +205,7 @@ export default () => {
           let response = await safe3Contract.batchRedeemAvailable(
             [ethers.utils.arrayify(publicKey)],
             [ethers.utils.arrayify(signMsg)],
-            safe4Address
+            safe4TargetAddress
           );
           _redeemTxHashs.avaiable = {
             status: 1,
@@ -262,7 +234,7 @@ export default () => {
           let response = await safe3Contract.batchRedeemLocked(
             [ethers.utils.arrayify(publicKey)],
             [ethers.utils.arrayify(signMsg)],
-            safe4Address
+            safe4TargetAddress
           );
           console.log("redeem lockeed txhash:", response.hash)
           _redeemTxHashs.locked = {
@@ -282,17 +254,17 @@ export default () => {
       } else {
         console.log("无需执行迁移锁定资产.")
       }
-
       // safe3 主节点
       if (
         safe3Asset.masternode
-        && safe3Asset.masternode.redeemHeight == 0
+        // && safe3Asset.masternode.redeemHeight == 0
       ) {
         try {
           let response = await safe3Contract.batchRedeemMasterNode(
             [ethers.utils.arrayify(publicKey)],
             [ethers.utils.arrayify(signMsg)],
-            [enode]
+            [""],
+            safe4TargetAddress
           );
           _redeemTxHashs.masternode = {
             status: 1,
@@ -313,7 +285,7 @@ export default () => {
       }
       setRedeeming(false);
     }
-  }, [safe3Wallet, safe3Asset, safe3Contract, safe4Address, enode, masternodeContract, supernodeContract]);
+  }, [safe3Wallet, safe3Asset, safe4TargetAddress, safe3Contract, masternodeContract, supernodeContract]);
 
   return (<>
 
@@ -378,7 +350,6 @@ export default () => {
                 <Divider />
                 <Col span={24}>
                   <Text strong type="secondary">Safe3 钱包私钥</Text>
-                  <Text>0x9c814b54f6e3eb8105e2fbf37babd312f376d592d74e7cfc5137490959863524</Text>
                 </Col>
                 <Col span={24} style={{ marginTop: "5px" }}>
                   <Input placeholder="输入钱包私钥"
@@ -412,41 +383,58 @@ export default () => {
               safe3Wallet && <>
                 <Divider />
                 <Col span={24}>
-                  <Alert type="warning" showIcon message={<>
-                    输入您的 Safe4 地址用于接收您在 Safe3 网络的资产
+                  <Alert type="info" showIcon message={<>
+                    默认使用当前钱包地址来接收迁移资产
                   </>} />
                   <Col span={24} style={{ marginTop: "20px" }}>
                     <Text strong type="secondary">Safe4 钱包地址</Text>
                   </Col>
                   <Col span={24}>
-                    <Input value={safe4Address} />
-                  </Col>
-                  {
-                    safe3Asset?.masternode
-                    && safe3Asset.masternode.redeemHeight == 0
-                    &&
-                    <>
-                      <Col span={24} style={{ marginTop: "20px" }}>
-                        <Text strong type="secondary">Safe4 主节点 ENODE</Text><br />
-                      </Col>
-                      <Col span={24}>
-                        <Input.TextArea disabled={redeeming} value={enode} onChange={(event) => {
-                          setEncode(event.target.value);
-                          setInputErrors({
-                            ...inputErrors,
-                            encode: undefined
-                          })
-                        }} />
-                      </Col>
-                      {
-                        inputErrors?.encode && <>
-                          <Col span={24}>
-                            <Alert style={{ marginTop: "5px" }} type="error" showIcon message={inputErrors?.encode} />
-                          </Col>
-                        </>
+                    <Input disabled={redeeming} size="large"
+                      status={warningSafe4TargetAddress ? "warning" : ""} value={safe4TargetAddress} onChange={(event) => {
+                      const input = event.target.value.trim();
+                      if (!ethers.utils.isAddress(input)) {
+                        setInputErrors({
+                          ...inputErrors,
+                          safe4TargetAddress: "请输入合法的Safe4钱包地址"
+                        })
+                      } else {
+                        setInputErrors({
+                          ...inputErrors,
+                          safe4TargetAddress: undefined
+                        })
                       }
-                    </>
-                  }
+                      setSafe4TargetAddress(input);
+                    }} onBlur={(event) => {
+                      const input = event.target.value.trim();
+                      if (!ethers.utils.isAddress(input)) {
+                        setInputErrors({
+                          ...inputErrors,
+                          safe4TargetAddress: "请输入合法的Safe4钱包地址"
+                        })
+                      } else {
+                        setInputErrors({
+                          ...inputErrors,
+                          safe4TargetAddress: undefined
+                        })
+                      }
+                      setSafe4TargetAddress(input);
+                    }} />
+                    {
+                      inputErrors?.safe4TargetAddress && <>
+                        <Alert style={{ marginTop: "5px" }} type="error"
+                          showIcon message={inputErrors?.safe4TargetAddress} />
+                      </>
+                    }
+                    {
+                      !inputErrors?.safe4TargetAddress && warningSafe4TargetAddress && <>
+                        <Alert style={{ marginTop: "5px" }} type="warning"
+                          showIcon message={<>
+                            您输入的资产接收地址并不是当前钱包地址，请仔细确认该地址是否为您期望用于接收资产的地址.
+                          </>}/>
+                      </>
+                    }
+                  </Col>
                   <Divider />
                   <Button
                     loading={redeeming}

@@ -18,6 +18,8 @@ import { Safe4_Business_Config } from '../../../config';
 import EditMasternode from './EditMasternode';
 import { useBlockNumber } from '../../../state/application/hooks';
 import Masternode from './Masternode';
+import CallMulticallAggregate, { CallMulticallAggregateContractCall } from '../../../state/multicall/CallMulticallAggregate';
+import useAddrNodeInfo from '../../../hooks/useAddrIsNode';
 
 const { Title, Text } = Typography;
 const Masternodes_Page_Size = 10;
@@ -27,13 +29,14 @@ export default ({
 }: {
   queryMyMasternodes: boolean
 }) => {
+
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const masternodeStorageContract = useMasternodeStorageContract();
-  const multicallContract = useMulticallContract();
-  const [masternodes, setMasternodes] = useState<MasternodeInfo[]>();
-  const [loading, setLoading] = useState<boolean>(false);
 
+  const multicallContract = useMulticallContract();
+  const masternodeStorageContract = useMasternodeStorageContract();
+  const [loading, setLoading] = useState<boolean>(false);
+  const [masternodes, setMasternodes] = useState<MasternodeInfo[]>();
   const [openEditMasternodeModal, setOpenEditMasternodeModal] = useState<boolean>(false);
   const [openEditMasternodeInfo, setOpenEditMasternodeInfo] = useState<MasternodeInfo>();
   const [openMasternodeModal, setOpenMasternodeModal] = useState<boolean>(false);
@@ -47,8 +50,11 @@ export default ({
     pageSize: number | undefined,
     current: number | undefined,
   }>();
+
   const activeAccount = useWalletsActiveAccount();
   const blockNumber = useBlockNumber();
+  const addrNodeInfo = useAddrNodeInfo( activeAccount );
+
 
   useEffect(() => {
     if (masternodeStorageContract) {
@@ -124,7 +130,7 @@ export default ({
         }
       }
     }
-  }, [pagination])
+  }, [pagination]);
 
   const loadMasternodeInfos = useCallback((addresses: string[]) => {
     if (masternodeStorageContract && multicallContract) {
@@ -203,7 +209,7 @@ export default ({
           CurrencyAmount.ether(JSBI.BigInt(0))
         )
         const masternodeTarget = CurrencyAmount.ether(ethers.utils.parseEther(Safe4_Business_Config.Masternode.Create.LockAmount + "").toBigInt());
-        const couldAddPartner = masternodeTarget.greaterThan(amount);
+        const couldAddPartner = masternodeTarget.greaterThan(amount) && ( addrNodeInfo && !addrNodeInfo.isNode );
         return <>
           <Row>
             <Col span={12}>

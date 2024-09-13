@@ -1,5 +1,5 @@
 
-import { Typography, Row, Col, Progress, Table, Badge, Button, Space, Card, Alert, Divider, Modal, Tabs, TabsProps } from 'antd';
+import { Typography, Row, Col, Progress, Table, Badge, Button, Space, Card, Alert, Divider, Modal, Tabs, TabsProps, Spin } from 'antd';
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMasternodeStorageContract, useSupernodeStorageContract } from '../../../hooks/useContracts';
@@ -7,6 +7,7 @@ import { formatSupernodeInfo, SupernodeInfo } from '../../../structs/Supernode';
 import { useWalletsActiveAccount } from '../../../state/wallets/hooks';
 import { MasternodeInfo, formatMasternode } from '../../../structs/Masternode';
 import SupernodeList from './SupernodeList';
+import useAddrNodeInfo from '../../../hooks/useAddrIsNode';
 
 const { Title, Text } = Typography;
 
@@ -23,11 +24,11 @@ export const RenderNodeState = (state: number) => {
   }
 }
 
-export function toFixedNoRound(number : number, decimalPlaces : number) {
+export function toFixedNoRound(number: number, decimalPlaces: number) {
   const str = number.toString();
   const decimalIndex = str.indexOf('.');
   if (decimalIndex === -1) {
-      return str;
+    return str;
   }
   const truncatedStr = str.substring(0, decimalIndex + decimalPlaces + 1);
   return parseFloat(truncatedStr).toFixed(decimalPlaces);
@@ -36,46 +37,37 @@ export function toFixedNoRound(number : number, decimalPlaces : number) {
 export default () => {
 
   const navigate = useNavigate();
-  const supernodeStorageContract = useSupernodeStorageContract();
-  const masternodeStorageContract = useMasternodeStorageContract();
   const activeAccount = useWalletsActiveAccount();
-  const [currentSupernodeInfo, setCurrentSupernodeInfo] = useState<SupernodeInfo>();
-  const [currentMasternodeInfo, setCurrentMasternodeInfo] = useState<MasternodeInfo>();
+  const activeAccountNodeInfo = useAddrNodeInfo(activeAccount);
+  const [activeItemKey, setActiveItemKey] = useState("list");
+
+  const items = useMemo<TabsProps['items']>(() => {
+    return [
+      {
+        key: 'list',
+        label: '超级节点列表',
+        children: <SupernodeList queryMySupernodes={false} />,
+      },
+      {
+        key: 'mySupernodes',
+        label: '我的超级节点',
+        children: <SupernodeList queryMySupernodes={true} />,
+        disabled: activeAccountNodeInfo == undefined || (activeAccountNodeInfo?.isNode),
+      },
+      {
+        key: 'myJoinedSupernodes',
+        label: '我加入的超级节点',
+        disabled: activeAccountNodeInfo == undefined || (activeAccountNodeInfo?.isNode),
+        children: <></>,
+      },
+    ]
+  }, [activeAccount, activeAccountNodeInfo]);
 
   useEffect(() => {
-    if (activeAccount && supernodeStorageContract) {
-      if (supernodeStorageContract && activeAccount) {
-        setCurrentSupernodeInfo(undefined);
-        // function getInfo(address _addr) external view returns (MasterNodeInfo memory);
-        supernodeStorageContract.callStatic.getInfo(activeAccount)
-          .then((_supernode: any) => setCurrentSupernodeInfo(formatSupernodeInfo(_supernode)))
-      }
+    if (activeAccountNodeInfo && activeAccountNodeInfo.isNode) {
+      setActiveItemKey("list");
     }
-  }, [supernodeStorageContract, activeAccount]);
-
-  useEffect(() => {
-    if (activeAccount && masternodeStorageContract) {
-      if (masternodeStorageContract && activeAccount) {
-        setCurrentMasternodeInfo(undefined);
-        // function getInfo(address _addr) external view returns (MasterNodeInfo memory);
-        masternodeStorageContract.callStatic.getInfo(activeAccount)
-          .then((_masternode: any) => setCurrentMasternodeInfo(formatMasternode(_masternode)))
-      }
-    }
-  }, [masternodeStorageContract, activeAccount]);
-
-  const items: TabsProps['items'] = [
-    {
-      key: 'list',
-      label: '超级节点列表',
-      children: <SupernodeList queryMySupernodes={false} />,
-    },
-    {
-      key: 'mySupernodes',
-      label: '我的超级节点',
-      children: <SupernodeList queryMySupernodes={true} />,
-    },
-  ];
+  }, [activeAccount, activeAccountNodeInfo])
 
   return <>
     <Row style={{ height: "50px" }}>
@@ -89,38 +81,36 @@ export default () => {
       <div style={{ margin: "auto", width: "90%" }}>
         <Card>
           <Alert showIcon type='info' message={<>
-            <Text>注册成为超级节点,将不能再注册主节点</Text><br />
-            <Text>注册成为超级节点,将不能再使用该账户下的锁仓记录进行超级节点投票</Text><br />
+            <Text>什么是超级节点</Text><br />
+            <Text>超级节点能干什么</Text><br />
           </>} />
           <Divider />
-          {
-            (currentSupernodeInfo && currentSupernodeInfo.id == 0 && currentMasternodeInfo && currentMasternodeInfo.id == 0) && <>
-              <Button onClick={() => navigate("/main/supernodes/create")}>创建超级节点</Button>
-            </>
-          }
-          {
-            currentSupernodeInfo && currentSupernodeInfo.id != 0 && <>
-              <Alert showIcon type='warning' message={<>
-                已经是超级节点
-              </>} />
-            </>
-          }
-          {
-            currentMasternodeInfo && currentMasternodeInfo.id != 0 && <>
-              <Alert showIcon type='warning' message={<>
-                已经是主节点
-              </>} />
-            </>
-          }
+          <>
+            <Spin spinning={activeAccountNodeInfo == undefined}>
+              <Button disabled={activeAccountNodeInfo == undefined || activeAccountNodeInfo?.isNode}
+                style={{ marginBottom: "5px" }} onClick={() => { navigate("/main/supernodes/create") }}>创建超级节点</Button>
+              {
+                activeAccountNodeInfo?.isMN && <>
+                  <Alert showIcon type='warning' message={<>
+                    已经是主节点
+                  </>} />
+                </>
+              }
+              {
+                activeAccountNodeInfo?.isSN && <>
+                  <Alert showIcon type='warning' message={<>
+                    已经是超级节点
+                  </>} />
+                </>
+              }
+            </Spin>
+          </>
         </Card>
         <br /><br />
         <Card>
-          <Tabs items={items} ></Tabs>
+          <Tabs activeKey={activeItemKey} items={items} onChange={setActiveItemKey}></Tabs>
         </Card>
       </div>
     </div>
-
-
-
   </>
 }

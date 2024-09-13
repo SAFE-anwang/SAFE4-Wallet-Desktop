@@ -16,21 +16,11 @@ import { Safe4_Business_Config } from '../../../config';
 import { ZERO } from '../../../utils/CurrentAmountUtils';
 import EditSupernode from './EditSupernode';
 import { useBlockNumber } from '../../../state/application/hooks';
+import { RenderNodeState } from './Supernodes';
+import useAddrNodeInfo from '../../../hooks/useAddrIsNode';
 
 const { Title, Text } = Typography;
 
-export const RenderNodeState = (state: number) => {
-  switch (state) {
-    case 0:
-      return <Badge status="success" text="初始化" />
-    case 1:
-      return <Badge status="processing" text="在线" />
-    case 2:
-      return <Badge status="error" text="异常" />
-    default:
-      return <Badge status="default" text="未知" />
-  }
-}
 
 export function toFixedNoRound(number: number, decimalPlaces: number) {
   const str = number.toString();
@@ -57,25 +47,25 @@ export default ({
   const supernodeVoteContract = useSupernodeVoteContract();
   const multicallContract = useMulticallContract();
   const activeAccount = useWalletsActiveAccount();
-  const [currentSupernodeInfo, setCurrentSupernodeInfo] = useState<SupernodeInfo>();
   const [supernodes, setSupernodes] = useState<SupernodeInfo[]>([]);
-
   const [loading, setLoading] = useState<boolean>(false);
   const [openSupernodeModal, setOpenSupernodeModal] = useState<boolean>(false);
   const [openEditSupernodeModal, setOpenEditSupernodeModal] = useState<boolean>(false);
   const [openSupernodeInfo, setOpenSupernodeInfo] = useState<SupernodeInfo>();
   const [openEditSupernodeInfo, setOpenEditSupernodeInfo] = useState<SupernodeInfo>();
-
   const [queryKey, setQueryKey] = useState<string>();
   const [queryKeyError, setQueryKeyError] = useState<string>();
-
   const [allVoteNum, setAllVoteNum] = useState<CurrencyAmount>(CurrencyAmount.ether(JSBI.BigInt(1)));
-
   const [pagination, setPagination] = useState<{
     current?: number,
     pageSize?: number,
     total?: number
   }>();
+
+  const activeAccountNodeInfo = useAddrNodeInfo(activeAccount);
+  const couldVote = useMemo(() => {
+    return activeAccountNodeInfo && !activeAccountNodeInfo.isSN ;
+  }, [activeAccountNodeInfo]);
 
   useEffect(() => {
     if (supernodeVoteContract) {
@@ -86,17 +76,6 @@ export default ({
         });
     }
   }, [supernodeVoteContract, blockNumber]);
-
-  useEffect(() => {
-    if (activeAccount && supernodeStorageContract) {
-      if (supernodeStorageContract && activeAccount) {
-        setCurrentSupernodeInfo(undefined);
-        // function getInfo(address _addr) external view returns (MasterNodeInfo memory);
-        supernodeStorageContract.callStatic.getInfo(activeAccount)
-          .then((_supernode: any) => setCurrentSupernodeInfo(formatSupernodeInfo(_supernode)))
-      }
-    }
-  }, [supernodeStorageContract, activeAccount]);
 
   useEffect(() => {
     if (supernodeStorageContract) {
@@ -216,9 +195,7 @@ export default ({
     }
   }, [pagination])
 
-  const couldVote = useMemo(() => {
-    return (currentSupernodeInfo && currentSupernodeInfo.id == 0);
-  }, [currentSupernodeInfo, activeAccount]);
+
 
   const columns: ColumnsType<SupernodeInfo> = [
     {
@@ -301,8 +278,7 @@ export default ({
         const { id, founders } = supernodeInfo;
         const amount = founders.map(founder => founder.amount).reduce((a0, a1) => { return a0.add(a1) }, ZERO);
         const supernodeTarget = CurrencyAmount.ether(ethers.utils.parseEther(Safe4_Business_Config.Supernode.Create.LockAmount + "").toBigInt());
-        const couldAddPartner = supernodeTarget.greaterThan(amount);
-        const _addr = addr.substring(0, 10) + "...." + addr.substring(addr.length - 8);
+        const couldAddPartner = supernodeTarget.greaterThan(amount) && activeAccountNodeInfo && !activeAccountNodeInfo.isNode;
         return <>
           <Row>
             <Col span={4}>
