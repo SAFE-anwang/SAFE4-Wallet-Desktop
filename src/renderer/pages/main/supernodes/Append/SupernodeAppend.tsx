@@ -1,5 +1,5 @@
 
-import { Typography, Row, Col, Button, Card, Divider, Space, Input, Slider, InputNumber, Alert } from 'antd';
+import { Typography, Row, Col, Button, Card, Divider, Space, Input, Slider, InputNumber, Alert, Spin } from 'antd';
 import { useEffect, useState } from 'react';
 import { useETHBalances, useWalletsActiveAccount } from '../../../../state/wallets/hooks';
 import { useSelector } from 'react-redux';
@@ -13,6 +13,7 @@ import { ethers } from 'ethers';
 import AppendModalConfirm from './AppendModal-Confirm';
 import Supernode from '../Supernode';
 import { Safe4_Business_Config } from '../../../../config';
+import useAddrNodeInfo from '../../../../hooks/useAddrIsNode';
 
 const { Text, Title } = Typography;
 
@@ -23,6 +24,7 @@ export default () => {
   const activeAccount = useWalletsActiveAccount();
   const balance = useETHBalances([activeAccount])[activeAccount];
   const [supernodeInfo, setSupernodeInfo] = useState<SupernodeInfo>();
+  const activeAccountNodeInfo = useAddrNodeInfo(activeAccount);
 
   useEffect(() => {
     if (supernodeAddr && supernodeStorageContract) {
@@ -54,7 +56,7 @@ export default () => {
         CurrencyAmount.ether(JSBI.BigInt(0))
       )
       const left = Safe4_Business_Config.Supernode.Create.LockAmount - Number(totalAmount.toFixed(0));
-      if ( left < Safe4_Business_Config.Supernode.Create.UnionLockAmount ) {
+      if (left < Safe4_Business_Config.Supernode.Create.UnionLockAmount) {
         setParams({
           step: 0,
           min: left,
@@ -63,8 +65,8 @@ export default () => {
         })
       } else {
         setParams({
-          step: Safe4_Business_Config.Supernode.Create.UnionLockAmount ,
-          min: Safe4_Business_Config.Supernode.Create.UnionLockAmount ,
+          step: Safe4_Business_Config.Supernode.Create.UnionLockAmount,
+          min: Safe4_Business_Config.Supernode.Create.UnionLockAmount,
           left,
           value: Safe4_Business_Config.Supernode.Create.UnionLockAmount
         })
@@ -145,9 +147,22 @@ export default () => {
                 </Col>
               </Row>
               <Divider />
-              <Button type='primary' onClick={nextClick}>
-                成为合伙人
-              </Button>
+              <Spin spinning={activeAccountNodeInfo == undefined}>
+                <Button disabled={activeAccountNodeInfo == undefined || activeAccountNodeInfo.isNode} type='primary' onClick={nextClick}>
+                  成为合伙人
+                </Button>
+                {
+                  activeAccountNodeInfo && activeAccountNodeInfo.isNode && <Alert type='warning' showIcon message={<>
+                    {
+                      activeAccountNodeInfo.isMN && "已经是主节点"
+                    }
+                    {
+                      activeAccountNodeInfo.isSN && "已经是超级节点"
+                    }
+                  </>} />
+                }
+
+              </Spin>
             </>
           </Card>
         </Row>

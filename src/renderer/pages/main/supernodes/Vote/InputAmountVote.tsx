@@ -1,4 +1,4 @@
-import { Card } from "antd"
+import { Card, Spin } from "antd"
 import { useETHBalances, useWalletsActiveAccount } from "../../../../state/wallets/hooks";
 import { useMemo, useState } from "react";
 import { CurrencyAmount, JSBI } from "@uniswap/sdk";
@@ -7,6 +7,7 @@ import { ONE, ZERO } from "../../../../utils/CurrentAmountUtils";
 import { Button, Col, Divider, Input, Modal, Row, Typography, Space, Alert } from "antd"
 import { SupernodeInfo } from "../../../../structs/Supernode";
 import InputVoteModalConfirm from "./ InputVoteModal-Confirm";
+import useAddrNodeInfo from "../../../../hooks/useAddrIsNode";
 
 const { Text } = Typography;
 
@@ -28,9 +29,8 @@ export default ({
     return (activeAccountETHBalance && activeAccountETHBalance.greaterThan(ZERO) && activeAccountETHBalance.greaterThan(gasPay))
       ? activeAccountETHBalance.subtract(gasPay) : ZERO;
   }, [activeAccountETHBalance]);
-
+  const activeAccountNodeInfo = useAddrNodeInfo(activeAccount);
   const [openVoteModal, setOpenVoteModal] = useState<boolean>(false);
-
   const [params, setParams] = useState<{
     amount: string
   }>({
@@ -53,7 +53,7 @@ export default ({
         if (_amount.greaterThan(maxBalance)) {
           inputErrors.amount = "用于投票的SAFE数量大于持有数量";
         }
-        if ( ONE.greaterThan(_amount)) {
+        if (ONE.greaterThan(_amount)) {
           inputErrors.amount = "必须大于 1 SAFE";
         }
       } catch (error) {
@@ -69,9 +69,9 @@ export default ({
 
   return <>
     <Card title="使用账户中的SAFE余额进行投票">
-      <Alert style={{marginBottom:"20px"}} showIcon message={<>
+      <Alert style={{ marginBottom: "20px" }} showIcon message={<>
         用于投票的SAFE将会在锁仓账户中创建一个新的锁仓记录
-      </>}/>
+      </>} />
       <Row >
         <Col span={14}>
           <Text strong>数量</Text>
@@ -113,16 +113,24 @@ export default ({
       </Row>
       <br />
       <Row style={{ width: "100%", textAlign: "right" }}>
-        <Col span={24}>
-          <Button disabled={params.amount?false:true} type="primary" style={{ float: "left" }} onClick={() => {
-            onClickVote()
-          }}>投票</Button>
+        <Col span={4}>
+          <Spin spinning={activeAccountNodeInfo == undefined} >
+            <Button disabled={(params.amount ? false : true) && activeAccountNodeInfo && !activeAccountNodeInfo.isSN} type="primary" style={{ float: "left" }} onClick={() => {
+              onClickVote()
+            }}>投票</Button>
+            {
+              activeAccountNodeInfo && activeAccountNodeInfo.isSN &&
+              <Alert style={{ marginTop: "5px" }} showIcon type="warning" message={<>
+                超级节点不能进行投票
+              </>} />
+            }
+          </Spin>
         </Col>
       </Row>
     </Card>
     {
       supernodeInfo && <InputVoteModalConfirm openVoteModal={openVoteModal} setOpenVoteModal={setOpenVoteModal}
-        supernodeInfo={supernodeInfo} amount={params.amount}/>
+        supernodeInfo={supernodeInfo} amount={params.amount} />
     }
   </>
 }

@@ -1,9 +1,6 @@
 
 import { Typography, Row, Col, Button, Card, Checkbox, CheckboxProps, Divider, Alert, Tabs } from 'antd';
 import { useEffect, useMemo, useState } from 'react';
-import type { GetProp } from 'antd';
-import { useActiveAccountAccountRecords } from '../../../../state/wallets/hooks';
-import { EmptyContract } from '../../../../constants/SystemContracts';
 import { useSelector } from 'react-redux';
 import { AppState } from '../../../../state';
 import { useSupernodeStorageContract } from '../../../../hooks/useContracts';

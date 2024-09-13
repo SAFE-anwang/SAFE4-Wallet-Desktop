@@ -1,4 +1,4 @@
-import { Typography, Row, Col, Button, Card, Checkbox, CheckboxProps, Divider, Alert, Pagination } from 'antd';
+import { Typography, Row, Col, Button, Card, Checkbox, CheckboxProps, Divider, Alert, Pagination, Spin } from 'antd';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { CheckboxValueType } from 'antd/es/checkbox/Group';
 import type { GetProp } from 'antd';
@@ -18,6 +18,7 @@ import { ethers } from 'ethers';
 import { fetchSuperNodeAddresses } from '../../../../services/supernode';
 import type { TabsProps } from 'antd';
 import { useBlockNumber } from '../../../../state/application/hooks';
+import useAddrNodeInfo from '../../../../hooks/useAddrIsNode';
 
 const { Text } = Typography;
 const AccountRecords_Page_Size = 24;
@@ -32,6 +33,8 @@ export default ({
   const activeAccount = useWalletsActiveAccount();
   const blockNumber = useBlockNumber();
   const multicallContract = useMulticallContract();
+  const activeAccountNodeInfo = useAddrNodeInfo(activeAccount);
+
   const [pagination, setPagination] = useState<{
     total: number | undefined
     pageSize: number | undefined,
@@ -204,18 +207,26 @@ export default ({
           value={checkedAccountRecordIds}
         />
         <br />
-        <Pagination style={{float:"right"}} {...pagination}></Pagination>
+        <Pagination style={{ float: "right" }} {...pagination}></Pagination>
         <br />
-        <Divider  />
-        <Button type='primary' disabled={checkedAccountRecordIds.length == 0} onClick={() => {
-          if (activeAccountAccountRecords) {
-            const checkedAccountRecords = activeAccountAccountRecords.filter(accountRecord => checkedAccountRecordIds.indexOf(accountRecord.id) >= 0);
-            setOpenVoteModal(true)
-            setCheckedAccountRecords(checkedAccountRecords);
+        <Divider />
+        <Spin spinning={activeAccountNodeInfo == undefined}>
+          <Button type='primary' disabled={activeAccountNodeInfo && (checkedAccountRecordIds.length == 0 || activeAccountNodeInfo.isSN)} onClick={() => {
+            if (activeAccountAccountRecords) {
+              const checkedAccountRecords = activeAccountAccountRecords.filter(accountRecord => checkedAccountRecordIds.indexOf(accountRecord.id) >= 0);
+              setOpenVoteModal(true)
+              setCheckedAccountRecords(checkedAccountRecords);
+            }
+          }}>
+            投票
+          </Button>
+          {
+            activeAccountNodeInfo && activeAccountNodeInfo.isSN &&
+            <Alert style={{ marginTop: "5px" }} showIcon type="warning" message={<>
+              超级节点不能进行投票
+            </>} />
           }
-        }}>
-          投票
-        </Button>
+        </Spin>
       </>
     </Card>
 
