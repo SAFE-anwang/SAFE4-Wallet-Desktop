@@ -19,13 +19,12 @@ import { SystemContract } from "../../../../constants/SystemContracts";
 const { Text, Title } = Typography;
 
 export default () => {
-
   const navigate = useNavigate();
   const proposalId = useSelector<AppState, number | undefined>(state => state.application.control.proposalId);
   const [proposalInfo, setProposalInfo] = useState<ProposalInfo>();
+
   const [voteInfos, setVoteInfos] = useState<VoteInfo[]>();
   const supernodeStorageContract = useSupernodeStorageContract();
-  const [topSupernodeAddresses, setTopSupernodeAddress] = useState<string[]>([]);
   const activeAccount = useWalletsActiveAccount();
   const proposalContractBalance = useETHBalances([SystemContract.Proposal])[SystemContract.Proposal];
   const [voteStatistic, setVoteStatistic] = useState<{
@@ -43,6 +42,13 @@ export default () => {
   const blockNumber = useBlockNumber();
   const [openVoteModal, setOpenVoteModal] = useState<boolean>(false);
   const [voteResult, setVoteResult] = useState<number>(3);
+  const [activeAccountTops,setActiveAccountTops] = useState<string[]>();
+  useEffect( () => {
+    if ( supernodeStorageContract ){
+      supernodeStorageContract.callStatic.getTops4Creator( activeAccount )
+        .then( setActiveAccountTops )
+    }
+  } , [ activeAccount , blockNumber , supernodeStorageContract ] )
 
   useEffect(() => {
     if (proposalId && proposalContract) {
@@ -50,19 +56,6 @@ export default () => {
         .then(_proposalInfo => setProposalInfo(formatProposalInfo(_proposalInfo)))
     }
   }, [proposalId, proposalContract, blockNumber]);
-  useEffect(() => {
-    if (supernodeStorageContract) {
-      supernodeStorageContract.callStatic.getTops()
-        .then(addresses => setTopSupernodeAddress(addresses))
-    }
-  }, [supernodeStorageContract]);
-
-  const activeAccountIsValidSupernode = useMemo(() => {
-    if (activeAccount && topSupernodeAddresses.length > 0) {
-      return topSupernodeAddresses.indexOf(activeAccount) >= 0;
-    }
-    return false;
-  }, [activeAccount, topSupernodeAddresses]);
 
   const waitingVote = useMemo(() => {
     if (timestamp && proposalInfo) {
@@ -131,7 +124,7 @@ export default () => {
   return (<>
 
     <Row style={{ height: "50px" }}>
-      <Col span={8}>
+      <Col span={12}>
         <Button style={{ marginTop: "14px", marginRight: "12px", float: "left" }} size="large" shape="circle" icon={<LeftOutlined />} onClick={() => {
           navigate("/main/proposals")
         }} />
@@ -266,19 +259,19 @@ export default () => {
                   <br />
                   <Row>
                     {
-                      !activeAccountIsValidSupernode && <>
+                      activeAccountTops && activeAccountTops.length == 0 && <>
                         <Col span={24}>
                           <Alert type="warning" showIcon message={<>
-                            当前账户不是排名前49且在线的超级节点，不能对提案进行投票!
+                            拥有排名在前49且在线的超级节点的账户才可以进行投票
                           </>} />
                         </Col>
                       </>
                     }
                     {
-                      activeAccountIsValidSupernode && <>
+                      activeAccountTops && activeAccountTops.length > 0 && <>
                         <Col span={24}>
                           <Alert type="info" showIcon message={<>
-                            当前账户是排名前49且在线的超级节点，可以对提案进行投票
+                            当前账户拥有排名在前49且在线的超级节点数量 <Text strong>{activeAccountTops.length}</Text>,可以对提案进行投票
                           </>} />
                           <br />
                           {
@@ -323,13 +316,11 @@ export default () => {
         </Card>
       </div>
     </div>
-
     {
       proposalInfo && <>
         <VoteModalConfirm openVoteModal={openVoteModal} setOpenVoteModal={setOpenVoteModal} proposalInfo={proposalInfo} voteResult={voteResult} />
       </>
     }
-
   </>)
 
 }

@@ -1,5 +1,5 @@
 import { Typography, Row, Col, Button, Card, Divider, Input, Slider, Alert, Radio, Space, Spin, Select } from 'antd';
-import { ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useActiveAccountChildWallets, useETHBalances, useWalletsActiveAccount, useWalletsActiveKeystore } from '../../../../state/wallets/hooks';
 import { useMasternodeStorageContract, useMulticallContract, useSupernodeStorageContract } from '../../../../hooks/useContracts';
 import { LeftOutlined, QuestionCircleOutlined } from '@ant-design/icons';
@@ -12,8 +12,7 @@ import { Safe4_Business_Config } from '../../../../config';
 import CallMulticallAggregate, { CallMulticallAggregateContractCall, SyncCallMulticallAggregate } from '../../../../state/multicall/CallMulticallAggregate';
 import SSH2CMDTerminalNodeModal from '../../../components/SSH2CMDTerminalNodeModal';
 import AddressComponent from '../../../components/AddressComponent';
-import { HDNode } from 'ethers/lib/utils';
-import { generateChildWallet, generateMasternodeTypeChildWallets, SupportChildWalletType } from '../../../../utils/GenerateChildWallet';
+import { generateChildWallet, NodeAddressSelectType, SupportChildWalletType, SupportNodeAddressSelectType } from '../../../../utils/GenerateChildWallet';
 const { Text, Title } = Typography;
 
 export const Supernode_Create_Type_NoUnion = 1;
@@ -41,14 +40,12 @@ export default () => {
   const balance = useETHBalances([activeAccount])[activeAccount];
   const [enodeTips, setEnodeTips] = useState<boolean>(false);
   const [checking, setChecking] = useState<boolean>(false);
-
   const [openSSH2CMDTerminalNodeModal, setOpenSSH2CMDTerminalNodeModal] = useState<boolean>(false);
   const [nodeAddressPrivateKey, setNodeAddressPrivateKey] = useState<string>();
   const [nodeAddress, setNodeAddress] = useState<string>();
-  const [generateChild, setGenerateChild] = useState<boolean>(false);
   const walletsActiveKeystore = useWalletsActiveKeystore();
   const activeAccountChildWallets = useActiveAccountChildWallets(SupportChildWalletType.SN);
-
+  const [nodeAddressSelectType, setNodeAddressSelectType] = useState<SupportNodeAddressSelectType>();
   const [helpResult, setHelpResult] = useState<
     {
       enode: string,
@@ -92,6 +89,14 @@ export default () => {
     balance: undefined,
     address: undefined
   });
+
+  useEffect(() => {
+    if (walletsActiveKeystore?.mnemonic) {
+      setNodeAddressSelectType(NodeAddressSelectType.GEN)
+    } else {
+      setNodeAddressSelectType(NodeAddressSelectType.INPUT)
+    }
+  }, [walletsActiveKeystore]);
 
   const nextClick = () => {
     const { name, enode, description, incentivePlan, address } = createParams;
@@ -190,22 +195,22 @@ export default () => {
       }
       CallMulticallAggregate(
         multicallContract,
-        [nameExistCall, addrExistCall, addrIsFounderCall , addrExistInMasternodesCall, addrIsMasternodeFounderCall, enodeExistCall, enodeExistInMasternodeCall],
+        [nameExistCall, addrExistCall, addrIsFounderCall, addrExistInMasternodesCall, addrIsMasternodeFounderCall, enodeExistCall, enodeExistInMasternodeCall],
         () => {
           const nameExists: boolean = nameExistCall.result;
           const addrExists: boolean = addrExistCall.result;
           const addrExistsInMasternodes: boolean = addrExistInMasternodesCall.result;
           const enodeExists: boolean = enodeExistCall.result;
           const enodeExistsInMasternodes: boolean = enodeExistInMasternodeCall.result;
-          const addrIsFounder : boolean = addrIsFounderCall.result;
-          const addrIsMasternodeFounder : boolean = addrIsMasternodeFounderCall.result;
+          const addrIsFounder: boolean = addrIsFounderCall.result;
+          const addrIsMasternodeFounder: boolean = addrIsMasternodeFounderCall.result;
           if (nameExists) {
             inputErrors.name = "该名称已存在";
           }
           if (addrExists || addrExistsInMasternodes) {
             inputErrors.address = "该地址已经是节点地址,无法使用";
           }
-          if ( addrIsFounder || addrIsMasternodeFounder ){
+          if (addrIsFounder || addrIsMasternodeFounder) {
             inputErrors.address = "该地址已参与节点地址创建,无法使用"
           }
           if (enodeExists || enodeExistsInMasternodes) {
@@ -278,7 +283,7 @@ export default () => {
 
   // 子钱包加载后,自动设置可用的第一个子钱包作为默认选择;
   useEffect(() => {
-    if (!createParams.address && selectChildWalletOptions) {
+    if (!createParams.address && selectChildWalletOptions && nodeAddressSelectType == NodeAddressSelectType.GEN) {
       const couldSelect = selectChildWalletOptions.filter(option => !option.disabled);
       if (couldSelect && couldSelect.length > 0) {
         setCreateParams({
@@ -287,7 +292,7 @@ export default () => {
         })
       }
     }
-  }, [createParams, selectChildWalletOptions])
+  }, [createParams, selectChildWalletOptions , nodeAddressSelectType])
 
   const helpToCreate = useCallback(() => {
     if (createParams.address && activeAccountChildWallets && activeAccountChildWallets.wallets[createParams.address]
@@ -330,7 +335,7 @@ export default () => {
                       <Text>
                         已有服务器,也可以选择通过 SSH 登陆来辅助创建超级节点.
                       </Text>
-                      <Button onClick={() => {
+                      <Button disabled={ nodeAddressSelectType != SupportNodeAddressSelectType.GEN } onClick={() => {
                         helpToCreate();
                       }} type='primary' size='small' style={{ float: "right" }}>辅助创建</Button>
                     </Col>
@@ -395,30 +400,63 @@ export default () => {
                     超级节点运行时,节点程序需要加载超级节点地址的私钥来签名区块.
                   </Col>
                   <Col span={24}>
-                    钱包通过当前账户的种子密钥生成子地址作为超级节点地址.
-                  </Col>
-                  <Col span={24}>
                     由于该超级节点的私钥会被远程存放在您的节点服务器上,<Text type='danger' strong>请避免向这个超级节点地址进行资产转账.</Text>
                   </Col>
                 </Row>
               </>} />
               <Row>
                 <Col span={24}>
-                  <Select
-                    style={{
-                      width: "100%"
-                    }}
-                    placeholder="正在加载可用的超级节点地址..."
-                    options={selectChildWalletOptions}
-                    disabled={helpResult ? true : false}
-                    onChange={(value) => {
+                  <Radio.Group value={nodeAddressSelectType}
+                    onChange={(event) => {
                       setCreateParams({
                         ...createParams,
-                        address: value
-                      })
-                    }}
-                    value={createParams.address}
-                  />
+                        address: undefined
+                      });
+                      setNodeAddressSelectType(event.target.value);
+                    }}>
+                    <Space style={{ height: "50px" }} direction="vertical">
+                      <Radio disabled={walletsActiveKeystore?.mnemonic == undefined}
+                        value={NodeAddressSelectType.GEN}>
+                        钱包通过当前账户的种子密钥生成子地址作为主节点地址
+                      </Radio>
+                      <Radio value={NodeAddressSelectType.INPUT}>
+                        已在节点服务器上配置了节点地址私钥,直接输入节点地址
+                      </Radio>
+                    </Space>
+                  </Radio.Group>
+                  {
+                    nodeAddressSelectType == NodeAddressSelectType.INPUT &&
+                    <Input value={createParams.address} style={{ marginTop: "5px" }} placeholder='输入超级节点地址' onChange={(event) => {
+                      const input = event.target.value.trim();
+                      setCreateParams({
+                        ...createParams,
+                        address: input
+                      });
+                      setInputErrors({
+                        ...inputErrors,
+                        address: undefined
+                      });
+                    }} />
+                  }
+                  {
+                    nodeAddressSelectType == NodeAddressSelectType.GEN &&
+                    <Select
+                      style={{
+                        width: "100%" ,
+                        marginTop:"5px"
+                      }}
+                      placeholder="正在加载可用的超级节点地址..."
+                      options={selectChildWalletOptions}
+                      disabled={helpResult ? true : false}
+                      onChange={(value) => {
+                        setCreateParams({
+                          ...createParams,
+                          address: value
+                        })
+                      }}
+                      value={createParams.address}
+                    />
+                  }
                   {
                     inputErrors && inputErrors.address &&
                     <Alert style={{ marginTop: "5px" }} type='error' message={inputErrors.address} showIcon></Alert>

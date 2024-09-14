@@ -3,6 +3,18 @@ import { HDNode } from "ethers/lib/utils";
 import { SystemContract } from "../constants/SystemContracts";
 import CallMulticallAggregate, { CallMulticallAggregateContractCall, SyncCallMulticallAggregate } from "../state/multicall/CallMulticallAggregate";
 
+
+//////////////////////////////////////////////////
+export enum SupportNodeAddressSelectType {
+  INPUT = 1,
+  GEN = 2
+}
+export const NodeAddressSelectType = {
+  INPUT : SupportNodeAddressSelectType.INPUT,
+  GEN : SupportNodeAddressSelectType.GEN
+}
+///////////////////////////////////////////////////
+
 export enum SupportChildWalletType {
   SN = 1,
   MN = 2
