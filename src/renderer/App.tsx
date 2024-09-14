@@ -276,7 +276,7 @@ export default function App() {
                     <Route path="/main/proposals/vote" element={<ProposalVote />} />
                     <Route path="/main/gettestcoin" element={<GetTestCoin />} />
                     <Route path="/main/safe3" element={<Safe3 />} />
-                    <Route path="/main/test" element={<TestSSH2 />} />
+                    <Route path="/main/test" element={<TestSSH2/> }/>
                     <Route path="/main/menu" element={<Menu />} />
                     <Route path="/main/menu/storage" element={<Storage />} />
                     <Route path="/main/menu/network" element={<NetworkPage />} />

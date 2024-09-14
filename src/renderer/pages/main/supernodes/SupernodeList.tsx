@@ -72,7 +72,9 @@ export default ({
       // 获取总得票
       supernodeVoteContract.callStatic.getAllVoteNum()
         .then(data => {
-          setAllVoteNum(CurrencyAmount.ether(data));
+          if ( !JSBI.EQ( JSBI.BigInt(data) , JSBI.BigInt(0) ) ){
+            setAllVoteNum(CurrencyAmount.ether(data));
+          }
         });
     }
   }, [supernodeVoteContract, blockNumber]);
