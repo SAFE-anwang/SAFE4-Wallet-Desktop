@@ -55,6 +55,12 @@ const electronHandler = {
     close(){
       return ipcRenderer.invoke('connect-close', {})
     }
+  } , 
+
+  fileReader : {
+    readFile(filePath : string){
+      return ipcRenderer.invoke("file-read" , { filePath });
+    }
   }
 
 };

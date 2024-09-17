@@ -2,7 +2,7 @@
 import { Alert, Col, Row, Typography, Card, Divider, Button, Tabs, TabsProps, Input, Spin } from "antd";
 import { useCallback, useEffect, useState } from "react";
 import { useMasternodeLogicContract, useSafe3Contract } from "../../../hooks/useContracts";
-import { AvailableSafe3Info, SpecialSafe3Info, formatAvailableSafe3Info, formatLockedSafe3Info, formatSpecialSafe3Info } from "../../../structs/Safe3";
+import { AvailableSafe3Info, SpecialSafe3Info, formatAvailableSafe3Info, formatLockedSafe3Info, formatSpecialSafe3Info, formatLockedData } from "../../../structs/Safe3";
 import { ZERO } from "../../../utils/CurrentAmountUtils";
 import { CurrencyAmount } from "@uniswap/sdk";
 import { fetchSafe3Address } from "../../../services/safe3";
@@ -92,7 +92,7 @@ export default ({
               if (lockedNum > 0) {
                 safe3Contract.callStatic.getLockedInfo(address, 0, LockedTxLimit)
                   .then((_lockedSafe3Infos: any[]) => {
-                    const lockedSafe3Infos = _lockedSafe3Infos.map(formatLockedSafe3Info);
+                    const lockedSafe3Infos = _lockedSafe3Infos.map( formatLockedSafe3Info );
                     const loopResult: {
                       redeemHeight: number,
                       masternode?: {
