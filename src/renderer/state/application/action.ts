@@ -95,3 +95,11 @@ export const applicationControlCompile = createAction<{
 export const applicationControlDirectDeploy = createAction<boolean>(
   "application/controlDirectDeploy"
 )
+
+export const applicationControlUpdateEditMasternodeId = createAction<number>(
+  "application/controlUpdateEditMasternodeId"
+)
+
+export const applicationControlUpdateEditSupernodeId = createAction<number>(
+  "application/controlUpdateEditSupernodeId"
+)

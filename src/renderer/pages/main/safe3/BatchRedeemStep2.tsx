@@ -69,6 +69,7 @@ export default ({
             lockedAmount?: CurrencyAmount
         }
     }>();
+    const [ allFinish , setAllFinish ] = useState<boolean>(false);
 
     // 第一波查询100个地址的可用,锁仓条目数量,和是否主节点
     useEffect(() => {
@@ -122,7 +123,8 @@ export default ({
                     });
                 }
             } else {
-                console.log("Load OVER!!!!")
+                console.log("ALl Finished!");
+                setAllFinish(true);
             }
         }
     }, [safe3AddressArr, addressResultMap, safe3Contract, multicallContract]);
@@ -388,9 +390,9 @@ export default ({
             </Col>
         </Row>
         <Divider />
-        <Table columns={columns} dataSource={hasAssetList} />
+        <Table loading={!allFinish} columns={columns} dataSource={hasAssetList} />
         <Divider />
-        <Button type="primary" onClick={nextClick}>下一步</Button>
+        <Button type="primary" disabled={!allFinish} onClick={nextClick}>下一步</Button>
     </>
 
 }

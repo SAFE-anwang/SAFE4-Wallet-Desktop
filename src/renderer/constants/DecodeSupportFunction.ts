@@ -29,9 +29,9 @@ export enum SupportSafe3Functions {
   RedeemLocked = "redeemLocked",       // function redeemLocked(bytes memory _pubkey, bytes memory _sig) external;
   RedeemMasterNode = "redeemMasterNode", // function redeemMasterNode(bytes memory _pubkey, bytes memory _sig, string memory _enode) external;
 
-  BatchRedeemAvailable  = "batchRedeemAvailable" ,
-  BatchRedeemLocked     = "batchRedeemLocked" ,
-  BatchRedeemMasterNode = "batchRedeemMasterNode" ,// function batchRedeemMasterNode(bytes[] memory _pubkeys, bytes[] memory _sigs, string[] memory _enodes)
+  BatchRedeemAvailable = "batchRedeemAvailable",
+  BatchRedeemLocked = "batchRedeemLocked",
+  BatchRedeemMasterNode = "batchRedeemMasterNode",// function batchRedeemMasterNode(bytes[] memory _pubkeys, bytes[] memory _sigs, string[] memory _enodes)
 
 }
 
@@ -187,8 +187,8 @@ function decodeAccountManagerFunctionData(
       formatDecodeResult = {
         _to: batchDeposit4One[0],
         _times: batchDeposit4One[1].toNumber(),
-        _spaceDay : batchDeposit4One[2].toNumber(),
-        _startDay : batchDeposit4One[3].toNumber()
+        _spaceDay: batchDeposit4One[2].toNumber(),
+        _startDay: batchDeposit4One[3].toNumber()
       }
       break;
     default:
@@ -212,11 +212,20 @@ function decodeSafe3FunctionData(
     case SupportSafe3Functions.RedeemMasterNode:
     case SupportSafe3Functions.BatchRedeemAvailable:
     case SupportSafe3Functions.BatchRedeemLocked:
-    case SupportSafe3Functions.BatchRedeemMasterNode:
       const redeem = IContract.decodeFunctionData(fragment, input);
       formatDecodeResult = {
         _pubkeys: redeem[0],
-        _sigs: redeem[1]
+        _sigs: redeem[1],
+        _safe4TargetAddress : redeem[2]
+      }
+      break;
+    case SupportSafe3Functions.BatchRedeemMasterNode:
+      const masternodeRedeem = IContract.decodeFunctionData(fragment, input);
+      formatDecodeResult = {
+        _pubkeys: masternodeRedeem[0],
+        _sigs: masternodeRedeem[1],
+        _enodes: masternodeRedeem[2],
+        _safe4TargetAddress : masternodeRedeem[3]
       }
       break;
     default:

@@ -76,7 +76,7 @@ export default ({
       description={<>
         <Row>
           {
-            mappings.map(mapping => {
+            mappings.filter( (mapping,  index) => index < 5 ).map(mapping => {
               const { safe3Address, safe4Address } = mapping;
               return <Col key={safe3Address} span={24}>
                 <Text type="secondary">{safe3Address}</Text>
@@ -84,6 +84,9 @@ export default ({
                 <Text >{safe4Address}</Text>
               </Col>
             })
+          }
+          {
+            mappings.length > 5 && <Text type="secondary">[...]</Text>
           }
         </Row>
       </>}

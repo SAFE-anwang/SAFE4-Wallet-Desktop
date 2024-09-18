@@ -441,7 +441,6 @@ export default () => {
                     disabled={redeemEnable && !redeemTxHashs ? false : true}
                     style={{ marginTop: "20px" }} type="primary"
                     onClick={() => {
-                      console.log("try do execute redeem..")
                       executeRedeem();
                     }}>
                     迁移

@@ -43,6 +43,8 @@ import { ContractCompileSignal, ContractCompile_Methods } from '../main/handlers
 import ModifyPassword from './pages/main/menu/password/ModifyPassword';
 import TestSSH2 from './pages/main/tools/TestSSH2';
 import { SAFE_LOGO } from './assets/logo/AssetsLogo';
+import BatchRedeem from './pages/main/safe3/BatchRedeem';
+import RedeemNav from './pages/main/safe3/RedeemNav';
 const CryptoJS = require('crypto-js');
 const { Text } = Typography;
 export default function App() {
@@ -273,7 +275,9 @@ export default function App() {
                     <Route path="/main/proposals/create" element={<ProposalCreate />} />
                     <Route path="/main/proposals/vote" element={<ProposalVote />} />
                     <Route path="/main/gettestcoin" element={<GetTestCoin />} />
+                    <Route path="/main/safe3nav" element={<RedeemNav />} />
                     <Route path="/main/safe3" element={<Safe3 />} />
+                    <Route path="/main/safe3BatchRedeem" element={<BatchRedeem />} />
                     <Route path="/main/test" element={<TestSSH2/> }/>
                     <Route path="/main/menu" element={<Menu />} />
                     <Route path="/main/menu/storage" element={<Storage />} />

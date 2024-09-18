@@ -1,7 +1,7 @@
 
 import { CurrencyAmount, JSBI } from '@uniswap/sdk';
 import { Typography, Row, Col, Progress, Table, Badge, Button, Space, Card, Alert, Divider, Modal, Input } from 'antd';
-import { ColumnsType, ColumnType } from 'antd/es/table';
+import { ColumnsType } from 'antd/es/table';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMulticallContract, useSupernodeStorageContract, useSupernodeVoteContract } from '../../../hooks/useContracts';
@@ -35,9 +35,10 @@ export function toFixedNoRound(number: number, decimalPlaces: number) {
 const Supernode_Page_Size = 10;
 
 export default ({
-  queryMySupernodes
+  queryMySupernodes, queryJoinSupernodes
 }: {
-  queryMySupernodes: boolean
+  queryMySupernodes: boolean,
+  queryJoinSupernodes: boolean
 }) => {
 
   const navigate = useNavigate();
@@ -64,7 +65,7 @@ export default ({
 
   const activeAccountNodeInfo = useAddrNodeInfo(activeAccount);
   const couldVote = useMemo(() => {
-    return activeAccountNodeInfo && !activeAccountNodeInfo.isSN ;
+    return activeAccountNodeInfo && !activeAccountNodeInfo.isSN;
   }, [activeAccountNodeInfo]);
 
   useEffect(() => {
@@ -72,7 +73,7 @@ export default ({
       // 获取总得票
       supernodeVoteContract.callStatic.getAllVoteNum()
         .then(data => {
-          if ( !JSBI.EQ( JSBI.BigInt(data) , JSBI.BigInt(0) ) ){
+          if (!JSBI.EQ(JSBI.BigInt(data), JSBI.BigInt(0))) {
             setAllVoteNum(CurrencyAmount.ether(data));
           }
         });
@@ -82,6 +83,10 @@ export default ({
   useEffect(() => {
     if (supernodeStorageContract) {
       if ((pagination && pagination.current && pagination.current > 1)) {
+        return;
+      }
+      if (queryKey) {
+        doSearch();
         return;
       }
       if (queryMySupernodes && activeAccount) {
@@ -97,11 +102,20 @@ export default ({
               current: 1,
             })
           });
+      } else if (queryJoinSupernodes && activeAccount) {
+        // getAddrNum4Creator
+        supernodeStorageContract.callStatic.getAddrNum4Partner(activeAccount)
+          .then(data => {
+            if (data.toNumber() == 0) {
+              setSupernodes([]);
+            }
+            setPagination({
+              total: data.toNumber(),
+              pageSize: Supernode_Page_Size,
+              current: 1,
+            })
+          });
       } else {
-        if (queryKey) {
-          doSearch();
-          return;
-        }
         // function getNum() external view returns (uint);
         supernodeStorageContract.callStatic.getNum()
           .then(data => {
@@ -115,9 +129,8 @@ export default ({
             })
           });
       }
-
     }
-  }, [supernodeStorageContract, activeAccount, blockNumber,queryKey]);
+  }, [supernodeStorageContract, activeAccount, blockNumber, queryKey]);
 
   const loadSupernodeInfoList = useCallback((addresses: string[]) => {
     if (supernodeStorageContract && supernodeVoteContract && multicallContract) {
@@ -152,13 +165,21 @@ export default ({
             const supernodeInfo = formatSupernodeInfo(_supernodeInfo);
             supernodeInfo.totalVoteNum = CurrencyAmount.ether(JSBI.BigInt(totalVoteNum));
             supernodeInfo.totalAmount = CurrencyAmount.ether(JSBI.BigInt(totalAmount));
-            supernodeInfos.push(supernodeInfo);
+            if (queryMySupernodes && supernodeInfo.creator == activeAccount) {
+              supernodeInfos.push(supernodeInfo);
+            } else if (queryJoinSupernodes) {
+              if (supernodeInfo.founders.map(founder => founder.addr).indexOf(activeAccount) > 0) {
+                supernodeInfos.push(supernodeInfo);
+              }
+            } else {
+              supernodeInfos.push(supernodeInfo);
+            }
           }
           setSupernodes(supernodeInfos);
           setLoading(false);
         })
     }
-  }, [supernodeStorageContract, supernodeVoteContract, multicallContract]);
+  }, [supernodeStorageContract, supernodeVoteContract, multicallContract, queryMySupernodes, queryJoinSupernodes, activeAccount]);
 
   useEffect(() => {
     if (pagination && supernodeStorageContract && supernodeVoteContract && multicallContract) {
@@ -187,6 +208,11 @@ export default ({
             .then((addresses: any) => {
               loadSupernodeInfoList(addresses)
             });
+        } else if (queryJoinSupernodes) {
+          supernodeStorageContract.callStatic.getAddrs4Partner(activeAccount, _position, _offset)
+            .then((addresses: any) => {
+              loadSupernodeInfoList(addresses)
+            });
         } else {
           supernodeStorageContract.callStatic.getAll(_position, _offset)
             .then((addresses: any) => {
@@ -195,9 +221,7 @@ export default ({
         }
       }
     }
-  }, [pagination])
-
-
+  }, [pagination]);
 
   const columns: ColumnsType<SupernodeInfo> = [
     {
@@ -212,7 +236,7 @@ export default ({
           <Row>
             <Col>
               {
-                !queryMySupernodes && !queryKey && <Text strong>{rank}</Text>
+                !queryMySupernodes && !queryJoinSupernodes && !queryKey && <Text strong>{rank}</Text>
               }
             </Col>
           </Row>
@@ -350,7 +374,7 @@ export default ({
           const exist = await supernodeStorageContract.callStatic.exist(addr);
           if (exist) {
             const _supernodeInfo = await supernodeStorageContract.callStatic.getInfo(addr);
-            loadSupernodeInfoList( [_supernodeInfo.addr] )
+            loadSupernodeInfoList([_supernodeInfo.addr]);
             setPagination(undefined);
           } else {
             setSupernodes([]);
@@ -359,7 +383,7 @@ export default ({
             setLoading(false);
           }
         } else {
-          setQueryKeyError("请输入合法的主节点地址");
+          setQueryKeyError("请输入合法的超级节点地址");
         }
       } else {
         const id = Number(queryKey);
@@ -368,12 +392,12 @@ export default ({
           const exist = await supernodeStorageContract.callStatic.existID(id);
           if (exist) {
             const _supernodeInfo = await supernodeStorageContract.callStatic.getInfoByID(id);
-            loadSupernodeInfoList( [_supernodeInfo.addr] )
+            loadSupernodeInfoList([_supernodeInfo.addr])
             setPagination(undefined);
           } else {
             setSupernodes([]);
             setPagination(undefined);
-            setQueryKeyError("主节点ID不存在");
+            setQueryKeyError("超级节点ID不存在");
             setLoading(false);
           }
         } else {
@@ -381,12 +405,11 @@ export default ({
         }
       }
     }
-  }, [supernodeStorageContract, queryKey]);
+  }, [supernodeStorageContract, queryKey, queryMySupernodes, queryJoinSupernodes]);
 
   return <>
 
     {
-      !queryMySupernodes &&
       <Row style={{ marginBottom: "20px" }}>
         <Col span={12}>
           <Input.Search size='large' placeholder='超级节点ID｜超级节点地址' onChange={(event) => {

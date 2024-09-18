@@ -1,33 +1,33 @@
 import { Button, Col, Divider, Row, Typography } from "antd"
-import path from "path";
 import { useState } from "react";
 import { useSelector } from "react-redux";
 import { AppState } from "../../../state";
 
-const { Text, Title } = Typography
+const { Text, Paragraph } = Typography;
 
 export interface AddressPrivateKeyMap {
-  [ address : string ] : {
-    privateKey : string
+  [address: string]: {
+    privateKey: string
   }
 }
 
-export default ( {
+export default ({
   setAddressPrivateKeyMap
-} : {
-  setAddressPrivateKeyMap : ( map : AddressPrivateKeyMap ) => void
-} ) => {
+}: {
+  setAddressPrivateKeyMap: (map: AddressPrivateKeyMap) => void
+}) => {
   const data = useSelector<AppState, { [key: string]: any }>(state => state.application.data);
-  const safe3KeystoresFile = data["data"] + "\\safe3.keystores";
+  const safe3KeystoresFile = data["data"] + "/safe3.keystores";
+  const dumpCommand = `dumpwallet "${safe3KeystoresFile}"`;
   const [loading, setLoading] = useState<boolean>(false);
 
   const loadSafe3PrivateKeyFile = function () {
     setLoading(true);
     window.electron.fileReader.readFile(safe3KeystoresFile)
       .then((fileContent) => {
-        const lines = fileContent.split("\r\n").filter((line: string) => line && line.trim().indexOf("#") != 0)
+        const lines = fileContent.split("\n").filter((line: string) => line && line.trim().indexOf("#") != 0)
         const addressPrivateKeyArr = lines.map((line: string) => {
-          const arr = line.split(" ");
+          const arr = line.replace("\r","").split(" ");
           const privateKey = arr[0];
           const address = arr[4].split("=")[1];
           return {
@@ -44,37 +44,36 @@ export default ( {
           _addressPrivateKeyMap[address] = { privateKey }
         })
         setLoading(false);
-        setAddressPrivateKeyMap( _addressPrivateKeyMap )
+        setAddressPrivateKeyMap(_addressPrivateKeyMap)
       })
   }
 
   return <>
-    <Row style={{ marginTop: "20px" }}>
+    <Row style={{ marginTop: "40px" }}>
       <Col span={24}>
         <Text strong>第一步</Text>
         <br />
-        <Text>打开 Safe3 桌面钱包,并等待钱包同步到最新高度</Text>
+        <Text>打开 Safe3 桌面钱包,<Text strong>等待 Safe3 桌面钱包同步到最新高度</Text></Text>
       </Col>
-      <br />
-      <Col span={24}>
+      <Col span={24} style={{ marginTop: "20px" }}>
         <Text strong>第二步</Text>
         <br />
-        <Text>解锁钱包</Text>
+        <Text>如果 Safe3 桌面钱包设置了钱包密码,需要先解锁钱包</Text>
       </Col>
-      <Col span={24}>
+      <Col span={24} style={{ marginTop: "20px" }}>
         <Text strong>第三步</Text>
         <br />
-        <Text>输入命令,将私钥信息导出到</Text>
+        <Text>在 Safe3 钱包界面选择"工具",打开"Debug 控制台",输入如下命令,将钱包中的私钥信息导出</Text>
+        <br />
+        <Text style={{float:"left" , fontSize:"16px"}} code>{dumpCommand}</Text>
+        <Paragraph style={{float:"left" , fontSize:"16px" , marginLeft:"5px"}} copyable={{ text:dumpCommand }} />
       </Col>
-      <Col span={24}>
+      <Col span={24} style={{ marginTop: "20px" }}>
         <Text strong>第四步</Text>
         <br />
-        <Text>点击 加载私钥 按钮,由钱包加载私钥</Text>
+        <Text>导出完成后,点击本页面的加载私钥按钮</Text>
       </Col>
     </Row>
-    {
-      safe3KeystoresFile
-    }
     <Divider />
     <Button disabled={loading} loading={loading} type="primary" onClick={loadSafe3PrivateKeyFile}>
       加载私钥

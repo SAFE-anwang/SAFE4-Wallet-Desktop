@@ -10,7 +10,7 @@ import { CurrencyAmount, JSBI } from '@uniswap/sdk';
 import { ethers } from 'ethers';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
-import { applicationControlAppendMasternode } from '../../../state/application/action';
+import { applicationControlAppendMasternode, applicationControlUpdateEditMasternodeId } from '../../../state/application/action';
 import { useWalletsActiveAccount } from '../../../state/wallets/hooks';
 import { RenderNodeState } from '../supernodes/Supernodes';
 import AddressComponent from '../../components/AddressComponent';
@@ -25,9 +25,11 @@ const { Title, Text } = Typography;
 const Masternodes_Page_Size = 10;
 
 export default ({
-  queryMyMasternodes
+  queryMyMasternodes,
+  queryJoinMasternodes
 }: {
-  queryMyMasternodes: boolean
+  queryMyMasternodes: boolean,
+  queryJoinMasternodes: boolean,
 }) => {
 
   const navigate = useNavigate();
@@ -53,12 +55,14 @@ export default ({
 
   const activeAccount = useWalletsActiveAccount();
   const blockNumber = useBlockNumber();
-  const addrNodeInfo = useAddrNodeInfo( activeAccount );
-
-
+  const addrNodeInfo = useAddrNodeInfo(activeAccount);
   useEffect(() => {
     if (masternodeStorageContract) {
       if ((pagination && pagination.current && pagination.current > 1)) {
+        return;
+      }
+      if (queryKey) {
+        doSearch();
         return;
       }
       if (queryMyMasternodes) {
@@ -74,11 +78,19 @@ export default ({
               current: 1,
             })
           })
+      } else if (queryJoinMasternodes) {
+        masternodeStorageContract.callStatic.getAddrNum4Partner(activeAccount)
+          .then(data => {
+            if (data.toNumber() == 0) {
+              setMasternodes([]);
+            }
+            setPagination({
+              total: data.toNumber(),
+              pageSize: Masternodes_Page_Size,
+              current: 1,
+            })
+          })
       } else {
-        if (queryKey) {
-          doSearch();
-          return;
-        }
         // function getNum() external view returns (uint);
         masternodeStorageContract.callStatic.getNum()
           .then(data => {
@@ -122,6 +134,11 @@ export default ({
             .then((addresses: any) => {
               loadMasternodeInfos(addresses);
             });
+        } else if (queryJoinMasternodes) {
+          masternodeStorageContract.callStatic.getAddrs4Partner(activeAccount, position, offset)
+            .then((addresses: any) => {
+              loadMasternodeInfos(addresses);
+            });
         } else {
           masternodeStorageContract.callStatic.getAll(position, offset)
             .then((addresses: any) => {
@@ -142,16 +159,26 @@ export default ({
       ])
       multicallContract.callStatic.aggregate(calls)
         .then(data => {
-          const masternodes = data[1].map((raw: string) => {
+          const masternodes: MasternodeInfo[] = data[1].map((raw: string) => {
             const _masternode = masternodeStorageContract.interface.decodeFunctionResult(fragment, raw)[0];
             return formatMasternode(_masternode);
-          })
-          // then set masternodes ...
-          setMasternodes(masternodes.sort((m0: MasternodeInfo, m1: MasternodeInfo) => m1.id - m0.id));
+          });
+          if (queryMyMasternodes) {
+            const _masternodes = masternodes.filter(masternode => masternode.creator == activeAccount)
+              .sort((m0: MasternodeInfo, m1: MasternodeInfo) => m1.id - m0.id);
+            setMasternodes(_masternodes);
+          } else if (queryJoinMasternodes) {
+            const _masternodes = masternodes.filter(masternode => masternode.founders.map(founder => founder.addr).indexOf(activeAccount) > 0)
+              .sort((m0: MasternodeInfo, m1: MasternodeInfo) => m1.id - m0.id);
+            setMasternodes(_masternodes);
+          } else {
+            // then set masternodes ...
+            setMasternodes(masternodes.sort((m0: MasternodeInfo, m1: MasternodeInfo) => m1.id - m0.id));
+          }
           setLoading(false);
         })
     }
-  }, [masternodeStorageContract, multicallContract])
+  }, [masternodeStorageContract, multicallContract, queryJoinMasternodes, queryMyMasternodes, activeAccount])
 
   const columns: ColumnsType<MasternodeInfo> = [
     {
@@ -209,7 +236,7 @@ export default ({
           CurrencyAmount.ether(JSBI.BigInt(0))
         )
         const masternodeTarget = CurrencyAmount.ether(ethers.utils.parseEther(Safe4_Business_Config.Masternode.Create.LockAmount + "").toBigInt());
-        const couldAddPartner = masternodeTarget.greaterThan(amount) && ( addrNodeInfo && !addrNodeInfo.isNode );
+        const couldAddPartner = masternodeTarget.greaterThan(amount) && (addrNodeInfo && !addrNodeInfo.isNode);
         return <>
           <Row>
             <Col span={12}>
@@ -234,8 +261,9 @@ export default ({
                   queryMyMasternodes &&
                   <Button size='small' style={{ float: "right" }}
                     onClick={() => {
-                      setOpenEditMasternodeInfo(masternodeInfo);
-                      setOpenEditMasternodeModal(true);
+                      // setOpenEditMasternodeInfo(masternodeInfo);
+                      // setOpenEditMasternodeModal(true);
+                      dispatch(applicationControlUpdateEditMasternodeId(masternodeInfo.id));
                     }}>
                     编辑
                   </Button>
@@ -258,11 +286,8 @@ export default ({
           const exist = await masternodeStorageContract.callStatic.exist(addr);
           if (exist) {
             const _masternodeInfo = await masternodeStorageContract.callStatic.getInfo(addr);
-            console.log(_masternodeInfo)
-            const masternodeInfo = formatMasternode(_masternodeInfo);
-            setMasternodes([masternodeInfo]);
+            loadMasternodeInfos([_masternodeInfo.addr]);
             setPagination(undefined);
-            setLoading(false);
           } else {
             setMasternodes([]);
             setPagination(undefined);
@@ -279,10 +304,8 @@ export default ({
           const exist = await masternodeStorageContract.callStatic.existID(id);
           if (exist) {
             const _masternodeInfo = await masternodeStorageContract.callStatic.getInfoByID(id);
-            const masternodeInfo = formatMasternode(_masternodeInfo);
-            setMasternodes([masternodeInfo]);
+            loadMasternodeInfos([_masternodeInfo.addr]);
             setPagination(undefined);
-            setLoading(false);
           } else {
             setMasternodes([]);
             setPagination(undefined);
@@ -298,7 +321,6 @@ export default ({
 
   return <>
     {
-      !queryMyMasternodes &&
       <Row style={{ marginBottom: "20px" }}>
         <Col span={12}>
           <Input.Search size='large' placeholder='主节点ID｜主节点地址' onChange={(event) => {

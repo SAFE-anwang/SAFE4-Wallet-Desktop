@@ -46,19 +46,19 @@ export default () => {
       {
         key: 'list',
         label: '超级节点列表',
-        children: <SupernodeList queryMySupernodes={false} />,
+        children: <SupernodeList queryMySupernodes={false} queryJoinSupernodes={false} />,
       },
       {
         key: 'mySupernodes',
         label: '我的超级节点',
-        children: <SupernodeList queryMySupernodes={true} />,
+        children: <SupernodeList queryMySupernodes={true} queryJoinSupernodes={false} />,
         disabled: activeAccountNodeInfo == undefined || (activeAccountNodeInfo?.isNode),
       },
       {
         key: 'myJoinedSupernodes',
         label: '我加入的超级节点',
         disabled: activeAccountNodeInfo == undefined || (activeAccountNodeInfo?.isNode),
-        children: <></>,
+        children: <SupernodeList queryMySupernodes={false} queryJoinSupernodes={true} />,
       },
     ]
   }, [activeAccount, activeAccountNodeInfo]);

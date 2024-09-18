@@ -20,7 +20,7 @@ export default ({ transaction, setClickTransaction, support }: {
     call,
   } = transaction;
   const mappings = useMemo(() => {
-    const { _pubkeys, _sigs } = support.inputDecodeResult;
+    const { _pubkeys, _safe4TargetAddress } = support.inputDecodeResult;
     let mappings: {
       safe3Address: string,
       safe4Address: string
@@ -29,10 +29,10 @@ export default ({ transaction, setClickTransaction, support }: {
     let safe4Address = "[无法解析]";
     if (_pubkeys && _pubkeys.length > 0) {
       mappings = _pubkeys.map( (pubkey:string) => {
-        const publicKeyBuffer = ethers.utils.hexlify(_pubkeys[0]);
+        // const publicKeyBuffer = ethers.utils.hexlify( pubkey );
         try {
-          safe4Address = ethers.utils.computeAddress(publicKeyBuffer);
-          safe3Address = publicKeyToSafe3Address(_pubkeys[0]);
+          safe3Address = publicKeyToSafe3Address( pubkey );
+          safe4Address = _safe4TargetAddress;
         } catch (error) {
 
         }

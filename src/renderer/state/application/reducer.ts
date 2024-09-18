@@ -17,6 +17,8 @@ import {
   applicationControlContractVO,
   applicationControlCompile,
   applicationControlDirectDeploy,
+  applicationControlUpdateEditMasternodeId,
+  applicationControlUpdateEditSupernodeId,
 } from './action';
 
 import { ContractVO } from '../../services';
@@ -52,7 +54,6 @@ export interface IApplicationState {
     proposalId?: number,
     walletTab?: string,
     contractVO?: ContractVO,
-
     // 合约编译时存储的数据
     compile?: {
       compileResult: string,
@@ -69,7 +70,9 @@ export interface IApplicationState {
         }
       }
     }
-    directDeploy?: boolean
+    directDeploy?: boolean,
+    editMasternodeId ?: number,
+    editSupernodeId ?: number
   }
   supernodeAddresses: string[],
   blockchain: {
@@ -266,5 +269,13 @@ export default createReducer(initialState, (builder) => {
     .addCase(applicationAddRpcConfig, (state, { payload }) => {
       state.rpcConfigs?.push(payload);
     })
+
+    .addCase( applicationControlUpdateEditMasternodeId , ( state , {payload} ) => {
+      state.control.editMasternodeId = payload;
+    } )
+
+    .addCase( applicationControlUpdateEditSupernodeId , ( state , {payload} ) => {
+      state.control.editSupernodeId = payload;
+    } )
 
 })

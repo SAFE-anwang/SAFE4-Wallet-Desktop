@@ -266,11 +266,20 @@ export default () => {
             value: address,
             label: <>
               <Row key={address}>
-                <Col span={18}>
-                  <AddressComponent ellipsis address={address} />
+                <Col span={16}>
+                  <Row>
+                    {
+                      exist && <Col span={4}>
+                        <Text type='secondary'>[已注册]</Text>
+                      </Col>
+                    }
+                    <Col span={20}>
+                      <AddressComponent ellipsis address={address} />
+                    </Col>
+                  </Row>
                 </Col>
-                <Col span={6} style={{ textAlign: "right" }}>
-                  <Text>{path}</Text>
+                <Col span={8} style={{ textAlign: "right", float: "right" }}>
+                  <Text type='secondary'>{path}</Text>
                 </Col>
               </Row>
             </>,
@@ -292,7 +301,7 @@ export default () => {
         })
       }
     }
-  }, [createParams, selectChildWalletOptions , nodeAddressSelectType])
+  }, [createParams, selectChildWalletOptions, nodeAddressSelectType])
 
   const helpToCreate = useCallback(() => {
     if (createParams.address && activeAccountChildWallets && activeAccountChildWallets.wallets[createParams.address]
@@ -335,7 +344,7 @@ export default () => {
                       <Text>
                         已有服务器,也可以选择通过 SSH 登陆来辅助创建超级节点.
                       </Text>
-                      <Button disabled={ nodeAddressSelectType != SupportNodeAddressSelectType.GEN } onClick={() => {
+                      <Button disabled={nodeAddressSelectType != SupportNodeAddressSelectType.GEN} onClick={() => {
                         helpToCreate();
                       }} type='primary' size='small' style={{ float: "right" }}>辅助创建</Button>
                     </Col>
@@ -442,8 +451,8 @@ export default () => {
                     nodeAddressSelectType == NodeAddressSelectType.GEN &&
                     <Select
                       style={{
-                        width: "100%" ,
-                        marginTop:"5px"
+                        width: "100%",
+                        marginTop: "5px"
                       }}
                       placeholder="正在加载可用的超级节点地址..."
                       options={selectChildWalletOptions}

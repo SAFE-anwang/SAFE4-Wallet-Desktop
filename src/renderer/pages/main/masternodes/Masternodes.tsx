@@ -19,19 +19,19 @@ export default () => {
       {
         key: 'list',
         label: '主节点列表',
-        children: <MasternodeList queryMyMasternodes={false} />,
+        children: <MasternodeList queryMyMasternodes={false} queryJoinMasternodes={false} />,
       },
       {
         key: 'myMasternodes',
         label: '我的主节点',
         disabled: activeAccountNodeInfo == undefined || (activeAccountNodeInfo?.isNode),
-        children: <MasternodeList queryMyMasternodes={true} />,
+        children: <MasternodeList queryMyMasternodes={true} queryJoinMasternodes={false} />,
       },
       {
         key: 'myJoinMasternodes',
         label: '我加入的主节点',
         disabled: activeAccountNodeInfo == undefined || (activeAccountNodeInfo?.isNode),
-        children: <></>,
+        children: <MasternodeList queryMyMasternodes={false} queryJoinMasternodes={true} />,
       },
     ]
   }, [activeAccount, activeAccountNodeInfo]);
