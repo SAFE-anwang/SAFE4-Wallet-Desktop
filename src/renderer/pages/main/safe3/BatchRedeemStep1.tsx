@@ -25,9 +25,11 @@ export default ({
     setLoading(true);
     window.electron.fileReader.readFile(safe3KeystoresFile)
       .then((fileContent) => {
-        const lines = fileContent.split("\n").filter((line: string) => line && line.trim().indexOf("#") != 0)
+        console.log(fileContent);
+        
+        const lines = fileContent.replaceAll("\r","").split("\n").filter((line: string) => line && line.trim().indexOf("#") != 0)
         const addressPrivateKeyArr = lines.map((line: string) => {
-          const arr = line.replace("\r","").split(" ");
+          const arr = line.split(" ");
           const privateKey = arr[0];
           const address = arr[4].split("=")[1];
           return {

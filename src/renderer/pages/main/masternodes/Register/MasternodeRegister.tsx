@@ -391,7 +391,6 @@ export default () => {
               </Row>
             </>} />
             <Col span={24}>
-
               <Radio.Group value={nodeAddressSelectType}
                 onChange={(event) => {
                   setRegisterParams({
