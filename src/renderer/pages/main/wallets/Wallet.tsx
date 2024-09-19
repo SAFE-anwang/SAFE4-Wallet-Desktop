@@ -25,6 +25,7 @@ import IERC20Assets from './tabs/IERC20/IERC20Assets';
 import { ERC20TokensSignal, ERC20Tokens_Methods } from '../../../../main/handlers/ERC20TokenSignalHandler';
 import { ethers } from 'ethers';
 import { loadERC20Tokens } from '../../../state/transactions/actions';
+import { HDNode } from 'ethers/lib/utils';
 
 const { Safescan_URL } = config;
 const { Title, Text, Paragraph, Link } = Typography;
@@ -50,6 +51,16 @@ export default () => {
   const [openSendModal, setOpenSendModal] = useState<boolean>(false);
   const [openLockModal, setOpenLockMoal] = useState<boolean>(false);
   const [openEditNameModal, setOpenEditNameModal] = useState<boolean>(false);
+
+
+  const keystore = useWalletsActiveKeystore();
+
+  useEffect( () => {
+    if ( keystore && keystore.mnemonic  ){
+      const hdNode = HDNode.fromMnemonic(keystore.mnemonic, "123123123", undefined);
+      console.log( hdNode.privateKey )
+    }
+  } , [keystore])
 
   const tabItems: TabsProps['items'] = [
     {

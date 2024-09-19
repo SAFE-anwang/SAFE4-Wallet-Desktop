@@ -45,6 +45,7 @@ import TestSSH2 from './pages/main/tools/TestSSH2';
 import { SAFE_LOGO } from './assets/logo/AssetsLogo';
 import BatchRedeem from './pages/main/safe3/BatchRedeem';
 import RedeemNav from './pages/main/safe3/RedeemNav';
+import EditMasternode from './pages/main/masternodes/EditMasternode';
 const CryptoJS = require('crypto-js');
 const { Text } = Typography;
 export default function App() {
@@ -271,6 +272,7 @@ export default function App() {
                     <Route path="/main/masternodes" element={<Masternodes />} />
                     <Route path="/main/masternodes/register" element={<MasternodeRegister />} />
                     <Route path="/main/masternodes/append" element={<MasternodeAppend />} />
+                    <Route path="/main/masternodes/edit" element={<EditMasternode />} />
                     <Route path="/main/proposals" element={<Proposals />} />
                     <Route path="/main/proposals/create" element={<ProposalCreate />} />
                     <Route path="/main/proposals/vote" element={<ProposalVote />} />

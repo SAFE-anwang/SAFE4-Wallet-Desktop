@@ -1,9 +1,9 @@
 
 
 
-import { Typography, Button, Card, Divider, Statistic, Row, Col, Modal, Flex, Tooltip, Tabs, TabsProps, QRCode, Badge, Space, Alert, Input } from 'antd';
-import { useMasternodeStorageContract, useMulticallContract, useSupernodeStorageContract } from '../../../hooks/useContracts';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Typography, Button, Row, Col, Modal, Space, Alert, Input } from 'antd';
+import { useMasternodeStorageContract, useMulticallContract } from '../../../hooks/useContracts';
+import { useCallback, useEffect, useState } from 'react';
 import { MasternodeInfo, formatMasternode } from '../../../structs/Masternode';
 import Table, { ColumnsType } from 'antd/es/table';
 import { CurrencyAmount, JSBI } from '@uniswap/sdk';
@@ -15,10 +15,8 @@ import { useWalletsActiveAccount } from '../../../state/wallets/hooks';
 import { RenderNodeState } from '../supernodes/Supernodes';
 import AddressComponent from '../../components/AddressComponent';
 import { Safe4_Business_Config } from '../../../config';
-import EditMasternode from './EditMasternode';
 import { useBlockNumber } from '../../../state/application/hooks';
 import Masternode from './Masternode';
-import CallMulticallAggregate, { CallMulticallAggregateContractCall } from '../../../state/multicall/CallMulticallAggregate';
 import useAddrNodeInfo from '../../../hooks/useAddrIsNode';
 
 const { Title, Text } = Typography;
@@ -39,8 +37,6 @@ export default ({
   const masternodeStorageContract = useMasternodeStorageContract();
   const [loading, setLoading] = useState<boolean>(false);
   const [masternodes, setMasternodes] = useState<MasternodeInfo[]>();
-  const [openEditMasternodeModal, setOpenEditMasternodeModal] = useState<boolean>(false);
-  const [openEditMasternodeInfo, setOpenEditMasternodeInfo] = useState<MasternodeInfo>();
   const [openMasternodeModal, setOpenMasternodeModal] = useState<boolean>(false);
   const [openMasternodeInfo, setOpenMasternodeInfo] = useState<MasternodeInfo>();
 
@@ -261,9 +257,8 @@ export default ({
                   queryMyMasternodes &&
                   <Button size='small' style={{ float: "right" }}
                     onClick={() => {
-                      // setOpenEditMasternodeInfo(masternodeInfo);
-                      // setOpenEditMasternodeModal(true);
                       dispatch(applicationControlUpdateEditMasternodeId(masternodeInfo.id));
+                      navigate("/main/masternodes/edit")
                     }}>
                     编辑
                   </Button>
@@ -350,15 +345,6 @@ export default ({
     }}>
       {
         openMasternodeInfo && <Masternode masternodeInfo={openMasternodeInfo} />
-      }
-    </Modal>
-
-    <Modal destroyOnClose open={openEditMasternodeModal} width={800} footer={null} closable onCancel={() => {
-      setOpenEditMasternodeInfo(undefined);
-      setOpenEditMasternodeModal(false);
-    }}>
-      {
-        openEditMasternodeInfo && <EditMasternode masternodeInfo={openEditMasternodeInfo} />
       }
     </Modal>
 

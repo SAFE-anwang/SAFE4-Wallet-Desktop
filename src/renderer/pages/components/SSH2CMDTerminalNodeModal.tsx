@@ -51,7 +51,6 @@ export class CommandState {
 
 const DEFAULT_CONFIG = {
   // 节点程序的下载地址
-  // Safe4FileURL: "https://binaries.soliditylang.org/bin/list.json",
   Safe4FileURL: "https://www.anwang.com/download/testnet/safe4_node/safe4-testnet.linux.latest.tar.gz",
   Safe4FileMD5: "https://www.anwang.com/download/testnet/safe4_node/safe4-testnet.linux.latest.md5",
   Safe4FileName: "safe4-testnet.linux.latest.tar.gz",
@@ -197,7 +196,7 @@ export default ({
 
   const outputKeyStore = useCallback(async () => {
     if ( wallet ){
-      const keystore = await wallet.encrypt(password ? password : "");
+      const keystore = await wallet.encrypt("");
       return {
         address: wallet.address,
         keystore
