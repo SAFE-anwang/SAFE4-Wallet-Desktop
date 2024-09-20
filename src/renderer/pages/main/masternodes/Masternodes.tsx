@@ -70,7 +70,7 @@ export default () => {
           <>
             <Spin spinning={ activeAccountNodeInfo == undefined }>
               <Button disabled={ activeAccountNodeInfo == undefined || activeAccountNodeInfo?.isNode }
-                      style={{ marginBottom: "5px" }} onClick={() => { navigate("/main/masternodes/register") }}>创建主节点</Button>
+                      style={{ marginBottom: "5px" }} onClick={() => { navigate("/main/masternodes/selectRegisterMode") }}>创建主节点</Button>
               {
                 activeAccountNodeInfo?.isMN && <>
                   <Alert showIcon type='warning' message={<>

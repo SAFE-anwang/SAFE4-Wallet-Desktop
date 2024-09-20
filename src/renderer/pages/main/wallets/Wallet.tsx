@@ -51,8 +51,6 @@ export default () => {
   const [openSendModal, setOpenSendModal] = useState<boolean>(false);
   const [openLockModal, setOpenLockMoal] = useState<boolean>(false);
   const [openEditNameModal, setOpenEditNameModal] = useState<boolean>(false);
-
-
   const keystore = useWalletsActiveKeystore();
 
   useEffect( () => {

@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { Alert, Button, Card, Col, Divider, Input, Radio, Row, Select, Space, Spin, Typography } from "antd";
+import { useNavigate } from "react-router-dom";
 
 const { Text, Title } = Typography
 
 export default () => {
-
+  const navigate = useNavigate();
   return <>
 
     <Row style={{ height: "50px" }}>
@@ -19,7 +20,7 @@ export default () => {
       <Card style={{ width: "100%", height: "800px" }}>
         <Row style={{ marginTop: "120px", marginBottom: "20px" }}>
           <Col span={12} offset={6}>
-            <Button style={{ height: "200px", width: "100%" }}>
+            <Button onClick={() => navigate("/main/masternodes/registerAssist")} style={{ height: "200px", width: "100%" }}>
               <Row>
                 <Col span={24}>
                   <Text style={{ fontSize: "40px" }}>辅助模式</Text>
@@ -31,13 +32,13 @@ export default () => {
             </Button>
           </Col>
           <Col span={12} offset={6} style={{ marginTop: "100px" }} >
-            <Button style={{ height: "200px", width: "100%" }}>
+            <Button onClick={() => navigate("/main/masternodes/register")}  style={{ height: "200px", width: "100%" }}>
               <Row>
                 <Col span={24}>
                   <Text style={{ fontSize: "40px" }}>专家模式</Text>
                 </Col>
                 <Col span={24}>
-                  <Text type="secondary" style={{ fontSize: "20px" }}>已在服务器上配置主节点,直接填入注册数据</Text>
+                  <Text type="secondary" style={{ fontSize: "20px" }}>已在服务器上配置超级节点,直接填入注册数据</Text>
                 </Col>
               </Row>
             </Button>

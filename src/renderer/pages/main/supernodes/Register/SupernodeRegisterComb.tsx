@@ -9,8 +9,10 @@ import { ethers } from 'ethers';
 import CreateModalConfirm from './CreateModal-Confirm';
 import NumberFormat from '../../../../utils/NumberFormat';
 import { Safe4_Business_Config } from '../../../../config';
-import CallMulticallAggregate, { CallMulticallAggregateContractCall } from '../../../../state/multicall/CallMulticallAggregate';
-import useAddrNodeInfo from '../../../../hooks/useAddrIsNode';
+import CallMulticallAggregate, { CallMulticallAggregateContractCall, SyncCallMulticallAggregate } from '../../../../state/multicall/CallMulticallAggregate';
+import SSH2CMDTerminalNodeModal from '../../../components/SSH2CMDTerminalNodeModal';
+import AddressComponent from '../../../components/AddressComponent';
+import { generateChildWallet, NodeAddressSelectType, SupportChildWalletType, SupportNodeAddressSelectType } from '../../../../utils/GenerateChildWallet';
 const { Text, Title } = Typography;
 
 export const Supernode_Create_Type_NoUnion = 1;
@@ -38,8 +40,18 @@ export default () => {
   const balance = useETHBalances([activeAccount])[activeAccount];
   const [enodeTips, setEnodeTips] = useState<boolean>(false);
   const [checking, setChecking] = useState<boolean>(false);
-  const activeAccountNodeInfo = useAddrNodeInfo( activeAccount );
-
+  const [openSSH2CMDTerminalNodeModal, setOpenSSH2CMDTerminalNodeModal] = useState<boolean>(false);
+  const [nodeAddressPrivateKey, setNodeAddressPrivateKey] = useState<string>();
+  const [nodeAddress, setNodeAddress] = useState<string>();
+  const walletsActiveKeystore = useWalletsActiveKeystore();
+  const activeAccountChildWallets = useActiveAccountChildWallets(SupportChildWalletType.SN);
+  const [nodeAddressSelectType, setNodeAddressSelectType] = useState<SupportNodeAddressSelectType>();
+  const [helpResult, setHelpResult] = useState<
+    {
+      enode: string,
+      nodeAddress: string
+    }
+  >();
   const [createParams, setCreateParams] = useState<{
     createType: number | 1,
     name: string | undefined,
@@ -78,8 +90,15 @@ export default () => {
     address: undefined
   });
 
+  useEffect(() => {
+    if (walletsActiveKeystore?.mnemonic) {
+      setNodeAddressSelectType(NodeAddressSelectType.GEN)
+    } else {
+      setNodeAddressSelectType(NodeAddressSelectType.INPUT)
+    }
+  }, [walletsActiveKeystore]);
+
   const nextClick = () => {
-    setOpenCreateModal(false);
     const { name, enode, description, incentivePlan, address } = createParams;
     incentivePlan.partner = sliderVal[0];
     incentivePlan.creator = sliderVal[1] - sliderVal[0];
@@ -198,7 +217,7 @@ export default () => {
             inputErrors.enode = "该ENODE已存在";
           }
           setChecking(false);
-          if (nameExists || enodeExists || enodeExistsInMasternodes || addrExists || addrExistsInMasternodes || addrIsFounder || addrIsMasternodeFounder) {
+          if (nameExists || enodeExists || enodeExistsInMasternodes || addrExists || addrExistsInMasternodes) {
             setInputErrors({ ...inputErrors });
             return;
           }
@@ -210,6 +229,9 @@ export default () => {
   const [openCreateModal, setOpenCreateModal] = useState<boolean>(false);
 
   useEffect(() => {
+    if (!walletsActiveKeystore || !walletsActiveKeystore.mnemonic) {
+      // 告知用户不可使用该界面;
+    }
     setCreateParams({
       ...createParams,
       address: undefined,
@@ -220,7 +242,82 @@ export default () => {
       balance: undefined,
       address: undefined
     });
-  }, [activeAccount]);
+    // 清楚使用 ssh 连接后做的数据
+    setNodeAddress(undefined);
+    setNodeAddressPrivateKey(undefined);
+    setHelpResult(undefined);
+  }, [walletsActiveKeystore]);
+
+  const selectChildWalletOptions = useMemo(() => {
+    if (activeAccountChildWallets) {
+      const options = Object.keys(activeAccountChildWallets.wallets)
+        .map(childAddress => {
+          const { path, exist } = activeAccountChildWallets.wallets[childAddress];
+          return {
+            address: childAddress,
+            path,
+            exist,
+            index: path.substring(Number(path.lastIndexOf("/") + 1))
+          }
+        })
+        .sort((a: any, b: any) => (a.index - b.index))
+        .map(({ address, path, exist, index }) => {
+          return {
+            value: address,
+            label: <>
+              <Row key={address}>
+                <Col span={16}>
+                  <Row>
+                    {
+                      exist && <Col span={4}>
+                        <Text type='secondary'>[已注册]</Text>
+                      </Col>
+                    }
+                    <Col span={20}>
+                      <AddressComponent ellipsis address={address} />
+                    </Col>
+                  </Row>
+                </Col>
+                <Col span={8} style={{ textAlign: "right", float: "right" }}>
+                  <Text type='secondary'>{path}</Text>
+                </Col>
+              </Row>
+            </>,
+            disabled: exist
+          }
+        })
+      return options;
+    }
+  }, [activeAccount, activeAccountChildWallets]);
+
+  // 子钱包加载后,自动设置可用的第一个子钱包作为默认选择;
+  useEffect(() => {
+    if (!createParams.address && selectChildWalletOptions && nodeAddressSelectType == NodeAddressSelectType.GEN) {
+      const couldSelect = selectChildWalletOptions.filter(option => !option.disabled);
+      if (couldSelect && couldSelect.length > 0) {
+        setCreateParams({
+          ...createParams,
+          address: couldSelect[0].value
+        })
+      }
+    }
+  }, [createParams, selectChildWalletOptions, nodeAddressSelectType])
+
+  const helpToCreate = useCallback(() => {
+    if (createParams.address && activeAccountChildWallets && activeAccountChildWallets.wallets[createParams.address]
+      && walletsActiveKeystore?.mnemonic
+    ) {
+      const path = activeAccountChildWallets.wallets[createParams.address].path;
+      const hdNode = generateChildWallet(
+        walletsActiveKeystore.mnemonic,
+        walletsActiveKeystore.password ? walletsActiveKeystore.password : "",
+        path
+      );
+      setNodeAddress(hdNode.address);
+      setNodeAddressPrivateKey(hdNode.privateKey);
+      setOpenSSH2CMDTerminalNodeModal(true);
+    }
+  }, [createParams, walletsActiveKeystore, activeAccountChildWallets]);
 
   return <>
     <Row style={{ height: "50px" }}>
@@ -236,7 +333,27 @@ export default () => {
 
     <Row style={{ marginTop: "20px", width: "100%" }}>
       <Card style={{ width: "100%" }}>
-        <div style={{ width: "50%", margin: "auto", marginTop: "20px" }}>
+        <div style={{ width: "50%", margin: "auto" }}>
+
+          <Row style={{ marginTop: "20px", marginBottom: "20px" }}>
+            <Col span={24}>
+              <Alert type='info' showIcon message={
+                <>
+                  <Row>
+                    <Col span={24}>
+                      <Text>
+                        已有服务器,也可以选择通过 SSH 登陆来辅助创建超级节点.
+                      </Text>
+                      <Button disabled={nodeAddressSelectType != SupportNodeAddressSelectType.GEN} onClick={() => {
+                        helpToCreate();
+                      }} type='primary' size='small' style={{ float: "right" }}>辅助创建</Button>
+                    </Col>
+                  </Row>
+                </>
+              }></Alert>
+            </Col>
+          </Row>
+
           <Row>
             <Col span={24}>
               <Text type='secondary'>创建模式</Text><br />
@@ -285,6 +402,82 @@ export default () => {
           <Divider />
           <Row>
             <Col span={24}>
+              <Text type='secondary'>超级节点地址</Text>
+              <Alert style={{ marginTop: "5px", marginBottom: "5px" }} type='warning' showIcon message={<>
+                <Row>
+                  <Col span={24}>
+                    超级节点运行时,节点程序需要加载超级节点地址的私钥来签名区块.
+                  </Col>
+                  <Col span={24}>
+                    由于该超级节点的私钥会被远程存放在您的节点服务器上,<Text type='danger' strong>请避免向这个超级节点地址进行资产转账.</Text>
+                  </Col>
+                </Row>
+              </>} />
+              <Row>
+                <Col span={24}>
+                  <Radio.Group value={nodeAddressSelectType}
+                    onChange={(event) => {
+                      setCreateParams({
+                        ...createParams,
+                        address: undefined
+                      });
+                      setNodeAddressSelectType(event.target.value);
+                    }}>
+                    <Space style={{ height: "50px" }} direction="vertical">
+                      <Radio disabled={walletsActiveKeystore?.mnemonic == undefined}
+                        value={NodeAddressSelectType.GEN}>
+                        钱包通过当前账户的种子密钥生成子地址作为主节点地址
+                      </Radio>
+                      <Radio value={NodeAddressSelectType.INPUT}>
+                        已在节点服务器上配置了节点地址私钥,直接输入节点地址
+                      </Radio>
+                    </Space>
+                  </Radio.Group>
+                  {
+                    nodeAddressSelectType == NodeAddressSelectType.INPUT &&
+                    <Input value={createParams.address} style={{ marginTop: "5px" }} placeholder='输入超级节点地址' onChange={(event) => {
+                      const input = event.target.value.trim();
+                      setCreateParams({
+                        ...createParams,
+                        address: input
+                      });
+                      setInputErrors({
+                        ...inputErrors,
+                        address: undefined
+                      });
+                    }} />
+                  }
+                  {
+                    nodeAddressSelectType == NodeAddressSelectType.GEN &&
+                    <Select
+                      style={{
+                        width: "100%",
+                        marginTop: "5px"
+                      }}
+                      placeholder="正在加载可用的超级节点地址..."
+                      options={selectChildWalletOptions}
+                      disabled={helpResult ? true : false}
+                      onChange={(value) => {
+                        setCreateParams({
+                          ...createParams,
+                          address: value
+                        })
+                      }}
+                      value={createParams.address}
+                    />
+                  }
+                  {
+                    inputErrors && inputErrors.address &&
+                    <Alert style={{ marginTop: "5px" }} type='error' message={inputErrors.address} showIcon></Alert>
+                  }
+                </Col>
+              </Row>
+
+            </Col>
+          </Row>
+          <Divider />
+          <Row>
+            <Col span={24}>
               <Text type='secondary'>名称</Text>
               <Input status={inputErrors.name ? "error" : ""}
                 value={createParams.name} placeholder='输入超级节点名称' onChange={(event) => {
@@ -307,33 +500,6 @@ export default () => {
           <Divider />
           <Row>
             <Col span={24}>
-              <Text type='secondary'>超级节点地址</Text>
-              <Row>
-                <Col span={24}>
-                  <Input value={createParams.address} style={{ marginTop: "5px" }} placeholder='输入超级节点地址' onChange={(event) => {
-                    const input = event.target.value.trim();
-                    setCreateParams({
-                      ...createParams,
-                      address: input
-                    });
-                    setInputErrors({
-                      ...inputErrors,
-                      address: undefined
-                    });
-                  }} />
-                  {
-                    inputErrors && inputErrors.address &&
-                    <Alert style={{ marginTop: "5px" }} type='error' message={inputErrors.address} showIcon></Alert>
-                  }
-                </Col>
-              </Row>
-
-            </Col>
-          </Row>
-
-          <Divider />
-          <Row>
-            <Col span={24}>
               <QuestionCircleOutlined onClick={() => setEnodeTips(true)} style={{ cursor: "pointer", marginRight: "5px" }} /><Text type='secondary'>ENODE</Text>
             </Col>
             {
@@ -346,6 +512,7 @@ export default () => {
               </Col>
             }
             <Input.TextArea style={{ height: "100px" }} status={inputErrors.enode ? "error" : ""}
+              disabled={helpResult ? true : false}
               value={createParams.enode} placeholder='输入超级节点ENODE' onChange={(event) => {
                 const inputEnode = event.target.value;
                 setInputErrors({
@@ -414,16 +581,10 @@ export default () => {
             </Row>
           </Row>
           <Divider />
+
           <Row style={{ width: "100%", textAlign: "right" }}>
             <Col span={24}>
-              {
-                activeAccountNodeInfo?.isNode && <div style={{ textAlign: "left", marginBottom: "20px" }}>
-                  <Alert type='warning' showIcon message={<>
-                    {`当前账户已经是${activeAccountNodeInfo.isMN ? '主节点' : '超级节点'},不可再创建节点`}
-                  </>} />
-                </div>
-              }
-              <Button disabled={activeAccountNodeInfo?.isNode} loading={checking} type="primary" onClick={() => {
+              <Button loading={checking} type="primary" onClick={() => {
                 nextClick();
               }}>下一步</Button>
             </Col>
@@ -431,10 +592,35 @@ export default () => {
         </div>
       </Card>
     </Row>
+
     {
       createParams.name && createParams.enode && createParams.description &&
       <CreateModalConfirm openCreateModal={openCreateModal} setOpenCreateModal={setOpenCreateModal} createParams={createParams} />
     }
+
+    {
+      nodeAddressPrivateKey && openSSH2CMDTerminalNodeModal && nodeAddress &&
+      <SSH2CMDTerminalNodeModal openSSH2CMDTerminalNodeModal={openSSH2CMDTerminalNodeModal} setOpenSSH2CMDTerminalNodeModal={setOpenSSH2CMDTerminalNodeModal}
+        nodeAddressPrivateKey={nodeAddressPrivateKey}
+        nodeAddress={nodeAddress}
+        onSuccess={(enode: string, nodeAddress: string) => {
+          setHelpResult({ enode, nodeAddress });
+          setCreateParams({
+            ...createParams,
+            address: nodeAddress,
+            enode
+          });
+          setInputErrors({
+            ...inputErrors,
+            address: undefined,
+            enode: undefined
+          })
+        }}
+        onError={() => {
+
+        }} />
+    }
+
   </>
 
 }

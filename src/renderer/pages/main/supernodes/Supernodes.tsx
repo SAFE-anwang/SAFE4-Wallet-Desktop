@@ -88,7 +88,7 @@ export default () => {
           <>
             <Spin spinning={activeAccountNodeInfo == undefined}>
               <Button disabled={activeAccountNodeInfo == undefined || activeAccountNodeInfo?.isNode}
-                style={{ marginBottom: "5px" }} onClick={() => { navigate("/main/supernodes/create") }}>创建超级节点</Button>
+                style={{ marginBottom: "5px" }} onClick={() => { navigate("/main/supernodes/selectRegisterMode") }}>创建超级节点</Button>
               {
                 activeAccountNodeInfo?.isMN && <>
                   <Alert showIcon type='warning' message={<>

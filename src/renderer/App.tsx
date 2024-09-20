@@ -46,6 +46,12 @@ import { SAFE_LOGO } from './assets/logo/AssetsLogo';
 import BatchRedeem from './pages/main/safe3/BatchRedeem';
 import RedeemNav from './pages/main/safe3/RedeemNav';
 import EditMasternode from './pages/main/masternodes/EditMasternode';
+import SelectMasternodeRegisterMode from './pages/main/masternodes/Register/SelectMasternodeRegisterMode';
+import MasternodeRegisterAssist from './pages/main/masternodes/Register/MasternodeRegisterAssist';
+import SelectSupernodeRegisterMode from './pages/main/supernodes/Register/SelectSupernodeRegisterMode';
+import SupernodeRegisterAssist from './pages/main/supernodes/Register/SupernodeRegisterAssist';
+import SelectMasternodeSyncMode from './pages/main/masternodes/Sync/SelectMasternodeSyncMode';
+import MasternodeSyncAssist from './pages/main/masternodes/Sync/MasternodeSyncAssist';
 const CryptoJS = require('crypto-js');
 const { Text } = Typography;
 export default function App() {
@@ -266,12 +272,18 @@ export default function App() {
                     <Route path="/waitingImportWallet" element={<WaitingWalletImport />} />
                     <Route path="/main/wallet" element={<Wallet />} />
                     <Route path="/main/supernodes" element={<Supernodes />} />
+                    <Route path="/main/supernodes/selectRegisterMode" element={<SelectSupernodeRegisterMode />} />
                     <Route path="/main/supernodes/vote" element={<SupernodeVote />} />
                     <Route path="/main/supernodes/append" element={<SupernodeAppend />} />
-                    <Route path="/main/supernodes/create" element={<SupernodeRegister />} />
+                    <Route path="/main/supernodes/register" element={<SupernodeRegister />} />
+                    <Route path="/main/supernodes/registerAssist" element={<SupernodeRegisterAssist />} />
                     <Route path="/main/masternodes" element={<Masternodes />} />
+                    <Route path="/main/masternodes/selectRegisterMode" element={<SelectMasternodeRegisterMode />} />
                     <Route path="/main/masternodes/register" element={<MasternodeRegister />} />
+                    <Route path="/main/masternodes/registerAssist" element={<MasternodeRegisterAssist />} />
                     <Route path="/main/masternodes/append" element={<MasternodeAppend />} />
+                    <Route path="/main/masternodes/selectSyncMode" element={<SelectMasternodeSyncMode />} />
+                    <Route path="/main/masternodes/syncAssist" element={<MasternodeSyncAssist />} />
                     <Route path="/main/masternodes/edit" element={<EditMasternode />} />
                     <Route path="/main/proposals" element={<Proposals />} />
                     <Route path="/main/proposals/create" element={<ProposalCreate />} />

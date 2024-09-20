@@ -19,7 +19,7 @@ import { useBlockNumber } from '../../../state/application/hooks';
 import Masternode from './Masternode';
 import useAddrNodeInfo from '../../../hooks/useAddrIsNode';
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 const Masternodes_Page_Size = 10;
 
 export default ({
@@ -258,7 +258,7 @@ export default ({
                   <Button size='small' style={{ float: "right" }}
                     onClick={() => {
                       dispatch(applicationControlUpdateEditMasternodeId(masternodeInfo.id));
-                      navigate("/main/masternodes/edit")
+                      navigate("/main/masternodes/selectSyncMode")
                     }}>
                     编辑
                   </Button>
