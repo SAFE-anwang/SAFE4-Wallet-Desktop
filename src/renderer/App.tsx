@@ -52,6 +52,10 @@ import SelectSupernodeRegisterMode from './pages/main/supernodes/Register/Select
 import SupernodeRegisterAssist from './pages/main/supernodes/Register/SupernodeRegisterAssist';
 import SelectMasternodeSyncMode from './pages/main/masternodes/Sync/SelectMasternodeSyncMode';
 import MasternodeSyncAssist from './pages/main/masternodes/Sync/MasternodeSyncAssist';
+import SupernodeSyncAssist from './pages/main/supernodes/Sync/SupernodeSyncAssist';
+import SelectSupernodeSyncMode from './pages/main/supernodes/Sync/SelectSupernodeSyncMode';
+import MasternodeSync from './pages/main/masternodes/Sync/MasternodeSync';
+import SupernodeSync from './pages/main/supernodes/Sync/SupernodeSync';
 const CryptoJS = require('crypto-js');
 const { Text } = Typography;
 export default function App() {
@@ -277,12 +281,16 @@ export default function App() {
                     <Route path="/main/supernodes/append" element={<SupernodeAppend />} />
                     <Route path="/main/supernodes/register" element={<SupernodeRegister />} />
                     <Route path="/main/supernodes/registerAssist" element={<SupernodeRegisterAssist />} />
+                    <Route path="/main/supernodes/selectSyncMode" element={<SelectSupernodeSyncMode />} />
+                    <Route path="/main/supernodes/sync" element={<SupernodeSync />} />
+                    <Route path="/main/supernodes/syncAssist" element={<SupernodeSyncAssist />} />
                     <Route path="/main/masternodes" element={<Masternodes />} />
                     <Route path="/main/masternodes/selectRegisterMode" element={<SelectMasternodeRegisterMode />} />
                     <Route path="/main/masternodes/register" element={<MasternodeRegister />} />
                     <Route path="/main/masternodes/registerAssist" element={<MasternodeRegisterAssist />} />
                     <Route path="/main/masternodes/append" element={<MasternodeAppend />} />
                     <Route path="/main/masternodes/selectSyncMode" element={<SelectMasternodeSyncMode />} />
+                    <Route path="/main/masternodes/sync" element={<MasternodeSync />} />
                     <Route path="/main/masternodes/syncAssist" element={<MasternodeSyncAssist />} />
                     <Route path="/main/masternodes/edit" element={<EditMasternode />} />
                     <Route path="/main/proposals" element={<Proposals />} />
@@ -292,7 +300,7 @@ export default function App() {
                     <Route path="/main/safe3nav" element={<RedeemNav />} />
                     <Route path="/main/safe3" element={<Safe3 />} />
                     <Route path="/main/safe3BatchRedeem" element={<BatchRedeem />} />
-                    <Route path="/main/test" element={<TestSSH2/> }/>
+                    <Route path="/main/test" element={<TestSSH2 />} />
                     <Route path="/main/menu" element={<Menu />} />
                     <Route path="/main/menu/storage" element={<Storage />} />
                     <Route path="/main/menu/network" element={<NetworkPage />} />

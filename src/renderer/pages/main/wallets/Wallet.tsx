@@ -51,14 +51,6 @@ export default () => {
   const [openSendModal, setOpenSendModal] = useState<boolean>(false);
   const [openLockModal, setOpenLockMoal] = useState<boolean>(false);
   const [openEditNameModal, setOpenEditNameModal] = useState<boolean>(false);
-  const keystore = useWalletsActiveKeystore();
-
-  useEffect( () => {
-    if ( keystore && keystore.mnemonic  ){
-      const hdNode = HDNode.fromMnemonic(keystore.mnemonic, "123123123", undefined);
-      console.log( hdNode.privateKey )
-    }
-  } , [keystore])
 
   const tabItems: TabsProps['items'] = [
     {

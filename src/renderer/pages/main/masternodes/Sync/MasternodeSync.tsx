@@ -9,14 +9,13 @@ import { AppState } from "../../../../state";
 import { formatMasternode, MasternodeInfo } from "../../../../structs/Masternode";
 import { useMasternodeLogicContract, useMasternodeStorageContract, useMulticallContract, useSupernodeStorageContract } from "../../../../hooks/useContracts";
 import { useTransactionAdder } from "../../../../state/transactions/hooks";
-import { generateChildWallet, NodeAddressSelectType, SupportChildWalletType, SupportNodeAddressSelectType } from "../../../../utils/GenerateChildWallet";
-import { useActiveAccountChildWallets, useWalletsActiveAccount, useWalletsActiveKeystore } from "../../../../state/wallets/hooks";
+import { NodeAddressSelectType } from "../../../../utils/GenerateChildWallet";
+import { useWalletsActiveAccount, useWalletsActiveKeystore } from "../../../../state/wallets/hooks";
 import { TxExecuteStatus } from "../../safe3/Safe3";
 import { CallMulticallAggregateContractCall, SyncCallMulticallAggregate } from "../../../../state/multicall/CallMulticallAggregate";
 import { enodeRegex } from "../../supernodes/Register/SupernodeRegister";
 import { InputRules } from "../Register/MasternodeRegister";
 import AddressComponent from "../../../components/AddressComponent";
-import SSH2CMDTerminalNodeModal from "../../../components/SSH2CMDTerminalNodeModal";
 
 const { Text, Title } = Typography
 
@@ -30,18 +29,9 @@ export default () => {
   const masternodeLogicContract = useMasternodeLogicContract(true);
   const addTransaction = useTransactionAdder();
   const multicallContract = useMulticallContract();
-  const [nodeAddressSelectType, setNodeAddressSelectType] = useState<SupportNodeAddressSelectType>();
   const walletsActiveKeystore = useWalletsActiveKeystore();
-  const activeAccountChildWallets = useActiveAccountChildWallets(SupportChildWalletType.MN);
   const activeAccount = useWalletsActiveAccount();
-  const [openSSH2CMDTerminalNodeModal, setOpenSSH2CMDTerminalNodeModal] = useState<boolean>(false);
-  const [nodeAddressPrivateKey, setNodeAddressPrivateKey] = useState<string>();
-  const [helpResult, setHelpResult] = useState<
-    {
-      enode: string,
-      nodeAddress: string
-    }
-  >();
+
   const [updating, setUpdating] = useState<boolean>(false);
   const [updateParams, setUpdateParams] = useState<{
     address: string | undefined,
@@ -74,14 +64,6 @@ export default () => {
   }, [masternodeInfo, updateParams]);
 
   useEffect(() => {
-    if (walletsActiveKeystore?.mnemonic) {
-      setNodeAddressSelectType(NodeAddressSelectType.GEN)
-    } else {
-      setNodeAddressSelectType(NodeAddressSelectType.INPUT)
-    }
-  }, [walletsActiveKeystore]);
-
-  useEffect(() => {
     if (editMasternodeId && masternodeStorageContract) {
       masternodeStorageContract.callStatic.getInfoByID(editMasternodeId).then(_masternodeInfo => {
         const masternodeInfo = formatMasternode(_masternodeInfo);
@@ -94,77 +76,6 @@ export default () => {
       });
     }
   }, [editMasternodeId, masternodeStorageContract]);
-
-  const selectChildWalletOptions = useMemo(() => {
-    if (activeAccountChildWallets && nodeAddressSelectType && masternodeInfo) {
-      const options = Object.keys(activeAccountChildWallets.wallets)
-        .map(childAddress => {
-          const { path, exist } = activeAccountChildWallets.wallets[childAddress];
-          return {
-            address: childAddress,
-            path,
-            exist: exist ? childAddress != masternodeInfo?.addr : exist,
-            index: path.substring(Number(path.lastIndexOf("/") + 1))
-          }
-        })
-        .sort((a: any, b: any) => (a.index - b.index))
-        .map(({ address, path, exist, index }) => {
-          return {
-            value: address,
-            label: <>
-              <Row key={address}>
-                <Col span={16}>
-                  <Row>
-                    {
-                      exist && <Col span={6}>
-                        <Text type='secondary'>[已注册]</Text>
-                      </Col>
-                    }
-                    {
-                      address == masternodeInfo.addr && <Col span={6}>
-                        <Text type='secondary'>[当前节点]</Text>
-                      </Col>
-                    }
-                    <Col span={18}>
-                      <AddressComponent ellipsis address={address} />
-                    </Col>
-                  </Row>
-                </Col>
-                <Col span={8} style={{ textAlign: "right", float: "right" }}>
-                  <Text type='secondary'>{path}</Text>
-                </Col>
-              </Row>
-            </>,
-            disabled: exist
-          }
-        })
-      return options;
-    }
-  }, [activeAccount, activeAccountChildWallets, nodeAddressSelectType, masternodeInfo]);
-
-  // 子钱包加载后,自动设置可用的第一个子钱包作为默认选择;
-  useEffect(() => {
-    if (selectChildWalletOptions && nodeAddressSelectType == NodeAddressSelectType.GEN && masternodeInfo) {
-      const couldSelect = selectChildWalletOptions.filter(option => !option.disabled);
-      if (couldSelect && couldSelect.length > 0) {
-        if (couldSelect.map(option => option.value).indexOf(masternodeInfo.addr)) {
-          setUpdateParams({
-            ...updateParams,
-            address: masternodeInfo.addr
-          });
-        } else {
-          setUpdateParams({
-            ...updateParams,
-            address: couldSelect[0].value
-          });
-        }
-        setInputErrors({
-          ...inputErrors,
-          address: undefined
-        });
-      }
-    }
-  }, [masternodeInfo, selectChildWalletOptions, nodeAddressSelectType]);
 
   const doUpdate = useCallback(async () => {
     if (masternodeStorageContract && supernodeStorageContract && multicallContract && masternodeLogicContract && masternodeInfo) {
@@ -352,21 +263,6 @@ export default () => {
     }
   }, [activeAccount, updateParams, masternodeStorageContract, supernodeStorageContract, multicallContract, masternodeLogicContract, masternodeInfo]);
 
-  const helpToCreate = useCallback(() => {
-    if (updateParams.address && activeAccountChildWallets && activeAccountChildWallets.wallets[updateParams.address]
-      && walletsActiveKeystore?.mnemonic
-    ) {
-      const path = activeAccountChildWallets.wallets[updateParams.address].path;
-      const hdNode = generateChildWallet(
-        walletsActiveKeystore.mnemonic,
-        walletsActiveKeystore.password ? walletsActiveKeystore.password : "",
-        path
-      );
-      setNodeAddressPrivateKey(hdNode.privateKey);
-    }
-    setOpenSSH2CMDTerminalNodeModal(true);
-  }, [updateParams, walletsActiveKeystore, activeAccountChildWallets]);
-
   return <>
 
     <Row style={{ height: "50px" }}>
@@ -375,7 +271,7 @@ export default () => {
           navigate("/main/masternodes")
         }} />
         <Title level={4} style={{ lineHeight: "16px" }}>
-          编辑主节点
+          同步主节点数据
         </Title>
       </Col>
     </Row>
@@ -403,106 +299,47 @@ export default () => {
               isNodeCreator && <>
                 <Col span={24} style={{ marginTop: "20px" }}>
                   <Text type="secondary">主节点地址</Text>
-                  <Alert style={{ marginTop: "5px", marginBottom: "5px" }} type='warning' showIcon message={<>
-                    <Row>
-                      <Col span={24}>
-                        主节点运行时,节点程序需要加载主节点地址的私钥来签名见证凭证.
-                      </Col>
-                      <Col span={24}>
-                        由于该主节点地址的私钥会被远程存放在您的节点服务器上,<Text type='danger' strong>请避免向这个主节点地址进行资产转账.</Text>
-                      </Col>
-                    </Row>
-                  </>} />
                 </Col>
                 <Col span={24}>
-                  <Radio.Group value={nodeAddressSelectType} disabled={helpResult != undefined}
+                  <Input style={{ marginTop: "5px" }} value={updateParams?.address} placeholder='输入主节点地址'
                     onChange={(event) => {
+                      const input = event.target.value.trim();
                       setUpdateParams({
                         ...updateParams,
-                        address: masternodeInfo?.addr
+                        address: input
                       });
-                      setNodeAddressSelectType(event.target.value);
-                    }}>
-                    <Space style={{ height: "50px" }} direction="vertical">
-                      <Radio disabled={walletsActiveKeystore?.mnemonic == undefined}
-                        value={NodeAddressSelectType.GEN}>
-                        钱包通过当前账户的种子密钥生成子地址作为主节点地址
-                      </Radio>
-                      <Radio value={NodeAddressSelectType.INPUT}>
-                        不更换主节点地址
-                      </Radio>
-                    </Space>
-                  </Radio.Group>
-                  {
-                    nodeAddressSelectType == NodeAddressSelectType.INPUT &&
-                    <Input style={{ marginTop: "5px" }} value={updateParams?.address} placeholder='输入主节点地址' disabled={true}
-                      onChange={(event) => {
-                        const input = event.target.value.trim();
-                        setUpdateParams({
-                          ...updateParams,
-                          address: input
-                        });
-                        setInputErrors({
-                          ...inputErrors,
-                          address: undefined
-                        })
-                      }} />
-                  }
-                  {
-                    nodeAddressSelectType == NodeAddressSelectType.GEN &&
-                    <Spin spinning={false}>
-                      <Select
-                        style={{
-                          width: "100%",
-                          marginTop: "5px"
-                        }}
-                        placeholder="正在加载可用的主节点地址..."
-                        options={selectChildWalletOptions}
-                        disabled={helpResult ? true : false}
-                        onChange={(value) => {
-                          setUpdateParams({
-                            ...updateParams,
-                            address: value
-                          });
-                          setInputErrors({
-                            ...inputErrors,
-                            address: undefined
-                          })
-                        }}
-                        value={updateParams.address}
-                      />
-                    </Spin>
-                  }
+                      setInputErrors({
+                        ...inputErrors,
+                        address: undefined
+                      })
+                    }} />
                   {
                     inputErrors?.address && <Alert style={{ marginTop: "5px" }} type="error" showIcon message={inputErrors.address} />
                   }
                 </Col>
 
-                {
-                  helpResult && helpResult.enode && <>
-                    <Divider />
-                    <Col span={24} style={{ marginTop: "20px" }}>
-                      <Text type="secondary">ENODE</Text>
-                    </Col>
-                    <Col span={24}>
-                      <Input.TextArea style={{ height: "100px" }} value={updateParams.enode} disabled={helpResult != undefined}
-                        onChange={(event) => {
-                          const input = event.target.value.trim();
-                          setUpdateParams({
-                            ...updateParams,
-                            enode: input
-                          });
-                          setInputErrors({
-                            ...inputErrors,
-                            enode: undefined
-                          })
-                        }} />
-                      {
-                        inputErrors?.enode && <Alert style={{ marginTop: "5px" }} type="error" showIcon message={inputErrors.enode} />
-                      }
-                    </Col>
-                  </>
-                }
+                <Divider />
+                <Col span={24}>
+                  <Text type="secondary">ENODE</Text>
+                </Col>
+                <Col span={24}>
+                  <Input.TextArea style={{ height: "100px" }} value={updateParams.enode}
+                    onChange={(event) => {
+                      const input = event.target.value.trim();
+                      setUpdateParams({
+                        ...updateParams,
+                        enode: input
+                      });
+                      setInputErrors({
+                        ...inputErrors,
+                        enode: undefined
+                      })
+                    }} />
+                  {
+                    inputErrors?.enode && <Alert style={{ marginTop: "5px" }} type="error" showIcon message={inputErrors.enode} />
+                  }
+                </Col>
+
                 <Divider />
                 <Col span={24}>
                   <Text type="secondary">主节点简介</Text>
@@ -528,32 +365,14 @@ export default () => {
           </Row>
           <Divider />
           <Row>
-
             <Col span={24} style={{ textAlign: "right" }}>
               {
-                !helpResult && isNodeCreator && <>
-                  <Button onClick={() => helpToCreate()} type='primary'>下一步</Button>
-                </>
-              }
-              <br />
-              {
-                helpResult && helpResult.enode && <>
-                  {
-                    !needUpdate &&
-                    <Alert style={{ textAlign: "left" }} showIcon type="info" message={<>
-                      主节点信息与主节点服务器数据一致,无需调用合约更新数据
-                    </>} />
-                  }
-                  {
-                    needUpdate &&
-                    <Button disabled={!isNodeCreator} type="primary" onClick={doUpdate} loading={updating}>更新</Button>
-                  }
-                </>
-
+                isNodeCreator &&
+                <Button disabled={!isNodeCreator || !needUpdate} type="primary" onClick={doUpdate} loading={updating}>更新</Button>
               }
               {
                 !isNodeCreator && <>
-                  <Alert style={{ marginTop: "5px" , textAlign: "left"  }} type="warning" showIcon message={"只有节点的创建人才能操作该节点"} />
+                  <Alert style={{ marginTop: "5px", textAlign: "left" }} type="warning" showIcon message={"只有节点的创建人才能操作该节点"} />
                 </>
               }
             </Col>
@@ -627,29 +446,6 @@ export default () => {
         </div>
       </Card>
     </Row>
-
-    {
-      openSSH2CMDTerminalNodeModal && updateParams.address &&
-      <SSH2CMDTerminalNodeModal openSSH2CMDTerminalNodeModal={openSSH2CMDTerminalNodeModal} setOpenSSH2CMDTerminalNodeModal={setOpenSSH2CMDTerminalNodeModal}
-        nodeAddress={updateParams.address} nodeAddressPrivateKey={nodeAddressPrivateKey}
-        onSuccess={(enode: string, nodeAddress: string) => {
-          setHelpResult({ enode, nodeAddress });
-          setUpdateParams({
-            ...updateParams,
-            address: nodeAddress,
-            enode
-          });
-          setInputErrors({
-            ...inputErrors,
-            address: undefined,
-            enode: undefined
-          })
-        }}
-        onError={() => {
-
-        }} />
-    }
-
   </>
 
 }

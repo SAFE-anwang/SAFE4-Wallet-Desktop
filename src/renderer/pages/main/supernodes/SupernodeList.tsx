@@ -7,7 +7,7 @@ import { useNavigate } from 'react-router-dom';
 import { useMulticallContract, useSupernodeStorageContract, useSupernodeVoteContract } from '../../../hooks/useContracts';
 import { formatSupernodeInfo, SupernodeInfo } from '../../../structs/Supernode';
 import { useDispatch } from 'react-redux';
-import { applicationControlVoteSupernode } from '../../../state/application/action';
+import { applicationControlUpdateEditSupernodeId, applicationControlVoteSupernode } from '../../../state/application/action';
 import { ethers } from 'ethers';
 import { useWalletsActiveAccount } from '../../../state/wallets/hooks';
 import Supernode from './Supernode';
@@ -165,10 +165,12 @@ export default ({
             const supernodeInfo = formatSupernodeInfo(_supernodeInfo);
             supernodeInfo.totalVoteNum = CurrencyAmount.ether(JSBI.BigInt(totalVoteNum));
             supernodeInfo.totalAmount = CurrencyAmount.ether(JSBI.BigInt(totalAmount));
-            if (queryMySupernodes && supernodeInfo.creator == activeAccount) {
-              supernodeInfos.push(supernodeInfo);
+            if (queryMySupernodes) {
+              if (supernodeInfo.creator == activeAccount) {
+                supernodeInfos.push(supernodeInfo);
+              }
             } else if (queryJoinSupernodes) {
-              if (supernodeInfo.founders.map(founder => founder.addr).indexOf(activeAccount) > 0) {
+              if (supernodeInfo.founders.map(founder => founder.addr).indexOf(activeAccount) >= 0) {
                 supernodeInfos.push(supernodeInfo);
               }
             } else {
@@ -350,9 +352,9 @@ export default ({
                 {
                   queryMySupernodes &&
                   <Button size='small' type='default' style={{ float: "right" }} onClick={() => {
-                    setOpenEditSupernodeInfo(supernodeInfo);
-                    setOpenEditSupernodeModal(true);
-                  }}>编辑</Button>
+                    dispatch(applicationControlUpdateEditSupernodeId(supernodeInfo.id));
+                    navigate("/main/supernodes/selectSyncMode")
+                  }}>同步</Button>
                 }
               </Space>
 

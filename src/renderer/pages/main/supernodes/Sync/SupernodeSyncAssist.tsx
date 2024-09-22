@@ -6,25 +6,24 @@ import { ethers } from "ethers";
 import { CloseCircleTwoTone, LeftOutlined } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 import { AppState } from "../../../../state";
-import { formatMasternode, MasternodeInfo } from "../../../../structs/Masternode";
 import { useMasternodeLogicContract, useMasternodeStorageContract, useMulticallContract, useSupernodeStorageContract } from "../../../../hooks/useContracts";
 import { useTransactionAdder } from "../../../../state/transactions/hooks";
 import { generateChildWallet, NodeAddressSelectType, SupportChildWalletType, SupportNodeAddressSelectType } from "../../../../utils/GenerateChildWallet";
 import { useActiveAccountChildWallets, useWalletsActiveAccount, useWalletsActiveKeystore } from "../../../../state/wallets/hooks";
 import { TxExecuteStatus } from "../../safe3/Safe3";
 import { CallMulticallAggregateContractCall, SyncCallMulticallAggregate } from "../../../../state/multicall/CallMulticallAggregate";
-import { enodeRegex } from "../../supernodes/Register/SupernodeRegister";
-import { InputRules } from "../Register/MasternodeRegister";
+import { enodeRegex, InputRules } from "../Register/SupernodeRegister";
 import AddressComponent from "../../../components/AddressComponent";
 import SSH2CMDTerminalNodeModal from "../../../components/SSH2CMDTerminalNodeModal";
+import { formatSupernodeInfo, SupernodeInfo } from "../../../../structs/Supernode";
 
 const { Text, Title } = Typography
 
 export default () => {
 
   const navigate = useNavigate();
-  const editMasternodeId = useSelector((state: AppState) => state.application.control.editMasternodeId);
-  const [masternodeInfo, setMasternodeInfo] = useState<MasternodeInfo>();
+  const editSupernodeId = useSelector((state: AppState) => state.application.control.editSupernodeId);
+  const [supernodeInfo, setSupernodeInfo] = useState<SupernodeInfo>();
   const masternodeStorageContract = useMasternodeStorageContract();
   const supernodeStorageContract = useSupernodeStorageContract();
   const masternodeLogicContract = useMasternodeLogicContract(true);
@@ -32,7 +31,7 @@ export default () => {
   const multicallContract = useMulticallContract();
   const [nodeAddressSelectType, setNodeAddressSelectType] = useState<SupportNodeAddressSelectType>();
   const walletsActiveKeystore = useWalletsActiveKeystore();
-  const activeAccountChildWallets = useActiveAccountChildWallets(SupportChildWalletType.MN);
+  const activeAccountChildWallets = useActiveAccountChildWallets(SupportChildWalletType.SN);
   const activeAccount = useWalletsActiveAccount();
   const [openSSH2CMDTerminalNodeModal, setOpenSSH2CMDTerminalNodeModal] = useState<boolean>(false);
   const [nodeAddressPrivateKey, setNodeAddressPrivateKey] = useState<string>();
@@ -46,16 +45,19 @@ export default () => {
   const [updateParams, setUpdateParams] = useState<{
     address: string | undefined,
     enode: string | undefined,
-    description: string | undefined
+    description: string | undefined,
+    name: string | undefined
   }>({
     address: undefined,
     enode: undefined,
-    description: undefined
+    description: undefined,
+    name: undefined
   });
   const [inputErrors, setInputErrors] = useState<{
     address?: string,
     enode?: string,
-    description?: string
+    description?: string,
+    name?: string,
   }>();
   const [updateResult, setUpdateResult] = useState<{
     address?: TxExecuteStatus,
@@ -64,14 +66,14 @@ export default () => {
   }>();
 
   const isNodeCreator = useMemo(() => {
-    return masternodeInfo?.creator == activeAccount;
-  }, [masternodeInfo, activeAccount]);
+    return supernodeInfo?.creator == activeAccount;
+  }, [supernodeInfo, activeAccount]);
 
   const needUpdate = useMemo(() => {
-    return masternodeInfo?.addr != updateParams.address
-      || masternodeInfo?.enode != updateParams.enode
-      || masternodeInfo?.description != updateParams.description
-  }, [masternodeInfo, updateParams]);
+    return supernodeInfo?.addr != updateParams.address
+      || supernodeInfo?.enode != updateParams.enode
+      || supernodeInfo?.description != updateParams.description
+  }, [supernodeInfo, updateParams]);
 
   useEffect(() => {
     if (walletsActiveKeystore?.mnemonic) {
@@ -82,28 +84,29 @@ export default () => {
   }, [walletsActiveKeystore]);
 
   useEffect(() => {
-    if (editMasternodeId && masternodeStorageContract) {
-      masternodeStorageContract.callStatic.getInfoByID(editMasternodeId).then(_masternodeInfo => {
-        const masternodeInfo = formatMasternode(_masternodeInfo);
-        setMasternodeInfo(masternodeInfo);
+    if (editSupernodeId && supernodeStorageContract) {
+      supernodeStorageContract.callStatic.getInfoByID(editSupernodeId).then(_supernodeInfo => {
+        const supernodeInfo = formatSupernodeInfo(_supernodeInfo);
+        setSupernodeInfo(supernodeInfo);
         setUpdateParams({
-          address: masternodeInfo.addr,
-          enode: masternodeInfo.enode,
-          description: masternodeInfo.description
+          address: supernodeInfo.addr,
+          enode: supernodeInfo.enode,
+          description: supernodeInfo.description,
+          name: supernodeInfo.name
         });
       });
     }
-  }, [editMasternodeId, masternodeStorageContract]);
+  }, [editSupernodeId, supernodeStorageContract]);
 
   const selectChildWalletOptions = useMemo(() => {
-    if (activeAccountChildWallets && nodeAddressSelectType && masternodeInfo) {
+    if (activeAccountChildWallets && nodeAddressSelectType && supernodeInfo) {
       const options = Object.keys(activeAccountChildWallets.wallets)
         .map(childAddress => {
           const { path, exist } = activeAccountChildWallets.wallets[childAddress];
           return {
             address: childAddress,
             path,
-            exist: exist ? childAddress != masternodeInfo?.addr : exist,
+            exist: exist ? childAddress != supernodeInfo?.addr : exist,
             index: path.substring(Number(path.lastIndexOf("/") + 1))
           }
         })
@@ -121,7 +124,7 @@ export default () => {
                       </Col>
                     }
                     {
-                      address == masternodeInfo.addr && <Col span={6}>
+                      address == supernodeInfo.addr && <Col span={6}>
                         <Text type='secondary'>[当前节点]</Text>
                       </Col>
                     }
@@ -140,19 +143,21 @@ export default () => {
         })
       return options;
     }
-  }, [activeAccount, activeAccountChildWallets, nodeAddressSelectType, masternodeInfo]);
+  }, [activeAccount, activeAccountChildWallets, nodeAddressSelectType, supernodeInfo]);
 
   // 子钱包加载后,自动设置可用的第一个子钱包作为默认选择;
   useEffect(() => {
-    if (selectChildWalletOptions && nodeAddressSelectType == NodeAddressSelectType.GEN && masternodeInfo) {
+    if (selectChildWalletOptions && nodeAddressSelectType == NodeAddressSelectType.GEN && supernodeInfo) {
       const couldSelect = selectChildWalletOptions.filter(option => !option.disabled);
       if (couldSelect && couldSelect.length > 0) {
-        if (couldSelect.map(option => option.value).indexOf(masternodeInfo.addr)) {
+        if ( couldSelect.map(option => option.value).indexOf(supernodeInfo.addr) >= 0 ) {
+          console.log("超级节点地址是子地址")
           setUpdateParams({
             ...updateParams,
-            address: masternodeInfo.addr
+            address: supernodeInfo.addr
           });
         } else {
+          console.log("超级节点地址不是子地址")
           setUpdateParams({
             ...updateParams,
             address: couldSelect[0].value
@@ -164,29 +169,29 @@ export default () => {
         });
       }
     }
-  }, [masternodeInfo, selectChildWalletOptions, nodeAddressSelectType]);
+  }, [supernodeInfo, selectChildWalletOptions, nodeAddressSelectType]);
 
   const doUpdate = useCallback(async () => {
-    if (masternodeStorageContract && supernodeStorageContract && multicallContract && masternodeLogicContract && masternodeInfo) {
+    if (masternodeStorageContract && supernodeStorageContract && multicallContract && masternodeLogicContract && supernodeInfo) {
       const { address, enode, description } = updateParams;
       const inputErrors: {
         address?: string, enode?: string, description?: string
       } = {};
       if (!address) {
-        inputErrors.address = "请输入主节点地址";
+        inputErrors.address = "请输入超级节点地址";
       } else if (!ethers.utils.isAddress(address)) {
-        inputErrors.address = "请输入合法的主节点地址";
+        inputErrors.address = "请输入合法的超级节点地址";
       }
       if (!enode) {
-        inputErrors.enode = "请输入主节点ENODE";
+        inputErrors.enode = "请输入超级节点ENODE";
       } else {
         const isMatch = enodeRegex.test(enode);
         if (!isMatch) {
-          inputErrors.enode = "主节点ENODE格式不正确!";
+          inputErrors.enode = "超级节点ENODE格式不正确!";
         }
       }
       if (!description) {
-        inputErrors.description = "请输入主节点简介";
+        inputErrors.description = "请输入超级节点简介";
       } else if (description.length < InputRules.description.min || description.length > InputRules.description.max) {
         inputErrors.description = `简介信息长度需要大于${InputRules.description.min}且小于${InputRules.description.max}`;
       }
@@ -196,7 +201,7 @@ export default () => {
       }
       // Check Address;
       setUpdating(true);
-      if (address != masternodeInfo.addr) {
+      if (address != supernodeInfo.addr) {
         const addrExistCall: CallMulticallAggregateContractCall = {
           contract: masternodeStorageContract,
           functionName: "exist",
@@ -232,7 +237,7 @@ export default () => {
         }
         if (addrIsFounder || addrIsSupernodeFounder) {
           if (addrIsFounder) {
-            inputErrors.address = "该地址已参与主节点地址创建,无法使用";
+            inputErrors.address = "该地址已参与主点地址创建,无法使用";
           }
           if (addrIsSupernodeFounder) {
             inputErrors.address = "该地址已参与超级节点地址创建,无法使用";
@@ -240,7 +245,7 @@ export default () => {
         }
       }
       // Check Enode
-      if (enode != masternodeInfo.enode) {
+      if (enode != supernodeInfo.enode) {
         const enodeExistCall: CallMulticallAggregateContractCall = {
           contract: masternodeStorageContract,
           functionName: "existEnode",
@@ -266,14 +271,14 @@ export default () => {
 
       let _updateResult = updateResult ?? {};
       // DO update address
-      if (masternodeInfo.addr != address) {
+      if (supernodeInfo.addr != address) {
         try {
-          const response = await masternodeLogicContract.changeAddress(masternodeInfo.addr, address);
+          const response = await supernodeStorageContract.changeAddress(supernodeInfo.addr, address);
           const { hash, data } = response;
-          addTransaction({ to: masternodeLogicContract.address }, response, {
+          addTransaction({ to: supernodeStorageContract.address }, response, {
             call: {
               from: activeAccount,
-              to: masternodeLogicContract.address,
+              to: supernodeStorageContract.address,
               input: data,
               value: "0"
             }
@@ -293,14 +298,14 @@ export default () => {
         console.log("Address 无变化,不需更新");
       }
       // DO Update Enode
-      if (masternodeInfo.enode != enode) {
+      if (supernodeInfo.enode != enode) {
         try {
-          const response = await masternodeLogicContract.changeEnode(address, enode);
+          const response = await supernodeStorageContract.changeEnode(address, enode);
           const { hash, data } = response;
-          addTransaction({ to: masternodeLogicContract.address }, response, {
+          addTransaction({ to: supernodeStorageContract.address }, response, {
             call: {
               from: activeAccount,
-              to: masternodeLogicContract.address,
+              to: supernodeStorageContract.address,
               input: data,
               value: "0"
             }
@@ -320,14 +325,14 @@ export default () => {
         console.log("ENODE 无变化,不需更新");
       }
       // DO Update description
-      if (description != masternodeInfo.description) {
+      if (description != supernodeInfo.description) {
         try {
-          const response = await masternodeLogicContract.changeDescription(address, description);
+          const response = await supernodeStorageContract.changeDescription(address, description);
           const { hash, data } = response;
-          addTransaction({ to: masternodeLogicContract.address }, response, {
+          addTransaction({ to: supernodeStorageContract.address }, response, {
             call: {
               from: activeAccount,
-              to: masternodeLogicContract.address,
+              to: supernodeStorageContract.address,
               input: data,
               value: "0"
             }
@@ -350,7 +355,7 @@ export default () => {
       console.log("执行完毕");
       setUpdating(false);
     }
-  }, [activeAccount, updateParams, masternodeStorageContract, supernodeStorageContract, multicallContract, masternodeLogicContract, masternodeInfo]);
+  }, [activeAccount, updateParams, masternodeStorageContract, supernodeStorageContract, multicallContract, masternodeLogicContract, supernodeInfo]);
 
   const helpToCreate = useCallback(() => {
     if (updateParams.address && activeAccountChildWallets && activeAccountChildWallets.wallets[updateParams.address]
@@ -372,10 +377,10 @@ export default () => {
     <Row style={{ height: "50px" }}>
       <Col span={12}>
         <Button style={{ marginTop: "14px", marginRight: "12px", float: "left" }} size="large" shape="circle" icon={<LeftOutlined />} onClick={() => {
-          navigate("/main/masternodes")
+          navigate("/main/supernodes")
         }} />
         <Title level={4} style={{ lineHeight: "16px" }}>
-          编辑主节点
+          同步超级节点信息
         </Title>
       </Col>
     </Row>
@@ -386,30 +391,30 @@ export default () => {
 
           <Row style={{ marginTop: "20px" }}>
             <Col span={24}>
-              <Text type="secondary">主节点ID</Text>
+              <Text type="secondary">超级节点ID</Text>
             </Col>
             <Col>
-              <Text strong>{masternodeInfo?.id}</Text>
+              <Text strong>{supernodeInfo?.id}</Text>
             </Col>
             <Col span={24} style={{ marginTop: "20px" }}>
               <Text type="secondary">创建者</Text>
             </Col>
             <Col span={24}>
               {
-                masternodeInfo && <AddressComponent address={masternodeInfo?.creator} />
+                supernodeInfo && <AddressComponent address={supernodeInfo?.creator} />
               }
             </Col>
             {
               isNodeCreator && <>
                 <Col span={24} style={{ marginTop: "20px" }}>
-                  <Text type="secondary">主节点地址</Text>
+                  <Text type="secondary">超级节点地址</Text>
                   <Alert style={{ marginTop: "5px", marginBottom: "5px" }} type='warning' showIcon message={<>
                     <Row>
                       <Col span={24}>
-                        主节点运行时,节点程序需要加载主节点地址的私钥来签名见证凭证.
+                        超级节点运行时,节点程序需要加载超级节点地址的私钥来签名见证凭证.
                       </Col>
                       <Col span={24}>
-                        由于该主节点地址的私钥会被远程存放在您的节点服务器上,<Text type='danger' strong>请避免向这个主节点地址进行资产转账.</Text>
+                        由于该超级节点地址的私钥会被远程存放在您的节点服务器上,<Text type='danger' strong>请避免向这个超级节点地址进行资产转账.</Text>
                       </Col>
                     </Row>
                   </>} />
@@ -419,23 +424,20 @@ export default () => {
                     onChange={(event) => {
                       setUpdateParams({
                         ...updateParams,
-                        address: masternodeInfo?.addr
+                        address: supernodeInfo?.addr
                       });
                       setNodeAddressSelectType(event.target.value);
                     }}>
-                    <Space style={{ height: "50px" }} direction="vertical">
+                    <Space style={{ height: "20px" }} direction="vertical">
                       <Radio disabled={walletsActiveKeystore?.mnemonic == undefined}
                         value={NodeAddressSelectType.GEN}>
-                        钱包通过当前账户的种子密钥生成子地址作为主节点地址
-                      </Radio>
-                      <Radio value={NodeAddressSelectType.INPUT}>
-                        不更换主节点地址
+                        钱包通过当前账户的种子密钥生成子地址作为超级节点地址
                       </Radio>
                     </Space>
                   </Radio.Group>
                   {
                     nodeAddressSelectType == NodeAddressSelectType.INPUT &&
-                    <Input style={{ marginTop: "5px" }} value={updateParams?.address} placeholder='输入主节点地址' disabled={true}
+                    <Input style={{ marginTop: "5px" }} value={updateParams?.address} placeholder='输入超级节点地址' disabled={true}
                       onChange={(event) => {
                         const input = event.target.value.trim();
                         setUpdateParams({
@@ -456,7 +458,7 @@ export default () => {
                           width: "100%",
                           marginTop: "5px"
                         }}
-                        placeholder="正在加载可用的主节点地址..."
+                        placeholder="正在加载可用的超级节点地址..."
                         options={selectChildWalletOptions}
                         disabled={helpResult ? true : false}
                         onChange={(value) => {
@@ -505,7 +507,27 @@ export default () => {
                 }
                 <Divider />
                 <Col span={24}>
-                  <Text type="secondary">主节点简介</Text>
+                  <Text type="secondary">超级节点名称</Text>
+                </Col>
+                <Col span={24}>
+                  <Input value={updateParams.name} onChange={(event) => {
+                    const input = event.target.value.trim();
+                    setUpdateParams({
+                      ...updateParams,
+                      name: input
+                    });
+                    setInputErrors({
+                      ...inputErrors,
+                      name: undefined
+                    })
+                  }} />
+                  {
+                    inputErrors?.name && <Alert style={{ marginTop: "5px" }} type="error" showIcon message={inputErrors.name} />
+                  }
+                </Col>
+                <Divider />
+                <Col span={24}>
+                  <Text type="secondary">超级节点简介</Text>
                 </Col>
                 <Col span={24}>
                   <Input.TextArea style={{ height: "100px" }} value={updateParams.description} onChange={(event) => {
@@ -541,7 +563,7 @@ export default () => {
                   {
                     !needUpdate &&
                     <Alert style={{ textAlign: "left" }} showIcon type="info" message={<>
-                      主节点信息与主节点服务器数据一致,无需调用合约更新数据
+                      超级节点信息与超级节点服务器数据一致,无需调用合约更新数据
                     </>} />
                   }
                   {
@@ -553,7 +575,7 @@ export default () => {
               }
               {
                 !isNodeCreator && <>
-                  <Alert style={{ marginTop: "5px" , textAlign: "left"  }} type="warning" showIcon message={"只有节点的创建人才能操作该节点"} />
+                  <Alert style={{ marginTop: "5px", textAlign: "left" }} type="warning" showIcon message={"只有节点的创建人才能操作该节点"} />
                 </>
               }
             </Col>
