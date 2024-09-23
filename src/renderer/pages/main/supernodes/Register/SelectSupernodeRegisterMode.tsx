@@ -25,7 +25,7 @@ export default () => {
                   <Text style={{ fontSize: "40px" }}>辅助模式</Text>
                 </Col>
                 <Col span={24}>
-                  <Text type="secondary" style={{ fontSize: "20px" }}>已有云服务器,钱包通过SSH登陆辅助建立主节点</Text>
+                  <Text type="secondary" style={{ fontSize: "20px" }}>已有云服务器,钱包通过SSH登陆辅助建立超级节点</Text>
                 </Col>
               </Row>
             </Button>
@@ -37,7 +37,7 @@ export default () => {
                   <Text style={{ fontSize: "40px" }}>专家模式</Text>
                 </Col>
                 <Col span={24}>
-                  <Text type="secondary" style={{ fontSize: "20px" }}>已在服务器上配置主节点,直接填入注册数据</Text>
+                  <Text type="secondary" style={{ fontSize: "20px" }}>已在服务器上配置超级节点,直接填入注册数据</Text>
                 </Col>
               </Row>
             </Button>

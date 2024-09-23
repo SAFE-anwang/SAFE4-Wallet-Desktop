@@ -52,7 +52,7 @@ export default ({
           value: value,
         }
       ).then((response: TransactionResponse) => {
-        const { hash , data } = response;
+        const { hash, data } = response;
         addTransaction({ to: masternodeLogicContract.address }, response, {
           call: {
             from: activeAccount,
@@ -72,15 +72,15 @@ export default ({
     }
   }, [activeAccount, masternodeLogicContract, valueAmount]);
 
-  const [txHash,setTxHash] = useState<string>();
+  const [txHash, setTxHash] = useState<string>();
   const cancel = useCallback(() => {
     setOpenAppendModal(false);
-    if (txHash){
+    if (txHash) {
       setTxHash(undefined);
       dispatch(applicationUpdateWalletTab("history"));
       navigate("/main/wallet");
     }
-  }, [txHash] );
+  }, [txHash]);
 
   return <Modal title="联合创建超级节点" open={openAppendModal} footer={null} destroyOnClose onCancel={cancel}>
     <Divider />

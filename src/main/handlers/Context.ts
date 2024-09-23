@@ -8,7 +8,7 @@ export class Context {
     data: string,
     keystores: string,
     database: string,
-    kys : string
+    kys: string
   } = {
       resource: "",
       data: "data",
@@ -17,17 +17,17 @@ export class Context {
       kys: "safe4.wallet.kys"
     };
 
-  constructor(resourcePath: string , appIsPackaged : boolean) {
+  constructor(resourcePath: string, appIsPackaged: boolean) {
     this.path.resource = resourcePath;
-    if ( appIsPackaged ){
+    if (appIsPackaged) {
       // 将数据目录定位到不同系统下的安装应用的根目录
       // 然后就相当于在与应用同级的目录下创建数据目录,避免重新安装应用时,会覆盖掉数据.
       const _appsDir = process.platform == "darwin" ? path.join(this.path.resource, "../../../")
-                        : path.join(this.path.resource, "../../");
-      this.path.data = path.join(_appsDir, "testnet_"+this.path.data);
-    }else{
+        : path.join(this.path.resource, "../../");
+      this.path.data = path.join(_appsDir, "testnet_" + this.path.data);
+    } else {
       // 如果是在开发环境下,那就在源码目录内生成data文件
-      this.path.data = path.join(this.path.resource,this.path.data);
+      this.path.data = path.join(this.path.resource, this.path.data);
     }
     // 使用 fs.existsSync() 同步地检查文件夹是否存在
     if (!fs.existsSync(this.path.data)) {

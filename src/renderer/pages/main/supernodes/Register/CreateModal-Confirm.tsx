@@ -12,6 +12,7 @@ import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { applicationUpdateWalletTab } from "../../../../state/application/action";
 import { Safe4_Business_Config } from "../../../../config";
+import { walletsUpdateUsedChildWalletAddress } from "../../../../state/wallets/action";
 
 const { Text } = Typography;
 
@@ -23,7 +24,7 @@ export default ({
   setOpenCreateModal: (openCreateModal: boolean) => void,
   createParams: {
     createType: number,
-    address : string | undefined,
+    address: string | undefined,
     name: string | undefined,
     enode: string | undefined,
     description: string | undefined,
@@ -49,12 +50,12 @@ export default ({
 
   const doCreateSupernode = useCallback(() => {
     if (activeAccount && supernodeLogicContract) {
-      const { createType, name, enode, description, incentivePlan , address } = createParams;
+      const { createType, name, enode, description, incentivePlan, address } = createParams;
       // function register(bool _isUnion, address _addr, uint _lockDay, string memory _name, string memory _enode, string memory _description,
       //                    uint _creatorIncentive, uint _partnerIncentive, uint _voterIncentive) external payable;
       const value = ethers.utils.parseEther(
         (Supernode_create_type_Union == createType ? Safe4_Business_Config.Supernode.Create.UnionLockAmount
-          : Safe4_Business_Config.Supernode.Create.LockAmount ) + ""
+          : Safe4_Business_Config.Supernode.Create.LockAmount) + ""
       );
       setSending(true);
       supernodeLogicContract.register(
@@ -79,6 +80,10 @@ export default ({
         setTxHash(hash);
         setSending(false);
         setTransactionResponse(response);
+        dispatch(walletsUpdateUsedChildWalletAddress({
+          address,
+          used: true
+        }));
       }).catch((err: any) => {
         setSending(false);
         setErr(err)

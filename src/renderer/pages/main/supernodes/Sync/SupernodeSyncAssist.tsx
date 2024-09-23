@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { Alert, Button, Card, Col, Divider, Input, Radio, Row, Select, Space, Spin, Typography } from "antd";
 
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { ethers } from "ethers";
 import { CloseCircleTwoTone, LeftOutlined } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 import { AppState } from "../../../../state";
-import { useMasternodeLogicContract, useMasternodeStorageContract, useMulticallContract, useSupernodeStorageContract } from "../../../../hooks/useContracts";
+import { useMasternodeLogicContract, useMasternodeStorageContract, useMulticallContract, useSupernodeLogicContract, useSupernodeStorageContract } from "../../../../hooks/useContracts";
 import { useTransactionAdder } from "../../../../state/transactions/hooks";
 import { generateChildWallet, NodeAddressSelectType, SupportChildWalletType, SupportNodeAddressSelectType } from "../../../../utils/GenerateChildWallet";
 import { useActiveAccountChildWallets, useWalletsActiveAccount, useWalletsActiveKeystore } from "../../../../state/wallets/hooks";
@@ -16,6 +16,7 @@ import { enodeRegex, InputRules } from "../Register/SupernodeRegister";
 import AddressComponent from "../../../components/AddressComponent";
 import SSH2CMDTerminalNodeModal from "../../../components/SSH2CMDTerminalNodeModal";
 import { formatSupernodeInfo, SupernodeInfo } from "../../../../structs/Supernode";
+import { walletsUpdateUsedChildWalletAddress } from "../../../../state/wallets/action";
 
 const { Text, Title } = Typography
 
@@ -26,7 +27,7 @@ export default () => {
   const [supernodeInfo, setSupernodeInfo] = useState<SupernodeInfo>();
   const masternodeStorageContract = useMasternodeStorageContract();
   const supernodeStorageContract = useSupernodeStorageContract();
-  const masternodeLogicContract = useMasternodeLogicContract(true);
+  const supernodeLogicContract = useSupernodeLogicContract(true);
   const addTransaction = useTransactionAdder();
   const multicallContract = useMulticallContract();
   const [nodeAddressSelectType, setNodeAddressSelectType] = useState<SupportNodeAddressSelectType>();
@@ -35,6 +36,7 @@ export default () => {
   const activeAccount = useWalletsActiveAccount();
   const [openSSH2CMDTerminalNodeModal, setOpenSSH2CMDTerminalNodeModal] = useState<boolean>(false);
   const [nodeAddressPrivateKey, setNodeAddressPrivateKey] = useState<string>();
+  const dispatch = useDispatch();
   const [helpResult, setHelpResult] = useState<
     {
       enode: string,
@@ -150,7 +152,7 @@ export default () => {
     if (selectChildWalletOptions && nodeAddressSelectType == NodeAddressSelectType.GEN && supernodeInfo) {
       const couldSelect = selectChildWalletOptions.filter(option => !option.disabled);
       if (couldSelect && couldSelect.length > 0) {
-        if ( couldSelect.map(option => option.value).indexOf(supernodeInfo.addr) >= 0 ) {
+        if (couldSelect.map(option => option.value).indexOf(supernodeInfo.addr) >= 0) {
           console.log("超级节点地址是子地址")
           setUpdateParams({
             ...updateParams,
@@ -172,7 +174,7 @@ export default () => {
   }, [supernodeInfo, selectChildWalletOptions, nodeAddressSelectType]);
 
   const doUpdate = useCallback(async () => {
-    if (masternodeStorageContract && supernodeStorageContract && multicallContract && masternodeLogicContract && supernodeInfo) {
+    if (masternodeStorageContract && supernodeStorageContract && multicallContract && supernodeLogicContract && supernodeInfo) {
       const { address, enode, description } = updateParams;
       const inputErrors: {
         address?: string, enode?: string, description?: string
@@ -273,12 +275,12 @@ export default () => {
       // DO update address
       if (supernodeInfo.addr != address) {
         try {
-          const response = await supernodeStorageContract.changeAddress(supernodeInfo.addr, address);
+          const response = await supernodeLogicContract.changeAddress(supernodeInfo.addr, address);
           const { hash, data } = response;
-          addTransaction({ to: supernodeStorageContract.address }, response, {
+          addTransaction({ to: supernodeLogicContract.address }, response, {
             call: {
               from: activeAccount,
-              to: supernodeStorageContract.address,
+              to: supernodeLogicContract.address,
               input: data,
               value: "0"
             }
@@ -287,6 +289,10 @@ export default () => {
             txHash: hash,
             status: 1,
           }
+          dispatch(walletsUpdateUsedChildWalletAddress({
+            address,
+            used: true
+          }));
         } catch (err: any) {
           _updateResult.address = {
             status: 0,
@@ -300,12 +306,12 @@ export default () => {
       // DO Update Enode
       if (supernodeInfo.enode != enode) {
         try {
-          const response = await supernodeStorageContract.changeEnode(address, enode);
+          const response = await supernodeLogicContract.changeEnode(address, enode);
           const { hash, data } = response;
-          addTransaction({ to: supernodeStorageContract.address }, response, {
+          addTransaction({ to: supernodeLogicContract.address }, response, {
             call: {
               from: activeAccount,
-              to: supernodeStorageContract.address,
+              to: supernodeLogicContract.address,
               input: data,
               value: "0"
             }
@@ -327,12 +333,12 @@ export default () => {
       // DO Update description
       if (description != supernodeInfo.description) {
         try {
-          const response = await supernodeStorageContract.changeDescription(address, description);
+          const response = await supernodeLogicContract.changeDescription(address, description);
           const { hash, data } = response;
-          addTransaction({ to: supernodeStorageContract.address }, response, {
+          addTransaction({ to: supernodeLogicContract.address }, response, {
             call: {
               from: activeAccount,
-              to: supernodeStorageContract.address,
+              to: supernodeLogicContract.address,
               input: data,
               value: "0"
             }
@@ -355,7 +361,7 @@ export default () => {
       console.log("执行完毕");
       setUpdating(false);
     }
-  }, [activeAccount, updateParams, masternodeStorageContract, supernodeStorageContract, multicallContract, masternodeLogicContract, supernodeInfo]);
+  }, [activeAccount, updateParams, masternodeStorageContract, supernodeStorageContract, multicallContract, supernodeLogicContract, supernodeInfo]);
 
   const helpToCreate = useCallback(() => {
     if (updateParams.address && activeAccountChildWallets && activeAccountChildWallets.wallets[updateParams.address]
