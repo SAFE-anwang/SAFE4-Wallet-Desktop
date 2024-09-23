@@ -7,12 +7,14 @@ export class Context {
     resource: string,
     data: string,
     keystores: string,
-    database: string
+    database: string,
+    kys : string
   } = {
       resource: "",
       data: "data",
       keystores: "safe4.wallet.keystores",
-      database: "safe4.wallet.sqlite3"
+      database: "safe4.wallet.db",
+      kys: "safe4.wallet.kys"
     };
 
   constructor(resourcePath: string , appIsPackaged : boolean) {
@@ -24,7 +26,7 @@ export class Context {
                         : path.join(this.path.resource, "../../");
       this.path.data = path.join(_appsDir, "testnet_"+this.path.data);
     }else{
-      // 如果实在开发环境下,那就在源码目录内生成data文件
+      // 如果是在开发环境下,那就在源码目录内生成data文件
       this.path.data = path.join(this.path.resource,this.path.data);
     }
     // 使用 fs.existsSync() 同步地检查文件夹是否存在
@@ -37,6 +39,7 @@ export class Context {
     }
     this.path.database = path.join(this.path.data, this.path.database);
     this.path.keystores = path.join(this.path.data, this.path.keystores);
+    this.path.kys = path.join(this.path.data, this.path.kys);
   }
 
 }

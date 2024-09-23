@@ -16,23 +16,40 @@ export class IndexSingalHandler implements ListenSignalHandler {
     return IndexSingal;
   }
   private db: any;
+  private kysDB: any;
   private ctx: Context;
+
   public getSqlite3DB(): any {
     return this.db;
+  }
+
+  public getSqliteKys(): any {
+    return this.kysDB;
   }
 
   constructor(ctx: Context, DBConnectedCallback: () => void) {
     this.ctx = ctx;
     const sqlite3 = require('sqlite3').verbose();
     const database = ctx.path.database;
-    console.log("[sqlite3] Connect DB path :", database)
+    const kysDBPath = ctx.path.kys;
+    console.log("[sqlite3] Connect DB path :", database);
+    console.log("[sqlite3] Connect KYS-DB path :", kysDBPath);
+    this.kysDB = new sqlite3.Database(
+      kysDBPath,
+      function (err: any) {
+        if (err) {
+          return;
+        }
+        console.log("Connect sqlite3-kysdb successed.")
+      }
+    )
     this.db = new sqlite3.Database(
       database,
       function (err: any) {
         if (err) {
           return;
         }
-        console.log("Connect sqlite3 successed.")
+        console.log("Connect sqlite3-db successed.")
         DBConnectedCallback();
       }
     )
@@ -48,13 +65,14 @@ export class IndexSingalHandler implements ListenSignalHandler {
     event.reply(Channel, [this.getSingal(), method, [data]])
   }
 
-  private async load() : Promise<any> {
-    const { walletKeystores, encrypt } = this.loadWalletKeystores();
+  private async load(): Promise<any> {
+    const encrypt = await this.loadWalletKeystoreFromDB();
+    // const { walletKeystores, encrypt } = this.loadWalletKeystores();
     const rpc_configs = await this.loadRpcConfig();
     const wallet_names = await this.loadWalletNames();
     return {
       path: this.ctx.path,
-      walletKeystores,
+      walletKeystores: [],
       encrypt,
       rpc_configs,
       wallet_names
@@ -92,6 +110,26 @@ export class IndexSingalHandler implements ListenSignalHandler {
         }
       )
     });
+  }
+
+  private async loadWalletKeystoreFromDB() {
+    const queryPromise = new Promise<any>((resolve, reject) => {
+      this.kysDB.all("SELECT * from wallet_kys limit 1", [],
+        (err: any, rows: any) => {
+          resolve(rows);
+        })
+    });
+    const rows = await queryPromise;
+    if (rows.length > 0) {
+      const base58Encode = rows[0].data;
+      const encrypt = JSON.parse(
+        ethers.utils.toUtf8String(
+          ethers.utils.base58.decode(base58Encode)
+        )
+      );
+      return encrypt;
+    }
+    return undefined;
   }
 
   private loadWalletKeystores(): { walletKeystores?: any, encrypt?: any } {

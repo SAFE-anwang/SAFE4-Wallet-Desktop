@@ -172,7 +172,7 @@ export default function App() {
       const iv = CryptoJS.enc.Hex.parse(encrypt.iv);
       const key = CryptoJS.PBKDF2(password, salt, {
         keySize: 256 / 32,
-        iterations: 1024,
+        iterations: 102400,
         hasher: CryptoJS.algo.SHA256
       });
       const decrypted = CryptoJS.AES.decrypt(

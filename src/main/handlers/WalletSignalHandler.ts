@@ -4,7 +4,6 @@ import { Context } from "./Context";
 import { ListenSignalHandler } from "./ListenSignalHandler";
 import * as bip39 from 'bip39';
 import { base58 } from "ethers/lib/utils";
-
 const fs = require('fs');
 const CryptoJS = require('crypto-js');
 
@@ -22,9 +21,28 @@ export class WalletSignalHandler implements ListenSignalHandler {
   getSingal(): string {
     return WalletSignal;
   }
-  ctx: Context
-  constructor(ctx: Context) {
+
+  ctx: Context;
+
+  kysDB: any;
+
+  constructor(ctx: Context, kysDB: any) {
     this.ctx = ctx;
+    this.kysDB = kysDB;
+    this.kysDB.run(
+      "CREATE TABLE IF NOT EXISTS \"wallet_kys\" ( "
+      + "\"id\" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,"
+      + " \"data\" blob"
+      + ");",
+      [],
+      (err: any) => {
+        if (err) {
+          console.log("[sqlite3-kys] Create Table wallet_kys Error:", err);
+          return;
+        }
+        console.log("[sqlite3-kys] Check wallet_kys Exisits.");
+      }
+    )
   }
 
   async handleOn(event: Electron.IpcMainEvent, ...args: any[]): Promise<any> {
@@ -50,15 +68,17 @@ export class WalletSignalHandler implements ListenSignalHandler {
   }
 
   private async storeWallet(params: any[]) {
+
     const walletList = params[0];
     const applicationPassword = params[1];
     const content = JSON.stringify(walletList);
+
     try {
       // pbkdf2 the password with rondom-salt(32 byte length)
       const salt = CryptoJS.lib.WordArray.random(32);
       const aesKey = CryptoJS.PBKDF2(applicationPassword, salt, {
         keySize: 256 / 32,
-        iterations: 1024,
+        iterations: 102400,
         hasher: CryptoJS.algo.SHA256
       });
       // aes by secret with random-iv(16 byte length)
@@ -74,10 +94,31 @@ export class WalletSignalHandler implements ListenSignalHandler {
       });
       // base58
       const base58Encode = base58.encode(ethers.utils.toUtf8Bytes(json));
-      const tempKeystoresFilePath = this.ctx.path.keystores + ".temp";
-      await fs.writeFileSync(tempKeystoresFilePath, base58Encode, 'utf8');
-      await fs.renameSync(tempKeystoresFilePath, this.ctx.path.keystores);
-      // await fs.writeFileSync(this.ctx.path.keystores, base58Encode, 'utf8');
+      const dbUpdatePromise = new Promise((resolve, reject) => {
+        this.kysDB.all("SELECT * FROM wallet_kys", [], (err: any, rows: any[]) => {
+          if (err) {
+            reject(err);
+            return;
+          }
+          if (rows && rows.length > 0) {
+            console.log("[sqlite3-kys] UPDATE for stored.")
+            this.kysDB.run("UPDATE wallet_kys set data = ?", [base58Encode], (err: any, rows: any) => {
+              if (!err) {
+                resolve(rows);
+              }
+            })
+          } else {
+            console.log("[sqlite3-kys] INSERT for stored.")
+            this.kysDB.run("INSERT INTO wallet_kys(data) VALUES(?)", [base58Encode], (err: any, rows: any) => {
+              if (!err) {
+                resolve(rows);
+              }
+            })
+          }
+        })
+      });
+      const rows = await dbUpdatePromise;
+      console.log("stored wallet-keystores into kys-db");
       return {
         success: true,
         path: Wallet_Keystore_FileName
