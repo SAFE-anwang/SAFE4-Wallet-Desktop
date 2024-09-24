@@ -18,8 +18,9 @@ export default ({
   setAddressPrivateKeyMap: (map: AddressPrivateKeyMap) => void
 }) => {
   const data = useSelector<AppState, { [key: string]: any }>(state => state.application.data);
+  const safe3KeystoresFile_windows = data["data"] + "\\safe3.keystores";
   const safe3KeystoresFile = path.join( data["data"] , "safe3.keystores" );
-  const dumpCommand = `dumpwallet "${safe3KeystoresFile}"`;
+  const dumpCommand = `dumpwallet "${safe3KeystoresFile_windows}"`;
   const [loading, setLoading] = useState<boolean>(false);
   const loadSafe3PrivateKeyFile = function () {
     setLoading(true);
