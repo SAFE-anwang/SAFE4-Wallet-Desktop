@@ -47,7 +47,6 @@ export default () => {
   }, [safe3RedeemList, safe3RedeemStatistic]);
 
   return <>
-
     <Row style={{ height: "50px" }}>
       <Col span={12}>
         <Title level={4} style={{ lineHeight: "16px" }}>
@@ -55,7 +54,6 @@ export default () => {
         </Title>
       </Col>
     </Row>
-
     <div style={{ width: "100%", paddingTop: "40px" }}>
       <div style={{ margin: "auto", width: "90%" }}>
         <Card>

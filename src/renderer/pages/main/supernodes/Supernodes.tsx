@@ -81,8 +81,8 @@ export default () => {
       <div style={{ margin: "auto", width: "90%" }}>
         <Card>
           <Alert showIcon type='info' message={<>
-            <Text>什么是超级节点</Text><br />
-            <Text>超级节点能干什么</Text><br />
+            <Text>超级节点将 Safe4 网络中的交易进行验证打包,写入区块链中</Text><br />
+            <Text>每一次成功写入区块,都可以获得超级节点奖励,并将奖励分配给它的创建者以及投票人</Text><br />
           </>} />
           <Divider />
           <>

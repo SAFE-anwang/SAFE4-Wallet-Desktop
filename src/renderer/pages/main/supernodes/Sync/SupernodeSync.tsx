@@ -283,7 +283,7 @@ export default () => {
             txHash: hash
           }
         } catch (err: any) {
-          console.log("Error >>" , err)
+          console.log("Error >>", err)
           _updateResult.name = {
             status: 1,
             error: err.error.reason
@@ -420,27 +420,16 @@ export default () => {
           </Row>
           <Divider />
           <Row>
-            <Col span={24} style={{ textAlign: "right" }}>
-              {
-                isNodeCreator &&
-                <Button disabled={!needUpdate} type="primary" onClick={doUpdate} loading={updating}>更新</Button>
-              }
-              {
-                !isNodeCreator && <>
-                  <Alert style={{ marginTop: "5px", textAlign: "left" }} type="warning" showIcon message={"只有节点的创建人才能操作该节点"} />
-                </>
-              }
-            </Col>
             <Col span={24}>
               {
                 updateResult &&
                 <>
-                  <Alert style={{ marginTop: "20px" }} type="success" message={<>
+                  <Alert style={{ marginTop: "20px" , marginBottom:"20px" }} type="success" message={<>
                     {
                       updateResult.address && <>
                         {
                           updateResult.address.status == 1 && <>
-                            <Text type="secondary">地址更新</Text><br />
+                            <Text type="secondary">地址更新交易哈希</Text><br />
                             <Text strong>{updateResult.address.txHash}</Text> <br />
                           </>
                         }
@@ -459,7 +448,7 @@ export default () => {
                       updateResult.enode && <>
                         {
                           updateResult.enode.status == 1 && <>
-                            <Text type="secondary">ENODE更新</Text><br />
+                            <Text type="secondary">ENODE更新交易哈希</Text><br />
                             <Text strong>{updateResult.enode.txHash}</Text> <br />
                           </>
                         }
@@ -475,29 +464,10 @@ export default () => {
                       </>
                     }
                     {
-                      updateResult.description && <>
-                        {
-                          updateResult.description.status == 1 && <>
-                            <Text type="secondary">简介更新</Text><br />
-                            <Text strong>{updateResult.description.txHash}</Text> <br />
-                          </>
-                        }
-                        {
-                          updateResult.description.status == 0 && <>
-                            <Text type="secondary">简介更新失败</Text><br />
-                            <Text strong type="danger">
-                              <CloseCircleTwoTone twoToneColor="red" style={{ marginRight: "5px" }} />
-                              {updateResult.description.error}
-                            </Text> <br />
-                          </>
-                        }
-                      </>
-                    }
-                    {
                       updateResult.name && <>
                         {
                           updateResult.name.status == 1 && <>
-                            <Text type="secondary">名称更新</Text><br />
+                            <Text type="secondary">名称更新交易哈希</Text><br />
                             <Text strong>{updateResult.name.txHash}</Text> <br />
                           </>
                         }
@@ -512,10 +482,44 @@ export default () => {
                         }
                       </>
                     }
-                  </>} />
+                    {
+                      updateResult.description && <>
+                        {
+                          updateResult.description.status == 1 && <>
+                            <Text type="secondary">简介更新交易哈希</Text><br />
+                            <Text strong>{updateResult.description.txHash}</Text> <br />
+                          </>
+                        }
+                        {
+                          updateResult.description.status == 0 && <>
+                            <Text type="secondary">简介更新失败</Text><br />
+                            <Text strong type="danger">
+                              <CloseCircleTwoTone twoToneColor="red" style={{ marginRight: "5px" }} />
+                              {updateResult.description.error}
+                            </Text> <br />
+                          </>
+                        }
+                      </>
+                    }
+                    <br />
+                    <Text italic>更新数据交易发出后,等待交易确认,超级节点的信息才会同步更新到整个 Safe4 网络</Text>
+                  </>}/>
                 </>
               }
             </Col>
+
+            <Col span={24} style={{ textAlign: "right" }}>
+              {
+                isNodeCreator &&
+                <Button disabled={!needUpdate || (updateResult != undefined && !updating) } type="primary" onClick={doUpdate} loading={updating}>更新</Button>
+              }
+              {
+                !isNodeCreator && <>
+                  <Alert style={{ marginTop: "5px", textAlign: "left" }} type="warning" showIcon message={"只有节点的创建人才能操作该节点"} />
+                </>
+              }
+            </Col>
+
           </Row>
         </div>
       </Card>

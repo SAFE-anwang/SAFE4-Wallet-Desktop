@@ -431,7 +431,7 @@ export default ({
         return;
       }
       if (!CMD_checkKeystore_success) {
-        updateSteps(1, "使用钱包密码加密节点地址 Keystore文件");
+        updateSteps(1, "正在生成节点地址 Keystore 文件");
         const { address, keystore } = await outputKeyStore();
         const keystoreStr = keystore.toString().replaceAll("\"", "\\\"");
         const hiddenKeystore = JSON.parse(keystore);

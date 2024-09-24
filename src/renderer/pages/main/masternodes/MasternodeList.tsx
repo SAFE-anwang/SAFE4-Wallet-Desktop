@@ -255,12 +255,12 @@ export default ({
                 </Button>
                 {
                   queryMyMasternodes &&
-                  <Button size='small' style={{ float: "right" }}
+                  <Button type={ masternodeInfo.state != 1 ? "primary" : "default" } size='small' style={{ float: "right" }}
                     onClick={() => {
                       dispatch(applicationControlUpdateEditMasternodeId(masternodeInfo.id));
                       navigate("/main/masternodes/selectSyncMode")
                     }}>
-                    编辑
+                    同步
                   </Button>
                 }
               </Space>
@@ -328,6 +328,17 @@ export default ({
             queryKeyError &&
             <Alert type='error' showIcon message={queryKeyError} style={{ marginTop: "5px" }} />
           }
+        </Col>
+      </Row>
+    }
+
+    {
+      queryMyMasternodes && <Row style={{ marginBottom: "20px" }}>
+        <Col span={24}>
+          <Alert type='info' message={<>
+            <Text>对于状态错误的主节点,需要检查主节点信息与服务器主节点配置是否一致</Text><br/>
+            <Text>点击主节点的 <Text strong>同步</Text> 按钮,同步主节点信息与服务器主节点配置</Text>
+          </>} />
         </Col>
       </Row>
     }

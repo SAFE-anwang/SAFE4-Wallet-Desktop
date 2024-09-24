@@ -6,7 +6,7 @@ import { ethers } from "ethers";
 import { CloseCircleTwoTone, LeftOutlined } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 import { AppState } from "../../../../state";
-import { useMasternodeLogicContract, useMasternodeStorageContract, useMulticallContract, useSupernodeLogicContract, useSupernodeStorageContract } from "../../../../hooks/useContracts";
+import { useMasternodeStorageContract, useMulticallContract, useSupernodeLogicContract, useSupernodeStorageContract } from "../../../../hooks/useContracts";
 import { useTransactionAdder } from "../../../../state/transactions/hooks";
 import { generateChildWallet, NodeAddressSelectType, SupportChildWalletType, SupportNodeAddressSelectType } from "../../../../utils/GenerateChildWallet";
 import { useActiveAccountChildWallets, useWalletsActiveAccount, useWalletsActiveKeystore } from "../../../../state/wallets/hooks";
@@ -64,7 +64,8 @@ export default () => {
   const [updateResult, setUpdateResult] = useState<{
     address?: TxExecuteStatus,
     enode?: TxExecuteStatus,
-    description?: TxExecuteStatus
+    description?: TxExecuteStatus,
+    name?: TxExecuteStatus
   }>();
 
   const isNodeCreator = useMemo(() => {
@@ -75,6 +76,7 @@ export default () => {
     return supernodeInfo?.addr != updateParams.address
       || supernodeInfo?.enode != updateParams.enode
       || supernodeInfo?.description != updateParams.description
+      || supernodeInfo?.name != updateParams.name
   }, [supernodeInfo, updateParams]);
 
   useEffect(() => {
@@ -175,7 +177,7 @@ export default () => {
 
   const doUpdate = useCallback(async () => {
     if (masternodeStorageContract && supernodeStorageContract && multicallContract && supernodeLogicContract && supernodeInfo) {
-      const { address, enode, description } = updateParams;
+      const { address, enode, description, name } = updateParams;
       const inputErrors: {
         address?: string, enode?: string, description?: string
       } = {};
@@ -357,6 +359,34 @@ export default () => {
       } else {
         console.log("Description 无变化,不需更新");
       }
+
+      // DO update name
+      if (name != supernodeInfo.name) {
+        try {
+          const response = await supernodeLogicContract.changeName(address, name);
+          const { hash, data } = response;
+          addTransaction({ to: supernodeLogicContract.address }, response, {
+            call: {
+              from: activeAccount,
+              to: supernodeLogicContract.address,
+              input: data,
+              value: "0"
+            }
+          });
+          _updateResult.name = {
+            status: 1,
+            txHash: hash
+          }
+        } catch (err: any) {
+          _updateResult.name = {
+            status: 1,
+            error: err.error.reason
+          }
+        }
+        setUpdateResult({ ..._updateResult });
+      } else {
+        console.log("Name 无变化,不需更新");
+      }
       // 执行完毕;
       console.log("执行完毕");
       setUpdating(false);
@@ -426,35 +456,43 @@ export default () => {
                   </>} />
                 </Col>
                 <Col span={24}>
-                  <Radio.Group value={nodeAddressSelectType} disabled={helpResult != undefined}
-                    onChange={(event) => {
-                      setUpdateParams({
-                        ...updateParams,
-                        address: supernodeInfo?.addr
-                      });
-                      setNodeAddressSelectType(event.target.value);
-                    }}>
-                    <Space style={{ height: "20px" }} direction="vertical">
-                      <Radio disabled={walletsActiveKeystore?.mnemonic == undefined}
-                        value={NodeAddressSelectType.GEN}>
-                        钱包通过当前账户的种子密钥生成子地址作为超级节点地址
-                      </Radio>
-                    </Space>
-                  </Radio.Group>
                   {
-                    nodeAddressSelectType == NodeAddressSelectType.INPUT &&
-                    <Input style={{ marginTop: "5px" }} value={updateParams?.address} placeholder='输入超级节点地址' disabled={true}
+                    nodeAddressSelectType == NodeAddressSelectType.GEN &&
+                    <Radio.Group value={nodeAddressSelectType} disabled={helpResult != undefined}
                       onChange={(event) => {
-                        const input = event.target.value.trim();
                         setUpdateParams({
                           ...updateParams,
-                          address: input
+                          address: supernodeInfo?.addr
                         });
-                        setInputErrors({
-                          ...inputErrors,
-                          address: undefined
-                        })
-                      }} />
+                        setNodeAddressSelectType(event.target.value);
+                      }}>
+                      <Space style={{ height: "20px" }} direction="vertical">
+                        <Radio disabled={walletsActiveKeystore?.mnemonic == undefined}
+                          value={NodeAddressSelectType.GEN}>
+                          钱包通过当前账户的种子密钥生成子地址作为超级节点地址
+                        </Radio>
+                      </Space>
+                    </Radio.Group>
+                  }
+                  {
+                    nodeAddressSelectType == NodeAddressSelectType.INPUT &&
+                    <>
+                      <Alert showIcon type="error" message={<>
+                        当前账户没有种子密钥(助记词),无法派生子地址.不可使用辅助功能
+                      </>} />
+                      <Input style={{ marginTop: "5px" }} value={updateParams?.address} placeholder='输入超级节点地址' disabled={true}
+                        onChange={(event) => {
+                          const input = event.target.value.trim();
+                          setUpdateParams({
+                            ...updateParams,
+                            address: input
+                          });
+                          setInputErrors({
+                            ...inputErrors,
+                            address: undefined
+                          })
+                        }} />
+                    </>
                   }
                   {
                     nodeAddressSelectType == NodeAddressSelectType.GEN &&
@@ -485,7 +523,6 @@ export default () => {
                     inputErrors?.address && <Alert style={{ marginTop: "5px" }} type="error" showIcon message={inputErrors.address} />
                   }
                 </Col>
-
                 {
                   helpResult && helpResult.enode && <>
                     <Divider />
@@ -556,45 +593,16 @@ export default () => {
           </Row>
           <Divider />
           <Row>
-
-            <Col span={24} style={{ textAlign: "right" }}>
-              {
-                !helpResult && isNodeCreator && <>
-                  <Button onClick={() => helpToCreate()} type='primary'>下一步</Button>
-                </>
-              }
-              <br />
-              {
-                helpResult && helpResult.enode && <>
-                  {
-                    !needUpdate &&
-                    <Alert style={{ textAlign: "left" }} showIcon type="info" message={<>
-                      超级节点信息与超级节点服务器数据一致,无需调用合约更新数据
-                    </>} />
-                  }
-                  {
-                    needUpdate &&
-                    <Button disabled={!isNodeCreator} type="primary" onClick={doUpdate} loading={updating}>更新</Button>
-                  }
-                </>
-
-              }
-              {
-                !isNodeCreator && <>
-                  <Alert style={{ marginTop: "5px", textAlign: "left" }} type="warning" showIcon message={"只有节点的创建人才能操作该节点"} />
-                </>
-              }
-            </Col>
             <Col span={24}>
               {
                 updateResult &&
                 <>
-                  <Alert style={{ marginTop: "20px" }} type="success" message={<>
+                  <Alert style={{ marginTop: "20px", marginBottom: "20px" }} type="success" message={<>
                     {
                       updateResult.address && <>
                         {
                           updateResult.address.status == 1 && <>
-                            <Text type="secondary">地址更新</Text><br />
+                            <Text type="secondary">地址更新交易哈希</Text><br />
                             <Text strong>{updateResult.address.txHash}</Text> <br />
                           </>
                         }
@@ -613,7 +621,7 @@ export default () => {
                       updateResult.enode && <>
                         {
                           updateResult.enode.status == 1 && <>
-                            <Text type="secondary">ENODE更新</Text><br />
+                            <Text type="secondary">ENODE更新交易哈希</Text><br />
                             <Text strong>{updateResult.enode.txHash}</Text> <br />
                           </>
                         }
@@ -629,10 +637,29 @@ export default () => {
                       </>
                     }
                     {
+                      updateResult.name && <>
+                        {
+                          updateResult.name.status == 1 && <>
+                            <Text type="secondary">名称更新交易哈希</Text><br />
+                            <Text strong>{updateResult.name.txHash}</Text> <br />
+                          </>
+                        }
+                        {
+                          updateResult.name.status == 0 && <>
+                            <Text type="secondary">名称更新失败</Text><br />
+                            <Text strong type="danger">
+                              <CloseCircleTwoTone twoToneColor="red" style={{ marginRight: "5px" }} />
+                              {updateResult.name.error}
+                            </Text> <br />
+                          </>
+                        }
+                      </>
+                    }
+                    {
                       updateResult.description && <>
                         {
                           updateResult.description.status == 1 && <>
-                            <Text type="secondary">简介更新</Text><br />
+                            <Text type="secondary">简介更新交易哈希</Text><br />
                             <Text strong>{updateResult.description.txHash}</Text> <br />
                           </>
                         }
@@ -647,7 +674,36 @@ export default () => {
                         }
                       </>
                     }
+                    <br />
+                    <Text italic>更新数据交易发出后,等待交易确认,超级节点的信息才会同步更新到 Safe4 网络</Text>
                   </>} />
+                </>
+              }
+            </Col>
+
+            <Col span={24} style={{ textAlign: "right" }}>
+              {
+                !helpResult && isNodeCreator && <>
+                  <Button disabled={nodeAddressSelectType != NodeAddressSelectType.GEN} onClick={() => helpToCreate()} type='primary'>下一步</Button>
+                </>
+              }
+              {
+                helpResult && helpResult.enode && <>
+                  {
+                    !needUpdate &&
+                    <Alert style={{ textAlign: "left" }} showIcon type="info" message={<>
+                      超级节点信息与超级节点服务器数据一致,无需调用合约更新数据
+                    </>} />
+                  }
+                  {
+                    needUpdate &&
+                    <Button disabled={!isNodeCreator || updateResult != undefined} type="primary" onClick={doUpdate} loading={updating}>更新</Button>
+                  }
+                </>
+              }
+              {
+                !isNodeCreator && <>
+                  <Alert style={{ marginTop: "5px", textAlign: "left" }} type="warning" showIcon message={"只有节点的创建人才能操作该节点"} />
                 </>
               }
             </Col>

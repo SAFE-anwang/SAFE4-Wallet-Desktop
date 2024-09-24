@@ -147,17 +147,10 @@ export default () => {
     if (selectChildWalletOptions && nodeAddressSelectType == NodeAddressSelectType.GEN && masternodeInfo) {
       const couldSelect = selectChildWalletOptions.filter(option => !option.disabled);
       if (couldSelect && couldSelect.length > 0) {
-        if (couldSelect.map(option => option.value).indexOf(masternodeInfo.addr)) {
-          setUpdateParams({
-            ...updateParams,
-            address: masternodeInfo.addr
-          });
-        } else {
-          setUpdateParams({
-            ...updateParams,
-            address: couldSelect[0].value
-          });
-        }
+        setUpdateParams({
+          ...updateParams,
+          address: couldSelect[0].value
+        });
         setInputErrors({
           ...inputErrors,
           address: undefined
@@ -415,24 +408,6 @@ export default () => {
                   </>} />
                 </Col>
                 <Col span={24}>
-                  <Radio.Group value={nodeAddressSelectType} disabled={helpResult != undefined}
-                    onChange={(event) => {
-                      setUpdateParams({
-                        ...updateParams,
-                        address: masternodeInfo?.addr
-                      });
-                      setNodeAddressSelectType(event.target.value);
-                    }}>
-                    <Space style={{ height: "50px" }} direction="vertical">
-                      <Radio disabled={walletsActiveKeystore?.mnemonic == undefined}
-                        value={NodeAddressSelectType.GEN}>
-                        钱包通过当前账户的种子密钥生成子地址作为主节点地址
-                      </Radio>
-                      <Radio value={NodeAddressSelectType.INPUT}>
-                        不更换主节点地址
-                      </Radio>
-                    </Space>
-                  </Radio.Group>
                   {
                     nodeAddressSelectType == NodeAddressSelectType.INPUT &&
                     <Input style={{ marginTop: "5px" }} value={updateParams?.address} placeholder='输入主节点地址' disabled={true}
@@ -450,34 +425,50 @@ export default () => {
                   }
                   {
                     nodeAddressSelectType == NodeAddressSelectType.GEN &&
-                    <Spin spinning={false}>
-                      <Select
-                        style={{
-                          width: "100%",
-                          marginTop: "5px"
-                        }}
-                        placeholder="正在加载可用的主节点地址..."
-                        options={selectChildWalletOptions}
-                        disabled={helpResult ? true : false}
-                        onChange={(value) => {
+                    <>
+                      <Radio.Group value={nodeAddressSelectType} disabled={helpResult != undefined}
+                        onChange={(event) => {
                           setUpdateParams({
                             ...updateParams,
-                            address: value
+                            address: masternodeInfo?.addr
                           });
-                          setInputErrors({
-                            ...inputErrors,
-                            address: undefined
-                          })
-                        }}
-                        value={updateParams.address}
-                      />
-                    </Spin>
+                          setNodeAddressSelectType(event.target.value);
+                        }}>
+                        <Space style={{ height: "20px" }} direction="vertical">
+                          <Radio disabled={walletsActiveKeystore?.mnemonic == undefined}
+                            value={NodeAddressSelectType.GEN}>
+                            钱包通过当前账户的种子密钥生成子地址作为主节点地址
+                          </Radio>
+                        </Space>
+                      </Radio.Group>
+                      <Spin spinning={false}>
+                        <Select
+                          style={{
+                            width: "100%",
+                            marginTop: "5px"
+                          }}
+                          placeholder="正在加载可用的主节点地址..."
+                          options={selectChildWalletOptions}
+                          disabled={helpResult ? true : false}
+                          onChange={(value) => {
+                            setUpdateParams({
+                              ...updateParams,
+                              address: value
+                            });
+                            setInputErrors({
+                              ...inputErrors,
+                              address: undefined
+                            })
+                          }}
+                          value={updateParams.address}
+                        />
+                      </Spin>
+                    </>
                   }
                   {
                     inputErrors?.address && <Alert style={{ marginTop: "5px" }} type="error" showIcon message={inputErrors.address} />
                   }
                 </Col>
-
                 {
                   helpResult && helpResult.enode && <>
                     <Divider />
@@ -529,44 +520,16 @@ export default () => {
           <Divider />
           <Row>
 
-            <Col span={24} style={{ textAlign: "right" }}>
-              {
-                !helpResult && isNodeCreator && <>
-                  <Button onClick={() => helpToCreate()} type='primary'>下一步</Button>
-                </>
-              }
-              <br />
-              {
-                helpResult && helpResult.enode && <>
-                  {
-                    !needUpdate &&
-                    <Alert style={{ textAlign: "left" }} showIcon type="info" message={<>
-                      主节点信息与主节点服务器数据一致,无需调用合约更新数据
-                    </>} />
-                  }
-                  {
-                    needUpdate &&
-                    <Button disabled={!isNodeCreator} type="primary" onClick={doUpdate} loading={updating}>更新</Button>
-                  }
-                </>
-
-              }
-              {
-                !isNodeCreator && <>
-                  <Alert style={{ marginTop: "5px" , textAlign: "left"  }} type="warning" showIcon message={"只有节点的创建人才能操作该节点"} />
-                </>
-              }
-            </Col>
             <Col span={24}>
               {
                 updateResult &&
                 <>
-                  <Alert style={{ marginTop: "20px" }} type="success" message={<>
+                  <Alert style={{ marginTop: "20px", marginBottom: "20px" }} type="success" message={<>
                     {
                       updateResult.address && <>
                         {
                           updateResult.address.status == 1 && <>
-                            <Text type="secondary">地址更新</Text><br />
+                            <Text type="secondary">地址更新交易哈希</Text><br />
                             <Text strong>{updateResult.address.txHash}</Text> <br />
                           </>
                         }
@@ -585,7 +548,7 @@ export default () => {
                       updateResult.enode && <>
                         {
                           updateResult.enode.status == 1 && <>
-                            <Text type="secondary">ENODE更新</Text><br />
+                            <Text type="secondary">ENODE更新交易哈希</Text><br />
                             <Text strong>{updateResult.enode.txHash}</Text> <br />
                           </>
                         }
@@ -604,7 +567,7 @@ export default () => {
                       updateResult.description && <>
                         {
                           updateResult.description.status == 1 && <>
-                            <Text type="secondary">简介更新</Text><br />
+                            <Text type="secondary">简介更新交易哈希</Text><br />
                             <Text strong>{updateResult.description.txHash}</Text> <br />
                           </>
                         }
@@ -619,10 +582,40 @@ export default () => {
                         }
                       </>
                     }
+                    <br />
+                    <Text italic>更新数据交易发出后,等待交易确认,主节点的信息才会同步更新到整个 Safe4 网络</Text>
                   </>} />
                 </>
               }
             </Col>
+
+            <Col span={24} style={{ textAlign: "right" }}>
+              {
+                !helpResult && isNodeCreator && <>
+                  <Button onClick={() => helpToCreate()} type='primary'>下一步</Button>
+                </>
+              }
+              {
+                helpResult && helpResult.enode && <>
+                  {
+                    !needUpdate && updateResult == undefined &&
+                    <Alert style={{ textAlign: "left" }} showIcon type="info" message={<>
+                      主节点信息与主节点服务器数据一致,无需调用合约更新数据
+                    </>} />
+                  }
+                  {
+                    needUpdate &&
+                    <Button disabled={!isNodeCreator || (updateResult != undefined && !updating)} type="primary" onClick={doUpdate} loading={updating}>更新</Button>
+                  }
+                </>
+              }
+              {
+                !isNodeCreator && <>
+                  <Alert style={{ marginTop: "5px", textAlign: "left" }} type="warning" showIcon message={"只有节点的创建人才能操作该节点"} />
+                </>
+              }
+            </Col>
+
           </Row>
         </div>
       </Card>

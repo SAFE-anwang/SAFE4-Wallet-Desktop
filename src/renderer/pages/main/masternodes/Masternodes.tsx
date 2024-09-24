@@ -56,13 +56,10 @@ export default () => {
           <Alert showIcon type="info" message={<>
             <Row>
               <Col span={24}>
-                <Text>什么是主节点?</Text>
+                <Text>成为主节点参与 Safe4 网络治理,提高网络的效率和安全性</Text>
               </Col>
               <Col span={24}>
-                <Text>创建主节点有什么好处?</Text>
-              </Col>
-              <Col span={24}>
-                <Text>这个页面可以干什么?</Text>
+                <Text>区块打包时,会选取一个主节点作为见证人，并向这个主节点的创建者分发奖励</Text>
               </Col>
             </Row>
           </>} />

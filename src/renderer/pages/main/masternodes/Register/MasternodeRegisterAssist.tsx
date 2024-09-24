@@ -378,6 +378,12 @@ export default () => {
             </>} />
             <Col span={24}>
               {
+                nodeAddressSelectType == NodeAddressSelectType.INPUT &&
+                <Alert showIcon type="error" message={<>
+                  当前账户没有种子密钥(助记词),无法派生子地址.不可使用辅助功能
+                </>} />
+              }
+              {
                 nodeAddressSelectType == NodeAddressSelectType.GEN &&
                 <Spin spinning={false}>
                   <Select

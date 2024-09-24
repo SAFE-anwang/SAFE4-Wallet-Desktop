@@ -2,6 +2,7 @@ import { Button, Col, Divider, Row, Typography } from "antd"
 import { useState } from "react";
 import { useSelector } from "react-redux";
 import { AppState } from "../../../state";
+import path from "path";
 
 const { Text, Paragraph } = Typography;
 
@@ -17,16 +18,13 @@ export default ({
   setAddressPrivateKeyMap: (map: AddressPrivateKeyMap) => void
 }) => {
   const data = useSelector<AppState, { [key: string]: any }>(state => state.application.data);
-  const safe3KeystoresFile = data["data"] + "/safe3.keystores";
+  const safe3KeystoresFile = path.join( data["data"] , "safe3.keystores" );
   const dumpCommand = `dumpwallet "${safe3KeystoresFile}"`;
   const [loading, setLoading] = useState<boolean>(false);
-
   const loadSafe3PrivateKeyFile = function () {
     setLoading(true);
     window.electron.fileReader.readFile(safe3KeystoresFile)
       .then((fileContent) => {
-        console.log(fileContent);
-        
         const lines = fileContent.replaceAll("\r","").split("\n").filter((line: string) => line && line.trim().indexOf("#") != 0)
         const addressPrivateKeyArr = lines.map((line: string) => {
           const arr = line.split(" ");

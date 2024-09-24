@@ -244,20 +244,10 @@ export default ({
       </Col>
     </Row>
     <Divider />
-    <Button type="primary" loading={redeeming} disabled={notEnough || redeemTxHashs != undefined} onClick={executeRedeem}>迁移</Button>
-    {
-      notEnough && <>
-        <Alert style={{ marginTop: "5px" }} showIcon type="error" message={
-          <>
-            当前正在使用的钱包没有 SAFE 来支付迁移资产所需要支付的手续费。
-          </>
-        } />
-      </>
-    }
     {
       redeemTxHashs &&
       <>
-        <Alert style={{ marginTop: "20px" }} type="success" message={<>
+        <Alert style={{ marginTop: "20px", marginBottom: "20px" }} type="success" message={<>
           {
             redeemTxHashs?.avaiable && <>
               {
@@ -316,6 +306,17 @@ export default ({
             </>
           }
         </>} />
+      </>
+    }
+
+    <Button type="primary" loading={redeeming} disabled={notEnough || redeemTxHashs != undefined} onClick={executeRedeem}>迁移</Button>
+    {
+      notEnough && <>
+        <Alert style={{ marginTop: "5px" }} showIcon type="error" message={
+          <>
+            当前正在使用的钱包没有 SAFE 来支付迁移资产所需要支付的手续费。
+          </>
+        } />
       </>
     }
 

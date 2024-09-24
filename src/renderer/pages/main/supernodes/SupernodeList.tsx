@@ -51,9 +51,7 @@ export default ({
   const [supernodes, setSupernodes] = useState<SupernodeInfo[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [openSupernodeModal, setOpenSupernodeModal] = useState<boolean>(false);
-  const [openEditSupernodeModal, setOpenEditSupernodeModal] = useState<boolean>(false);
   const [openSupernodeInfo, setOpenSupernodeInfo] = useState<SupernodeInfo>();
-  const [openEditSupernodeInfo, setOpenEditSupernodeInfo] = useState<SupernodeInfo>();
   const [queryKey, setQueryKey] = useState<string>();
   const [queryKeyError, setQueryKeyError] = useState<string>();
   const [allVoteNum, setAllVoteNum] = useState<CurrencyAmount>(CurrencyAmount.ether(JSBI.BigInt(1)));
@@ -326,6 +324,13 @@ export default ({
               <Text>{id}</Text>
               <Space direction='horizontal' style={{ float: "right" }}>
                 {
+                  queryMySupernodes &&
+                  <Button size='small' type={supernodeInfo.state != 1 ? "primary" : "default"} style={{ float: "right" }} onClick={() => {
+                    dispatch(applicationControlUpdateEditSupernodeId(supernodeInfo.id));
+                    navigate("/main/supernodes/selectSyncMode")
+                  }}>同步</Button>
+                }
+                {
                   couldAddPartner &&
                   <Button size='small' type='primary' style={{ float: "right" }} onClick={() => {
                     dispatch(applicationControlVoteSupernode(addr));
@@ -349,15 +354,7 @@ export default ({
                       })
                   }
                 }}>查看</Button>
-                {
-                  queryMySupernodes &&
-                  <Button size='small' type='default' style={{ float: "right" }} onClick={() => {
-                    dispatch(applicationControlUpdateEditSupernodeId(supernodeInfo.id));
-                    navigate("/main/supernodes/selectSyncMode")
-                  }}>同步</Button>
-                }
               </Space>
-
             </Col>
           </Row>
         </>
@@ -428,6 +425,17 @@ export default ({
       </Row>
     }
 
+    {
+      queryMySupernodes && <Row style={{ marginBottom: "20px" }}>
+        <Col span={24}>
+          <Alert type='info' message={<>
+            <Text>对于状态异常的超级节点,需要检查超级节点信息与服务器超级节点配置是否一致</Text><br />
+            <Text>点击超级节点的 <Text strong>同步</Text> 按钮,同步超级节点信息与服务器超级节点配置</Text>
+          </>} />
+        </Col>
+      </Row>
+    }
+
     <Table loading={loading} onChange={(pagination) => {
       const { current, pageSize, total } = pagination;
       setPagination({
@@ -446,14 +454,7 @@ export default ({
       }
     </Modal>
 
-    <Modal destroyOnClose open={openEditSupernodeModal} width={800} footer={null} closable onCancel={() => {
-      setOpenEditSupernodeInfo(undefined);
-      setOpenEditSupernodeModal(false);
-    }}>
-      {
-        openEditSupernodeInfo && <EditSupernode supernodeInfo={openEditSupernodeInfo} />
-      }
-    </Modal>
+
 
   </>
 }

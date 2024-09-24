@@ -38,7 +38,7 @@ export default () => {
   const balance = useETHBalances([activeAccount])[activeAccount];
   const [enodeTips, setEnodeTips] = useState<boolean>(false);
   const [checking, setChecking] = useState<boolean>(false);
-  const activeAccountNodeInfo = useAddrNodeInfo( activeAccount );
+  const activeAccountNodeInfo = useAddrNodeInfo(activeAccount);
 
   const [createParams, setCreateParams] = useState<{
     createType: number | 1,
@@ -365,7 +365,7 @@ export default () => {
           <Divider />
           <Row>
             <Text type='secondary'>简介</Text>
-            <Input status={inputErrors.description ? "error" : ""}
+            <Input.TextArea style={{height:"100px"}} status={inputErrors.description ? "error" : ""}
               value={createParams.description} placeholder='请输入超级节点简介信息' onChange={(event) => {
                 const inputDescription = event.target.value;
                 setInputErrors({
@@ -376,7 +376,7 @@ export default () => {
                   ...createParams,
                   description: inputDescription
                 })
-              }}></Input>
+              }} />
             {
               inputErrors && inputErrors.description &&
               <Alert style={{ marginTop: "5px" }} type='error' message={inputErrors.description} showIcon></Alert>

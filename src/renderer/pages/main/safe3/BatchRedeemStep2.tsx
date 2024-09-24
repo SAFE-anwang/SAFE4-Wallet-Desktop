@@ -273,11 +273,10 @@ export default ({
         // 过滤有资产的数据需要进行显示;
         const hasAssetList = Object.keys(addressResultMap).filter(address => {
             const { availableInfo, lockedAmount, mnLocked } = addressResultMap[address];
-            // const hasAvailable = availableInfo?.amount.greaterThan(ZERO)
-            // const hasLocked = lockedAmount?.greaterThan(ZERO)
-            // const hasMasternode = mnLocked
-            // return hasAvailable || hasLocked || hasMasternode;
-            return true;
+            const hasAvailable = availableInfo?.amount.greaterThan(ZERO)
+            const hasLocked = lockedAmount?.greaterThan(ZERO)
+            const hasMasternode = mnLocked
+            return hasAvailable || hasLocked || hasMasternode;
         }).map(address => addressResultMap[address]);
         const needRedeemList = hasAssetList.filter(result => {
             const { availableInfo, lockedAmount, mnLocked, lockedRedeemHeight } = result;
