@@ -129,9 +129,21 @@ export interface SupernodeInfo {
 
 export function formatSupernodeInfo(supernodeInfo: any) : SupernodeInfo {
     const {
-        id, name, addr, creator, enode, description, isOfficial, lastRewardHeight, createHeight, updateHeight,
+        id, addr, creator, enode, isOfficial, lastRewardHeight, createHeight, updateHeight,
         state, founders, incentivePlan ,
     } = supernodeInfo;
+    let name = "";
+    let description = "";
+    try {
+      name = supernodeInfo.name;
+    }catch(err){
+
+    }
+    try {
+      description = supernodeInfo.description;
+    }catch(err){
+
+    }
     return {
         id: id.toNumber(),
         name,

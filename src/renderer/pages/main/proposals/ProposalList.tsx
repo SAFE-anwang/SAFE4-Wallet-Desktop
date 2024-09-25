@@ -79,7 +79,7 @@ export default ({
       }
       if (queryMyProposals) {
         // function getMineNum() external view returns (uint);
-        proposalContract.callStatic.getMineNum()
+        proposalContract.callStatic.getMineNum(activeAccount)
           .then(data => {
             setPagination({
               total: data.toNumber(),
@@ -122,7 +122,7 @@ export default ({
         setLoading(true);
         if (queryMyProposals) {
           //  function getMines(uint _start, uint _count) external view returns (uint[] memory);
-          proposalContract.callStatic.getMines(position, offset)
+          proposalContract.callStatic.getMines(activeAccount , position, offset)
             .then((proposalIds: any) => {
               multicallGetProposalInfoByIds(proposalIds)
             });
@@ -137,7 +137,7 @@ export default ({
         setProposalInfos(undefined);
       }
     }
-  }, [pagination]);
+  }, [pagination , activeAccount]);
 
   const multicallGetProposalInfoByIds = useCallback((_proposalIds: any) => {
     if (multicallContract && proposalContract) {

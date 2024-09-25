@@ -68,11 +68,13 @@ export default ({
   openSSH2CMDTerminalNodeModal,
   setOpenSSH2CMDTerminalNodeModal,
   nodeAddressPrivateKey,
+  isSupernode,
   nodeAddress,
   onSuccess,
   onError
 }: {
   nodeAddressPrivateKey ?: string,
+  isSupernode ?: boolean,
   nodeAddress: string,
   openSSH2CMDTerminalNodeModal: boolean
   setOpenSSH2CMDTerminalNodeModal: (openSSH2CMDTerminalNodeModal: boolean) => void
@@ -361,7 +363,7 @@ export default ({
         const CMD_unzip_success = await CMD_unzip.execute(term);
         updateSteps(0, "启动 Safe4 节点程序");
         const CMD_start: CommandState = new CommandState(
-          `cd ${_Safe4NodeDir} && sh start.sh ${inputParams.host} > safe.log 2>&1`,
+          `cd ${_Safe4NodeDir} && sh start.sh ${inputParams.host} ${nodeAddress.toLowerCase()} > safe.log 2>&1`,
           () => {
             return true;
           },

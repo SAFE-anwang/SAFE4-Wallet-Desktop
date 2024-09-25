@@ -13,6 +13,8 @@ import TransactionElementCallProposalVote from "./TransactionElementCallProposal
 import TransactionElementCallProposalCreate from "./TransactionElementCallProposalCreate";
 import TransactionElementCallSafe3Redeem from "./TransactionElementCallSafe3Redeem";
 import TransactionELementCallAMBatchDeposit from "./TransactionElementCallAMBatchDeposit"
+import TransactionElementCallSNChange from "./TransactionElementCallSNChange";
+import TransactionElementCallMNChange from "./TransactionElementCallMNChange";
 
 export default ({ transaction, setClickTransaction, support }: {
   transaction: TransactionDetails,
@@ -110,6 +112,34 @@ export default ({ transaction, setClickTransaction, support }: {
           setClickTransaction={setClickTransaction}
           support={support}
         />
+      case SupportSupernodeLogicFunctions.ChangeName:
+        return <TransactionElementCallSNChange
+          transaction={transaction}
+          setClickTransaction={setClickTransaction}
+          support={support}
+          title="更新超级节点名称"
+        />
+      case SupportSupernodeLogicFunctions.ChangeAddress:
+        return <TransactionElementCallSNChange
+          transaction={transaction}
+          setClickTransaction={setClickTransaction}
+          support={support}
+          title="更新超级节点地址"
+        />
+      case SupportSupernodeLogicFunctions.ChangeDescription:
+        return <TransactionElementCallSNChange
+          transaction={transaction}
+          setClickTransaction={setClickTransaction}
+          support={support}
+          title="更新超级节点简介"
+        />
+      case SupportSupernodeLogicFunctions.ChangeEncode:
+        return <TransactionElementCallSNChange
+          transaction={transaction}
+          setClickTransaction={setClickTransaction}
+          support={support}
+          title="更新超级节点ENODE"
+        />
       default:
         return <></>
     }
@@ -125,6 +155,27 @@ export default ({ transaction, setClickTransaction, support }: {
         />
       case SupportMasternodeLogicFunctions.AppendRegister:
         return <TransactionElementCallMNAppend
+          transaction={transaction}
+          setClickTransaction={setClickTransaction}
+          support={support}
+        />
+      case SupportMasternodeLogicFunctions.ChangeAddress:
+        return <TransactionElementCallMNChange
+          title="更新主节点地址"
+          transaction={transaction}
+          setClickTransaction={setClickTransaction}
+          support={support}
+        />
+      case SupportMasternodeLogicFunctions.ChangeEncode:
+        return <TransactionElementCallMNChange
+          title="更新主节点ENODE"
+          transaction={transaction}
+          setClickTransaction={setClickTransaction}
+          support={support}
+        />
+      case SupportMasternodeLogicFunctions.ChangeDescription:
+        return <TransactionElementCallMNChange
+          title="更新主节点简介"
           transaction={transaction}
           setClickTransaction={setClickTransaction}
           support={support}

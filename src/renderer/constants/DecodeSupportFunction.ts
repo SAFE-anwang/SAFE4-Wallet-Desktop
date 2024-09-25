@@ -10,7 +10,11 @@ export enum SupportAccountManagerFunctions {
 }
 export enum SupportSupernodeLogicFunctions {
   Register = "register",            // function register(bool _isUnion, address _addr, uint _lockDay, string memory _name, string memory _enode, string memory _description, uint _creatorIncentive, uint _partnerIncentive, uint _voterIncentive) external payable;
-  AppendRegister = "appendRegister" // function appendRegister(address _addr, uint _lockDay) external payable;
+  AppendRegister = "appendRegister", // function appendRegister(address _addr, uint _lockDay) external payable;
+  ChangeName = "changeName",      // function changeName(address _addr, address _name)
+  ChangeAddress = "changeAddress",   // function changeAddress(address _addr, address _newAddr)
+  ChangeEncode = "changeEnode",         // function changeEnode(address _addr, string memory _enode)
+  ChangeDescription = "changeDescription",
 }
 export enum SupportSupernodeVoteFunctions {
   VoteOrApproval = "voteOrApproval", // function voteOrApproval(bool _isVote, address _dstAddr, uint[] memory _recordIDs)
@@ -18,7 +22,10 @@ export enum SupportSupernodeVoteFunctions {
 }
 export enum SupportMasternodeLogicFunctions {
   Register = "register",            // function register(bool _isUnion, address _addr, uint _lockDay, string memory _enode, string memory _description, uint _creatorIncentive, uint _partnerIncentive) external payable;
-  AppendRegister = "appendRegister" // function appendRegister(address _addr, uint _lockDay) external payable;
+  AppendRegister = "appendRegister",// function appendRegister(address _addr, uint _lockDay) external payable;
+  ChangeAddress = "changeAddress",   // function changeAddress(address _addr, address _newAddr)
+  ChangeEncode = "changeEnode",         // function changeEnode(address _addr, string memory _enode)
+  ChangeDescription = "changeDescription",
 }
 export enum SupportProposalFunctions {
   Create = "create",                //function create(string memory _title, uint _payAmount, uint _payTimes, uint _startPayTime, uint _endPayTime, string memory _description) external payable returns (uint);
@@ -87,6 +94,25 @@ function decodeMasternodeLogicFunctionData(IContract: Interface, fragment: Funct
         _lockDay: appendRegister[1]
       }
       break;
+    case SupportMasternodeLogicFunctions.ChangeAddress:
+      let changeAddress = IContract.decodeFunctionData(fragment, input);
+      formatDecodeResult = {
+        _addr: changeAddress[0],
+        _newAddr: changeAddress[1]
+      }
+      break;
+    case SupportMasternodeLogicFunctions.ChangeEncode:
+      let changeEnode = IContract.decodeFunctionData(fragment, input);
+      formatDecodeResult = {
+        _addr: changeEnode[0],
+      }
+      break;
+    case SupportMasternodeLogicFunctions.ChangeDescription:
+      let changeDescription = IContract.decodeFunctionData(fragment, input);
+      formatDecodeResult = {
+        _addr: changeDescription[0],
+      }
+      break;
     default:
       break;
   }
@@ -114,6 +140,31 @@ function decodeSupernodeLogicFunctionData(IContract: Interface, fragment: Functi
       formatDecodeResult = {
         _addr: appendRegister[0],
         _lockDay: appendRegister[1]
+      }
+      break;
+    case SupportSupernodeLogicFunctions.ChangeName:
+      let changeName = IContract.decodeFunctionData(fragment, input);
+      formatDecodeResult = {
+        _addr: changeName[0],
+      }
+      break;
+    case SupportSupernodeLogicFunctions.ChangeAddress:
+      let changeAddress = IContract.decodeFunctionData(fragment, input);
+      formatDecodeResult = {
+        _addr: changeAddress[0],
+        _newAddr: changeAddress[1]
+      }
+      break;
+    case SupportSupernodeLogicFunctions.ChangeEncode:
+      let changeEnode = IContract.decodeFunctionData(fragment, input);
+      formatDecodeResult = {
+        _addr: changeEnode[0],
+      }
+      break;
+    case SupportSupernodeLogicFunctions.ChangeDescription:
+      let changeDescription = IContract.decodeFunctionData(fragment, input);
+      formatDecodeResult = {
+        _addr: changeDescription[0],
       }
       break;
     default:
@@ -216,7 +267,7 @@ function decodeSafe3FunctionData(
       formatDecodeResult = {
         _pubkeys: redeem[0],
         _sigs: redeem[1],
-        _safe4TargetAddress : redeem[2]
+        _safe4TargetAddress: redeem[2]
       }
       break;
     case SupportSafe3Functions.BatchRedeemMasterNode:
@@ -225,7 +276,7 @@ function decodeSafe3FunctionData(
         _pubkeys: masternodeRedeem[0],
         _sigs: masternodeRedeem[1],
         _enodes: masternodeRedeem[2],
-        _safe4TargetAddress : masternodeRedeem[3]
+        _safe4TargetAddress: masternodeRedeem[3]
       }
       break;
     default:

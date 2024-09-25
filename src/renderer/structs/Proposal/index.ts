@@ -7,15 +7,15 @@ import { CurrencyAmount } from "@uniswap/sdk";
     }
  */
 export interface VoteInfo {
-    voter: string,
-    voteResult: number
+  voter: string,
+  voteResult: number
 }
-export function formatVoteInfo( _voteInfo : any ) : VoteInfo {
-    const { voter , voteResult } = _voteInfo;
-    return {
-        voter , 
-        voteResult : voteResult.toNumber()
-    }
+export function formatVoteInfo(_voteInfo: any): VoteInfo {
+  const { voter, voteResult } = _voteInfo;
+  return {
+    voter,
+    voteResult: voteResult.toNumber()
+  }
 }
 
 /**
@@ -34,33 +34,46 @@ export function formatVoteInfo( _voteInfo : any ) : VoteInfo {
     }
  */
 export interface ProposalInfo {
-    id: number,
-    creator: string,
-    title: string,
-    payAmount: CurrencyAmount,
-    payTimes: number,
-    startPayTime: number,
-    endPayTime: number,
-    description: string,
-    state: number,
-    createHeight: number,
-    updateHeight: number
+  id: number,
+  creator: string,
+  title: string,
+  payAmount: CurrencyAmount,
+  payTimes: number,
+  startPayTime: number,
+  endPayTime: number,
+  description: string,
+  state: number,
+  createHeight: number,
+  updateHeight: number
 }
 
 
 export function formatProposalInfo(_proposalInfo: any): ProposalInfo {
-    const { id, creator, title, payAmount, payTimes, startPayTime, endPayTime, description, state, createHeight, updateHeight } = _proposalInfo;
-    return {
-        id: id.toNumber(),
-        creator,
-        title,
-        payAmount: CurrencyAmount.ether(payAmount),
-        payTimes: payTimes.toNumber(),
-        startPayTime: startPayTime.toNumber(),
-        endPayTime: endPayTime.toNumber(),
-        description,
-        state: state.toNumber(),
-        createHeight: createHeight.toNumber(),
-        updateHeight: updateHeight.toNumber()
-    }
+  const { id, creator, payAmount, payTimes, startPayTime, endPayTime, state, createHeight, updateHeight } = _proposalInfo;
+
+  let title = "";
+  let description = "";
+  try {
+    title = _proposalInfo.title;
+  } catch (err) {
+
+  }
+  try {
+    description = _proposalInfo.description;
+  } catch (err) {
+
+  }
+  return {
+    id: id.toNumber(),
+    creator,
+    title,
+    payAmount: CurrencyAmount.ether(payAmount),
+    payTimes: payTimes.toNumber(),
+    startPayTime: startPayTime.toNumber(),
+    endPayTime: endPayTime.toNumber(),
+    description,
+    state: state.toNumber(),
+    createHeight: createHeight.toNumber(),
+    updateHeight: updateHeight.toNumber()
+  }
 }

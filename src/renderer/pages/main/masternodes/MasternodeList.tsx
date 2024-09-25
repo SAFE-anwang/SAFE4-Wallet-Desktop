@@ -124,6 +124,7 @@ export default ({
         if (total == 0) {
           return;
         }
+
         setLoading(true);
         if (queryMyMasternodes) {
           masternodeStorageContract.callStatic.getAddrs4Creator(activeAccount, position, offset)

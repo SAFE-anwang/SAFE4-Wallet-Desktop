@@ -204,9 +204,9 @@ export default ({
         setLoading(true);
         if (queryMySupernodes) {
           // getAddrs4Creator:
-          supernodeStorageContract.callStatic.getAddrs4Creator(activeAccount, _position, _offset)
+          supernodeStorageContract.callStatic.getAddrs4Creator(activeAccount, position, offset)
             .then((addresses: any) => {
-              loadSupernodeInfoList(addresses)
+              loadSupernodeInfoList( addresses.map( (addr : any) => addr ).reverse() )
             });
         } else if (queryJoinSupernodes) {
           supernodeStorageContract.callStatic.getAddrs4Partner(activeAccount, _position, _offset)

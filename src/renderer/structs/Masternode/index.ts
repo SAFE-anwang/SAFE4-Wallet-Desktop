@@ -32,9 +32,15 @@ export interface MasternodeInfo {
 }
 export function formatMasternode( masternode : any) : MasternodeInfo {
   const {
-    id, name, addr, creator, enode, description, isOfficial, lastRewardHeight, createHeight, updateHeight,
+    id, addr, creator, enode, isOfficial, lastRewardHeight, createHeight, updateHeight,
     state, founders, incentivePlan
   } = masternode;
+  let description = "";
+  try {
+    description = masternode.description;
+  }catch( err ){
+
+  }
   return {
     id: id.toNumber(),
     addr,
