@@ -50,8 +50,6 @@ export default () => {
     , [multicallContract, masternodeStorageContract, supernodeStorageContract]);
 
 
-
-
   return <>
 
   </>

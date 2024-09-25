@@ -56,6 +56,8 @@ import SupernodeSyncAssist from './pages/main/supernodes/Sync/SupernodeSyncAssis
 import SelectSupernodeSyncMode from './pages/main/supernodes/Sync/SelectSupernodeSyncMode';
 import MasternodeSync from './pages/main/masternodes/Sync/MasternodeSync';
 import SupernodeSync from './pages/main/supernodes/Sync/SupernodeSync';
+import TestSSH2CMD from './pages/main/tools/ssh2/TestSSH2CMD';
+import TestSSH2Shell from './pages/main/tools/ssh2/TestSSH2Shell';
 const CryptoJS = require('crypto-js');
 const { Text } = Typography;
 export default function App() {
@@ -300,7 +302,7 @@ export default function App() {
                     <Route path="/main/safe3nav" element={<RedeemNav />} />
                     <Route path="/main/safe3" element={<Safe3 />} />
                     <Route path="/main/safe3BatchRedeem" element={<BatchRedeem />} />
-                    <Route path="/main/test" element={<TestSSH2 />} />
+                    <Route path="/main/test" element={<TestSSH2Shell />} />
                     <Route path="/main/menu" element={<Menu />} />
                     <Route path="/main/menu/storage" element={<Storage />} />
                     <Route path="/main/menu/network" element={<NetworkPage />} />

@@ -4,8 +4,6 @@ import { useEffect, useRef } from "react";
 import { SSH2ConnectConfig } from "../../../main/SSH2Ipc";
 
 
-
-
 /**
  * 进行窗口输入命令交互式的终端页面.
  */
@@ -110,7 +108,7 @@ export default (({
   }
 
   return <>
-    <div ref={terminalRef} style={{ width: '100%', height: '100%', background: "black", padding: "5px" }} />
+    <div ref={terminalRef} style={{ width: '100%', height: '600px', background: "black", padding: "5px" }} />
   </>
 
 })
