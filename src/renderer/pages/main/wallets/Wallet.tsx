@@ -52,8 +52,6 @@ export default () => {
   const [openLockModal, setOpenLockMoal] = useState<boolean>(false);
   const [openEditNameModal, setOpenEditNameModal] = useState<boolean>(false);
 
-  const applicationPassword = useApplicationPassword();
-
   const tabItems: TabsProps['items'] = [
     {
       key: 'locked',
@@ -203,7 +201,6 @@ export default () => {
     <div style={{ width: "100%", paddingTop: "40px" }}>
       <div style={{ margin: "auto", width: "90%" }}>
         <Row>
-          { applicationPassword }
           <Paragraph copyable>{activeWallet?.address}</Paragraph>
           <div style={{ marginLeft: "5px" }}>
             <Safescan url={`/address/${activeWallet?.address}`} type={SafescanComponentType.Link} />
@@ -286,7 +283,6 @@ export default () => {
     <WalletKeystoreModal openKeystoreModal={openKeystoreModal} setOpenKeystoreModal={setOpenKeystoreModal} />
     <WalletSendModal openSendModal={openSendModal} setOpenSendModal={setOpenSendModal} />
     <WalletLockModal openLockModal={openLockModal} setOpenLockModal={setOpenLockMoal} />
-
     <WalletEditNameModal openEditNameModal={openEditNameModal} setOpenEditNameModal={setOpenEditNameModal} />
 
   </>)

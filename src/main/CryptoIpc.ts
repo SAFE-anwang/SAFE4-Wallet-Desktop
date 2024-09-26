@@ -1,5 +1,3 @@
-import { path } from 'path';
-
 const CryptoJS = require('crypto-js');
 import { ethers } from "ethers";
 import { base58 } from "ethers/lib/utils";
@@ -15,28 +13,18 @@ const iterations = TargetN / N;   // 计算循环迭代的次数
 
 export class CryptoIpc {
   constructor(ipcMain: any) {
-    ipcMain.handle("crypto-scrypt", async (event: any, params: any) => {
-      const password = "123123123";
-      const base58Result = await scryptEncryptWallets({ walletList: [1, 2, 3], applicationPassword: password });
-      console.log("base58 Result:", base58Result);
-      const encrypt = JSON.parse(
-        ethers.utils.toUtf8String(
-          ethers.utils.base58.decode(base58Result)
-        )
-      );
-      console.log( "encrypt:" , encrypt );
-      const result = await scryptDecryptWallets( encrypt , "!123123123" )
-      console.log("result ::" , result)
+    ipcMain.handle("crypto-scrypt-decrypt", async (event: any, params: any) => {
+      const { encrypt , password } = params;
+      const result = await scryptDecryptWallets( encrypt , password );
+      return result;
     })
   }
 }
 
 export async function scryptEncryptWallets({ walletList, applicationPassword }: { walletList: any, applicationPassword: string }): Promise<string> {
-
   const crypto = require('crypto');
   const content = JSON.stringify(walletList);
   const salt = crypto.randomBytes(32).toString("hex");
-
   let derivedKey = Buffer.from(applicationPassword);
   for (let i = 0; i < iterations; i++) {
     derivedKey = await new Promise((resolve, reject) => {
@@ -45,9 +33,8 @@ export async function scryptEncryptWallets({ walletList, applicationPassword }: 
         else resolve(_derivedKey);
       });
     });
-    console.log(`完成第${i}次迭代计算:${derivedKey.toString("hex")}`)
   }
-  // aes by secret with random-iv(16 byte length)
+  // aes by secret with random-iv(32 byte length)
   const iv = CryptoJS.lib.WordArray.random(32);
   const aesKey = bufferToWordArray(derivedKey);
   const encrypt = CryptoJS.AES.encrypt(
@@ -77,7 +64,6 @@ export async function scryptDecryptWallets(encrypt: any, password: string): Prom
         else resolve(_derivedKey);
       });
     });
-    console.log(`完成第${i}次迭代计算:${derivedKey.toString("hex")}`)
   }
   const aesKey = bufferToWordArray(derivedKey);
   const decrypted = CryptoJS.AES.decrypt(
@@ -86,7 +72,6 @@ export async function scryptDecryptWallets(encrypt: any, password: string): Prom
     { iv: iv, mode: CryptoJS.mode.CBC, padding: CryptoJS.pad.Pkcs7 }
   );
   const text = decrypted.toString(CryptoJS.enc.Utf8);
-  console.log("decrypted result :" , text)
   const walletKeystores = JSON.parse(text);
   return walletKeystores;
 }

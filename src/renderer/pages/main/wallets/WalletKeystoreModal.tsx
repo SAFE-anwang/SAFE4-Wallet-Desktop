@@ -32,8 +32,8 @@ export default ({
 
   useEffect(() => {
     if (privateKey) {
-      const ethersWallet = new ethers.Wallet(privateKey);
       setKeystore(undefined);
+      const ethersWallet = new ethers.Wallet(privateKey);
       setEncrypting(true);
       ethersWallet.encrypt(password ? password : "").then((keystore: any) => {
         setKeystore(keystore);
@@ -43,6 +43,12 @@ export default ({
       setKeystore(undefined);
     }
   }, [privateKey, password]);
+
+  useEffect(() => {
+    return () => {
+      setKeystore(undefined);
+    }
+  } , [])
 
   return (<>
     <Modal title="Keystore" open={openKeystoreModal} width={"400px"} footer={null} closable onCancel={() => { setOpenKeystoreModal(false) }}>

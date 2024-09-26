@@ -72,7 +72,6 @@ export class IndexSingalHandler implements ListenSignalHandler {
     const wallet_names = await this.loadWalletNames();
     return {
       path: this.ctx.path,
-      walletKeystores: [],
       encrypt,
       rpc_configs,
       wallet_names
@@ -132,6 +131,9 @@ export class IndexSingalHandler implements ListenSignalHandler {
     return undefined;
   }
 
+  /**
+   * @returns 低于 1.0.1 版本前的钱包私钥处理方式,已作废
+   */
   private loadWalletKeystores(): { walletKeystores?: any, encrypt?: any } {
     let walletKeystores: any = [];
     let safe4walletKeyStoresContent = undefined;

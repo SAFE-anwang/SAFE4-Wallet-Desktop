@@ -58,7 +58,6 @@ import SupernodeSync from './pages/main/supernodes/Sync/SupernodeSync';
 import TestSSH2CMD from './pages/main/tools/ssh2/TestSSH2CMD';
 import TestSSH2Shell from './pages/main/tools/ssh2/TestSSH2Shell';
 import TestCrypto from './pages/main/tools/TestCrypto';
-const CryptoJS = require('crypto-js');
 const { Text } = Typography;
 export default function App() {
 
@@ -85,6 +84,7 @@ export default function App() {
     endpoint: string,
     active: number
   }[]>();
+  const [decrypting, setDecrypting] = useState<boolean>(false);
 
   useEffect(() => {
     if (!loading && dbRpcConfigs) {
@@ -169,29 +169,16 @@ export default function App() {
 
   const decrypt = useCallback(async () => {
     if (password && encrypt) {
-      // const salt = CryptoJS.enc.Hex.parse(encrypt.salt);
-      // const ciphertext = CryptoJS.enc.Hex.parse(encrypt.ciphertext);
-      // const iv = CryptoJS.enc.Hex.parse(encrypt.iv);
-      // const key = CryptoJS.PBKDF2(password, salt, {
-      //   keySize: 256 / 32,
-      //   iterations: 102400,
-      //   hasher: CryptoJS.algo.SHA256
-      // });
-      // const decrypted = CryptoJS.AES.decrypt(
-      //   { ciphertext },
-      //   key,
-      //   { iv: iv, mode: CryptoJS.mode.CBC, padding: CryptoJS.pad.Pkcs7 }
-      // );
       try {
-        // const text = decrypted.toString(CryptoJS.enc.Utf8);
-        console.log("do crypto.scrypt")
-        const walletKeystores = await window.electron.crypto.scrypt({ encrypt , password });
+        setDecrypting(true);
+        const walletKeystores = await window.electron.crypto.decrypt({ encrypt, password });
         setWalletKeystores(walletKeystores);
         dispatch(applicationSetPassword(password));
       } catch (err) {
         console.log("decrypt error:", err);
         setPasswordError("输入正确的密码才能打开本地加密文件");
       }
+      setDecrypting(false);
     }
   }, [password, encrypt]);
 
@@ -233,7 +220,8 @@ export default function App() {
                         <Alert style={{ marginTop: "5px" }} type='error' showIcon message={passwordError} />
                       </>
                     }
-                    <Button htmlType='submit' disabled={password ? false : true} onClick={decrypt} type='primary' size='large' style={{ width: "100%", marginTop: "20px" }}>
+                    <Button loading={decrypting} htmlType='submit' disabled={password ? false : true} onClick={decrypt}
+                      type='primary' size='large' style={{ width: "100%", marginTop: "20px" }}>
                       解锁
                     </Button>
                   </Form>

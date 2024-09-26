@@ -64,8 +64,8 @@ const electronHandler = {
   } ,
 
   crypto : {
-    scrypt( params : any ){
-      return ipcRenderer.invoke("crypto-scrypt" , params )
+    decrypt( params : any ){
+      return ipcRenderer.invoke("crypto-scrypt-decrypt" , params )
     }
   }
 
