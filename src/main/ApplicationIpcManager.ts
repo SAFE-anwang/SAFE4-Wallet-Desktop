@@ -11,6 +11,7 @@ import { WalletNameHandler } from "./handlers/WalletNameHandler";
 import { SSH2Ipc } from "./SSH2Ipc";
 import { ERC20TokenSignalHandler } from "./handlers/ERC20TokenSignalHandler";
 import { LocalFileReader } from "./handlers/LocalFileReaderIpc";
+import { CryptoIpc } from "./CryptoIpc";
 
 export const Channel : Channels = "ipc-example";
 
@@ -58,6 +59,7 @@ export class ApplicationIpcManager {
     });
     new SSH2Ipc(ipcMain);
     new LocalFileReader(ipcMain);
+    new CryptoIpc(ipcMain);
   }
 
 }

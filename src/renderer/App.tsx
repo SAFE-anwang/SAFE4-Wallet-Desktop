@@ -41,7 +41,6 @@ import ContractDeploy from './pages/main/contracts/ContractDeploy';
 import ContractEdit from './pages/main/contracts/ContractEdit';
 import { ContractCompileSignal, ContractCompile_Methods } from '../main/handlers/ContractCompileHandler';
 import ModifyPassword from './pages/main/menu/password/ModifyPassword';
-import TestSSH2 from './pages/main/tools/TestSSH2';
 import { SAFE_LOGO } from './assets/logo/AssetsLogo';
 import BatchRedeem from './pages/main/safe3/BatchRedeem';
 import RedeemNav from './pages/main/safe3/RedeemNav';
@@ -58,6 +57,7 @@ import MasternodeSync from './pages/main/masternodes/Sync/MasternodeSync';
 import SupernodeSync from './pages/main/supernodes/Sync/SupernodeSync';
 import TestSSH2CMD from './pages/main/tools/ssh2/TestSSH2CMD';
 import TestSSH2Shell from './pages/main/tools/ssh2/TestSSH2Shell';
+import TestCrypto from './pages/main/tools/TestCrypto';
 const CryptoJS = require('crypto-js');
 const { Text } = Typography;
 export default function App() {
@@ -302,7 +302,7 @@ export default function App() {
                     <Route path="/main/safe3nav" element={<RedeemNav />} />
                     <Route path="/main/safe3" element={<Safe3 />} />
                     <Route path="/main/safe3BatchRedeem" element={<BatchRedeem />} />
-                    <Route path="/main/test" element={<TestSSH2Shell />} />
+                    <Route path="/main/test" element={<TestCrypto />} />
                     <Route path="/main/menu" element={<Menu />} />
                     <Route path="/main/menu/storage" element={<Storage />} />
                     <Route path="/main/menu/network" element={<NetworkPage />} />
