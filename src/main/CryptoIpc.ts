@@ -17,7 +17,7 @@ export class CryptoIpc {
       const r = 8;                    // 块大小因子
       const p = 1;                    // 并行化因子
       const dkLen = 32;               // 生成32字节（256位）的密钥
-      const TargetN = 16384;          // 迭代目标次数
+      const TargetN = 262144;          // 迭代目标次数
       const iterations = TargetN / N; // 计算循环迭代的次数
 
       // 从初始密码开始;
