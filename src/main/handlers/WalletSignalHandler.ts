@@ -4,6 +4,7 @@ import { Context } from "./Context";
 import { ListenSignalHandler } from "./ListenSignalHandler";
 import * as bip39 from 'bip39';
 import { base58 } from "ethers/lib/utils";
+import { scryptEncryptWallets } from "../CryptoIpc";
 const fs = require('fs');
 const CryptoJS = require('crypto-js');
 
@@ -68,32 +69,10 @@ export class WalletSignalHandler implements ListenSignalHandler {
   }
 
   private async storeWallet(params: any[]) {
-
     const walletList = params[0];
     const applicationPassword = params[1];
-    const content = JSON.stringify(walletList);
-
     try {
-      // pbkdf2 the password with rondom-salt(32 byte length)
-      const salt = CryptoJS.lib.WordArray.random(32);
-      const aesKey = CryptoJS.PBKDF2(applicationPassword, salt, {
-        keySize: 256 / 32,
-        iterations: 102400,
-        hasher: CryptoJS.algo.SHA256
-      });
-      // aes by secret with random-iv(16 byte length)
-      const iv = CryptoJS.lib.WordArray.random(16);
-      const encrypt = CryptoJS.AES.encrypt(
-        content, aesKey,
-        { iv: iv, mode: CryptoJS.mode.CBC, padding: CryptoJS.pad.Pkcs7 }
-      );
-      const json = JSON.stringify({
-        salt: CryptoJS.enc.Hex.stringify(salt),
-        iv: CryptoJS.enc.Hex.stringify(iv),
-        ciphertext: encrypt.ciphertext.toString(CryptoJS.enc.Hex)
-      });
-      // base58
-      const base58Encode = base58.encode(ethers.utils.toUtf8Bytes(json));
+      const base58Encode = await scryptEncryptWallets( { walletList , applicationPassword } );
       const dbUpdatePromise = new Promise((resolve, reject) => {
         this.kysDB.all("SELECT * FROM wallet_kys", [], (err: any, rows: any[]) => {
           if (err) {

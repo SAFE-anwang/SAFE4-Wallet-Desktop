@@ -167,24 +167,25 @@ export default function App() {
     window.electron.ipcRenderer.sendMessage(IPC_CHANNEL, [ContractCompileSignal, method, []]);
   }, []);
 
-  const decrypt = useCallback(() => {
+  const decrypt = useCallback(async () => {
     if (password && encrypt) {
-      const salt = CryptoJS.enc.Hex.parse(encrypt.salt);
-      const ciphertext = CryptoJS.enc.Hex.parse(encrypt.ciphertext);
-      const iv = CryptoJS.enc.Hex.parse(encrypt.iv);
-      const key = CryptoJS.PBKDF2(password, salt, {
-        keySize: 256 / 32,
-        iterations: 102400,
-        hasher: CryptoJS.algo.SHA256
-      });
-      const decrypted = CryptoJS.AES.decrypt(
-        { ciphertext },
-        key,
-        { iv: iv, mode: CryptoJS.mode.CBC, padding: CryptoJS.pad.Pkcs7 }
-      );
+      // const salt = CryptoJS.enc.Hex.parse(encrypt.salt);
+      // const ciphertext = CryptoJS.enc.Hex.parse(encrypt.ciphertext);
+      // const iv = CryptoJS.enc.Hex.parse(encrypt.iv);
+      // const key = CryptoJS.PBKDF2(password, salt, {
+      //   keySize: 256 / 32,
+      //   iterations: 102400,
+      //   hasher: CryptoJS.algo.SHA256
+      // });
+      // const decrypted = CryptoJS.AES.decrypt(
+      //   { ciphertext },
+      //   key,
+      //   { iv: iv, mode: CryptoJS.mode.CBC, padding: CryptoJS.pad.Pkcs7 }
+      // );
       try {
-        const text = decrypted.toString(CryptoJS.enc.Utf8);
-        const walletKeystores = JSON.parse(text);
+        // const text = decrypted.toString(CryptoJS.enc.Utf8);
+        console.log("do crypto.scrypt")
+        const walletKeystores = await window.electron.crypto.scrypt({ encrypt , password });
         setWalletKeystores(walletKeystores);
         dispatch(applicationSetPassword(password));
       } catch (err) {

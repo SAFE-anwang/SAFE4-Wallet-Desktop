@@ -6,7 +6,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useETHBalances, useWalletsActiveAccount, useWalletsActiveKeystore, useWalletsActivePrivateKey, useWalletsActiveWallet } from '../../../state/wallets/hooks';
 import { applicationActionUpdateAtCreateWallet, applicationUpdateWalletTab } from '../../../state/application/action';
 import { SendOutlined, QrcodeOutlined, LockOutlined, MoreOutlined, GlobalOutlined, EditOutlined } from '@ant-design/icons';
-import { useBlockNumber, useTimestamp } from '../../../state/application/hooks';
+import { useApplicationPassword, useBlockNumber, useTimestamp } from '../../../state/application/hooks';
 import Locked from './tabs/Locked/Locked';
 import WalletLockModal from './Lock/WalletLockModal';
 import History from './tabs/History/History';
@@ -51,6 +51,8 @@ export default () => {
   const [openSendModal, setOpenSendModal] = useState<boolean>(false);
   const [openLockModal, setOpenLockMoal] = useState<boolean>(false);
   const [openEditNameModal, setOpenEditNameModal] = useState<boolean>(false);
+
+  const applicationPassword = useApplicationPassword();
 
   const tabItems: TabsProps['items'] = [
     {
@@ -201,6 +203,7 @@ export default () => {
     <div style={{ width: "100%", paddingTop: "40px" }}>
       <div style={{ margin: "auto", width: "90%" }}>
         <Row>
+          { applicationPassword }
           <Paragraph copyable>{activeWallet?.address}</Paragraph>
           <div style={{ marginLeft: "5px" }}>
             <Safescan url={`/address/${activeWallet?.address}`} type={SafescanComponentType.Link} />
