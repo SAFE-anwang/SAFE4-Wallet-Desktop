@@ -15,10 +15,10 @@ export default () => {
 
   useEffect( () => {
     doScrypt();
+    console.log( 1 << 18 )
   } , [] );
 
   return <>
-
     <Row style={{ height: "50px" }}>
       <Col span={12}>
         <Title level={4} style={{ lineHeight: "16px" }}>
@@ -26,13 +26,11 @@ export default () => {
         </Title>
       </Col>
     </Row>
-
     <Row style={{ marginTop: "20px", width: "100%" }}>
       <Card style={{ width: "100%", height: "800px" }}>
-        { scryptResult }
+        <Text>  { scryptResult } </Text>
       </Card>
     </Row>
-
   </>
 
 }
