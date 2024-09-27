@@ -59,12 +59,13 @@ import TestSSH2CMD from './pages/main/tools/ssh2/TestSSH2CMD';
 import TestSSH2Shell from './pages/main/tools/ssh2/TestSSH2Shell';
 import TestCrypto from './pages/main/tools/TestCrypto';
 const { Text } = Typography;
+
 export default function App() {
 
   const dispatch = useDispatch();
   const [loading, setLoading] = useState<boolean>(true);
-
   const [walletsKeystores, setWalletKeystores] = useState<any>(undefined);
+
   const [encrypt, setEncrypt] = useState<{
     salt: string,
     iv: string,
@@ -72,6 +73,7 @@ export default function App() {
   }>();
   const [password, setPassword] = useState<string>();
   const [passwordError, setPasswordError] = useState<string>();
+  const [locked , setLocked] = useState(true);
 
   const web3Rpc = useApplicationBlockchainWeb3Rpc();
   const [activeWeb3Rpc, setActiveWeb3Rpc] = useState<{
@@ -88,7 +90,6 @@ export default function App() {
 
   useEffect(() => {
     if (!loading && dbRpcConfigs) {
-      console.log("[App.tsx] load rpc-configs :", dbRpcConfigs);
       const activeRpcConfig = dbRpcConfigs.find(rpcConfig => rpcConfig.active == 1);
       const endpoint = activeRpcConfig ? activeRpcConfig.endpoint : config.Default_Web3_Endpoint;
       const chainId = activeRpcConfig ? activeRpcConfig.chainId : config.Default_Web3_ChainId;
@@ -98,6 +99,7 @@ export default function App() {
       }));
     }
   }, [loading, dbRpcConfigs]);
+
   useEffect(() => {
     if (web3Rpc) {
       const { chainId, endpoint } = web3Rpc;
@@ -153,6 +155,10 @@ export default function App() {
         dispatch(walletsLoadWalletNames(walletNames));
         if (encrypt) {
           setEncrypt(encrypt);
+          setLocked(true);
+        } else {
+          setWalletKeystores([]);
+          setLocked(false);
         }
         setLoading(false);
       }
@@ -170,6 +176,7 @@ export default function App() {
         setDecrypting(true);
         const walletKeystores = await window.electron.crypto.decrypt({ encrypt, password });
         setWalletKeystores(walletKeystores);
+        setLocked(false);
         dispatch(applicationSetPassword(password));
       } catch (err) {
         console.log("decrypt error:", err);
@@ -188,11 +195,13 @@ export default function App() {
 
   return (
     <>
+
       {
         loading && <Spin fullscreen spinning={loading} />
       }
+
       {
-        !loading && !walletsKeystores && encrypt && <>
+        !loading && encrypt && locked && <>
           <Row style={{ marginTop: "10%" }}>
             <Card style={{ width: "400px", margin: "auto", boxShadow: "5px 5px 10px #888888" }}>
               <Row>
@@ -228,8 +237,9 @@ export default function App() {
           </Row >
         </>
       }
+
       {
-        !loading && walletsKeystores && connectors && <>
+        !loading && !locked && walletsKeystores && connectors && <>
           <Web3ReactProvider key={activeWeb3Rpc?.endpoint} connectors={connectors}>
             <LoopUpdate />
             <Router>
