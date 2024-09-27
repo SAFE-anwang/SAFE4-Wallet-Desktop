@@ -576,6 +576,7 @@ export default () => {
       <SSH2CMDTerminalNodeModal openSSH2CMDTerminalNodeModal={openSSH2CMDTerminalNodeModal} setOpenSSH2CMDTerminalNodeModal={setOpenSSH2CMDTerminalNodeModal}
         nodeAddressPrivateKey={nodeAddressPrivateKey}
         nodeAddress={nodeAddress}
+        isSupernode={true}
         onSuccess={(enode: string, nodeAddress: string) => {
           setHelpResult({ enode, nodeAddress });
           setCreateParams({

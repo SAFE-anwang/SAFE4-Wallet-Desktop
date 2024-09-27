@@ -20,7 +20,7 @@ export const enodeRegex = /^enode:\/\/[0-9a-fA-F]{128}@(\d{1,3}\.\d{1,3}\.\d{1,3
 export const InputRules = {
   name: {
     min: 2,
-    max: 20
+    max: 200
   },
   description: {
     min: 12,

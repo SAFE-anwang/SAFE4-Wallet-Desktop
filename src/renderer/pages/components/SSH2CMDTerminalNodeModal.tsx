@@ -55,9 +55,10 @@ const DEFAULT_CONFIG = {
   Safe4FileMD5: "https://www.anwang.com/download/testnet/safe4_node/safe4-testnet.linux.latest.md5",
   Safe4FileName: "safe4-testnet.linux.latest.tar.gz",
   Safe4MD5Sum: "020c64d3ae684a29d2231dcd3c6f1c66",
-  // 解压后的节点程序目录
-  Safe4NodeDir: "safe4-testnet-v0.1.7",
-  // 默认数据文件目录
+
+  // 从这里读区 geth 运行后写入的数据,从而加载 geth 的路径,以及data_dir
+  Safe4Info: ".safe4_info",
+  // 默认的 Safe4DataDir
   Safe4DataDir: ".safe4/safetest",
 }
 
@@ -73,8 +74,8 @@ export default ({
   onSuccess,
   onError
 }: {
-  nodeAddressPrivateKey ?: string,
-  isSupernode ?: boolean,
+  nodeAddressPrivateKey?: string,
+  isSupernode?: boolean,
   nodeAddress: string,
   openSSH2CMDTerminalNodeModal: boolean
   setOpenSSH2CMDTerminalNodeModal: (openSSH2CMDTerminalNodeModal: boolean) => void
@@ -197,7 +198,7 @@ export default ({
   }, []);
 
   const outputKeyStore = useCallback(async () => {
-    if ( wallet ){
+    if (wallet) {
       const keystore = await wallet.encrypt("");
       return {
         address: wallet.address,
@@ -207,10 +208,10 @@ export default ({
     const fakeKeystore = JSON.parse(Fake_Keystore_Template);
     fakeKeystore.address = nodeAddress;
     return {
-      address : nodeAddress ,
-      keystore : JSON.stringify(fakeKeystore)
+      address: nodeAddress,
+      keystore: JSON.stringify(fakeKeystore)
     }
-  }, [wallet, password , nodeAddress]);
+  }, [wallet, password, nodeAddress]);
 
   const doConnect = useCallback(() => {
     const { host, username, password } = inputParams;
@@ -274,13 +275,14 @@ export default ({
       Safe4FileURL,
       Safe4FileName,
       Safe4MD5Sum,
-      Safe4DataDir,
-      Safe4NodeDir
+      Safe4Info,
+      Safe4DataDir
     } = DEFAULT_CONFIG;
 
-    let _Safe4DataDir = Safe4DataDir;
     let _Safe4MD5Sum = Safe4MD5Sum;
-    let _Safe4NodeDir = Safe4NodeDir;
+    let _Safe4DataDir = Safe4DataDir;
+    let _Safe4NodeDir = "";
+    let _Safe4GethPath = "";
 
     const CMD_psSafe4: CommandState = new CommandState(
       "ps aux| grep geth | grep -v grep",
@@ -288,11 +290,11 @@ export default ({
         if (data) {
           console.log("[.ps]=", data);
           console.log("[.ps]", "Safe4 节点进程存在;");
-          const match = data.match(/--datadir\s+([^\s]+)/);
-          if (match) {
-            console.log("--datadir:", match[1]);
-            _Safe4DataDir = match[1];
-          }
+          // const match = data.match(/--datadir\s+([^\s]+)/);
+          // if (match) {
+          //   console.log("--datadir:", match[1]);
+          //   _Safe4DataDir = match[1];
+          // }
           return true;
         }
         console.log("[.ps]=", data);
@@ -302,6 +304,32 @@ export default ({
       () => console.log(""),
       () => console.log("")
     );
+
+    const CMD_catSafe4Info: CommandState = new CommandState(
+      `cat ${Safe4Info}`,
+      (data) => {
+        const safe4InfoArr = data.split("\n");
+        if (safe4InfoArr) {
+          for (let i in safe4InfoArr) {
+            const keyValue = safe4InfoArr[i];
+            console.log("handle ::", keyValue)
+            if (keyValue.indexOf("=") > 0) {
+              const [key, value] = keyValue.split("=");
+              if (key == "SAFE4_PATH") {
+                _Safe4GethPath = value.trim();
+              }
+              if (key == "DATA_DIR") {
+                _Safe4DataDir = value.trim();
+              }
+            }
+          }
+        }
+
+        return true;
+      },
+      () => { },
+      () => { }
+    )
 
     const CMD_download: CommandState = new CommandState(
       `wget -O ${Safe4FileName} ${Safe4FileURL} --no-check-certificate`,
@@ -373,6 +401,7 @@ export default ({
         const CMD_start_success = await CMD_start.execute(term);
       } else {
         updateSteps(0, "Safe4 节点程序已运行");
+        const CMD_catSafe4Info_success = await CMD_catSafe4Info.execute(term);
       }
       updateSteps(1, "Safe4 节点程序已运行");
 
@@ -406,12 +435,6 @@ export default ({
             if (publicKey.indexOf("04") == 0) {
               publicKey = publicKey.substring(2);
             }
-            // enode://d39fc9ed12000b2ea3b5463936958702f20a939405aae28e39463c8b66d78bb07baf7fe59370f6037849f2bd363b1bee3301d6b0bf8349abfbcafb5fccdceab2@172.105.24.28:30303
-            // enode://{publicKey}@{ip}:30303
-            // console.log({
-            //   privateKey: nodeKey,
-            //   publicKey: publicKey
-            // });
             const enode = `enode://${publicKey}@${inputParams.host}:30303`;
             console.log("[.cat nodekey]enode=", enode)
             setEnode(enode);
@@ -423,6 +446,35 @@ export default ({
         () => console.log(""),
         () => console.log("")
       )
+
+      const CMD_attachMinerStop: CommandState = new CommandState(
+        `${_Safe4GethPath} --exec "miner.stop()" attach ${_Safe4DataDir}/geth.ipc`,
+        (result) => {
+          return true;
+        },
+        () => { },
+        () => { }
+      );
+      const CMD_attachSetMiner: CommandState = new CommandState(
+        `${_Safe4GethPath} --exec "miner.setEtherbase('${nodeAddress.toLowerCase()}')" attach ${_Safe4DataDir}/geth.ipc`,
+        () => true,
+        () => { }, () => { }
+      );
+      const CMD_attachUnlockMiner: CommandState = new CommandState(
+        `${_Safe4GethPath} --exec "personal.unlockAccount('${nodeAddress.toLowerCase()}', '', 0)" attach ${_Safe4DataDir}/geth.ipc`,
+        () => true,
+        () => { }, () => { }
+      );
+      const CMD_attachMinderStart: CommandState = new CommandState(
+        `${_Safe4GethPath} --exec "miner.start()" attach ${_Safe4DataDir}/geth.ipc`,
+        (result) => {
+          console.log("cmd_acctch stop result :", result)
+          return true;
+        },
+        () => { },
+        () => { }
+      );
+
 
       let CMD_checkKeystore_success = false;
       try {
@@ -462,6 +514,13 @@ export default ({
         updateSteps(1, "节点地址 Keystore 文件已存在");
       }
       updateSteps(2);
+      if (isSupernode) {
+        // 在同步超级节点数据时，如果服务器已经启动geth,需要重新设置矿工，解锁，挖矿等命令;
+        const CMD_attach_stop = await CMD_attachMinerStop.execute(term);
+        const CMD_attach_SetMiner = await CMD_attachSetMiner.execute(term);
+        const CMD_attach_UnlockMiner = await CMD_attachUnlockMiner.execute(term);
+        const CMD_attach_start = await CMD_attachMinderStart.execute(term);
+      }
       const CMD_catNodeKey_success = await CMD_exportEnode.execute(term);
       if (CMD_catNodeKey_success) {
         updateSteps(3);
@@ -470,7 +529,7 @@ export default ({
         setScriptError("无法获取 ENODE 值");
       }
     }
-  }, [terminalInstance, inputParams, wallet , nodeAddress ]);
+  }, [terminalInstance, inputParams, wallet, nodeAddress]);
 
   return <>
     <Modal footer={null} open={openSSH2CMDTerminalNodeModal} width={1200} destroyOnClose closable={false}>

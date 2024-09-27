@@ -64,7 +64,7 @@ export default function App() {
   const dispatch = useDispatch();
   const [loading, setLoading] = useState<boolean>(true);
 
-  const [walletsKeystores, setWalletKeystores] = useState();
+  const [walletsKeystores, setWalletKeystores] = useState<any>(undefined);
   const [encrypt, setEncrypt] = useState<{
     salt: string,
     iv: string,
@@ -125,7 +125,6 @@ export default function App() {
       if (arg instanceof Array && arg[0] == IndexSingal && arg[1] == method) {
         const data = arg[2][0];
         const {
-          walletKeystores,
           path,
           encrypt,
           rpc_configs,
@@ -154,8 +153,6 @@ export default function App() {
         dispatch(walletsLoadWalletNames(walletNames));
         if (encrypt) {
           setEncrypt(encrypt);
-        } else {
-          setWalletKeystores(walletKeystores);
         }
         setLoading(false);
       }
@@ -291,7 +288,7 @@ export default function App() {
                     <Route path="/main/safe3nav" element={<RedeemNav />} />
                     <Route path="/main/safe3" element={<Safe3 />} />
                     <Route path="/main/safe3BatchRedeem" element={<BatchRedeem />} />
-                    <Route path="/main/test" element={<TestCrypto />} />
+                    <Route path="/main/test" element={<TestSSH2CMD />} />
                     <Route path="/main/menu" element={<Menu />} />
                     <Route path="/main/menu/storage" element={<Storage />} />
                     <Route path="/main/menu/network" element={<NetworkPage />} />

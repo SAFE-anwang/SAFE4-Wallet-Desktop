@@ -9,7 +9,7 @@ import { AppState } from "../../../../state";
 import { useMasternodeStorageContract, useMulticallContract, useSupernodeLogicContract, useSupernodeStorageContract } from "../../../../hooks/useContracts";
 import { useTransactionAdder } from "../../../../state/transactions/hooks";
 import { generateChildWallet, NodeAddressSelectType, SupportChildWalletType, SupportNodeAddressSelectType } from "../../../../utils/GenerateChildWallet";
-import { useActiveAccountChildWallets, useWalletsActiveAccount, useWalletsActiveKeystore } from "../../../../state/wallets/hooks";
+import { useActiveAccountChildWallets, useETHBalances, useSafe4Balance, useWalletsActiveAccount, useWalletsActiveKeystore } from "../../../../state/wallets/hooks";
 import { TxExecuteStatus } from "../../safe3/Safe3";
 import { CallMulticallAggregateContractCall, SyncCallMulticallAggregate } from "../../../../state/multicall/CallMulticallAggregate";
 import { enodeRegex, InputRules } from "../Register/SupernodeRegister";
@@ -17,12 +17,16 @@ import AddressComponent from "../../../components/AddressComponent";
 import SSH2CMDTerminalNodeModal from "../../../components/SSH2CMDTerminalNodeModal";
 import { formatSupernodeInfo, SupernodeInfo } from "../../../../structs/Supernode";
 import { walletsUpdateUsedChildWalletAddress } from "../../../../state/wallets/action";
+import { useWeb3React } from "@web3-react/core";
+import { CurrencyAmount } from "@uniswap/sdk";
+import { ZERO } from "../../../../utils/CurrentAmountUtils";
 
 const { Text, Title } = Typography
 
 export default () => {
 
   const navigate = useNavigate();
+  const { provider } = useWeb3React();
   const editSupernodeId = useSelector((state: AppState) => state.application.control.editSupernodeId);
   const [supernodeInfo, setSupernodeInfo] = useState<SupernodeInfo>();
   const masternodeStorageContract = useMasternodeStorageContract();
@@ -424,7 +428,6 @@ export default () => {
     <Row style={{ marginTop: "20px", width: "100%" }}>
       <Card style={{ width: "100%" }}>
         <div style={{ width: "50%", margin: "auto" }}>
-
           <Row style={{ marginTop: "20px" }}>
             <Col span={24}>
               <Text type="secondary">超级节点ID</Text>
@@ -712,10 +715,12 @@ export default () => {
       </Card>
     </Row>
 
+
     {
       openSSH2CMDTerminalNodeModal && updateParams.address &&
       <SSH2CMDTerminalNodeModal openSSH2CMDTerminalNodeModal={openSSH2CMDTerminalNodeModal} setOpenSSH2CMDTerminalNodeModal={setOpenSSH2CMDTerminalNodeModal}
         nodeAddress={updateParams.address} nodeAddressPrivateKey={nodeAddressPrivateKey}
+        isSupernode={true}
         onSuccess={(enode: string, nodeAddress: string) => {
           setHelpResult({ enode, nodeAddress });
           setUpdateParams({

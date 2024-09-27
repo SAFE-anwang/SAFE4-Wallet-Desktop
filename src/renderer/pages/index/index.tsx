@@ -16,12 +16,12 @@ export default () => {
   const walletsKeystores = useWalletsKeystores();
   useEffect( () => {
     if ( walletsKeystores.length == 0) {
-      navigate("/selectCreateWallet"); 
+      navigate("/selectCreateWallet");
     } else {
       navigate("/main/wallet")
     }
   } , [walletsKeystores] );
   return <>
-    
+
   </>
 }
