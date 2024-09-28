@@ -124,11 +124,11 @@ const initialState: IApplicationState = {
 export default createReducer(initialState, (builder) => {
 
   builder.addCase(applicationDataLoaded, (state, { payload: { path, rpcConfigs } }) => {
-    const { resource, data, database, keystores } = path;
+    const { resource, data, database, kys } = path;
     state.data["resource"] = resource;
     state.data["data"] = data;
     state.data["database"] = database;
-    state.data["keystores"] = keystores;
+    state.data["kys"] = kys;
     state.rpcConfigs = rpcConfigs;
   })
 

@@ -1,13 +1,11 @@
 
 import { Alert, Col, Row, Typography, Card, Divider, Button, Tabs, TabsProps, Input, Spin } from "antd";
 import { useCallback, useEffect, useState } from "react";
-import { useMasternodeLogicContract, useSafe3Contract } from "../../../hooks/useContracts";
-import { AvailableSafe3Info, SpecialSafe3Info, formatAvailableSafe3Info, formatLockedSafe3Info, formatSpecialSafe3Info } from "../../../structs/Safe3";
+import { useMasternodeLogicContract, useMulticallContract, useSafe3Contract } from "../../../hooks/useContracts";
+import { AvailableSafe3Info, formatAvailableSafe3Info, formatLockedSafe3Info, LockedSafe3Info } from "../../../structs/Safe3";
 import { ZERO } from "../../../utils/CurrentAmountUtils";
 import { CurrencyAmount } from "@uniswap/sdk";
-import { fetchSafe3Address } from "../../../services/safe3";
-import { ethers } from "ethers";
-import useSafeScan from "../../../hooks/useSafeScan";
+import { CallMulticallAggregateContractCall, SyncCallMulticallAggregate } from "../../../state/multicall/CallMulticallAggregate";
 
 const { Text } = Typography;
 const LockedTxLimit = 10;
@@ -36,9 +34,9 @@ export default ({
 
   const safe3Contract = useSafe3Contract();
   const masternodeStorageContract = useMasternodeLogicContract();
+  const multicallContract = useMulticallContract();
   const [safe3AddressAsset, setSafe3AddressAsset] = useState<Safe3Asset>();
   const [safe3AddressAssetLoading, setSafe3AddressAssetLoading] = useState<boolean>(false);
-  const {API} = useSafeScan();
 
   useEffect(() => {
     setSafe3Asset(undefined);
@@ -55,116 +53,96 @@ export default ({
     }
   }, [safe3Address, safe3Contract]);
 
-  const loadSafe3Asset = useCallback((address: string, callback: (safe3Asset: Safe3Asset) => void) => {
-    if (safe3Contract && masternodeStorageContract) {
+  const loadSafe3Asset = useCallback(async (address: string, callback: (safe3Asset: Safe3Asset) => void) => {
+    if (safe3Contract && masternodeStorageContract && multicallContract) {
       // 查询地址的可用资产信息
-      safe3Contract.callStatic.getAvailableInfo(address)
-        .then(data => {
-          const availableSafe3Info = formatAvailableSafe3Info(data);
-          const _safe3Asset: Safe3Asset = {
-            safe3Address: address,
-            availableSafe3Info,
-            locked: {
-              lockedNum: 0,
-              lockedAmount: ZERO,
-              redeemHeight: 0,
-              txLockedAmount: ZERO
-            }
+      const availableSafe3Info = formatAvailableSafe3Info(await safe3Contract.callStatic.getAvailableInfo(address));
+      const _safe3Asset: Safe3Asset = {
+        safe3Address: address,
+        availableSafe3Info,
+        locked: {
+          lockedNum: 0,
+          lockedAmount: ZERO,
+          redeemHeight: 0,
+          txLockedAmount: ZERO
+        }
+      }
+      setSafe3AddressAsset({
+        ..._safe3Asset
+      });
+
+      const lockedNum = (await safe3Contract.callStatic.getLockedNum(address)).toNumber();
+      const lockedPage = Math.ceil(lockedNum / LockedTxLimit);
+      const lockedPageCalls = [];
+      for (let i = 0; i < lockedPage; i++) {
+        const pageQueryCall: CallMulticallAggregateContractCall = {
+          contract: safe3Contract,
+          functionName: "getLockedInfo",
+          params: [address, i * LockedTxLimit, LockedTxLimit]
+        }
+        lockedPageCalls.push(pageQueryCall);
+      }
+      const aggregateTimes = Math.ceil(lockedPageCalls.length / LockedTxLimit);
+      const lockedSafe3Infos: LockedSafe3Info[] = [];
+      for (let i = 0; i < aggregateTimes; i++) {
+        const from = i * LockedTxLimit;
+        const to = from + LockedTxLimit;
+        const calls = lockedPageCalls.filter((_, index) => index >= from && index < to)
+        await SyncCallMulticallAggregate(multicallContract, calls);
+        calls.map(call => {
+          call.result.map(formatLockedSafe3Info)
+            .forEach((lockedSafe3Info: LockedSafe3Info) => lockedSafe3Infos.push(lockedSafe3Info));
+          // setTempUpdate .... //
+          const tempTotal = lockedSafe3Infos.map(lockTx => lockTx.amount).reduce((total, amount) => {
+            total = total.add(amount);
+            return total;
+          }, ZERO);
+          _safe3Asset.locked.lockedNum = lockedSafe3Infos.length;
+          _safe3Asset.locked.lockedAmount = tempTotal;
+          setSafe3AddressAsset({
+            ..._safe3Asset,
+          });
+          // setTempUpdate .... //
+        });
+      }
+      const loopResult: {
+        redeemHeight: number,
+        masternode?: {
+          redeemHeight: number,
+          lockedAmount: CurrencyAmount
+        }
+      } = {
+        redeemHeight: 0
+      };
+      const totalLockedAmount = lockedSafe3Infos.map(lockTx => {
+        if (lockTx.isMN) {
+          loopResult.masternode = {
+            redeemHeight: lockTx.redeemHeight,
+            lockedAmount: lockTx.amount
           }
-          // 查询地址的锁仓数据.
-          safe3Contract.callStatic.getLockedNum(address)
-            .then((data: any) => {
-              const lockedNum = data.toNumber();
-              if (lockedNum > 0) {
-                safe3Contract.callStatic.getLockedInfo(address, 0, LockedTxLimit)
-                  .then((_lockedSafe3Infos: any[]) => {
-                    const lockedSafe3Infos = _lockedSafe3Infos.map(formatLockedSafe3Info);
-                    const loopResult: {
-                      redeemHeight: number,
-                      masternode?: {
-                        redeemHeight: number,
-                        lockedAmount: CurrencyAmount
-                      }
-                    } = {
-                      redeemHeight: 0
-                    };
-                    const totalLockedAmount = lockedSafe3Infos.map(lockTx => {
-                      if (lockTx.isMN) {
-                        loopResult.masternode = {
-                          redeemHeight: lockTx.redeemHeight,
-                          lockedAmount: lockTx.amount
-                        }
-                      } else {
-                        loopResult.redeemHeight = lockTx.redeemHeight;
-                      }
-                      return lockTx.amount;
-                    }).reduce((total, amount) => {
-                      total = total.add(amount);
-                      return total;
-                    }, ZERO);
-                    if (lockedNum <= LockedTxLimit) {
-                      // 如果锁仓数据不多,则直接在一次调用合约中进行统计.
-                      _safe3Asset.locked = {
-                        redeemHeight: loopResult.redeemHeight,
-                        lockedNum,
-                        lockedAmount: totalLockedAmount,
-                        txLockedAmount: loopResult.masternode ? totalLockedAmount.subtract(loopResult.masternode.lockedAmount) : totalLockedAmount
-                      }
-                      if (loopResult.masternode) {
-                        _safe3Asset.masternode = {
-                          redeemHeight: loopResult.masternode.redeemHeight,
-                          lockedAmount: loopResult.masternode.lockedAmount
-                        }
-                      }
-                      callback(_safe3Asset);
-                    } else {
-                      // 如果锁仓数据过于多,则通过浏览器接口来获取锁仓以及是否为主节点.
-                      // 查询区块链浏览器接口获取它是否是主节点.
-                      fetchSafe3Address( API , address).then(data => {
-                        const { masternode, locked, mLockedAmount } = data;
-                        const isMasternode = masternode;
-                        const lockedAmount = CurrencyAmount.ether(ethers.utils.parseEther(locked).toBigInt());
-                        const masternodeLockedAmount = CurrencyAmount.ether(ethers.utils.parseEther(mLockedAmount).toBigInt());
-                        const txLockedAmount = lockedAmount.subtract(masternodeLockedAmount);
-                        _safe3Asset.locked = {
-                          redeemHeight: loopResult.redeemHeight,
-                          lockedNum,
-                          lockedAmount,
-                          txLockedAmount
-                        }
-                        if (isMasternode) {
-                          // 如何检查它是否已经迁移了主节点 ??
-                          // 1.> 如果在第一页的遍历结果中已经出现了主节点的锁仓记录，则直接用它的结果就可以了.
-                          // 2.> 如果是需要查询浏览器接口获取是否为主节点的情况,不好判断是否迁移过主节点,则先简单的从masternodes中检测这个地址是不是主节点.
-                          if (loopResult.masternode) {
-                            _safe3Asset.masternode = {
-                              redeemHeight: loopResult.masternode.redeemHeight,
-                              lockedAmount: loopResult.masternode.lockedAmount
-                            }
-                          } else {
-                            // for 2
-                            masternodeStorageContract.callStatic.exist(address)
-                              .then((exist: boolean) => {
-                                _safe3Asset.masternode = {
-                                  redeemHeight: exist ? 1 : 0,
-                                  lockedAmount: masternodeLockedAmount
-                                }
-                                callback(_safe3Asset);
-                                return;
-                              });
-                          }
-                        }
-                        callback(_safe3Asset);
-                      });
-                    }
-                  });
-              } else {
-                callback(_safe3Asset);
-              }
-            })
-        })
+        } else {
+          loopResult.redeemHeight = lockTx.redeemHeight;
+        }
+        return lockTx.amount;
+      }).reduce((total, amount) => {
+        total = total.add(amount);
+        return total;
+      }, ZERO);
+      _safe3Asset.locked = {
+        redeemHeight: loopResult.redeemHeight,
+        lockedNum,
+        lockedAmount: totalLockedAmount,
+        txLockedAmount: loopResult.masternode ? totalLockedAmount.subtract(loopResult.masternode.lockedAmount) : totalLockedAmount
+      }
+      if (loopResult.masternode) {
+        _safe3Asset.masternode = {
+          redeemHeight: loopResult.masternode.redeemHeight,
+          lockedAmount: loopResult.masternode.lockedAmount
+        }
+      }
+      callback(_safe3Asset);
     }
-  }, [safe3Contract, masternodeStorageContract]);
+  }, [safe3Contract, masternodeStorageContract, multicallContract]);
 
   useEffect(() => {
     if (safe3AddressAsset) {
@@ -219,7 +197,6 @@ export default ({
         </>
       }
     </Col>
-
   </>)
 
 }

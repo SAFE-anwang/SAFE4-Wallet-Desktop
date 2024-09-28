@@ -67,7 +67,6 @@ export class IndexSingalHandler implements ListenSignalHandler {
 
   private async load(): Promise<any> {
     const encrypt = await this.loadWalletKeystoreFromDB();
-    // const { walletKeystores, encrypt } = this.loadWalletKeystores();
     const rpc_configs = await this.loadRpcConfig();
     const wallet_names = await this.loadWalletNames();
     return {
@@ -129,54 +128,6 @@ export class IndexSingalHandler implements ListenSignalHandler {
       return encrypt;
     }
     return undefined;
-  }
-
-  /**
-   * @returns 低于 1.0.1 版本前的钱包私钥处理方式,已作废
-   */
-  private loadWalletKeystores(): { walletKeystores?: any, encrypt?: any } {
-    let walletKeystores: any = [];
-    let safe4walletKeyStoresContent = undefined;
-    let encrypt: {
-      salt: string,
-      iv: string,
-      ciphertext: string
-    };
-    try {
-      safe4walletKeyStoresContent = fs.readFileSync(
-        this.ctx.path.keystores, "utf8");
-    } catch (err) {
-      console.error(`No ${this.ctx.path.keystores} found`)
-    }
-    try {
-      if (safe4walletKeyStoresContent) {
-        const base58DecodeResult = JSON.parse(
-          ethers.utils.toUtf8String(
-            ethers.utils.base58.decode(safe4walletKeyStoresContent)
-          )
-        );
-        // console.log("Load safe4.wallet.keystores:", base58DecodeResult);
-        if (base58DecodeResult instanceof Array) {
-          console.log("Load Unencrypt safe4.wallet.keystores");
-          walletKeystores = base58DecodeResult;
-        } else if (base58DecodeResult instanceof Object) {
-          console.log("Load Encrypted safe4.wallet.keystores");
-          encrypt = {
-            ...base58DecodeResult
-          }
-          return {
-            walletKeystores,
-            encrypt
-          }
-        }
-      }
-    } catch (err) {
-      console.error(`${this.ctx.path.keystores} 损坏`);
-    }
-    console.log(`Finish Load ${this.ctx.path.keystores}`)
-    return {
-      walletKeystores
-    };
   }
 
 }

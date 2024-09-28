@@ -16,8 +16,6 @@ export default () => {
   const navigate = useNavigate();
   const data = useSelector<AppState, { [key: string]: any }>(state => state.application.data);
 
-  console.log("data:" , data)
-
   return <>
     <Row style={{ height: "50px" }}>
       <Col span={8}>
@@ -48,7 +46,7 @@ export default () => {
               <Text type='secondary'>钱包文件</Text>
             </Col>
             <Col span={24}>
-              <Text>{data["keystores"]}</Text>
+              <Text>{data["kys"]}</Text>
             </Col>
           </Row>
 

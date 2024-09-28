@@ -6,13 +6,11 @@ export class Context {
   path: {
     resource: string,
     data: string,
-    keystores: string,
     database: string,
     kys: string
   } = {
       resource: "",
       data: "data",
-      keystores: "safe4.wallet.keystores",
       database: "safe4.wallet.db",
       kys: "safe4.wallet.kys"
     };
@@ -38,7 +36,6 @@ export class Context {
       console.log(`[Init] ${this.path.data}:Folder already exists.`);
     }
     this.path.database = path.join(this.path.data, this.path.database);
-    this.path.keystores = path.join(this.path.data, this.path.keystores);
     this.path.kys = path.join(this.path.data, this.path.kys);
   }
 

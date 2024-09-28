@@ -56,15 +56,15 @@ import SelectSupernodeSyncMode from './pages/main/supernodes/Sync/SelectSupernod
 import MasternodeSync from './pages/main/masternodes/Sync/MasternodeSync';
 import SupernodeSync from './pages/main/supernodes/Sync/SupernodeSync';
 import TestSSH2CMD from './pages/main/tools/ssh2/TestSSH2CMD';
-import TestSSH2Shell from './pages/main/tools/ssh2/TestSSH2Shell';
-import TestCrypto from './pages/main/tools/TestCrypto';
+import { useWalletsKeystores } from './state/wallets/hooks';
 const { Text } = Typography;
 
 export default function App() {
 
   const dispatch = useDispatch();
   const [loading, setLoading] = useState<boolean>(true);
-  const [walletsKeystores, setWalletKeystores] = useState<any>(undefined);
+  const walletsKeystores = useWalletsKeystores();
+  const [locked, setLocked] = useState( true );
 
   const [encrypt, setEncrypt] = useState<{
     salt: string,
@@ -73,7 +73,6 @@ export default function App() {
   }>();
   const [password, setPassword] = useState<string>();
   const [passwordError, setPasswordError] = useState<string>();
-  const [locked , setLocked] = useState(true);
 
   const web3Rpc = useApplicationBlockchainWeb3Rpc();
   const [activeWeb3Rpc, setActiveWeb3Rpc] = useState<{
@@ -155,9 +154,7 @@ export default function App() {
         dispatch(walletsLoadWalletNames(walletNames));
         if (encrypt) {
           setEncrypt(encrypt);
-          setLocked(true);
-        } else {
-          setWalletKeystores([]);
+        }else{
           setLocked(false);
         }
         setLoading(false);
@@ -174,10 +171,10 @@ export default function App() {
     if (password && encrypt) {
       try {
         setDecrypting(true);
-        const walletKeystores = await window.electron.crypto.decrypt({ encrypt, password });
-        setWalletKeystores(walletKeystores);
-        setLocked(false);
+        const walletsKeystores = await window.electron.crypto.decrypt({ encrypt, password });
+        dispatch(walletsLoadKeystores(walletsKeystores));
         dispatch(applicationSetPassword(password));
+        setLocked(false);
       } catch (err) {
         console.log("decrypt error:", err);
         setPasswordError("输入正确的密码才能打开本地加密文件");
@@ -186,16 +183,16 @@ export default function App() {
     }
   }, [password, encrypt]);
 
-  useEffect(() => {
-    if (walletsKeystores) {
-      dispatch(walletsLoadKeystores(walletsKeystores));
+  useEffect( () => {
+    if ( walletsKeystores && walletsKeystores.length > 0 ){
+        setLocked(false);
     }
-  }, [walletsKeystores]);
+  } , [ walletsKeystores ] )
+
   const atCreateWallet = useApplicationActionAtCreateWallet();
 
   return (
     <>
-
       {
         loading && <Spin fullscreen spinning={loading} />
       }

@@ -9,7 +9,7 @@ export const applicationDataLoaded = createAction<{
   path: {
     resource: string,
     data: string,
-    keystores: string,
+    kys: string,
     database: string
   },
   rpcConfigs: {
