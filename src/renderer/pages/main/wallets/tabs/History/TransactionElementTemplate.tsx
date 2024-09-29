@@ -23,12 +23,12 @@ export default ({
                     <Row style={{ width: "50px", float: "left" }}>
                         {
                             !status && status != 0 && <Spin indicator={<LoadingOutlined style={{ fontSize: "34px", float: "left", marginLeft: "-18px", marginTop: "-14px" }} />} >
-                                <Avatar style={{ padding:"4px" , marginTop: "8px", background: icon ? "#e6e6e6" : "" }}
+                                <Avatar style={{  marginTop: "8px", background: icon ? "#e6e6e6" : "" }}
                                     src={icon ? icon : SAFE_LOGO} />
                             </Spin>
                         }
                         {
-                            status == 1 && <Avatar style={{  padding:"4px"  , marginTop: "8px", background: icon ? "#e6e6e6" : "" }}
+                            status == 1 && <Avatar style={{  marginTop: "8px", background: icon ? "#e6e6e6" : "" }}
                                 src={icon ? icon : SAFE_LOGO} />
                         }
                         {

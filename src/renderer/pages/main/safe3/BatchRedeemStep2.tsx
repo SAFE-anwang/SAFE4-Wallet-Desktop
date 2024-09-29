@@ -280,19 +280,44 @@ export default ({
       return hasAvailable || hasLocked || hasMasternode;
     }).map(address => addressResultMap[address]);
     const needRedeemList = hasAssetList.filter(result => {
+
       const { availableInfo, lockedAmount, mnLocked, lockedRedeemHeight } = result;
+
       const needRedeemAvailable = availableInfo?.amount.greaterThan(ZERO)
         && availableInfo.redeemHeight == 0;
-      const needRedeemLocked = lockedAmount?.greaterThan(ZERO)
-        && lockedRedeemHeight == 0;
+
+      let needRedeemLocked = false;
+      if (lockedAmount) {
+        if (mnLocked) {
+          if (lockedAmount.greaterThan(mnLocked.amount)) {
+            needRedeemLocked = lockedRedeemHeight == 0;
+          } else {
+            needRedeemLocked = mnLocked.redeemHeight == 0;
+          }
+        } else {
+          needRedeemLocked = lockedAmount.greaterThan(ZERO) && lockedRedeemHeight == 0;
+        }
+      }
+
       const needRedeemMasternode = mnLocked
         && mnLocked.redeemHeight == 0;
       return needRedeemAvailable || needRedeemLocked || needRedeemMasternode;
+
     });
     const needRedeemTotalAvailableAmount = needRedeemList.map(result => result.availableInfo?.amount)
       .reduce((total: CurrencyAmount, current: CurrencyAmount | undefined) => { return total.add(current ?? ZERO) }, ZERO);
-    const needRedeemTotalLockedAmount = needRedeemList.map(result => result.lockedAmount)
-      .reduce((total: CurrencyAmount, current: CurrencyAmount | undefined) => { return total.add(current ?? ZERO) }, ZERO);
+    const needRedeemTotalLockedAmount = needRedeemList.map(result => {
+      const lockedAmount = result.lockedAmount;
+      const mnLocked = result.mnLocked;
+      if (lockedAmount) {
+        if (mnLocked && mnLocked.redeemHeight > 0) {
+          return result.lockedAmount?.subtract(mnLocked.amount);
+        } else {
+          return result.lockedAmount;
+        }
+      }
+      return ZERO;
+    }).reduce((total: CurrencyAmount, current: CurrencyAmount | undefined) => { return total.add(current ?? ZERO) }, ZERO);
     const needRedeemMasternodeCounts = needRedeemList.filter(result => result.mnLocked && result.mnLocked.redeemHeight == 0).length;
     return {
       statistic: {
@@ -332,17 +357,17 @@ export default ({
       key: 'address0',
       render: (address) => {
         const availableInfo = addressResultMap[address]?.availableInfo;
-        const redeemHeight = availableInfo?.redeemHeight;
+        const needRedeemAvailable = availableInfo?.amount.greaterThan(ZERO) && availableInfo.redeemHeight == 0;
         return <>
           {
-            redeemHeight != 0 && <>
+            !needRedeemAvailable && <>
               <Text type="secondary" delete>
                 {availableInfo?.amount.toExact()} SAFE
               </Text>
             </>
           }
           {
-            redeemHeight == 0 && <>
+            needRedeemAvailable && <>
               <Text strong>
                 {availableInfo?.amount.toExact()} SAFE
               </Text>
@@ -359,16 +384,32 @@ export default ({
       render: (address) => {
         const lockedAmount = addressResultMap[address]?.lockedAmount;
         const lockedRedeemHeight = addressResultMap[address]?.lockedRedeemHeight;
+        const mnLocked = addressResultMap[address]?.mnLocked;
+
+        let needLockedRedeem = false;
+        if (lockedAmount) {
+          if (mnLocked) {
+            console.log(` ${lockedAmount.toExact()} > ${mnLocked.amount.toExact()}`)
+            if (lockedAmount.greaterThan(mnLocked.amount)) {
+              needLockedRedeem = lockedRedeemHeight == 0;
+            } else {
+              needLockedRedeem = mnLocked.redeemHeight == 0;
+            }
+          } else {
+            needLockedRedeem = lockedAmount.greaterThan(ZERO) && lockedRedeemHeight == 0;
+          }
+        }
+
         return <>
           {
-            lockedRedeemHeight != 0 && <>
+            !needLockedRedeem && <>
               <Text type="secondary" delete>
                 {lockedAmount?.toExact()} SAFE
               </Text>
             </>
           }
           {
-            lockedRedeemHeight == 0 && <>
+            needLockedRedeem && <>
               <Text strong>
                 {lockedAmount?.toExact()} SAFE
               </Text>
@@ -443,7 +484,7 @@ export default ({
     <Divider />
     {
       allFinish && needRedeemList.length == 0 &&
-      <Alert style={{marginBottom:"20px"}} type="warning" showIcon message={<>
+      <Alert style={{ marginBottom: "20px" }} type="warning" showIcon message={<>
         没有需要进行迁移资产的账户
       </>} />
     }
