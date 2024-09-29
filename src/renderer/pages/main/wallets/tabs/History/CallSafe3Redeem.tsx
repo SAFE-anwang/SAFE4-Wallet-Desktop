@@ -42,8 +42,8 @@ export default ({
   }, [functionName]);
 
   const RenderAssetFlow = () => {
-    const safe4Addresses = mappings.map( mapping => mapping.safe4Address );
-    if (safe4Addresses && safe4Addresses.indexOf(activeAccount) > 0 ) {
+    const safe4Addresses = mappings.map(mapping => mapping.safe4Address);
+    if (safe4Addresses && safe4Addresses.indexOf(activeAccount) >= 0) {
       return <>
         {
           JSBI.greaterThan(locked, JSBI.BigInt(0)) &&
@@ -76,7 +76,7 @@ export default ({
       description={<>
         <Row>
           {
-            mappings.filter( (mapping,  index) => index < 5 ).map(mapping => {
+            mappings.filter((mapping, index) => index < 5).map(mapping => {
               const { safe3Address, safe4Address } = mapping;
               return <Col key={safe3Address} span={24}>
                 <Text type="secondary">{safe3Address}</Text>

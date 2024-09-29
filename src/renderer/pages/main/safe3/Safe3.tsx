@@ -198,7 +198,7 @@ export default () => {
       let _redeemTxHashs = redeemTxHashs ?? {};
       // safe3 可用资产大于零,且没有被赎回.
       if (
-        // availableSafe3Info.redeemHeight == 0 &&
+        availableSafe3Info.redeemHeight == 0 &&
         availableSafe3Info.amount.greaterThan(ZERO)
       ) {
         try {
@@ -216,7 +216,7 @@ export default () => {
         } catch (error: any) {
           _redeemTxHashs.avaiable = {
             status: 0,
-            error: error.error.reason
+            error: error.toString()
           }
           setRedeemTxHashs({ ..._redeemTxHashs })
           console.log("执行迁移可用资产错误,Error:", error.error.reason);
@@ -227,7 +227,7 @@ export default () => {
 
       // safe3 锁仓资产大于零,且没有被赎回.
       if (
-        // locked.redeemHeight == 0 &&
+        locked.redeemHeight == 0 &&
         locked.txLockedAmount.greaterThan(ZERO)
       ) {
         try {
@@ -257,7 +257,7 @@ export default () => {
       // safe3 主节点
       if (
         safe3Asset.masternode
-        // && safe3Asset.masternode.redeemHeight == 0
+        && safe3Asset.masternode.redeemHeight == 0
       ) {
         try {
           let response = await safe3Contract.batchRedeemMasterNode(
@@ -301,8 +301,8 @@ export default () => {
       <div style={{ margin: "auto", width: "90%" }}>
         <Card>
           <Alert showIcon type="info" message={<>
-            <Text>将 Safe3 网络的资产迁移到 Safe4 网络 (当前测试使用 Safe3 网络 2024年之前的资产快照)</Text><br />
-            <Text>私钥只在当前界面用于本地验证以及数据签名.</Text><br />
+            <Text>将 Safe3 网络的资产迁移到 Safe4 网络 (当前测试使用 Safe3 网络 2024年9月之前的资产快照)</Text><br />
+            <Text>您输入的私钥只在当前界面用于本地验证以及数据签名.</Text><br />
           </>} />
           <Steps style={{ marginTop: "20px" }} current={current} items={items} />
           <Row style={{ marginTop: "20px" }}>
