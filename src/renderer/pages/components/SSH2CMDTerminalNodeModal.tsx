@@ -350,14 +350,14 @@ export default ({
     )
 
     if (term) {
-
       let needAttachIpc = false;
-
       updateSteps(0, "检查 Safe4 进程是否运行");
       const CMD_psSafe4_success = await CMD_psSafe4.execute(term);
       if (!CMD_psSafe4_success) {
         try {
+          console.log("从服务器获取最新 MD5值",DEFAULT_CONFIG.Safe4FileMD5);
           _Safe4MD5Sum = (await (await fetch(DEFAULT_CONFIG.Safe4FileMD5)).text()).trim();
+          console.log("从服务器获取最新 MD5值",_Safe4MD5Sum);
         } catch (err) {
 
         }
@@ -393,7 +393,7 @@ export default ({
         const CMD_unzip_success = await CMD_unzip.execute(term);
         updateSteps(0, "启动 Safe4 节点程序");
         const CMD_start: CommandState = new CommandState(
-          `cd ${_Safe4NodeDir} && sh start.sh ${inputParams.host} ${nodeAddress.toLowerCase()} > safe.log 2>&1`,
+          `cd ${_Safe4NodeDir} && nohup ./start.sh ${inputParams.host} ${nodeAddress.toLowerCase()} 2>&1 >run.log &`,
           () => {
             return true;
           },
