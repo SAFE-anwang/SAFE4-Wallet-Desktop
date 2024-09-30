@@ -12,6 +12,7 @@ import {
 import { useETHBalances, useWalletsActiveAccount } from "../../../state/wallets/hooks";
 import { CurrencyAmount } from "@uniswap/sdk";
 import Safe3AssetRender, { Safe3Asset } from "./Safe3AssetRender";
+import { useTransactionAdder } from "../../../state/transactions/hooks";
 
 const { Text, Title } = Typography;
 
@@ -57,6 +58,7 @@ export default () => {
   const activeAccount = useWalletsActiveAccount();
   const [current, setCurrent] = useState(0);
   const items = steps.map((item) => ({ key: item.title, title: item.title }));
+  const addTransaction = useTransactionAdder();
 
   const [safe3Address, setSafe3Address] = useState<string>();
   const [safe3PrivateKey, setSafe3PrivateKey] = useState<string>();
@@ -101,7 +103,7 @@ export default () => {
   }, [activeAccount, safe4TargetAddress]);
 
   const redeemEnable = useMemo(() => {
-    if ( inputErrors?.safe3Address || inputErrors?.safe3PrivateKeyError || inputErrors?.safe4TargetAddress ){
+    if (inputErrors?.safe3Address || inputErrors?.safe3PrivateKeyError || inputErrors?.safe4TargetAddress) {
       return false;
     }
     if (!safe3Asset) {
@@ -114,13 +116,13 @@ export default () => {
       return false;
     }
     const avaiable = safe3Asset.availableSafe3Info.amount.greaterThan(ZERO)
-    && safe3Asset.availableSafe3Info.redeemHeight == 0;
+      && safe3Asset.availableSafe3Info.redeemHeight == 0;
     const locked = safe3Asset.locked.txLockedAmount.greaterThan(ZERO)
-    && safe3Asset.locked.redeemHeight == 0;
+      && safe3Asset.locked.redeemHeight == 0;
     const masternode = safe3Asset.masternode
-    && safe3Asset.masternode.redeemHeight == 0;
+      && safe3Asset.masternode.redeemHeight == 0;
     return avaiable || locked || masternode;
-  }, [safe3Asset, safe3Wallet, notEnough,inputErrors]);
+  }, [safe3Asset, safe3Wallet, notEnough, inputErrors]);
 
   useEffect(() => {
     setSafe3Asset(undefined);
@@ -166,12 +168,12 @@ export default () => {
     }
   }, [safe3PrivateKey, safe3Asset]);
 
-  useEffect( ()=>{
+  useEffect(() => {
     // 当用户切换用户时 , 将所有输入重置;
     setSafe3Address(undefined);
     setSafe3PrivateKey(undefined);
     setSafe4TargetAddress(activeAccount);
-  } , [ activeAccount ] );
+  }, [activeAccount]);
 
   useEffect(() => {
     if (safe3Asset) {
@@ -187,7 +189,7 @@ export default () => {
 
   const executeRedeem = useCallback(async () => {
     if (safe4TargetAddress && safe3Wallet && safe3Asset && masternodeContract && supernodeContract && safe3Contract) {
-      if ( !ethers.utils.isAddress(safe4TargetAddress) ){
+      if (!ethers.utils.isAddress(safe4TargetAddress)) {
         return;
       }
       const { safe3Address, availableSafe3Info, locked } = safe3Asset;
@@ -212,6 +214,14 @@ export default () => {
             txHash: response.hash
           }
           setRedeemTxHashs({ ..._redeemTxHashs });
+          addTransaction({ to: safe3Contract.address }, response, {
+            call: {
+              from: activeAccount,
+              to: safe3Contract.address,
+              input: response.data,
+              value: "0"
+            }
+          });
           console.log("执行迁移可用资产Hash:", response.hash);
         } catch (error: any) {
           _redeemTxHashs.avaiable = {
@@ -242,6 +252,14 @@ export default () => {
             txHash: response.hash
           }
           setRedeemTxHashs({ ..._redeemTxHashs });
+          addTransaction({ to: safe3Contract.address }, response, {
+            call: {
+              from: activeAccount,
+              to: safe3Contract.address,
+              input: response.data,
+              value: "0"
+            }
+          });
           console.log("执行迁移锁定资产Hash:", response.hash);
         } catch (error: any) {
           _redeemTxHashs.locked = {
@@ -271,6 +289,14 @@ export default () => {
             txHash: response.hash
           }
           setRedeemTxHashs({ ..._redeemTxHashs });
+          addTransaction({ to: safe3Contract.address }, response, {
+            call: {
+              from: activeAccount,
+              to: safe3Contract.address,
+              input: response.data,
+              value: "0"
+            }
+          });
           console.log("执行迁移主节点Hash:", response.hash);
         } catch (error: any) {
           _redeemTxHashs.masternode = {
@@ -392,34 +418,34 @@ export default () => {
                   <Col span={24}>
                     <Input disabled={redeeming} size="large"
                       status={warningSafe4TargetAddress ? "warning" : ""} value={safe4TargetAddress} onChange={(event) => {
-                      const input = event.target.value.trim();
-                      if (!ethers.utils.isAddress(input)) {
-                        setInputErrors({
-                          ...inputErrors,
-                          safe4TargetAddress: "请输入合法的Safe4钱包地址"
-                        })
-                      } else {
-                        setInputErrors({
-                          ...inputErrors,
-                          safe4TargetAddress: undefined
-                        })
-                      }
-                      setSafe4TargetAddress(input);
-                    }} onBlur={(event) => {
-                      const input = event.target.value.trim();
-                      if (!ethers.utils.isAddress(input)) {
-                        setInputErrors({
-                          ...inputErrors,
-                          safe4TargetAddress: "请输入合法的Safe4钱包地址"
-                        })
-                      } else {
-                        setInputErrors({
-                          ...inputErrors,
-                          safe4TargetAddress: undefined
-                        })
-                      }
-                      setSafe4TargetAddress(input);
-                    }} />
+                        const input = event.target.value.trim();
+                        if (!ethers.utils.isAddress(input)) {
+                          setInputErrors({
+                            ...inputErrors,
+                            safe4TargetAddress: "请输入合法的Safe4钱包地址"
+                          })
+                        } else {
+                          setInputErrors({
+                            ...inputErrors,
+                            safe4TargetAddress: undefined
+                          })
+                        }
+                        setSafe4TargetAddress(input);
+                      }} onBlur={(event) => {
+                        const input = event.target.value.trim();
+                        if (!ethers.utils.isAddress(input)) {
+                          setInputErrors({
+                            ...inputErrors,
+                            safe4TargetAddress: "请输入合法的Safe4钱包地址"
+                          })
+                        } else {
+                          setInputErrors({
+                            ...inputErrors,
+                            safe4TargetAddress: undefined
+                          })
+                        }
+                        setSafe4TargetAddress(input);
+                      }} />
                     {
                       inputErrors?.safe4TargetAddress && <>
                         <Alert style={{ marginTop: "5px" }} type="error"
@@ -431,29 +457,32 @@ export default () => {
                         <Alert style={{ marginTop: "5px" }} type="warning"
                           showIcon message={<>
                             您输入的资产接收地址并不是当前钱包地址，请仔细确认该地址是否为您期望用于接收资产的地址.
-                          </>}/>
+                          </>} />
                       </>
                     }
                   </Col>
                   <Divider />
-                  <Button
-                    loading={redeeming}
-                    disabled={redeemEnable && !redeemTxHashs ? false : true}
-                    style={{ marginTop: "20px" }} type="primary"
-                    onClick={() => {
-                      executeRedeem();
-                    }}>
-                    迁移
-                  </Button>
+
                   {
                     notEnough && <>
-                      <Alert style={{ marginTop: "5px" }} showIcon type="error" message={
+                      <Alert style={{ marginBottom: "5px" }} showIcon type="error" message={
                         <>
                           当前正在使用的钱包没有 SAFE 来支付迁移资产所需要支付的手续费。
                         </>
                       } />
                     </>
                   }
+
+                  <Button
+                    loading={redeeming}
+                    disabled={redeemEnable && !redeemTxHashs ? false : true}
+                    style={{ marginTop: "5px" }} type="primary"
+                    onClick={() => {
+                      executeRedeem();
+                    }}>
+                    迁移
+                  </Button>
+
                   {
                     redeemTxHashs &&
                     <>

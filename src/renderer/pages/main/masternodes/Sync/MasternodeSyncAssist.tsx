@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { Alert, Button, Card, Col, Divider, Input, Radio, Row, Select, Space, Spin, Typography } from "antd";
 
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { ethers } from "ethers";
 import { CloseCircleTwoTone, LeftOutlined } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
@@ -17,12 +17,14 @@ import { enodeRegex } from "../../supernodes/Register/SupernodeRegister";
 import { InputRules } from "../Register/MasternodeRegister";
 import AddressComponent from "../../../components/AddressComponent";
 import SSH2CMDTerminalNodeModal from "../../../components/SSH2CMDTerminalNodeModal";
+import { walletsUpdateUsedChildWalletAddress } from "../../../../state/wallets/action";
 
 const { Text, Title } = Typography
 
 export default () => {
 
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const editMasternodeId = useSelector((state: AppState) => state.application.control.editMasternodeId);
   const [masternodeInfo, setMasternodeInfo] = useState<MasternodeInfo>();
   const masternodeStorageContract = useMasternodeStorageContract();
@@ -116,12 +118,12 @@ export default () => {
                 <Col span={16}>
                   <Row>
                     {
-                      exist && <Col span={6}>
+                      exist && (address != helpResult?.nodeAddress) && <Col span={6}>
                         <Text type='secondary'>[已注册]</Text>
                       </Col>
                     }
                     {
-                      address == masternodeInfo.addr && <Col span={6}>
+                      (address == masternodeInfo.addr || address == helpResult?.nodeAddress) && <Col span={6}>
                         <Text type='secondary'>[当前节点]</Text>
                       </Col>
                     }
@@ -140,24 +142,31 @@ export default () => {
         })
       return options;
     }
-  }, [activeAccount, activeAccountChildWallets, nodeAddressSelectType, masternodeInfo]);
+  }, [activeAccount, activeAccountChildWallets, nodeAddressSelectType, masternodeInfo, helpResult]);
 
   // 子钱包加载后,自动设置可用的第一个子钱包作为默认选择;
   useEffect(() => {
     if (selectChildWalletOptions && nodeAddressSelectType == NodeAddressSelectType.GEN && masternodeInfo) {
       const couldSelect = selectChildWalletOptions.filter(option => !option.disabled);
-      if (couldSelect && couldSelect.length > 0) {
-        setUpdateParams({
-          ...updateParams,
-          address: couldSelect[0].value
-        });
+      if (couldSelect && couldSelect.length > 0 && !helpResult) {
+        if (couldSelect.map(option => option.value).indexOf(masternodeInfo.addr) > 0) {
+          setUpdateParams({
+            ...updateParams,
+            address: masternodeInfo.addr
+          });
+        } else {
+          setUpdateParams({
+            ...updateParams,
+            address: couldSelect[0].value
+          });
+        }
         setInputErrors({
           ...inputErrors,
           address: undefined
         });
       }
     }
-  }, [masternodeInfo, selectChildWalletOptions, nodeAddressSelectType]);
+  }, [masternodeInfo, selectChildWalletOptions, nodeAddressSelectType, helpResult]);
 
   const doUpdate = useCallback(async () => {
     if (masternodeStorageContract && supernodeStorageContract && multicallContract && masternodeLogicContract && masternodeInfo) {
@@ -275,6 +284,10 @@ export default () => {
             txHash: hash,
             status: 1,
           }
+          dispatch(walletsUpdateUsedChildWalletAddress({
+            address,
+            used: true
+          }));
         } catch (err: any) {
           _updateResult.address = {
             status: 0,

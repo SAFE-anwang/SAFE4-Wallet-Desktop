@@ -385,11 +385,9 @@ export default ({
         const lockedAmount = addressResultMap[address]?.lockedAmount;
         const lockedRedeemHeight = addressResultMap[address]?.lockedRedeemHeight;
         const mnLocked = addressResultMap[address]?.mnLocked;
-
         let needLockedRedeem = false;
         if (lockedAmount) {
           if (mnLocked) {
-            console.log(` ${lockedAmount.toExact()} > ${mnLocked.amount.toExact()}`)
             if (lockedAmount.greaterThan(mnLocked.amount)) {
               needLockedRedeem = lockedRedeemHeight == 0;
             } else {
@@ -399,7 +397,6 @@ export default ({
             needLockedRedeem = lockedAmount.greaterThan(ZERO) && lockedRedeemHeight == 0;
           }
         }
-
         return <>
           {
             !needLockedRedeem && <>

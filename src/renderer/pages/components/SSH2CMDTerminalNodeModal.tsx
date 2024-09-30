@@ -398,6 +398,7 @@ export default ({
           () => console.log(""),
           () => console.log("")
         )
+
         const CMD_start_success = await CMD_start.execute(term);
       } else {
         updateSteps(0, "Safe4 节点程序已运行");
@@ -520,6 +521,8 @@ export default ({
         const CMD_attach_SetMiner = await CMD_attachSetMiner.execute(term);
         const CMD_attach_UnlockMiner = await CMD_attachUnlockMiner.execute(term);
         const CMD_attach_start = await CMD_attachMinderStart.execute(term);
+      } else {
+        // const CMD_attach_SetMiner = await CMD_attachSetMiner.execute(term);
       }
       const CMD_catNodeKey_success = await CMD_exportEnode.execute(term);
       if (CMD_catNodeKey_success) {

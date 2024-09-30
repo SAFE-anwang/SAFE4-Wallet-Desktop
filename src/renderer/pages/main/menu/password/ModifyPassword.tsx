@@ -65,7 +65,6 @@ export default () => {
       });
       return;
     }
-    console.log("Do modify Password...");
     setModifing(true);
     const method = Wallet_Methods.storeWallet;
     window.electron.ipcRenderer.sendMessage(IPC_CHANNEL, [WalletSignal, method, [walletsKeystores, inputNewPwd]]);

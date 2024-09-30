@@ -151,21 +151,19 @@ export default () => {
         })
       return options;
     }
-  }, [activeAccount, activeAccountChildWallets, nodeAddressSelectType, supernodeInfo]);
+  }, [activeAccount, activeAccountChildWallets, nodeAddressSelectType, supernodeInfo ]);
 
   // 子钱包加载后,自动设置可用的第一个子钱包作为默认选择;
   useEffect(() => {
     if (selectChildWalletOptions && nodeAddressSelectType == NodeAddressSelectType.GEN && supernodeInfo) {
       const couldSelect = selectChildWalletOptions.filter(option => !option.disabled);
-      if (couldSelect && couldSelect.length > 0) {
+      if (couldSelect && couldSelect.length > 0 && !helpResult) {
         if (couldSelect.map(option => option.value).indexOf(supernodeInfo.addr) >= 0) {
-          console.log("超级节点地址是子地址")
           setUpdateParams({
             ...updateParams,
             address: supernodeInfo.addr
           });
         } else {
-          console.log("超级节点地址不是子地址")
           setUpdateParams({
             ...updateParams,
             address: couldSelect[0].value
@@ -177,7 +175,7 @@ export default () => {
         });
       }
     }
-  }, [supernodeInfo, selectChildWalletOptions, nodeAddressSelectType]);
+  }, [supernodeInfo, selectChildWalletOptions, nodeAddressSelectType,helpResult]);
 
   const doUpdate = useCallback(async () => {
     if (masternodeStorageContract && supernodeStorageContract && multicallContract && supernodeLogicContract && supernodeInfo) {
@@ -276,6 +274,7 @@ export default () => {
         setUpdating(false);
         return;
       }
+
 
       let _updateResult = updateResult ?? {};
       // DO update address

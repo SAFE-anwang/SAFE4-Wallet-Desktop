@@ -63,4 +63,4 @@ export const Safe4_Business_Config = {
   }
 }
 
-export default Config["test"]
+export default Config["prod"]

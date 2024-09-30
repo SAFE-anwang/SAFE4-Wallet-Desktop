@@ -40,7 +40,7 @@ export default () => {
               <DatabaseOutlined />
             </Col>
             <Col span={20}>
-              版本 v0.1.8
+              版本 v1.0.2
             </Col>
             {/* <Col span={2} style={{ textAlign: "center" }}>
               <RightOutlined />
@@ -74,7 +74,7 @@ export default () => {
             <Col span={2} style={{ textAlign: "center" }}>
               <RightOutlined />
             </Col>
-          </Row> 
+          </Row>
         </Card>
         {
           password && <Card className="menu-item-container" style={{ marginBottom: "20px" }}>

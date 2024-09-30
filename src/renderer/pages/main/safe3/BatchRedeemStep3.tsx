@@ -309,16 +309,17 @@ export default ({
       </>
     }
 
-    <Button type="primary" loading={redeeming} disabled={notEnough || redeemTxHashs != undefined} onClick={executeRedeem}>迁移</Button>
     {
       notEnough && <>
-        <Alert style={{ marginTop: "5px" }} showIcon type="error" message={
+        <Alert style={{ marginBottom: "5px" }} showIcon type="error" message={
           <>
             当前正在使用的钱包没有 SAFE 来支付迁移资产所需要支付的手续费。
           </>
         } />
       </>
     }
+    <Button type="primary" loading={redeeming} disabled={notEnough || redeemTxHashs != undefined} onClick={executeRedeem}>迁移</Button>
+
 
   </>
 }
