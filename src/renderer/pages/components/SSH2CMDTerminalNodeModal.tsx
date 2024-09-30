@@ -46,7 +46,6 @@ export class CommandState {
     });
     return promise;
   }
-
 }
 
 const DEFAULT_CONFIG = {
@@ -54,7 +53,7 @@ const DEFAULT_CONFIG = {
   Safe4FileURL: "https://www.anwang.com/download/testnet/safe4_node/safe4-testnet.linux.latest.tar.gz",
   Safe4FileMD5: "https://www.anwang.com/download/testnet/safe4_node/safe4-testnet.linux.latest.md5.json",
   Safe4FileName: "safe4-testnet.linux.latest.tar.gz",
-  Safe4MD5Sum: "66de74ba506b410b52f9192e9e79e9da",
+  Safe4MD5Sum: "2bfc00d64eb813536b3db20f04ed0fd9",
   // 从这里读区 geth 运行后写入的数据,从而加载 geth 的路径,以及data_dir
   Safe4Info: ".safe4_info",
   // 默认的 Safe4DataDir
