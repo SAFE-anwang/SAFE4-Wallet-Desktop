@@ -350,6 +350,9 @@ export default ({
     )
 
     if (term) {
+
+      let needAttachIpc = false;
+
       updateSteps(0, "检查 Safe4 进程是否运行");
       const CMD_psSafe4_success = await CMD_psSafe4.execute(term);
       if (!CMD_psSafe4_success) {
@@ -397,11 +400,11 @@ export default ({
           () => console.log(""),
           () => console.log("")
         )
-
         const CMD_start_success = await CMD_start.execute(term);
       } else {
         updateSteps(0, "Safe4 节点程序已运行");
         const CMD_catSafe4Info_success = await CMD_catSafe4Info.execute(term);
+        needAttachIpc = true;
       }
       updateSteps(1, "Safe4 节点程序已运行");
 
@@ -514,7 +517,7 @@ export default ({
         updateSteps(1, "节点地址 Keystore 文件已存在");
       }
       updateSteps(2);
-      if (isSupernode) {
+      if (isSupernode && needAttachIpc) {
         // 在同步超级节点数据时，如果服务器已经启动geth,需要重新设置矿工，解锁，挖矿等命令;
         const CMD_attach_stop = await CMD_attachMinerStop.execute(term);
         const CMD_attach_SetMiner = await CMD_attachSetMiner.execute(term);
