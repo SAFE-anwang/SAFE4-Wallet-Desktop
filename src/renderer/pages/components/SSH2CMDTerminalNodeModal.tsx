@@ -52,7 +52,7 @@ export class CommandState {
 const DEFAULT_CONFIG = {
   // 节点程序的下载地址
   Safe4FileURL: "https://www.anwang.com/download/testnet/safe4_node/safe4-testnet.linux.latest.tar.gz",
-  Safe4FileMD5: "https://www.anwang.com/download/testnet/safe4_node/safe4-testnet.linux.latest.md5",
+  Safe4FileMD5: "https://www.anwang.com/download/testnet/safe4_node/safe4-testnet.linux.latest.md5.json",
   Safe4FileName: "safe4-testnet.linux.latest.tar.gz",
   Safe4MD5Sum: "66de74ba506b410b52f9192e9e79e9da",
   // 从这里读区 geth 运行后写入的数据,从而加载 geth 的路径,以及data_dir
@@ -355,8 +355,7 @@ export default ({
       const CMD_psSafe4_success = await CMD_psSafe4.execute(term);
       if (!CMD_psSafe4_success) {
         try {
-          console.log("从服务器获取最新 MD5值",DEFAULT_CONFIG.Safe4FileMD5);
-          _Safe4MD5Sum = (await (await fetch(DEFAULT_CONFIG.Safe4FileMD5)).text()).trim();
+          _Safe4MD5Sum = JSON.parse( (await (await fetch(DEFAULT_CONFIG.Safe4FileMD5)).text()).trim() ).md5 ;
           console.log("从服务器获取最新 MD5值",_Safe4MD5Sum);
         } catch (err) {
 
@@ -382,7 +381,7 @@ export default ({
           () => console.log("")
         );
         // Safe4 节点进程不存在;
-        updateSteps(0, "检查 Safe4 节点程序安装文件");
+        updateSteps(0, "检查 Safe4 节点程序安装文件 ");
         const CMD_checkzip_success = await CMD_checkzip.execute(term);
         if (!CMD_checkzip_success) {
           // 需要从官网下载 Safe4 节点程序;
@@ -393,7 +392,7 @@ export default ({
         const CMD_unzip_success = await CMD_unzip.execute(term);
         updateSteps(0, "启动 Safe4 节点程序");
         const CMD_start: CommandState = new CommandState(
-          `cd ${_Safe4NodeDir} && nohup ./start.sh ${inputParams.host} ${nodeAddress.toLowerCase()} 2>&1 >run.log &`,
+          `cd ${_Safe4NodeDir} && nohup sh ./start.sh ${inputParams.host} ${nodeAddress.toLowerCase()} 2>&1 >run.log &`,
           () => {
             return true;
           },
