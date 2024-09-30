@@ -54,7 +54,7 @@ const DEFAULT_CONFIG = {
   Safe4FileURL: "https://www.anwang.com/download/testnet/safe4_node/safe4-testnet.linux.latest.tar.gz",
   Safe4FileMD5: "https://www.anwang.com/download/testnet/safe4_node/safe4-testnet.linux.latest.md5",
   Safe4FileName: "safe4-testnet.linux.latest.tar.gz",
-  Safe4MD5Sum: "734b01ae239a1d860b8ca709727fe352",
+  Safe4MD5Sum: "66de74ba506b410b52f9192e9e79e9da",
   // 从这里读区 geth 运行后写入的数据,从而加载 geth 的路径,以及data_dir
   Safe4Info: ".safe4_info",
   // 默认的 Safe4DataDir
