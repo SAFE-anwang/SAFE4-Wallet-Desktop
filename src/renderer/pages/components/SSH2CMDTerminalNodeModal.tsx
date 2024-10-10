@@ -343,7 +343,7 @@ export default ({
       () => console.log("")
     )
 
-    const CMD_mkdirDataDir : CommandState = new CommandState(
+    const CMD_mkdirDataDir: CommandState = new CommandState(
       `mkdir -p ${_Safe4DataDir}/keystore`,
       () => true,
       () => console.log(""),
@@ -354,10 +354,11 @@ export default ({
       let needAttachIpc = false;
       updateSteps(0, "检查 Safe4 进程是否运行");
       const CMD_psSafe4_success = await CMD_psSafe4.execute(term);
+      let keystoreExist = false;
       if (!CMD_psSafe4_success) {
         try {
-          _Safe4MD5Sum = JSON.parse( (await (await fetch(DEFAULT_CONFIG.Safe4FileMD5)).text()).trim() ).md5 ;
-          console.log("从服务器获取最新 MD5值",_Safe4MD5Sum);
+          _Safe4MD5Sum = JSON.parse((await (await fetch(DEFAULT_CONFIG.Safe4FileMD5)).text()).trim()).md5;
+          console.log("从服务器获取最新 MD5值", _Safe4MD5Sum);
         } catch (err) {
 
         }
@@ -393,26 +394,49 @@ export default ({
         const CMD_unzip_success = await CMD_unzip.execute(term);
         updateSteps(0, "初始化节点地址 Keystore 文件");
         const CMD_mkdirDataDir_success = await CMD_mkdirDataDir.execute(term);
-        updateSteps(0, "正在生成节点地址 Keystore 文件");
-        const { address, keystore } = await outputKeyStore();
-        const keystoreStr = keystore.toString().replaceAll("\"", "\\\"");
-        const hiddenKeystore = JSON.parse(keystore);
-        hiddenKeystore.crypto.ciphertext = "****************************************";
-        const hidden = JSON.stringify(hiddenKeystore).replaceAll("\"", "\\\"");
-        const DateStr = DateTimeFormat(new Date(), "yyyy-MM-dd\'T'\HH-mm-ss.sss\'Z\'");
-        const targetFile = `${_Safe4DataDir}/keystore/UTC--${DateStr}--${address.toLowerCase().substring(2)}`;
-        const CMD_importKey: CommandState = new CommandState(
-          `echo "${keystoreStr}" > ${targetFile}`,
-          () => {
-            return true;
+        const CMD_checkKeystore: CommandState = new CommandState(
+          `find ${_Safe4DataDir}/keystore -type f -name "*${nodeAddress.substring(2).toLocaleLowerCase()}*" -print -quit | grep -q '.' && echo "Keystore file exists" || echo "Keystore file does not exist"`,
+          (data: string) => {
+            let _data = data.trim();
+            if (_data.indexOf("Keystore file does not exist") > -1) {
+              if ("Keystore file does not exist" == _data) {
+                console.log("[.keystore not exists] = ", data);
+                return false;
+              }
+              throw new Error(data.replace("Keystore file does not exist", ""));
+            } else {
+              console.log("[.keystore exists] = ", data)
+              return true;
+            }
           },
           () => console.log(""),
           () => console.log("")
         )
-        const CMD_importKey_success = await CMD_importKey.execute(
-          term,
-          `echo "${hidden}" > ${targetFile}`
-        );
+
+        keystoreExist = await CMD_checkKeystore.execute(term);
+        if (!keystoreExist) {
+          updateSteps(0, "正在生成节点地址 Keystore 文件");
+          const { address, keystore } = await outputKeyStore();
+          const keystoreStr = keystore.toString().replaceAll("\"", "\\\"");
+          const hiddenKeystore = JSON.parse(keystore);
+          hiddenKeystore.crypto.ciphertext = "****************************************";
+          const hidden = JSON.stringify(hiddenKeystore).replaceAll("\"", "\\\"");
+          const DateStr = DateTimeFormat(new Date(), "yyyy-MM-dd\'T'\HH-mm-ss.sss\'Z\'");
+          const targetFile = `${_Safe4DataDir}/keystore/UTC--${DateStr}--${address.toLowerCase().substring(2)}`;
+          const CMD_importKey: CommandState = new CommandState(
+            `echo "${keystoreStr}" > ${targetFile}`,
+            () => {
+              return true;
+            },
+            () => console.log(""),
+            () => console.log("")
+          )
+          const CMD_importKey_success = await CMD_importKey.execute(
+            term,
+            `echo "${hidden}" > ${targetFile}`
+          );
+          keystoreExist = true;
+        }
         updateSteps(0, "启动 Safe4 节点程序");
         const CMD_start: CommandState = new CommandState(
           `cd ${_Safe4NodeDir} && ./start.sh ${inputParams.host} ${nodeAddress.toLowerCase()}`,
@@ -500,16 +524,14 @@ export default ({
         () => { }
       );
 
-
-      let CMD_checkKeystore_success = false;
       try {
-        CMD_checkKeystore_success = await CMD_checkKeystore.execute(term);
+        keystoreExist = keystoreExist ? keystoreExist : await CMD_checkKeystore.execute(term);
       } catch (error) {
         console.log("error:", error);
         updateSteps(1, "", "无法定位 keystore 文件目录位置");
         return;
       }
-      if (!CMD_checkKeystore_success) {
+      if (!keystoreExist) {
         updateSteps(1, "正在生成节点地址 Keystore 文件");
         const { address, keystore } = await outputKeyStore();
         const keystoreStr = keystore.toString().replaceAll("\"", "\\\"");
