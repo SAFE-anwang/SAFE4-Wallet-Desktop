@@ -391,7 +391,7 @@ export default ({
         const CMD_unzip_success = await CMD_unzip.execute(term);
         updateSteps(0, "启动 Safe4 节点程序");
         const CMD_start: CommandState = new CommandState(
-          `cd ${_Safe4NodeDir} && nohup sh ./start.sh ${inputParams.host} ${nodeAddress.toLowerCase()} 2>&1 >run.log &`,
+          `cd ${_Safe4NodeDir} && ./start.sh ${inputParams.host} ${nodeAddress.toLowerCase()}`,
           () => {
             return true;
           },
