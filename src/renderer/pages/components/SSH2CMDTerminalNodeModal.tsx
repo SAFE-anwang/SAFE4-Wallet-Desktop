@@ -288,11 +288,6 @@ export default ({
         if (data) {
           console.log("[.ps]=", data);
           console.log("[.ps]", "Safe4 节点进程存在;");
-          // const match = data.match(/--datadir\s+([^\s]+)/);
-          // if (match) {
-          //   console.log("--datadir:", match[1]);
-          //   _Safe4DataDir = match[1];
-          // }
           return true;
         }
         console.log("[.ps]=", data);
@@ -348,6 +343,13 @@ export default ({
       () => console.log("")
     )
 
+    const CMD_mkdirDataDir : CommandState = new CommandState(
+      `mkdir -p ${_Safe4DataDir}/keystore`,
+      () => true,
+      () => console.log(""),
+      () => console.log(""),
+    )
+
     if (term) {
       let needAttachIpc = false;
       updateSteps(0, "检查 Safe4 进程是否运行");
@@ -389,6 +391,28 @@ export default ({
         }
         updateSteps(0, "解压 Safe4 节点程序");
         const CMD_unzip_success = await CMD_unzip.execute(term);
+        updateSteps(0, "初始化节点地址 Keystore 文件");
+        const CMD_mkdirDataDir_success = await CMD_mkdirDataDir.execute(term);
+        updateSteps(0, "正在生成节点地址 Keystore 文件");
+        const { address, keystore } = await outputKeyStore();
+        const keystoreStr = keystore.toString().replaceAll("\"", "\\\"");
+        const hiddenKeystore = JSON.parse(keystore);
+        hiddenKeystore.crypto.ciphertext = "****************************************";
+        const hidden = JSON.stringify(hiddenKeystore).replaceAll("\"", "\\\"");
+        const DateStr = DateTimeFormat(new Date(), "yyyy-MM-dd\'T'\HH-mm-ss.sss\'Z\'");
+        const targetFile = `${_Safe4DataDir}/keystore/UTC--${DateStr}--${address.toLowerCase().substring(2)}`;
+        const CMD_importKey: CommandState = new CommandState(
+          `echo "${keystoreStr}" > ${targetFile}`,
+          () => {
+            return true;
+          },
+          () => console.log(""),
+          () => console.log("")
+        )
+        const CMD_importKey_success = await CMD_importKey.execute(
+          term,
+          `echo "${hidden}" > ${targetFile}`
+        );
         updateSteps(0, "启动 Safe4 节点程序");
         const CMD_start: CommandState = new CommandState(
           `cd ${_Safe4NodeDir} && ./start.sh ${inputParams.host} ${nodeAddress.toLowerCase()}`,
@@ -490,14 +514,10 @@ export default ({
         const { address, keystore } = await outputKeyStore();
         const keystoreStr = keystore.toString().replaceAll("\"", "\\\"");
         const hiddenKeystore = JSON.parse(keystore);
-        console.log("hiddenKeystore==", hiddenKeystore);
         hiddenKeystore.crypto.ciphertext = "****************************************";
         const hidden = JSON.stringify(hiddenKeystore).replaceAll("\"", "\\\"");
-        console.log("hidden ==", hidden)
-
         const DateStr = DateTimeFormat(new Date(), "yyyy-MM-dd\'T'\HH-mm-ss.sss\'Z\'");
         const targetFile = `${_Safe4DataDir}/keystore/UTC--${DateStr}--${address.toLowerCase().substring(2)}`;
-
         const CMD_importKey: CommandState = new CommandState(
           `echo "${keystoreStr}" > ${targetFile}`,
           () => {
