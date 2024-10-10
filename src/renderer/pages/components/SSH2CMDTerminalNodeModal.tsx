@@ -439,7 +439,8 @@ export default ({
         }
         updateSteps(0, "启动 Safe4 节点程序");
         const CMD_start: CommandState = new CommandState(
-          `cd ${_Safe4NodeDir} && ./start.sh ${inputParams.host} ${nodeAddress.toLowerCase()}`,
+          isSupernode ?  `cd ${_Safe4NodeDir} && ./start.sh ${inputParams.host} ${nodeAddress.toLowerCase()}`
+            :  `cd ${_Safe4NodeDir} && ./start.sh ${inputParams.host}`,
           () => {
             return true;
           },
@@ -557,14 +558,13 @@ export default ({
         updateSteps(1, "节点地址 Keystore 文件已存在");
       }
       updateSteps(2);
-      if (isSupernode && needAttachIpc) {
-        // 在同步超级节点数据时，如果服务器已经启动geth,需要重新设置矿工，解锁，挖矿等命令;
+      if ( needAttachIpc ){
         const CMD_attach_stop = await CMD_attachMinerStop.execute(term);
-        const CMD_attach_SetMiner = await CMD_attachSetMiner.execute(term);
-        const CMD_attach_UnlockMiner = await CMD_attachUnlockMiner.execute(term);
-        const CMD_attach_start = await CMD_attachMinderStart.execute(term);
-      } else {
-        // const CMD_attach_SetMiner = await CMD_attachSetMiner.execute(term);
+        if ( isSupernode ){
+          const CMD_attach_SetMiner = await CMD_attachSetMiner.execute(term);
+          const CMD_attach_UnlockMiner = await CMD_attachUnlockMiner.execute(term);
+          const CMD_attach_start = await CMD_attachMinderStart.execute(term);
+        }
       }
       const CMD_catNodeKey_success = await CMD_exportEnode.execute(term);
       if (CMD_catNodeKey_success) {
