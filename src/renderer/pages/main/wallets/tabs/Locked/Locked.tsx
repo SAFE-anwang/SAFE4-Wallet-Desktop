@@ -1,4 +1,4 @@
-import { Row, Statistic, Card, Col, Typography, Button, Divider, Space, Tag, List } from "antd";
+import { Row, Statistic, Card, Col, Typography, Button, Divider, Space, Tag, List, Input } from "antd";
 import { useSafe4Balance, useWalletsActiveAccount } from "../../../../../state/wallets/hooks";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useBlockNumber, useTimestamp } from "../../../../../state/application/hooks";
@@ -10,6 +10,7 @@ import { EmptyContract } from "../../../../../constants/SystemContracts";
 import AddressView from "../../../../components/AddressView";
 import { DateTimeFormat } from "../../../../../utils/DateUtils";
 import { ZERO } from "../../../../../utils/CurrentAmountUtils";
+import AddLockModal from "./AddLockModal";
 
 const { Text } = Typography;
 const AccountRecords_Page_Size = 5;
@@ -19,14 +20,19 @@ export default () => {
   const activeAccount = useWalletsActiveAccount();
   const safe4balance = useSafe4Balance([activeAccount])[activeAccount];
   const blockNumber = useBlockNumber();
+
   const [openWithdrawModal, setOpenWithdrawModal] = useState<boolean>(false);
+  const [openAddModal, setOpenAddModal] = useState<boolean>(false);
   const [selectedAccountRecord, setSelectedAccountRecord] = useState<AccountRecord>();
+
   const [accountRecords, setAccountRecords] = useState<AccountRecord[]>([]);
   const timestamp = useTimestamp();
   const accountManagerContract = useAccountManagerContract();
   const multicallContract = useMulticallContract();
   const [loading, setLoading] = useState<boolean>(false);
   const [accountRecordZERO, setAccountRecordZERO] = useState<AccountRecord>();
+
+  const [queryAccountRecordId, setQueryAccountRecordId] = useState<number>();
 
   useEffect(() => {
     if (accountManagerContract) {
@@ -36,12 +42,11 @@ export default () => {
           const accountRecordZERO = formatAccountRecord(_accountRecord);
           if (accountRecordZERO.amount.greaterThan(ZERO)) {
             setAccountRecordZERO(accountRecordZERO)
-          }else{
+          } else {
             setAccountRecordZERO(undefined);
           }
         })
         .catch((err: any) => {
-          console.log("get zero error:", err)
         })
     }
   }, [accountManagerContract, blockNumber, activeAccount]);
@@ -55,27 +60,36 @@ export default () => {
 
   const initilizePageQuery = useCallback(() => {
     if (accountManagerContract) {
-      // function getTotalAmount(address _addr) external view returns (uint, uint);
-      accountManagerContract.callStatic.getTotalAmount(activeAccount)
-        .then((data: any) => {
-          const pagination = {
-            total: data[1].toNumber(),
-            pageSize: AccountRecords_Page_Size,
-            position: "bottom",
-            current: 1,
-            onChange: (page: number) => {
-              pagination.current = page;
-              setPagination({
-                ...pagination
-              })
+      if (!queryAccountRecordId) {
+        // function getTotalAmount(address _addr) external view returns (uint, uint);
+        accountManagerContract.callStatic.getTotalAmount(activeAccount)
+          .then((data: any) => {
+            const pagination = {
+              total: data[1].toNumber(),
+              pageSize: AccountRecords_Page_Size,
+              position: "bottom",
+              current: 1,
+              onChange: (page: number) => {
+                pagination.current = page;
+                setPagination({
+                  ...pagination
+                })
+              }
             }
-          }
-          setPagination({
-            ...pagination,
+            setPagination({
+              ...pagination,
+            })
           })
+      } else {
+        console.log("AccountRecord Id - Query initilizePageQuery");
+        setPagination({
+          total: 1,
+          pageSize: AccountRecords_Page_Size,
+          current: 1,
         })
+      }
     }
-  }, [accountManagerContract]);
+  }, [accountManagerContract , queryAccountRecordId]);
 
   useEffect(() => {
     if (pagination && pagination.current != 1) {
@@ -87,7 +101,7 @@ export default () => {
 
   useEffect(() => {
     initilizePageQuery();
-  }, [accountManagerContract, activeAccount]);
+  }, [accountManagerContract, activeAccount, queryAccountRecordId]);
 
   useEffect(() => {
     if (pagination && accountManagerContract && multicallContract) {
@@ -103,10 +117,14 @@ export default () => {
         /////////////////////////////////////////////////
         // function getTotalIDs(address _addr, uint _start, uint _count) external view returns (uint[] memory);
         setLoading(true);
-        accountManagerContract.getTotalIDs(activeAccount, position, offset)
-          .then((accountRecordIds: any) => {
-            multicallGetAccountRecordByIds(accountRecordIds);
-          })
+        if (!queryAccountRecordId) {
+          accountManagerContract.getTotalIDs(activeAccount, position, offset)
+            .then((accountRecordIds: any) => {
+              multicallGetAccountRecordByIds(accountRecordIds);
+            })
+        } else {
+          multicallGetAccountRecordByIds( [queryAccountRecordId] )
+        }
       } else {
         setAccountRecords([]);
       }
@@ -115,7 +133,7 @@ export default () => {
 
   const multicallGetAccountRecordByIds = useCallback((_accountRecordIds: any) => {
     if (multicallContract && accountManagerContract) {
-      const accountRecordIds = _accountRecordIds.map((_id: any) => _id.toNumber())
+      const accountRecordIds = _accountRecordIds.map((_id: any) => _id.toNumber ? _id.toNumber() : _id )
         .filter((id: number) => id > 0)
       // .sort((id0: number, id1: number) => id1 - id0)
       const getRecordByIDFragment = accountManagerContract?.interface?.getFunction("getRecordByID");
@@ -142,7 +160,9 @@ export default () => {
             const _recordUseInfo = accountManagerContract?.interface.decodeFunctionResult(getRecordUseInfoFragment, raws[half + i])[0];
             const accountRecord = formatAccountRecord(_accountRecord);
             accountRecord.recordUseInfo = formatRecordUseInfo(_recordUseInfo);
-            accountRecords.push(accountRecord);
+            if ( accountRecord.addr == activeAccount ){
+              accountRecords.push(accountRecord);
+            }
           }
           setLoading(false);
           setAccountRecords(accountRecords);
@@ -254,6 +274,16 @@ export default () => {
           <Divider style={{ margin: "4px 0" }} />
           <div style={{ lineHeight: "42px" }}>
             <Space style={{ float: "right", marginTop: "2px" }}>
+              {
+                id != 0 && <>
+                  <Button size="small" icon={<LockOutlined />} title="追加锁仓" onClick={() => {
+                    setSelectedAccountRecord(accountRecord);
+                    setOpenAddModal(true)
+                  }}>
+                    追加锁仓
+                  </Button>
+                </>
+              }
               <Button title="提现" disabled={!couldWithdraw} size="small" type="primary" onClick={() => {
                 setSelectedAccountRecord(accountRecord);
                 setOpenWithdrawModal(true)
@@ -298,8 +328,21 @@ export default () => {
     </Row>
 
     <Card title="锁仓列表" style={{ marginTop: "40px" }}>
+
+      <Input.Search size="large" placeholder="输入锁仓ID查询" onChange={(event) => {
+        if ( !event.target.value.trim() ){
+          setQueryAccountRecordId(undefined);
+        }
+      }} onSearch={( value ) => {
+        const id = Number(value);
+        if ( id ){
+          setQueryAccountRecordId(id);
+        } else {
+
+        }
+      }}/>
       {
-        accountRecordZERO && ( pagination && pagination.current == 1 ) && <>
+        accountRecordZERO && (pagination && pagination.current == 1) && !queryAccountRecordId && <>
           {RenderAccountRecord(accountRecordZERO)}
         </>
       }
@@ -310,10 +353,11 @@ export default () => {
         loading={loading}
       />
     </Card>
-
     <WalletWithdrawModal selectedAccountRecord={selectedAccountRecord}
       openWithdrawModal={openWithdrawModal} setOpenWithdrawModal={setOpenWithdrawModal} />
-
+    <AddLockModal selectedAccountRecord={selectedAccountRecord}
+      openAddModal={openAddModal} setOpenAddModal={setOpenAddModal}
+    />
   </>
 
 

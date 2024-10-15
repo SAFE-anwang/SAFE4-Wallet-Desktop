@@ -15,6 +15,7 @@ import TransactionElementCallSafe3Redeem from "./TransactionElementCallSafe3Rede
 import TransactionELementCallAMBatchDeposit from "./TransactionElementCallAMBatchDeposit"
 import TransactionElementCallSNChange from "./TransactionElementCallSNChange";
 import TransactionElementCallMNChange from "./TransactionElementCallMNChange";
+import TransactionElementCallAMAddLockDay from "./TransactionElementCallAMAddLockDay";
 
 export default ({ transaction, setClickTransaction, support }: {
   transaction: TransactionDetails,
@@ -207,6 +208,12 @@ export default ({ transaction, setClickTransaction, support }: {
         />
       case SupportAccountManagerFunctions.BatchDeposit4One:
         return <TransactionELementCallAMBatchDeposit
+          transaction={transaction}
+          setClickTransaction={setClickTransaction}
+          support={support}
+        />
+      case SupportAccountManagerFunctions.AddLockDay:
+        return <TransactionElementCallAMAddLockDay
           transaction={transaction}
           setClickTransaction={setClickTransaction}
           support={support}
