@@ -37,7 +37,7 @@ export default ({
   }, [txHash]);
 
   return <>
-    <Modal footer={null} destroyOnClose title="追加锁仓" style={{ height: "300px" }} open={openAddModal} onCancel={cancel}>
+    <Modal footer={null} destroyOnClose title="追加锁仓天数" style={{ height: "300px" }} open={openAddModal} onCancel={cancel}>
       {
         step == STEP_INPUT && selectedAccountRecord && <>
           <AddLockModalInput selectedAccountRecord={selectedAccountRecord} goNextCallback={(addLockDay) => {

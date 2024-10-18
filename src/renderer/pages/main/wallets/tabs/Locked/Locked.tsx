@@ -4,7 +4,7 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useBlockNumber, useTimestamp } from "../../../../../state/application/hooks";
 import { useAccountManagerContract, useMulticallContract } from "../../../../../hooks/useContracts";
 import { AccountRecord, formatAccountRecord, formatRecordUseInfo } from "../../../../../structs/AccountManager";
-import { LockOutlined, RetweetOutlined } from '@ant-design/icons';
+import { ClockCircleOutlined, LockOutlined, RetweetOutlined } from '@ant-design/icons';
 import WalletWithdrawModal from "../../Withdraw/WalletWithdrawModal";
 import { EmptyContract } from "../../../../../constants/SystemContracts";
 import AddressView from "../../../../components/AddressView";
@@ -276,7 +276,7 @@ export default () => {
             <Space style={{ float: "right", marginTop: "2px" }}>
               {
                 id != 0 && <>
-                  <Button size="small" icon={<LockOutlined />} title="追加锁仓" onClick={() => {
+                  <Button size="small" icon={<ClockCircleOutlined />} title="追加锁仓" onClick={() => {
                     setSelectedAccountRecord(accountRecord);
                     setOpenAddModal(true)
                   }}>
