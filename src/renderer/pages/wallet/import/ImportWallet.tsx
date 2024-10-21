@@ -55,19 +55,23 @@ export default () => {
   //"m/44'/60'/0'/0/0"
   const handleImportMnemonicInput = (mnemonic: string | undefined, password: string | undefined, path: string) => {
     if (mnemonic && mnemonic != "") {
-      if (ethers.utils.isValidMnemonic(mnemonic)) {
-        setInputErrors({
-          ...inputErrors,
-          mnemonic: undefined
-        })
-        const wallet = HDNode.fromMnemonic(mnemonic, password, undefined).derivePath(path)
-        setAddress(wallet.address)
-      } else {
-        setAddress(undefined);
-        setInputErrors({
-          ...inputErrors,
-          mnemonic: "无效的助记词"
-        })
+      try {
+        if (ethers.utils.isValidMnemonic(mnemonic)) {
+          setInputErrors({
+            ...inputErrors,
+            mnemonic: undefined
+          });
+          const wallet = HDNode.fromMnemonic(mnemonic, password, undefined).derivePath(path)
+          setAddress(wallet.address)
+        } else {
+          setAddress(undefined);
+          setInputErrors({
+            ...inputErrors,
+            mnemonic: "无效的助记词"
+          })
+        }
+      }catch ( err ){
+        console.log("error :" , err)
       }
     } else {
       setInputErrors({
@@ -268,7 +272,7 @@ export default () => {
 
                   </Col>
                   <Col style={{ marginTop: "30px" }} span={24}>
-                    <Text type="secondary" strong>密码</Text>
+                    <Text type="secondary" strong>种子密码</Text>
                     <Switch style={{ float: "right", marginBottom: "5px" }} checkedChildren="开启" unCheckedChildren="关闭"
                       value={activePassword} onChange={setActivePassword} />
                     <Input.Password value={params.password} size="large" disabled={!activePassword} onChange={(event) => {
