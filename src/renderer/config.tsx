@@ -4,21 +4,15 @@ export const IPC_CHANNEL: Channels = "ipc-example";
 export const Safe4_Network_Config = {
   Testnet: {
     chainId: 6666666,
-
-    endpoint: "http://47.107.47.210:8545",
-    Safescan_URL: "http://127.0.0.1:3000",
-    Safescan_Api: "http://127.0.0.1:5005"
-
+    // endpoint: "http://47.107.47.210:8545",
+    // Safescan_URL: "http://127.0.0.1:3000",
+    // Safescan_Api: "http://127.0.0.1:5005"
     // endpoint: "http://47.107.47.210:8545",
     // Safescan_URL: "http://47.107.47.210",
     // Safescan_Api: "http://47.107.47.210:5005"
-
-    // endpoint: "http://172.104.162.94:8545",
-    // Safescan_URL: "https://safe4.anwang.com",
-    // Safescan_Api: "https://safe4.anwang.com/5005"
-
-
-
+    endpoint: "http://172.104.162.94:8545",
+    Safescan_URL: "https://safe4.anwang.com",
+    Safescan_Api: "https://safe4.anwang.com/5005"
   },
   Mainnet: {
     chainId: 6666666,
