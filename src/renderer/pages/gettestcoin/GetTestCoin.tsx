@@ -25,11 +25,12 @@ export default () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { chainId } = useWeb3React();
-  const {API} = useSafeScan();
+  const { API } = useSafeScan();
 
   const doFetchGetTestCoin = useCallback(() => {
     if (chainId) {
       setSending(true);
+      console.log("fetch gettestcoin ==>" , API)
       fetchGetTestCoin( API , { address: activeAccount })
         .then(({ transactionHash, amount, address, from }: any) => {
           addTransaction({
