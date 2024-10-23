@@ -1,4 +1,4 @@
-import { ReactNode, useCallback, useEffect, useRef, useState } from "react";
+import { ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Terminal } from "@xterm/xterm";
 import { FitAddon } from "@xterm/addon-fit";
 import { Button, Card, Col, Input, Row, Typography, Steps, Alert, Divider, Spin, Modal } from "antd";
@@ -7,6 +7,8 @@ import { useApplicationPassword } from "../../state/application/hooks";
 import AddressComponent from "./AddressComponent";
 import { CloseCircleTwoTone, LoadingOutlined } from "@ant-design/icons";
 import { DateTimeFormat } from "../../utils/DateUtils";
+import { useWeb3React } from "@web3-react/core";
+import { Safe4_Network_Config } from "../../config";
 
 const { Text } = Typography;
 
@@ -87,6 +89,35 @@ export default ({
   const [enode, setEnode] = useState<string>();
   const [scriptError, setScriptError] = useState<string>();
   const wallet = nodeAddressPrivateKey ? new ethers.Wallet(nodeAddressPrivateKey) : undefined;
+  const { chainId } = useWeb3React();
+
+  const DEFAULT_CONFIG = useMemo(() => {
+    if (chainId == Safe4_Network_Config.Mainnet.chainId) {
+      // 正式网络相关配置
+      return {
+        // 节点程序的下载地址
+        Safe4FileURL: "https://www.anwang.com/download/testnet/safe4_node/safe4-testnet.linux.latest.tar.gz",
+        Safe4FileMD5: "https://www.anwang.com/download/testnet/safe4_node/safe4-testnet.linux.latest.md5.json",
+        Safe4FileName: "safe4-testnet.linux.latest.tar.gz",
+        // 从这里读区 geth 运行后写入的数据,从而加载 geth 的路径,以及 data_dir
+        Safe4Info: ".safe4_info",
+        // 默认的 Safe4DataDir
+        Safe4DataDir: ".safe4/safetest",
+      }
+    } else {
+      // 测试网络相关配置
+      return {
+        // 节点程序的下载地址
+        Safe4FileURL: "https://www.anwang.com/download/testnet/safe4_node/safe4-testnet.linux.latest.tar.gz",
+        Safe4FileMD5: "https://www.anwang.com/download/testnet/safe4_node/safe4-testnet.linux.latest.md5.json",
+        Safe4FileName: "safe4-testnet.linux.latest.tar.gz",
+        // 从这里读区 geth 运行后写入的数据,从而加载 geth 的路径,以及data_dir
+        Safe4Info: ".safe4_info",
+        // 默认的 Safe4DataDir
+        Safe4DataDir: ".safe4/safetest",
+      }
+    }
+  }, [chainId]);
 
   const DEFAULT_STEPS: {
     title: string | ReactNode,
@@ -272,12 +303,11 @@ export default ({
     const {
       Safe4FileURL,
       Safe4FileName,
-      Safe4MD5Sum,
       Safe4Info,
       Safe4DataDir
     } = DEFAULT_CONFIG;
 
-    let _Safe4MD5Sum = Safe4MD5Sum;
+    let _Safe4MD5Sum = "";
     let _Safe4DataDir = Safe4DataDir;
     let _Safe4NodeDir = "";
     let _Safe4GethPath = "";
@@ -439,8 +469,8 @@ export default ({
         }
         updateSteps(0, "启动 Safe4 节点程序");
         const CMD_start: CommandState = new CommandState(
-          isSupernode ?  `cd ${_Safe4NodeDir} && ./start.sh ${inputParams.host} ${nodeAddress.toLowerCase()}`
-            :  `cd ${_Safe4NodeDir} && ./start.sh ${inputParams.host}`,
+          isSupernode ? `cd ${_Safe4NodeDir} && ./start.sh ${inputParams.host} ${nodeAddress.toLowerCase()}`
+            : `cd ${_Safe4NodeDir} && ./start.sh ${inputParams.host}`,
           () => {
             return true;
           },
@@ -558,9 +588,9 @@ export default ({
         updateSteps(1, "节点地址 Keystore 文件已存在");
       }
       updateSteps(2);
-      if ( needAttachIpc ){
+      if (needAttachIpc) {
         const CMD_attach_stop = await CMD_attachMinerStop.execute(term);
-        if ( isSupernode ){
+        if (isSupernode) {
           const CMD_attach_SetMiner = await CMD_attachSetMiner.execute(term);
           const CMD_attach_UnlockMiner = await CMD_attachUnlockMiner.execute(term);
           const CMD_attach_start = await CMD_attachMinderStart.execute(term);
@@ -582,7 +612,7 @@ export default ({
         <Col span={8}>
           {
             current < 0 &&
-            <Card title="SSH 连接" style={{ width: "95%", height: "470px" }}>
+            <Card title={`SSH 连接`} style={{ width: "95%", height: "470px" }}>
               <Spin spinning={connecting}>
                 <Row>
                   <Col span={24}>

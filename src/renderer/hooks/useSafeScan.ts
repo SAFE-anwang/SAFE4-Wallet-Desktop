@@ -5,18 +5,11 @@ export default (): {
   URL: string,
   API: string
 } => {
-  const { chainId, provider } = useWeb3React();
-  const endpoint = provider?.connection.url;
-  // return {
-  //   URL: chainId == Safe4_Network_Config.Testnet.chainId ?
-  //     Safe4_Network_Config.Testnet.Safescan_URL : Safe4_Network_Config.Mainnet.Safescan_URL,
-  //   API: chainId == Safe4_Network_Config.Testnet.chainId ?
-  //     Safe4_Network_Config.Testnet.Safescan_Api : Safe4_Network_Config.Mainnet.Safescan_Api,
-  // }
+  const { chainId } = useWeb3React();
   return {
-    URL: endpoint == Safe4_Network_Config.Testnet.endpoint ?
+    URL: chainId == Safe4_Network_Config.Testnet.chainId ?
       Safe4_Network_Config.Testnet.Safescan_URL : Safe4_Network_Config.Mainnet.Safescan_URL,
-    API: endpoint == Safe4_Network_Config.Testnet.endpoint ?
+    API: chainId == Safe4_Network_Config.Testnet.chainId ?
       Safe4_Network_Config.Testnet.Safescan_Api : Safe4_Network_Config.Mainnet.Safescan_Api,
   }
 }
