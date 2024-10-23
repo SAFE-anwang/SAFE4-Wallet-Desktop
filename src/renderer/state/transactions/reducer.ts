@@ -142,10 +142,12 @@ export const initialState: {
       symbol: string,
       decimals: number
     }
-  }
+  } , 
+  chainId ?: number
 } = {
   transactions: {},
-  tokens: {}
+  tokens: {} , 
+  chainId : -1
 }
 
 export default createReducer(initialState, (builder) => {
@@ -205,11 +207,16 @@ export default createReducer(initialState, (builder) => {
         tokens,
         addressActivityFetch: {
           ...addressActivityFetch
-        }
+        } , 
+        chainId: addressActivityFetch.chainId
       }
     })
 
     .addCase(loadTransactionsAndUpdateAddressActivityFetch, (state, { payload: { chainId, addTxns, addressActivityFetch } }) => {
+      if ( state.chainId != chainId ){
+        console.log("chainid changed.....")
+        return;
+      }
       if (addTxns && addTxns.length > 0) {
         state.transactions = TransactionsCombine(state.transactions, addTxns);
         // 当有新的交易数据进来同步的时候,对数据进行一次过滤,如果数据中存在 TokenTransfer ,

@@ -27,6 +27,7 @@ export default ({
   const switchWeb3ReactConnect = () => {
     if (chainId) {
       dispatch( applicationBlockchainUpdateBlockNumber({blockNumber:0,timestamp:0}) )
+      dispatch( clearAllTransactions("") );
       dispatch(applicationUpdateWeb3Rpc({
         chainId: chainId,
         endpoint: endpoint
