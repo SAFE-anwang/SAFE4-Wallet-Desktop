@@ -122,7 +122,8 @@ export interface AddressActivityFetch {
   dbStoredRange: {
     start: number,
     end: number
-  }
+  },
+  chainId : number,
 }
 
 export interface TransactionState {

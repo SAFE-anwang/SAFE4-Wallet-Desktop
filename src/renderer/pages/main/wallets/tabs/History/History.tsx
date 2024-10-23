@@ -22,7 +22,7 @@ import useSafeScan from "../../../../../hooks/useSafeScan";
 import { DeleteOutlined } from "@ant-design/icons";
 import ClearHistoryConfirmModal from "./ClearHistoryConfirmModal";
 
-const { Text } = Typography;
+const { Text } = Typography; 
 
 export default () => {
 
@@ -40,8 +40,8 @@ export default () => {
   useEffect(() => {
     const addressActivtiesLoadActivities = DB_AddressActivity_Methods.loadActivities;
     const timeNodeRewardsGetAll = TimeNodeReward_Methods.getAll;
-    if (activeAccount && chainId) {
-      if (activeAccount != addressActivityFetch?.address) {
+    if (activeAccount && chainId && latestBlockNumber > 0) {
+      if (activeAccount != addressActivityFetch?.address || chainId != addressActivityFetch.chainId) {
         window.electron.ipcRenderer.sendMessage(IPC_CHANNEL, [DBAddressActivitySignal, addressActivtiesLoadActivities, [activeAccount,chainId]]);
       }
       window.electron.ipcRenderer.sendMessage(IPC_CHANNEL, [TimeNodeRewardSignal, timeNodeRewardsGetAll, [activeAccount, chainId]]);
@@ -61,7 +61,7 @@ export default () => {
             }
             return Activity2Transaction(row);
           });
-          console.log("dbStoredRange ::", dbStoredRange);
+          console.log(`DBStoredRange=${JSON.stringify(dbStoredRange)} / latestBlockNumber = ${latestBlockNumber} / chainId = ${chainId}`);
           dispatch(reloadTransactionsAndSetAddressActivityFetch({
             txns,
             addressActivityFetch: {
@@ -71,7 +71,8 @@ export default () => {
               current: 1,
               pageSize: 500,
               status: 0,
-              dbStoredRange
+              dbStoredRange,
+              chainId
             }
           }));
         }
@@ -137,7 +138,7 @@ export default () => {
         }
       });
     }
-  }, [activeAccount, chainId])
+  }, [activeAccount, chainId,latestBlockNumber])
 
   const walletTab = useSelector<AppState, string | undefined>(state => state.application.control.walletTab);
   useEffect(() => {

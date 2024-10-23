@@ -42,7 +42,8 @@ export default ({
             dbStoredRange : {
               start : 99999999 ,
               end : 1,
-            }
+            },
+            chainId
           }
         }));
         cancel();

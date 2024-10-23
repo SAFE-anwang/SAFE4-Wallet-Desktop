@@ -4,7 +4,7 @@ import { Typography, Button, Card, Divider, Statistic, Row, Col, Modal, Flex, To
 import { useEffect, useState } from "react";
 import { isSafe4Mainnet, isSafe4Network, isSafe4Testnet } from "../../../../utils/Safe4Network";
 import { useDispatch } from "react-redux";
-import { applicationUpdateWeb3Rpc } from "../../../../state/application/action";
+import { applicationBlockchainUpdateBlockNumber, applicationUpdateWeb3Rpc } from "../../../../state/application/action";
 import { clearAllTransactions } from "../../../../state/transactions/actions";
 
 const { Text } = Typography;
@@ -26,6 +26,7 @@ export default ({
 
   const switchWeb3ReactConnect = () => {
     if (chainId) {
+      dispatch( applicationBlockchainUpdateBlockNumber({blockNumber:0,timestamp:0}) )
       dispatch(applicationUpdateWeb3Rpc({
         chainId: chainId,
         endpoint: endpoint

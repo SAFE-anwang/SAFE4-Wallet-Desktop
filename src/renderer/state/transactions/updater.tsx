@@ -50,7 +50,7 @@ export default () => {
         console.log(`Finish fetch Address[${addressActivityFetch.address}]`)
         return;
       }
-      console.log(`Exeucte fetch Address[${addressActivityFetch.address}] activities from
+      console.log(`Exeucte fetch Address[${addressActivityFetch.address}] activities from ${API} - ${chainId} - 
                    Block[${addressActivityFetch.blockNumberStart}] to Block[${addressActivityFetch.blockNumberEnd}] @ page = ${addressActivityFetch.current}`);
       const newFetch = {
         ...addressActivityFetch,
