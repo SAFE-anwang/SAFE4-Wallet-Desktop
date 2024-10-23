@@ -48,7 +48,7 @@ export default ({
         cancel();
       }
     },
-    [activeAccount],
+    [activeAccount , chainId],
   )
 
   return <>

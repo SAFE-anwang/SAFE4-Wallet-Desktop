@@ -40,16 +40,15 @@ export default () => {
   useEffect(() => {
     const addressActivtiesLoadActivities = DB_AddressActivity_Methods.loadActivities;
     const timeNodeRewardsGetAll = TimeNodeReward_Methods.getAll;
-
     if (activeAccount && chainId) {
       if (activeAccount != addressActivityFetch?.address) {
-        window.electron.ipcRenderer.sendMessage(IPC_CHANNEL, [DBAddressActivitySignal, addressActivtiesLoadActivities, [activeAccount]]);
+        window.electron.ipcRenderer.sendMessage(IPC_CHANNEL, [DBAddressActivitySignal, addressActivtiesLoadActivities, [activeAccount,chainId]]);
       }
       window.electron.ipcRenderer.sendMessage(IPC_CHANNEL, [TimeNodeRewardSignal, timeNodeRewardsGetAll, [activeAccount, chainId]]);
       return window.electron.ipcRenderer.on(IPC_CHANNEL, (arg) => {
         if (arg instanceof Array && arg[0] == DBAddressActivitySignal && arg[1] == addressActivtiesLoadActivities) {
           const rows = arg[2][0];
-          console.log(`Load [${activeAccount}] AddressActivities From DB : `, rows);
+          console.log(`Load [${activeAccount}] - [${chainId}] AddressActivities From DB : `, rows);
           let dbStoredRange = {
             start: latestBlockNumber,
             end: 1

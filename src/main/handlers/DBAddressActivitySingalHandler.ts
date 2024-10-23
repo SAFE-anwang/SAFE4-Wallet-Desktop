@@ -107,7 +107,8 @@ export class DBAddressActivitySingalHandler implements ListenSignalHandler {
       this.updateActivity(receipt);
     } else if (DB_AddressActivity_Methods.loadActivities == method) {
       const address = params[0];
-      data = this.loadActivities(address, (rows: any) => {
+      const chainId = params[1];
+      data = this.loadActivities(address, chainId ,  (rows: any) => {
         event.reply(Channel, [this.getSingal(), method, [rows]])
       });
     } else if (DB_AddressActivity_Methods.saveOrUpdateActivities == method) {
@@ -160,16 +161,17 @@ export class DBAddressActivitySingalHandler implements ListenSignalHandler {
     )
   }
 
-  private loadActivities(address: string, callback: (rows: any) => void) {
+  private loadActivities(address: string, chainId : number , callback: (rows: any) => void) {
+
     this.db.all(
-      "SELECT * FROM Address_Activities WHERE ref_from = ? or ref_to = ?",
-      [address, address],
+      "SELECT * FROM Address_Activities WHERE (ref_from = ? or ref_to = ?) and chain_id = ?",
+      [address, address , chainId],
       (err: any, rows: any) => {
         if (err) {
           console.log("load activities error:", err, address)
           return;
         }
-        console.log(`Load activities for ${address} , size = ${rows.length}`)
+        console.log(`Load activities for ${address} - ${chainId} , size = ${rows.length}`)
         callback(rows);
       }
     )

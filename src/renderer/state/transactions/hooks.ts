@@ -7,6 +7,7 @@ import { Transfer, TransactionDetails, ContractCall, TokenTransfer } from "./red
 import { DateFormat } from "../../utils/DateUtils";
 import { CurrencyAmount, JSBI } from "@uniswap/sdk";
 import { DateTimeNodeRewardVO, TimeNodeRewardVO } from "../../services";
+import { useWeb3React } from "@web3-react/core";
 
 export function useTransactionAdder2(): (
   response: {
@@ -103,6 +104,7 @@ export function useTransactionAdder(): (
 export function useTransactions(account?: string) {
   const transactions = useSelector((state: AppState) => state.transactions.transactions);
   const nodeRewards = useSelector((state: AppState) => state.transactions.nodeRewards);
+  const { chainId } = useWeb3React();
   const accountTransactions = useMemo(() => {
     return Object.keys(transactions)
       .filter(txHash => {
@@ -116,7 +118,7 @@ export function useTransactions(account?: string) {
       .sort((t0, t1) => {
         return t1.addedTime - t0.addedTime
       })
-  }, [account, transactions]);
+  }, [account, transactions , chainId]);
   const dateTransactions: {
     [date: string]: {
       transactions: TransactionDetails[],

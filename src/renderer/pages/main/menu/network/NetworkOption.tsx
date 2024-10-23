@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { isSafe4Mainnet, isSafe4Network, isSafe4Testnet } from "../../../../utils/Safe4Network";
 import { useDispatch } from "react-redux";
 import { applicationUpdateWeb3Rpc } from "../../../../state/application/action";
+import { clearAllTransactions } from "../../../../state/transactions/actions";
 
 const { Text } = Typography;
 
