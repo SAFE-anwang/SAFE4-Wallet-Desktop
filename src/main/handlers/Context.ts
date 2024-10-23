@@ -22,7 +22,7 @@ export class Context {
       // 然后就相当于在与应用同级的目录下创建数据目录,避免重新安装应用时,会覆盖掉数据.
       const _appsDir = process.platform == "darwin" ? path.join(this.path.resource, "../../../")
         : path.join(this.path.resource, "../../");
-      this.path.data = path.join(_appsDir, "safe4-wallet-desktop-testnet-" + this.path.data);
+      this.path.data = path.join(_appsDir, "safe4-wallet-desktop-mainnet-" + this.path.data);
     } else {
       // 如果是在开发环境下,那就在源码目录内生成data文件
       this.path.data = path.join(this.path.resource, this.path.data);
