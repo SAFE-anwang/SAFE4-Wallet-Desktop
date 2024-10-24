@@ -19,6 +19,7 @@ import {
   applicationControlDirectDeploy,
   applicationControlUpdateEditMasternodeId,
   applicationControlUpdateEditSupernodeId,
+  applicationUpdateLanguage,
 } from './action';
 
 import { ContractVO } from '../../services';
@@ -97,7 +98,9 @@ export interface IApplicationState {
     salt?: string,
     iv?: string,
     ciphertext?: string
-  }
+  },
+
+  language : string
 
 }
 
@@ -118,7 +121,8 @@ const initialState: IApplicationState = {
   },
   data: {
 
-  }
+  } ,
+  language : "zh"
 }
 
 export default createReducer(initialState, (builder) => {
@@ -276,6 +280,10 @@ export default createReducer(initialState, (builder) => {
 
     .addCase( applicationControlUpdateEditSupernodeId , ( state , {payload} ) => {
       state.control.editSupernodeId = payload;
+    } )
+
+    .addCase( applicationUpdateLanguage , ( state , {payload} ) => {
+      state.language = payload;
     } )
 
 })

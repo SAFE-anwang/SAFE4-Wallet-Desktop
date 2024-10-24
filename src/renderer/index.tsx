@@ -3,6 +3,7 @@ import App from './App';
 import React, { useEffect, useState } from 'react';
 import { Provider } from 'react-redux';
 import store from './state';
+import './i18n';
 
 const container = document.getElementById('root') as HTMLElement;
 const root = createRoot(container);

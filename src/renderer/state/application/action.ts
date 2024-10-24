@@ -103,3 +103,7 @@ export const applicationControlUpdateEditMasternodeId = createAction<number>(
 export const applicationControlUpdateEditSupernodeId = createAction<number>(
   "application/controlUpdateEditSupernodeId"
 )
+
+export const applicationUpdateLanguage = createAction<string>(
+  "application/updateLanguage"
+)

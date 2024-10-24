@@ -10,21 +10,26 @@ import {
 } from '@ant-design/icons';
 import "./index.css"
 import { useApplicationPassword } from '../../../state/application/hooks';
+import { useTranslation } from 'react-i18next';
+import { applicationUpdateLanguage } from '../../../state/application/action';
 
 const { Title, Text } = Typography;
 
 
 export default () => {
-
-  const data = useSelector<AppState, { [key: string]: any }>(state => state.application.data);
   const navigate = useNavigate();
-  const password = useApplicationPassword();
+  const { t } = useTranslation();
+  const dispatch = useDispatch();
+
+  useEffect(() => {
+    dispatch(applicationUpdateLanguage("en"))
+  }, [dispatch])
 
   return (<>
     <Row style={{ height: "50px" }}>
       <Col span={12}>
         <Title level={4} style={{ lineHeight: "16px" }}>
-          菜单
+          {t("menu")}
         </Title>
       </Col>
     </Row>
@@ -61,7 +66,7 @@ export default () => {
             </Col>
           </Row>
 
-         <Divider style={{ margin: "0px 0px" }} />
+          <Divider style={{ margin: "0px 0px" }} />
           <Row className='menu-item' onClick={() => {
             navigate("/main/menu/storage")
           }}>
@@ -76,23 +81,21 @@ export default () => {
             </Col>
           </Row>
         </Card>
-        {
-          password && <Card className="menu-item-container" style={{ marginBottom: "20px" }}>
-            <Row className='menu-item' onClick={() => {
-              navigate("/main/menu/modifyPassword")
-            }}>
-              <Col span={2} style={{ textAlign: "center" }}>
-                <WalletOutlined />
-              </Col>
-              <Col span={20}>
-                修改钱包密码
-              </Col>
-              <Col span={2} style={{ textAlign: "center" }}>
-                <RightOutlined />
-              </Col>
-            </Row>
-          </Card>
-        }
+        <Card className="menu-item-container" style={{ marginBottom: "20px" }}>
+          <Row className='menu-item' onClick={() => {
+            navigate("/main/menu/modifyPassword")
+          }}>
+            <Col span={2} style={{ textAlign: "center" }}>
+              <WalletOutlined />
+            </Col>
+            <Col span={20}>
+              修改钱包密码
+            </Col>
+            <Col span={2} style={{ textAlign: "center" }}>
+              <RightOutlined />
+            </Col>
+          </Row>
+        </Card>
       </div>
     </div>
   </>)

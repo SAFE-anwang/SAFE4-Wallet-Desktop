@@ -1,5 +1,5 @@
 import { Alert, Button, Card, Col, Form, Image, Input, Row, Spin, Typography } from 'antd';
-import { useApplicationActionAtCreateWallet, useApplicationBlockchainWeb3Rpc } from './state/application/hooks';
+import { useApplicationActionAtCreateWallet, useApplicationBlockchainWeb3Rpc, useApplicationLanguage } from './state/application/hooks';
 import { useCallback, useEffect, useState } from 'react';
 import { Web3ReactHooks, Web3ReactProvider } from '@web3-react/core'
 import { initializeConnect } from './connectors/network';
@@ -57,6 +57,7 @@ import MasternodeSync from './pages/main/masternodes/Sync/MasternodeSync';
 import SupernodeSync from './pages/main/supernodes/Sync/SupernodeSync';
 import TestSSH2CMD from './pages/main/tools/ssh2/TestSSH2CMD';
 import { useWalletsKeystores } from './state/wallets/hooks';
+import { useTranslation } from 'react-i18next';
 const { Text } = Typography;
 
 export default function App() {
@@ -64,7 +65,8 @@ export default function App() {
   const dispatch = useDispatch();
   const [loading, setLoading] = useState<boolean>(true);
   const walletsKeystores = useWalletsKeystores();
-  const [locked, setLocked] = useState( true );
+  const [locked, setLocked] = useState(true);
+
 
   const [encrypt, setEncrypt] = useState<{
     salt: string,
@@ -154,7 +156,7 @@ export default function App() {
         dispatch(walletsLoadWalletNames(walletNames));
         if (encrypt) {
           setEncrypt(encrypt);
-        }else{
+        } else {
           setLocked(false);
         }
         setLoading(false);
@@ -183,13 +185,19 @@ export default function App() {
     }
   }, [password, encrypt]);
 
-  useEffect( () => {
-    if ( walletsKeystores && walletsKeystores.length > 0 ){
-        setLocked(false);
+  useEffect(() => {
+    if (walletsKeystores && walletsKeystores.length > 0) {
+      setLocked(false);
     }
-  } , [ walletsKeystores ] )
+  }, [walletsKeystores])
 
   const atCreateWallet = useApplicationActionAtCreateWallet();
+  const applicationLanguage = useApplicationLanguage();
+  const { t, i18n } = useTranslation();
+
+  useEffect(() => {
+    i18n.changeLanguage(applicationLanguage);
+  }, [applicationLanguage]);
 
   return (
     <>
@@ -209,7 +217,7 @@ export default function App() {
                   <Text style={{ fontSize: "28px" }}>Safe4</Text>
                 </Col>
                 <Col span={24} style={{ textAlign: "center", marginTop: "10px" }}>
-                  <Text type='secondary' style={{ fontSize: "18px" }}>即将进入去中心化网络</Text>
+                  <Text type='secondary' style={{ fontSize: "18px" }}>{t("welcome")}</Text>
                 </Col>
 
                 <Col span={24} style={{ marginTop: "20px" }}>

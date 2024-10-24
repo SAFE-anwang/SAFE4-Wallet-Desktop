@@ -71,4 +71,10 @@ export function useApplicationRpcConfigs() : { chainId : number , endpoint : str
   })
 }
 
+export function useApplicationLanguage() : string {
+  return useSelector((state: AppState) => {
+    return state.application.language;
+  })
+}
+
 
