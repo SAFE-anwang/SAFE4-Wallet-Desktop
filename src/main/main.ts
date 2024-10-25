@@ -38,7 +38,7 @@ let mainWindow: BrowserWindow | null = null;
 const resourcePath = app.isPackaged
   ? path.join(process.resourcesPath, '')
   : path.join(__dirname, '../../');
-new ApplicationIpcManager(
+const appIpcManager = new ApplicationIpcManager(
   resourcePath, app.isPackaged
 ).register(ipcMain);
 
@@ -184,5 +184,6 @@ app
       // dock icon is clicked and there are no other windows open.
       if (mainWindow === null) createWindow();
     });
+    appIpcManager.ctx.updateOSLocale( app.getLocale() );
   })
   .catch(console.log);

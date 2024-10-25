@@ -122,7 +122,7 @@ const initialState: IApplicationState = {
   data: {
 
   } ,
-  language : "zh"
+  language : "zh-CN"
 }
 
 export default createReducer(initialState, (builder) => {

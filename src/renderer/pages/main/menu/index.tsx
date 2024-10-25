@@ -1,29 +1,19 @@
-import { Typography, Button, Card, Divider, Statistic, Row, Col, Modal, Flex, Tooltip, Tabs, TabsProps, QRCode, Badge, Space, Alert } from 'antd';
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ethers } from 'ethers';
+import { Typography, Card, Divider, Row, Col } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
-import { useSelector } from "react-redux"
-import { AppState } from "../../../state";
 import {
-  DatabaseOutlined, RightOutlined, WalletOutlined, WifiOutlined
+  DatabaseOutlined, DownOutlined, GlobalOutlined, NumberOutlined, RightOutlined, WalletOutlined, WifiOutlined
 } from '@ant-design/icons';
 import "./index.css"
-import { useApplicationPassword } from '../../../state/application/hooks';
 import { useTranslation } from 'react-i18next';
-import { applicationUpdateLanguage } from '../../../state/application/action';
+import LanguageSelector from './language/LanguageSelector';
 
 const { Title, Text } = Typography;
 
-
 export default () => {
+
   const navigate = useNavigate();
   const { t } = useTranslation();
-  const dispatch = useDispatch();
-
-  useEffect(() => {
-    dispatch(applicationUpdateLanguage("en"))
-  }, [dispatch])
 
   return (<>
     <Row style={{ height: "50px" }}>
@@ -42,10 +32,10 @@ export default () => {
             // navigate("/main/menu/storage")
           }}>
             <Col span={2} style={{ textAlign: "center" }}>
-              <DatabaseOutlined />
+              <NumberOutlined />
             </Col>
             <Col span={20}>
-              版本 v2.0.0
+              {t("version")} v2.0.0
             </Col>
             {/* <Col span={2} style={{ textAlign: "center" }}>
               <RightOutlined />
@@ -59,7 +49,7 @@ export default () => {
               <WifiOutlined />
             </Col>
             <Col span={20}>
-              网络
+              {t("network")}
             </Col>
             <Col span={2} style={{ textAlign: "center" }}>
               <RightOutlined />
@@ -74,14 +64,14 @@ export default () => {
               <DatabaseOutlined />
             </Col>
             <Col span={20}>
-              存储
+              {t("storage")}
             </Col>
             <Col span={2} style={{ textAlign: "center" }}>
               <RightOutlined />
             </Col>
           </Row>
-        </Card>
-        <Card className="menu-item-container" style={{ marginBottom: "20px" }}>
+
+          <Divider style={{ margin: "0px 0px" }} />
           <Row className='menu-item' onClick={() => {
             navigate("/main/menu/modifyPassword")
           }}>
@@ -89,13 +79,19 @@ export default () => {
               <WalletOutlined />
             </Col>
             <Col span={20}>
-              修改钱包密码
+              {t("modifyWalletPassword")}
             </Col>
             <Col span={2} style={{ textAlign: "center" }}>
               <RightOutlined />
             </Col>
           </Row>
+
         </Card>
+
+        <Card className="menu-item-container" style={{ marginBottom: "20px" }}>
+          <LanguageSelector />
+        </Card>
+
       </div>
     </div>
   </>)

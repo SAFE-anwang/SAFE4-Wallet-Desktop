@@ -131,8 +131,11 @@ export default function App() {
           path,
           encrypt,
           rpc_configs,
-          wallet_names
+          wallet_names,
+          app_props,
+          os
         } = data;
+
         const rpcConfigs = rpc_configs.map((rpc_config: any) => {
           const { id, chain_id, endpoint, active } = rpc_config;
           return {
@@ -148,7 +151,12 @@ export default function App() {
             name,
             active: walletName.active == 1
           }
-        })
+        });
+        console.log("os >>" , os)
+        const appProps = app_props.map( ( { name , val } : any ) => {
+          return { name , val }
+        });
+        console.log( appProps );
         setDbRpcConfigs(rpcConfigs);
         dispatch(applicationDataLoaded({
           path, rpcConfigs

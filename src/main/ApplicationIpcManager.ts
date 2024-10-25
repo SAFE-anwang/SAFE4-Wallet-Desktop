@@ -12,6 +12,7 @@ import { SSH2Ipc } from "./SSH2Ipc";
 import { ERC20TokenSignalHandler } from "./handlers/ERC20TokenSignalHandler";
 import { LocalFileReader } from "./handlers/LocalFileReaderIpc";
 import { CryptoIpc } from "./CryptoIpc";
+import { AppPropSignalHandler } from "./handlers/AppPropSignalHandler";
 
 export const Channel : Channels = "ipc-example";
 
@@ -19,7 +20,7 @@ export class ApplicationIpcManager {
 
   listenSignalHandlers: ListenSignalHandler[] = [];
 
-  ctx : Context;
+  public ctx : Context;
 
   constructor( resoucePath : string , appIsPackaged : boolean ) {
     const ctx = new Context(resoucePath,appIsPackaged);
@@ -32,10 +33,11 @@ export class ApplicationIpcManager {
       this.listenSignalHandlers.push( new TimeNodeRewardHandler(ctx ,indexSignalHandler.getSqlite3DB()));
       this.listenSignalHandlers.push( new WalletNameHandler(ctx ,indexSignalHandler.getSqlite3DB()));
       this.listenSignalHandlers.push( new ERC20TokenSignalHandler( ctx, indexSignalHandler.getSqlite3DB()));
+      this.listenSignalHandlers.push( new AppPropSignalHandler( ctx, indexSignalHandler.getSqlite3DB()));
     });
     this.listenSignalHandlers.push(indexSignalHandler);
   }
-  public register(ipcMain : Electron.IpcMain) {
+  public register(ipcMain : Electron.IpcMain) : ApplicationIpcManager{
     ipcMain.on(Channel, async (event, arg) => {
       if (arg instanceof Array) {
         const signal = arg[0];
@@ -60,6 +62,7 @@ export class ApplicationIpcManager {
     new SSH2Ipc(ipcMain);
     new LocalFileReader(ipcMain);
     new CryptoIpc(ipcMain);
+    return this;
   }
 
 }
