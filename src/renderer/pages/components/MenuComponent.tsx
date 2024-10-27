@@ -25,11 +25,9 @@ function getItem(
 }
 
 const MenuComponent: React.FC = () => {
-
   const [current, setCurrent] = useState('/main/wallet');
   const navigate = useNavigate();
   const { t } = useTranslation();
-
   // const items: MenuItem[] = [
   //   getItem( "钱包" , '/main/wallet', <WalletOutlined />),
   //   getItem("超级节点", '/main/supernodes', <ClusterOutlined />),
@@ -40,7 +38,6 @@ const MenuComponent: React.FC = () => {
   //   // getItem("Test", '/main/test', <ApiOutlined />),
   //   getItem('领取测试币', '/main/gettestcoin', <GiftOutlined />),
   // ];
-
   const items: MenuItem[] = useMemo(() => {
     return [
       getItem( t("wallet")  , '/main/wallet', <WalletOutlined />),
@@ -52,9 +49,8 @@ const MenuComponent: React.FC = () => {
       getItem( t("getTestCoin"), '/main/gettestcoin', <GiftOutlined />),
     ]
   }, [t]);
-
   const bottom_items: MenuItem[] = [
-    getItem( t("wallet") , '/main/menu', <SettingOutlined />),
+    getItem( t("menu") , '/main/menu', <SettingOutlined />),
   ];
 
   const onClick: MenuProps['onClick'] = (e) => {
