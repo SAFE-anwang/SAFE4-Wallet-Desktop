@@ -9,20 +9,27 @@ import {
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { applicationUpdateLanguage } from '../../../../state/application/action';
+import { electron } from 'process';
+import { IPC_CHANNEL } from '../../../../config';
+import { AppProp_Methods, AppPropSignal } from '../../../../../main/handlers/AppPropSignalHandler';
 
 const { Title, Text , Link } = Typography;
 
 export default () => {
-
-  const { t } = useTranslation();
   const dispatch = useDispatch();
+  const { t } = useTranslation();
+
+  const doUpdateAppLanguage = ( language : string ) => {
+    window.electron.ipcRenderer.sendMessage(IPC_CHANNEL, [ AppPropSignal , AppProp_Methods.saveOrUpdateAppProp, ["language", language]]);
+    dispatch( applicationUpdateLanguage(language) )
+  }
 
   const items: MenuProps['items'] = [
     {
       key: '1',
       label: (
         <Link style={{lineHeight:"40px"}} onClick={() => {
-          dispatch(applicationUpdateLanguage("zh"))
+          doUpdateAppLanguage("zh")
         }}>中文</Link>
       ),
     },
@@ -30,7 +37,7 @@ export default () => {
       key: '2',
       label: (
         <Link style={{lineHeight:"40px"}}  onClick={() => {
-          dispatch(applicationUpdateLanguage("en"))
+          doUpdateAppLanguage("en")
         }}>English</Link>
       )
     },

@@ -15,7 +15,8 @@ export const applicationDataLoaded = createAction<{
   rpcConfigs: {
     chainId: number,
     endpoint: string
-  }[]
+  }[] ,
+  appProps : any
 }>("application/dataLoaded")
 
 export const applicationActionConfirmedMnemonic = createAction<{

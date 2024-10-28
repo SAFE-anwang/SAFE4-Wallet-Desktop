@@ -6,7 +6,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useETHBalances, useWalletsActiveAccount, useWalletsActiveKeystore, useWalletsActivePrivateKey, useWalletsActiveWallet } from '../../../state/wallets/hooks';
 import { applicationActionUpdateAtCreateWallet, applicationUpdateWalletTab } from '../../../state/application/action';
 import { SendOutlined, QrcodeOutlined, LockOutlined, MoreOutlined, GlobalOutlined, EditOutlined } from '@ant-design/icons';
-import { useApplicationPassword, useBlockNumber, useTimestamp } from '../../../state/application/hooks';
+import { useBlockNumber, useTimestamp } from '../../../state/application/hooks';
 import Locked from './tabs/Locked/Locked';
 import WalletLockModal from './Lock/WalletLockModal';
 import History from './tabs/History/History';
@@ -14,7 +14,7 @@ import WalletSendModal from './Send/WalletSendModal';
 import { AppState } from '../../../state';
 import { DateTimeFormat } from '../../../utils/DateUtils';
 import { useWeb3React } from '@web3-react/core';
-import config, { IPC_CHANNEL, Safe4_Network_Config } from '../../../config';
+import { IPC_CHANNEL, Safe4_Network_Config } from '../../../config';
 import WalletKeystoreModal from './WalletKeystoreModal';
 import WalletPrivateKeyModal from './WalletPrivateKeyModal';
 import WalletMnemonicModal from './WalletMnemonicModal';
@@ -25,14 +25,14 @@ import IERC20Assets from './tabs/IERC20/IERC20Assets';
 import { ERC20TokensSignal, ERC20Tokens_Methods } from '../../../../main/handlers/ERC20TokenSignalHandler';
 import { ethers } from 'ethers';
 import { loadERC20Tokens } from '../../../state/transactions/actions';
-import { HDNode } from 'ethers/lib/utils';
+import { useTranslation } from 'react-i18next';
 
-const { Safescan_URL } = config;
 const { Title, Text, Paragraph, Link } = Typography;
 
 export default () => {
 
   const dispatch = useDispatch();
+  const { t } = useTranslation();
   const activeWallet = useWalletsActiveWallet();
   const activeWalletName = useWalletName(activeWallet?.address);
   const account = useWalletsActiveAccount();
@@ -55,17 +55,17 @@ export default () => {
   const tabItems: TabsProps['items'] = [
     {
       key: 'locked',
-      label: '锁仓',
+      label: t("wallet_lock"),
       children: <Locked />,
     },
     {
       key: 'erc20',
-      label: '代币',
+      label: t("wallet_tokens"),
       children: <IERC20Assets />,
     },
     {
       key: 'history',
-      label: '历史',
+      label: t("wallet_history"),
       children: <History />,
     },
   ];
@@ -101,7 +101,7 @@ export default () => {
           <a onClick={() => {
             setOpenMnemonicModal(true);
           }}>
-            助记词
+            {t("wallet_mnemonic")}
           </a>
         ),
       })
@@ -112,7 +112,7 @@ export default () => {
         <a onClick={() => {
           setOpenPrivateKeyModal(true);
         }}>
-          私钥
+          {t("wallet_privateKey")}
         </a>
       ),
     });
@@ -122,7 +122,7 @@ export default () => {
         <a onClick={() => {
           setOpenKeystoreModal(true);
         }} >
-          Keystore
+            {t("wallet_keystore")}
         </a>
       ),
     })
@@ -162,7 +162,7 @@ export default () => {
     <Row style={{ height: "50px" }}>
       <Col span={12}>
         <Title level={4} style={{ lineHeight: "16px" }}>
-          钱包 <Divider type='vertical' style={{ marginLeft: "12px", marginRight: "12px" }} />
+          {t("wallet")} <Divider type='vertical' style={{ marginLeft: "12px", marginRight: "12px" }} />
           {activeWalletName}
           <span style={{ marginLeft: "20px" }}>
             <Tooltip title="编辑钱包名称">
@@ -208,7 +208,7 @@ export default () => {
         </Row>
         <Row>
           <Col span={18}>
-            <Statistic title="余额" value={balance?.toFixed(6)} />
+            <Statistic title={t("wallet_balance")} value={balance?.toFixed(6)} />
           </Col>
           <Col span={6}>
             <Row>
@@ -216,19 +216,19 @@ export default () => {
                 <Button style={{
                   height: "45px", width: "45px"
                 }} size='large' shape="circle" icon={<LockOutlined />} onClick={() => setOpenLockMoal(true)} /><br />
-                <Text>锁仓</Text>
+                <Text>{t("wallet_lock")}</Text>
               </Col>
               <Col span={6} style={{ textAlign: "center" }}>
                 <Button style={{
                   height: "45px", width: "45px"
                 }} size='large' shape="circle" icon={<SendOutlined />} onClick={() => setOpenSendModal(true)} /><br />
-                <Text>发送</Text>
+                <Text>{t("wallet_send")}</Text>
               </Col>
               <Col span={6} style={{ textAlign: "center" }}>
                 <Button style={{
                   height: "45px", width: "45px"
                 }} size='large' shape="circle" icon={<QrcodeOutlined />} onClick={() => setOpenReceiveModal(true)} /><br />
-                <Text>接收</Text>
+                <Text>{t("wallet_receive")}</Text>
               </Col>
 
               <Col span={6} style={{ textAlign: "center" }}>
@@ -238,7 +238,7 @@ export default () => {
                   }} size='large' shape="circle" icon={<MoreOutlined />} />
                 </Dropdown>
                 <br />
-                <Text>更多</Text>
+                <Text>{t("wallet_more")}</Text>
               </Col>
 
             </Row>
@@ -251,7 +251,7 @@ export default () => {
       </div>
     </div>
 
-    <Modal title="接收" open={openReceiveModal} width={"400px"} footer={null} closable onCancel={() => { setOpenReceiveModal(false) }}>
+    <Modal title={t("wallet_receive")} open={openReceiveModal} width={"400px"} footer={null} closable onCancel={() => { setOpenReceiveModal(false) }}>
       <Divider />
       <Row>
         <Text style={{ margin: "auto", marginTop: "20px", marginBottom: "20px" }} type='secondary'>资产只能在相同的网络中发送。</Text>

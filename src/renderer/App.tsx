@@ -135,7 +135,6 @@ export default function App() {
           app_props,
           os
         } = data;
-
         const rpcConfigs = rpc_configs.map((rpc_config: any) => {
           const { id, chain_id, endpoint, active } = rpc_config;
           return {
@@ -152,14 +151,20 @@ export default function App() {
             active: walletName.active == 1
           }
         });
-        console.log("os >>" , os)
-        const appProps = app_props.map( ( { name , val } : any ) => {
-          return { name , val }
-        });
-        console.log( appProps );
+
+        const appProps: any = {};
+        if (app_props.length > 0) {
+          Object.keys(app_props)
+            .forEach((index) => {
+              appProps[app_props[index].name] = app_props[index].val;
+            })
+        }
+        if (!appProps.language) {
+          appProps.language = os.locale;
+        }
         setDbRpcConfigs(rpcConfigs);
         dispatch(applicationDataLoaded({
-          path, rpcConfigs
+          path, rpcConfigs, appProps
         }));
         dispatch(walletsLoadWalletNames(walletNames));
         if (encrypt) {

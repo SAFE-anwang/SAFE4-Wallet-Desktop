@@ -11,12 +11,14 @@ import AddressView from "../../../../components/AddressView";
 import { DateTimeFormat } from "../../../../../utils/DateUtils";
 import { ZERO } from "../../../../../utils/CurrentAmountUtils";
 import AddLockModal from "./AddLockModal";
+import { useTranslation } from "react-i18next";
 
 const { Text } = Typography;
 const AccountRecords_Page_Size = 5;
 
 export default () => {
 
+  const {t} = useTranslation();
   const activeAccount = useWalletsActiveAccount();
   const safe4balance = useSafe4Balance([activeAccount])[activeAccount];
   const blockNumber = useBlockNumber();
@@ -33,6 +35,8 @@ export default () => {
   const [accountRecordZERO, setAccountRecordZERO] = useState<AccountRecord>();
 
   const [queryAccountRecordId, setQueryAccountRecordId] = useState<number>();
+
+
 
   useEffect(() => {
     if (accountManagerContract) {
@@ -193,8 +197,8 @@ export default () => {
     return <Card key={id} size="small" style={{ marginTop: "30px" }}>
       <Row>
         <Col span={6}>
-          <Divider orientation="center" style={{ fontSize: "14px", marginTop: "-23px", fontWeight: "600" }}>锁仓信息</Divider>
-          <Text strong type="secondary">记录ID</Text><br />
+          <Divider orientation="center" style={{ fontSize: "14px", marginTop: "-23px", fontWeight: "600" }}>{t("wallet_locked_accountRecordLockInfo")}</Divider>
+          <Text strong type="secondary">{t("wallet_locked_accountRecordLockId")}</Text><br />
           <Text strong>
             {
               locked && <LockOutlined />
@@ -202,7 +206,7 @@ export default () => {
             {id}
           </Text>
           <Divider style={{ margin: "4px 0" }} />
-          <Text strong type="secondary">锁仓数量</Text><br />
+          <Text strong type="secondary">{t("wallet_locked_lockedAmount")}</Text><br />
           <Text strong>{amount.toFixed(2)} SAFE</Text>
           <Divider style={{ margin: "4px 0" }} />
           <Text strong type="secondary">解锁高度</Text><br />
@@ -298,7 +302,7 @@ export default () => {
   return <>
     <Row>
       <Col span={18}>
-        <Statistic title="锁仓账户总余额" value={safe4balance?.total?.amount?.toFixed(6)} />
+        <Statistic title={t("wallet_balanceOfAccountManager")} value={safe4balance?.total?.amount?.toFixed(6)} />
       </Col>
       <Col span={6}>
         <Row>
@@ -310,26 +314,26 @@ export default () => {
               setOpenWithdrawModal(true)
             }
             } /><br />
-            <Text>提现</Text>
+            <Text>{t("wallet_withdraw")}</Text>
           </Col>
         </Row>
       </Col>
     </Row>
     <Row style={{ marginTop: "50px" }}>
       <Col span={8}>
-        <Statistic title="当前可用" value={safe4balance?.avaiable?.amount?.toFixed(6)} />
+        <Statistic title={t("wallet_accountManager_avaiable")} value={safe4balance?.avaiable?.amount?.toFixed(6)} />
       </Col>
       <Col span={8}>
-        <Statistic title="已锁定" value={safe4balance?.locked?.amount?.toFixed(6)} />
+        <Statistic title={t("wallet_accountManager_locked")} value={safe4balance?.locked?.amount?.toFixed(6)} />
       </Col>
       <Col span={8}>
-        <Statistic title="使用中" value={safe4balance?.used?.amount?.toFixed(6)} />
+        <Statistic title={t("wallet_accountManager_freeze")} value={safe4balance?.used?.amount?.toFixed(6)} />
       </Col>
     </Row>
 
-    <Card title="锁仓列表" style={{ marginTop: "40px" }}>
+    <Card title={t("wallet_locked_list")} style={{ marginTop: "40px" }}>
 
-      <Input.Search size="large" placeholder="输入锁仓ID查询" onChange={(event) => {
+      <Input.Search size="large" placeholder={t("wallet_locked_placehold_inputAccountRecordId")} onChange={(event) => {
         if ( !event.target.value.trim() ){
           setQueryAccountRecordId(undefined);
         }

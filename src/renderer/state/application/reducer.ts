@@ -122,18 +122,19 @@ const initialState: IApplicationState = {
   data: {
 
   } ,
-  language : "zh-CN"
+  language : "zh"
 }
 
 export default createReducer(initialState, (builder) => {
 
-  builder.addCase(applicationDataLoaded, (state, { payload: { path, rpcConfigs } }) => {
+  builder.addCase(applicationDataLoaded, (state, { payload: { path, rpcConfigs , appProps } }) => {
     const { resource, data, database, kys } = path;
     state.data["resource"] = resource;
     state.data["data"] = data;
     state.data["database"] = database;
     state.data["kys"] = kys;
     state.rpcConfigs = rpcConfigs;
+    state.language = appProps.language;
   })
 
     .addCase(applicationBlockchainUpdateBlockNumber, (state, { payload }) => {
@@ -284,6 +285,6 @@ export default createReducer(initialState, (builder) => {
 
     .addCase( applicationUpdateLanguage , ( state , {payload} ) => {
       state.language = payload;
-    } )
+    })
 
 })
