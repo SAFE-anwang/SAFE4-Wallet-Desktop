@@ -121,21 +121,41 @@ export default () => {
   }
 
   const validateKeystore = useCallback(() => {
-    if (params.keystore && params.keystorePWD) {
+    setInputErrors({
+      ...inputErrors,
+      keystore:undefined,
+      keystorePWD:undefined
+    });
+    if (params.keystore) {
       const { keystore, keystorePWD } = params;
       setKeystoreDecrypting(true);
-      ethers.Wallet.fromEncryptedJson(keystore, keystorePWD)
+      ethers.Wallet.fromEncryptedJson(keystore, keystorePWD ? keystorePWD : "")
         .then(wallet => {
-          console.log("Decrypt Keystore Success.Wallet=>", wallet)
+          setAddress(wallet.address);
+          setParams({
+            ...params,
+            privateKey:wallet.privateKey
+          })
           setKeystoreDecrypting(false);
         }).catch(err => {
           if ( err && err.message == 'invalid password' ){
-
+            setInputErrors({
+              ...inputErrors,
+              keystorePWD:"密码错误"
+            })
           } else {
-
+            setInputErrors({
+              ...inputErrors,
+              keystore:err.message
+            })
           }
           setKeystoreDecrypting(false);
         })
+    } else {
+      setInputErrors({
+        ...inputErrors,
+        keystore:"请输入 Keystore JSON文件内容"
+      })
     }
   }, [params.keystore, params.keystorePWD]);
 
@@ -180,6 +200,12 @@ export default () => {
           address,
           privateKey: params.privateKey
         }));
+      } else if ( importType == Import_Type_Keystore ){
+        dispatch(applicationActionConfirmedImport({
+          importType : Import_Type_PrivateKey,
+          address,
+          privateKey: params.privateKey
+        }));
       }
       navigate("/waitingImportWallet")
     }
@@ -207,6 +233,7 @@ export default () => {
                   <Segmented
                     options={importTypeOptions}
                     onChange={(value) => {
+                      setAddress(undefined);
                       if (value == '导入私钥') {
                         setImportType(Import_Type_PrivateKey)
                         setParams({
@@ -224,17 +251,18 @@ export default () => {
                           path: BIP44_Safe4_Path
                         })
                       } else if (value == '导入 Keystore') {
-                        setActivePassword(false)
-                        setActivePath(false)
                         setImportType(Import_Type_Keystore)
                         setParams({
                           ...params,
-                          mnemonic: undefined,
-                          password: undefined,
-                          privateKey: undefined
+                          keystore: undefined,
+                          keystorePWD : undefined
+                        });
+                        setInputErrors({
+                          ...inputErrors,
+                          keystore:undefined,
+                          keystorePWD:undefined
                         })
                       }
-                      setAddress(undefined)
                     }}
                   />
                 </Col>
@@ -342,11 +370,15 @@ export default () => {
                   importType == Import_Type_Keystore && <>
                     <Col style={{ marginTop: "20px" }} span={24}>
                       <Text type="secondary" strong>Keystore</Text>
-                      <Input.TextArea status={inputErrors?.keystore ? "error" : ""} onChange={(event) => {
+                      <Input.TextArea value={params.keystore} status={inputErrors?.keystore ? "error" : ""} onChange={(event) => {
                         const inputKeystore = event.target.value.trim();
                         setParams({
                           ...params,
                           keystore: inputKeystore
+                        });
+                        setInputErrors({
+                          ...inputErrors,
+                          keystore:undefined
                         })
                       }} style={{ height: "100px" }} />
                       {
@@ -363,14 +395,29 @@ export default () => {
                         setParams({
                           ...params,
                           keystorePWD: event.target.value
+                        });
+                        setInputErrors({
+                          ...inputErrors,
+                          keystorePWD:undefined
                         })
-                      }} />
+                      }}/>
+                       {
+                        inputErrors?.keystorePWD && <>
+                          <Alert type="error" showIcon message={<>
+                            {inputErrors.keystorePWD}
+                          </>} style={{ marginTop: "5px" }} />
+                        </>
+                      }
                     </Col>
-                    <Col style={{ marginTop: "30px" }} span={24}>
-                      <Button type="primary" onClick={validateKeystore}>验证</Button>
-                    </Col>
+                    {
+                      !address && <Col style={{ marginTop: "30px" }} span={24}>
+                        <Button type="primary" onClick={validateKeystore}>验证</Button>
+                      </Col>
+                    }
+                   
                   </>
                 }
+
                 {
                   address && <Col style={{ marginTop: "30px" }} span={24}>
                     <Alert type="success" message={<>
@@ -381,9 +428,15 @@ export default () => {
                     </>} />
                   </Col>
                 }
-                <Col style={{ marginTop: "30px" }} span={24}>
-                  <Button type="primary" disabled={!address} onClick={importWallet}>确认</Button>
-                </Col>
+
+                {
+                  (importType == Import_Type_Mnemonic || importType == Import_Type_PrivateKey || (importType == Import_Type_Keystore && address) ) &&
+                  <Col style={{ marginTop: "30px" }} span={24}>
+                    <Button type="primary" disabled={!address} onClick={importWallet}>确认</Button>
+                  </Col>
+                }
+
+               
               </Row>
             </Spin>
 
