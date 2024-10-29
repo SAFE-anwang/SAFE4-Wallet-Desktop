@@ -123,7 +123,8 @@ export interface SupernodeInfo {
     updateHeight: number,
 
     totalVoteNum ?: CurrencyAmount,
-    totalAmount  ?: CurrencyAmount
+    totalAmount  ?: CurrencyAmount,
+    unlockHeight ?: number
 
 }
 

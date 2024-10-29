@@ -1,5 +1,7 @@
 export default {
   welcome: "即将进入去中心化网络",
+  testnet: "测试网",
+  mainnet: "主网",
 
   menu: "菜单",
   language: "语言",
@@ -41,6 +43,9 @@ export default {
   wallet_locked_memberOfNode:"关联节点",
   wallet_locked_votedSupernode:"投票超级节点",
   wallet_locked_stakeRelease:"质押释放",
+  wallet_locked_notVoted:"未投票",
+  wallet_locked_notMember:"未关联",
   wallet_locked_placehold_inputAccountRecordId:"输入锁仓记录ID查询",
+  wallet_locked_addLockDay:"追加锁仓",
 
 }

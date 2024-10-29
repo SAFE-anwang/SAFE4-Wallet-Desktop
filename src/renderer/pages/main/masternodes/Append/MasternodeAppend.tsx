@@ -13,6 +13,7 @@ import { MasternodeInfo, formatMasternode } from '../../../../structs/Masternode
 import AppendModalConfirm from './AppendModal-Confirm';
 import Masternode from '../Masternode';
 import useAddrNodeInfo from '../../../../hooks/useAddrIsNode';
+import { Safe4_Business_Config } from '../../../../config';
 
 const { Text, Title } = Typography;
 
@@ -56,8 +57,8 @@ export default () => {
         (totalAmount, founder) => totalAmount = totalAmount.add(founder.amount),
         CurrencyAmount.ether(JSBI.BigInt(0))
       )
-      const left = 1000 - Number(totalAmount.toFixed(0));
-      if (left < 200) {
+      const left = Safe4_Business_Config.Masternode.Create.LockAmount - Number(totalAmount.toFixed(0));
+      if (left < Safe4_Business_Config.Masternode.Create.UnionLockAmount / 2) {
         setParams({
           step: 0,
           min: left,
@@ -66,10 +67,10 @@ export default () => {
         })
       } else {
         setParams({
-          step: 200,
-          min: 200,
+          step: Safe4_Business_Config.Masternode.Create.UnionLockAmount / 2,
+          min: Safe4_Business_Config.Masternode.Create.UnionLockAmount / 2,
           left,
-          value: 200
+          value: Safe4_Business_Config.Masternode.Create.UnionLockAmount / 2
         })
       }
     }

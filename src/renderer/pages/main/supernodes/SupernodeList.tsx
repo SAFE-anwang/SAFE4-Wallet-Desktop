@@ -4,7 +4,7 @@ import { Typography, Row, Col, Progress, Table, Badge, Button, Space, Card, Aler
 import { ColumnsType } from 'antd/es/table';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useMulticallContract, useSupernodeStorageContract, useSupernodeVoteContract } from '../../../hooks/useContracts';
+import { useAccountManagerContract, useMulticallContract, useSupernodeStorageContract, useSupernodeVoteContract } from '../../../hooks/useContracts';
 import { formatSupernodeInfo, SupernodeInfo } from '../../../structs/Supernode';
 import { useDispatch } from 'react-redux';
 import { applicationControlUpdateEditSupernodeId, applicationControlVoteSupernode } from '../../../state/application/action';
@@ -14,12 +14,13 @@ import Supernode from './Supernode';
 import AddressComponent from '../../components/AddressComponent';
 import { Safe4_Business_Config } from '../../../config';
 import { ZERO } from '../../../utils/CurrentAmountUtils';
-import EditSupernode from './EditSupernode';
-import { useBlockNumber } from '../../../state/application/hooks';
+import { useBlockNumber, useTimestamp } from '../../../state/application/hooks';
 import { RenderNodeState } from './Supernodes';
 import useAddrNodeInfo from '../../../hooks/useAddrIsNode';
+import { AccountRecord, formatAccountRecord } from '../../../structs/AccountManager';
+import { DateTimeFormat } from '../../../utils/DateUtils';
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 
 
 export function toFixedNoRound(number: number, decimalPlaces: number) {
@@ -44,8 +45,10 @@ export default ({
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const blockNumber = useBlockNumber();
+  const timestamp = useTimestamp();
   const supernodeStorageContract = useSupernodeStorageContract();
   const supernodeVoteContract = useSupernodeVoteContract();
+  const accountManagerAccount = useAccountManagerContract();
   const multicallContract = useMulticallContract();
   const activeAccount = useWalletsActiveAccount();
   const [supernodes, setSupernodes] = useState<SupernodeInfo[]>([]);
@@ -131,7 +134,7 @@ export default ({
   }, [supernodeStorageContract, activeAccount, blockNumber, queryKey]);
 
   const loadSupernodeInfoList = useCallback((addresses: string[]) => {
-    if (supernodeStorageContract && supernodeVoteContract && multicallContract) {
+    if (supernodeStorageContract && supernodeVoteContract && accountManagerAccount && multicallContract) {
       // function getInfo(address _addr) external view returns (MasterNodeInfo memory);
       const fragment = supernodeStorageContract.interface.getFunction("getInfo")
       const getInfoCalls = addresses.map((address: string) => [
@@ -152,7 +155,7 @@ export default ({
       multicallContract.callStatic.aggregate(calls)
         .then(data => {
           const multicallDatas = data[1];
-          const supernodeInfos = [];
+          const supernodeInfos: SupernodeInfo[] = [];
           for (let i = 0; i < multicallDatas.length / 3; i++) {
             const infoRaw = multicallDatas[i];
             const totalVoteNumRaw = multicallDatas[i + (multicallDatas.length / 3)];
@@ -175,11 +178,34 @@ export default ({
               supernodeInfos.push(supernodeInfo);
             }
           }
-          setSupernodes(supernodeInfos);
-          setLoading(false);
+
+          const getRecordByIDFragment = accountManagerAccount.interface.getFunction("getRecordByID");
+          const getRecordByIDCalls = supernodeInfos.map(supernodeInfo => {
+            const { lockID } = supernodeInfo.founders[0];
+            return [
+              accountManagerAccount.address,
+              accountManagerAccount.interface.encodeFunctionData(getRecordByIDFragment, [lockID])
+            ]
+          });
+          multicallContract.callStatic.aggregate(getRecordByIDCalls)
+            .then(data => {
+              const multicallDatas = data[1];
+              multicallDatas.map((raw: any) => {
+                const _accountRecord = accountManagerAccount.interface.decodeFunctionResult(getRecordByIDFragment, raw)[0];
+                return formatAccountRecord(_accountRecord);
+              }).forEach((accountRecord: AccountRecord) => {
+                supernodeInfos.forEach(supernodeInfo => {
+                  if (supernodeInfo.founders[0].lockID == accountRecord.id) {
+                    supernodeInfo.unlockHeight = accountRecord.unlockHeight;
+                  }
+                })
+              })
+              setSupernodes(supernodeInfos);
+              setLoading(false);
+            })
         })
     }
-  }, [supernodeStorageContract, supernodeVoteContract, multicallContract, queryMySupernodes, queryJoinSupernodes, activeAccount]);
+  }, [supernodeStorageContract, supernodeVoteContract, accountManagerAccount, multicallContract, queryMySupernodes, queryJoinSupernodes, activeAccount]);
 
   useEffect(() => {
     if (pagination && supernodeStorageContract && supernodeVoteContract && multicallContract) {
@@ -206,7 +232,7 @@ export default ({
           // getAddrs4Creator:
           supernodeStorageContract.callStatic.getAddrs4Creator(activeAccount, position, offset)
             .then((addresses: any) => {
-              loadSupernodeInfoList( addresses.map( (addr : any) => addr ).reverse() )
+              loadSupernodeInfoList(addresses.map((addr: any) => addr).reverse())
             });
         } else if (queryJoinSupernodes) {
           supernodeStorageContract.callStatic.getAddrs4Partner(activeAccount, _position, _offset)
@@ -229,7 +255,13 @@ export default ({
       dataIndex: 'id',
       key: '_id',
       render: (id, supernodeInfo: SupernodeInfo) => {
-        const { state } = supernodeInfo;
+        const { state, unlockHeight } = supernodeInfo;
+        let locked = true;
+        let unlockDateTime = undefined;
+        if (unlockHeight) {
+          locked = unlockHeight > blockNumber;
+          unlockDateTime = unlockHeight - blockNumber > 0 ? DateTimeFormat(((unlockHeight - blockNumber) * 30 + timestamp) * 1000) : undefined;
+        }
         const rank = (pagination && pagination.current && pagination.pageSize ? (pagination.current - 1) * pagination.pageSize : 0)
           + (supernodes.indexOf(supernodeInfo) + 1)
         return <>
@@ -245,9 +277,21 @@ export default ({
               <Text>{RenderNodeState(state)}</Text>
             </Col>
           </Row>
+          <Row>
+            <Col>
+              {/* {
+                queryMySupernodes && <>
+                  <Text strong type={locked ? "secondary" : "success"}>{ }</Text>
+                  {
+                    unlockDateTime && <Text strong style={{ float: "right" }} type="secondary">[{unlockDateTime}]</Text>
+                  }
+                </>
+              } */}
+            </Col>
+          </Row>
         </>
       },
-      width: "70px"
+      width: "120px"
     },
     {
       title: '得票数',
@@ -270,7 +314,7 @@ export default ({
           </Row>
         </>
       },
-      width: "180px"
+      width: "150px"
     },
     {
       title: '名称',
@@ -285,7 +329,7 @@ export default ({
               </Text>
             </Col>
           </Row>
-          <Row >
+          <Row>
             <Col span={24}>
               <Text title={supernodeVO.description} type='secondary' style={{ width: "180px", display: "block" }} ellipsis>
                 {supernodeVO.description}
@@ -294,7 +338,7 @@ export default ({
           </Row>
         </>
       },
-      width: "160px"
+      width: "150px"
     },
     {
       title: '超级节点',
@@ -359,7 +403,7 @@ export default ({
           </Row>
         </>
       },
-      width: "200px"
+      width: "240px"
     },
   ];
 

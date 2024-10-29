@@ -56,7 +56,7 @@ export default () => {
         CurrencyAmount.ether(JSBI.BigInt(0))
       )
       const left = Safe4_Business_Config.Supernode.Create.LockAmount - Number(totalAmount.toFixed(0));
-      if (left < Safe4_Business_Config.Supernode.Create.UnionLockAmount) {
+      if (left < Safe4_Business_Config.Supernode.Create.UnionLockAmount / 2) {
         setParams({
           step: 0,
           min: left,
@@ -65,10 +65,10 @@ export default () => {
         })
       } else {
         setParams({
-          step: Safe4_Business_Config.Supernode.Create.UnionLockAmount,
-          min: Safe4_Business_Config.Supernode.Create.UnionLockAmount,
+          step: Safe4_Business_Config.Supernode.Create.UnionLockAmount / 2,
+          min: Safe4_Business_Config.Supernode.Create.UnionLockAmount / 2,
           left,
-          value: Safe4_Business_Config.Supernode.Create.UnionLockAmount
+          value: Safe4_Business_Config.Supernode.Create.UnionLockAmount / 2
         })
       }
     }

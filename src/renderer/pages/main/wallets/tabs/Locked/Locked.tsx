@@ -209,7 +209,7 @@ export default () => {
           <Text strong type="secondary">{t("wallet_locked_lockedAmount")}</Text><br />
           <Text strong>{amount.toFixed(2)} SAFE</Text>
           <Divider style={{ margin: "4px 0" }} />
-          <Text strong type="secondary">解锁高度</Text><br />
+          <Text strong type="secondary">{t("wallet_locked_unlockHeight")}</Text><br />
           <Text strong type={locked ? "secondary" : "success"}>{unlockHeight}</Text>
           {
             unlockDateTime && <Text strong style={{ float: "right" }} type="secondary">[{unlockDateTime}]</Text>
@@ -219,13 +219,13 @@ export default () => {
           <Divider type="vertical" style={{ height: "100%" }} />
         </Col>
         <Col span={17}>
-          <Divider orientation="center" style={{ fontSize: "14px", marginTop: "-23px" }}>使用信息</Divider>
+          <Divider orientation="center" style={{ fontSize: "14px", marginTop: "-23px" }}>{t("wallet_locked_accountRecordUseInfo")}</Divider>
           <Row>
             <Col span={16}>
-              <Text strong type="secondary">关联节点</Text><br />
+              <Text strong type="secondary">{t("wallet_locked_memberOfNode")}</Text><br />
               {
                 frozenAddr == EmptyContract.EMPTY && <>
-                  <Tag>未关联</Tag>
+                  <Tag>{t("wallet_locked_notMember")}</Tag>
                 </>
               }
               {
@@ -235,7 +235,7 @@ export default () => {
               }
             </Col>
             <Col span={8}>
-              <Text strong type="secondary" style={{ float: "right" }}>质押释放</Text><br />
+              <Text strong type="secondary" style={{ float: "right" }}>{t("wallet_locked_stakeRelease")}</Text><br />
               <Text strong style={{ float: "right", color: unfreezeHeight > blockNumber ? "#104499" : "#27c92d" }}>
                 {unfreezeHeight == 0 ? "-" : unfreezeHeight}
                 {
@@ -250,10 +250,10 @@ export default () => {
           <Divider style={{ margin: "4px 0" }} />
           <Row>
             <Col span={16}>
-              <Text strong type="secondary">投票超级节点</Text><br />
+              <Text strong type="secondary">{t("wallet_locked_votedSupernode")}</Text><br />
               {
                 votedAddr == EmptyContract.EMPTY && <>
-                  <Tag>未投票</Tag>
+                  <Tag>{t("wallet_locked_notVoted")}</Tag>
                 </>
               }
               {
@@ -263,7 +263,7 @@ export default () => {
               }
             </Col>
             <Col span={8}>
-              <Text strong type="secondary" style={{ float: "right" }}>质押释放</Text><br />
+              <Text strong type="secondary" style={{ float: "right" }}>{t("wallet_locked_stakeRelease")}</Text><br />
               <Text strong style={{ float: "right", color: releaseHeight > blockNumber ? "#104499" : "#27c92d" }}>
                 {releaseHeight == 0 ? "-" : releaseHeight}
                 {
@@ -284,14 +284,14 @@ export default () => {
                     setSelectedAccountRecord(accountRecord);
                     setOpenAddModal(true)
                   }}>
-                    追加锁仓
+                    {t("wallet_locked_addLockDay")}
                   </Button>
                 </>
               }
               <Button title="提现" disabled={!couldWithdraw} size="small" type="primary" onClick={() => {
                 setSelectedAccountRecord(accountRecord);
                 setOpenWithdrawModal(true)
-              }}>提现</Button>
+              }}>{t("wallet_withdraw")}</Button>
             </Space>
           </div>
         </Col>

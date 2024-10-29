@@ -23,7 +23,7 @@ export default () => {
             <Button onClick={() => navigate("/main/masternodes/registerAssist")} style={{ height: "200px", width: "100%" }}>
               <Row>
                 <Col span={24}>
-                  <Text style={{ fontSize: "40px" }}>辅助模式</Text>
+                  <Text style={{ fontSize: "40px" }}>自动模式</Text>
                 </Col>
                 <Col span={24}>
                   <Text type="secondary" style={{ fontSize: "20px" }}>已有云服务器,钱包通过SSH登陆辅助建立主节点</Text>
@@ -35,7 +35,7 @@ export default () => {
             <Button onClick={() => navigate("/main/masternodes/register")}  style={{ height: "200px", width: "100%" }}>
               <Row>
                 <Col span={24}>
-                  <Text style={{ fontSize: "40px" }}>专家模式</Text>
+                  <Text style={{ fontSize: "40px" }}>手动模式</Text>
                 </Col>
                 <Col span={24}>
                   <Text type="secondary" style={{ fontSize: "20px" }}>已在服务器上配置超级节点,直接填入注册数据</Text>

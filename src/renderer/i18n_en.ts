@@ -1,5 +1,7 @@
 export default {
   welcome: "Entering a Decentralized Network Soon",
+  testnet: "Testnet",
+  mainnet: "Mainnet",
 
   menu: "Menu",
   language: "Language",
@@ -30,6 +32,19 @@ export default {
   wallet_balanceOfAccountManager:"Total Balance of AccountManager",
   wallet_accountManager_avaiable:"Avaiable",
   wallet_accountManager_locked:"Locked",
-  wallet_accountManager_freeze:"Freezing"
+  wallet_accountManager_freeze:"Staking",
 
+  wallet_locked_list:"Locked List",
+  wallet_locked_accountRecordLockId:"Account Record ID",
+  wallet_locked_accountRecordLockInfo:"Locked Info.",
+  wallet_locked_accountRecordUseInfo:"Stake Info.",
+  wallet_locked_lockedAmount:"Locked",
+  wallet_locked_unlockHeight:"Unlock Height",
+  wallet_locked_memberOfNode:"Member of Node",
+  wallet_locked_votedSupernode:"Voted Supernode",
+  wallet_locked_stakeRelease:"Stake Release",
+  wallet_locked_notVoted:"Not Voted",
+  wallet_locked_notMember:"Not a Member",
+  wallet_locked_placehold_inputAccountRecordId:"Enter Account Record ID",
+  wallet_locked_addLockDay:"Add Locked Days",
 }

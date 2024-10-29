@@ -89,7 +89,7 @@ export default () => {
   }, [isActivating, isActive]);
 
   const renderNetworkType = useMemo(() => {
-    return chainId == Safe4_Network_Config.Testnet.chainId ? <Text type='success'>测试网</Text> : "主网"
+    return chainId == Safe4_Network_Config.Testnet.chainId ? <Text type='success'>{t("testnet")}</Text> : <>{t("mainnet")}</>
   }, [chainId]);
 
   const items: MenuProps['items'] = useMemo(() => {

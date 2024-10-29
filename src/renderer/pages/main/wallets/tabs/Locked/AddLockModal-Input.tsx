@@ -1,31 +1,40 @@
-import { Alert, Button, Col, Divider, Input, Row, Typography } from "antd"
+import { Alert, Button, Col, Divider, Input, InputNumber, Row, Typography } from "antd"
 import { AccountRecord } from "../../../../../structs/AccountManager"
 import { useBlockNumber, useTimestamp } from "../../../../../state/application/hooks";
 import { DateTimeFormat } from "../../../../../utils/DateUtils";
 import { LockOutlined } from "@ant-design/icons";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { JSBI } from "@uniswap/sdk";
+import { EmptyContract } from "../../../../../constants/SystemContracts";
 
 const { Text } = Typography;
 
 export default ({
-  selectedAccountRecord ,
+  selectedAccountRecord,
   goNextCallback
 }: {
-  selectedAccountRecord: AccountRecord ,
-  goNextCallback : ( addLockDay : number ) => void
+  selectedAccountRecord: AccountRecord,
+  goNextCallback: (addLockDay: number) => void
 }) => {
 
   const blockNumber = useBlockNumber();
   const timestamp = useTimestamp();
 
   const {
-    id, amount, unlockHeight
+    id, amount, unlockHeight, recordUseInfo
   } = selectedAccountRecord;
+
   const locked = unlockHeight > blockNumber;
   const unlockDateTime = unlockHeight - blockNumber > 0 ? DateTimeFormat(((unlockHeight - blockNumber) * 30 + timestamp) * 1000) : undefined;
 
-  const [addLockDay, setAddLockDay] = useState<string>();
+  const isMemberOfNode = useMemo(() => {
+    if (recordUseInfo && recordUseInfo.frozenAddr && recordUseInfo.frozenAddr != EmptyContract.EMPTY) {
+      return true;
+    }
+    return false;
+  }, [recordUseInfo])
+
+  const [addLockDay, setAddLockDay] = useState<string>( isMemberOfNode ? "360" : "" );
   const [addLockDayError, setAddLockDayError] = useState<string>();
 
   const goNext = () => {
@@ -38,7 +47,7 @@ export default ({
         if (JSBI.greaterThan(JSBI.BigInt(1), _lockDay)) {
           _addLockDayError = "请输入正确的天数";
         }
-        goNextCallback( Number(_lockDay) );
+        goNextCallback(Number(_lockDay));
       } catch (error) {
         _addLockDayError = "请输入正确的天数";
       }
@@ -81,14 +90,29 @@ export default ({
         }
       </Col>
       <Divider style={{ marginTop: "20px", marginBottom: "20px" }} />
+      {
+        isMemberOfNode &&
+        <Col span={24}>
+          <Alert style={{ marginBottom: "20px" }} showIcon type="info" message={"参与创建节点的锁仓,每次追加锁仓时间不得低于360天"} />
+        </Col>
+      }
       <Col span={24}>
         <Text type="secondary" strong>追加锁仓天数</Text>
         <br />
-        <Input placeholder="输入追加锁仓天数" style={{ width: "50%" }} onChange={(event) => {
-          const input = event.target.value.trim();
-          setAddLockDay( input );
-          setAddLockDayError( undefined );
-        }} />
+        {
+          !isMemberOfNode &&
+          <Input placeholder="输入追加锁仓天数" style={{ width: "30%" }} onChange={(event) => {
+            const input = event.target.value.trim();
+            setAddLockDay(input);
+            setAddLockDayError(undefined);
+          }} />
+        }
+        {
+          isMemberOfNode &&
+          <InputNumber size="large" defaultValue={360} step={360} min={360} max={3600} onKeyPress={(e) => e.preventDefault()} style={{ width: "30%" }} onChange={(value) => {
+            setAddLockDay(value+"");
+          }} />
+        }
         <br />
         {
           addLockDayError && <Alert style={{ marginTop: "5px" }} type="error" showIcon message={addLockDayError} />

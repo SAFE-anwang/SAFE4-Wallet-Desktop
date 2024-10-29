@@ -44,9 +44,11 @@ export function formatAccountRecord(accountRecord: any): AccountRecord {
   } = accountRecord;
   let _lockDay = Number.NaN;
   let _unlockHeight = Number.NaN;
+  let _startHeight = Number.NaN;
   try {
     _lockDay = lockDay.toNumber()
     _unlockHeight = unlockHeight.toNumber();
+    _startHeight = startHeight.toNumber();
   } catch (err) {
 
   }
@@ -55,7 +57,7 @@ export function formatAccountRecord(accountRecord: any): AccountRecord {
     addr: addr.toString(),
     amount: CurrencyAmount.ether(JSBI.BigInt(amount.toString())),
     lockDay: _lockDay,
-    startHeight: startHeight.toNumber(),
+    startHeight: _startHeight,
     unlockHeight: _unlockHeight
   }
 }
