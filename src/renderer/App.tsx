@@ -192,7 +192,7 @@ export default function App() {
         setLocked(false);
       } catch (err) {
         console.log("decrypt error:", err);
-        setPasswordError("输入正确的密码才能打开本地加密文件");
+        setPasswordError(t("enterWalletPasswordError"));
       }
       setDecrypting(false);
     }
@@ -238,7 +238,7 @@ export default function App() {
                     <Input.Password size='large' onChange={(event) => {
                       setPassword(event.target.value);
                       setPasswordError(undefined);
-                    }} placeholder='输入密码' />
+                    }} placeholder={t("enterWalletPassword")} />
                     {
                       passwordError && <>
                         <Alert style={{ marginTop: "5px" }} type='error' showIcon message={passwordError} />
@@ -246,7 +246,7 @@ export default function App() {
                     }
                     <Button loading={decrypting} htmlType='submit' disabled={password ? false : true} onClick={decrypt}
                       type='primary' size='large' style={{ width: "100%", marginTop: "20px" }}>
-                      解锁
+                      {t("unlock")}
                     </Button>
                   </Form>
                 </Col>

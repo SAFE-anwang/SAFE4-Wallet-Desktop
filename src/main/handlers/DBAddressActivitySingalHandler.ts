@@ -1,3 +1,4 @@
+import { ChainId } from '@uniswap/sdk';
 import { AddressActivityVO } from "../../renderer/services";
 import { Channel } from "../ApplicationIpcManager";
 import { ListenSignalHandler } from "./ListenSignalHandler";
@@ -11,6 +12,7 @@ export enum DB_AddressActivity_Methods {
   loadActivities = "loadActivities",
   saveOrUpdateActivities = "saveOrupdateActivities",
   deleteAddressActivities = "DeleteAddressActivieis",
+  getActivitiesFromToAction = "getActivitiesFromToAction"
 }
 
 export enum DB_AddressActivity_Actions {
@@ -108,15 +110,20 @@ export class DBAddressActivitySingalHandler implements ListenSignalHandler {
     } else if (DB_AddressActivity_Methods.loadActivities == method) {
       const address = params[0];
       const chainId = params[1];
-      data = this.loadActivities(address, chainId ,  (rows: any) => {
+      data = this.loadActivities(address, chainId, (rows: any) => {
         event.reply(Channel, [this.getSingal(), method, [rows]])
       });
     } else if (DB_AddressActivity_Methods.saveOrUpdateActivities == method) {
       const [addressActivities, chainId] = params;
       this.saveOrUpdateActivities(addressActivities, chainId)
-    } else if (DB_AddressActivity_Methods.deleteAddressActivities == method){
-      const [ address , chainId ] = params;
-      this.deleteAddressActivities( address , chainId );
+    } else if (DB_AddressActivity_Methods.deleteAddressActivities == method) {
+      const [address, chainId] = params;
+      this.deleteAddressActivities(address, chainId);
+    } else if (DB_AddressActivity_Methods.getActivitiesFromToAction == method){
+      const [from, to,action,chainId] = params;
+      this.getActivitiesFromToAction(from, to,action,chainId , (rows:any) => {
+        event.reply(Channel, [this.getSingal(), method, [rows]])
+      });
     }
   }
 
@@ -132,6 +139,17 @@ export class DBAddressActivitySingalHandler implements ListenSignalHandler {
         }
         console.log("Insert into Address_Activities successed");
       });
+  }
+
+  private getActivitiesFromToAction(from: string, to: string, action : string , chainId: number , callback:(rows:any)=>void ) {
+    this.db.all(
+      "SELECT * FROM Address_Activities where ref_from = ? and ref_to = ? and action = ? and chain_id = ? order by timestamp desc,added_time desc",
+      [from , to , action , chainId],
+      ( err :any , rows : any ) => {
+        if ( !err ){
+          callback(rows)
+        }
+      })
   }
 
   private updateActivity(receipt: {
@@ -161,11 +179,11 @@ export class DBAddressActivitySingalHandler implements ListenSignalHandler {
     )
   }
 
-  private loadActivities(address: string, chainId : number , callback: (rows: any) => void) {
+  private loadActivities(address: string, chainId: number, callback: (rows: any) => void) {
 
     this.db.all(
       "SELECT * FROM Address_Activities WHERE (ref_from = ? or ref_to = ?) and chain_id = ?",
-      [address, address , chainId],
+      [address, address, chainId],
       (err: any, rows: any) => {
         if (err) {
           console.log("load activities error:", err, address)
@@ -177,15 +195,15 @@ export class DBAddressActivitySingalHandler implements ListenSignalHandler {
     )
   }
 
-  private deleteAddressActivities(address: string , chainId : number) {
+  private deleteAddressActivities(address: string, chainId: number) {
     this.db.run(
       "DELETE FROM address_activities WHERE (ref_from = ? or ref_to = ?) AND chain_id = ?",
-      [address, address , chainId ],
-      ( err : any , rows : any ) => {
-        if ( err ){
-          console.log(`Delete ${address}.activities Error:` , err);
-        }else{
-          console.log(`Delete ${address}.activities Success.` , rows)
+      [address, address, chainId],
+      (err: any, rows: any) => {
+        if (err) {
+          console.log(`Delete ${address}.activities Error:`, err);
+        } else {
+          console.log(`Delete ${address}.activities Success.`, rows)
         }
       });
   }

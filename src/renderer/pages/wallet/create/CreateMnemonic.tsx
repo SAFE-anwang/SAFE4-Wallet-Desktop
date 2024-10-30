@@ -6,6 +6,7 @@ import { IPC_CHANNEL } from "../../../config";
 import { WalletSignal, Wallet_Methods } from "../../../../main/handlers/WalletSignalHandler";
 import { useDispatch } from "react-redux";
 import { applicationActionConfirmedMnemonic } from "../../../state/application/action";
+import { useTranslation } from "react-i18next";
 
 const { Text } = Typography;
 
@@ -13,6 +14,7 @@ export default () => {
 
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const { t } = useTranslation();
 
   const [showMnemonic, setShowMnemonic] = useState<boolean>(false);
   const [mnemonic, setMnemonic] = useState<string>();
@@ -58,11 +60,11 @@ export default () => {
           <Col span={20}>
             <Text style={{
               fontSize: "28px"
-            }} strong>助记词</Text>
+            }} strong>{t("wallet_mnemonic")}</Text>
             <br />
             <Text style={{
               fontSize: "28px"
-            }} type="secondary" strong>阅读以下内容，然后安全地保存助记词</Text>
+            }} type="secondary" strong>{t("wallet_mnemonic_tip0")}</Text>
             <br /> <br /><br />
 
             <Row>
@@ -78,7 +80,7 @@ export default () => {
               <Col span={20}>
                 <Text style={{
                   lineHeight: "52px"
-                }}>仅通过助记词就可以完全访问您的钱包和资产。</Text>
+                }}>{t("wallet_mnemonic_tip1")}</Text>
               </Col>
             </Row>
             <br />
@@ -95,7 +97,7 @@ export default () => {
               <Col span={20}>
                 <Text style={{
                   lineHeight: "52px"
-                }}>如果您忘记了钱包密码，您可以使用助记词重新找回您的钱包。</Text>
+                }}>{t("wallet_mnemonic_tip2")}</Text>
               </Col>
             </Row>
             <br />
@@ -112,7 +114,7 @@ export default () => {
               <Col span={20}>
                 <Text style={{
                   lineHeight: "52px"
-                }}>任何官方都永远不会询问您的助记词。</Text>
+                }}>{t("wallet_mnemonic_tip3")}</Text>
               </Col>
             </Row>
             <br />
@@ -129,7 +131,7 @@ export default () => {
               <Col span={20}>
                 <Text style={{
                   lineHeight: "52px"
-                }}>永远不要分享给任何人。</Text>
+                }}>{t("wallet_mnemonic_tip4")}</Text>
               </Col>
             </Row>
           </Col>
@@ -145,10 +147,10 @@ export default () => {
           !showMnemonic && <Row>
             <Text style={{
               margin: "auto", marginTop: "180px"
-            }}>请阅读左侧的信息，然后点击下面的按钮</Text>
+            }}>{t("wallet_mnemonic_tip5")}</Text>
             <Button style={{
               marginTop: "18px", width: "100%"
-            }} type="dashed" disabled={mnemonic ? false : true} onClick={() => setShowMnemonic(true)}>查看助记词</Button>
+            }} type="dashed" disabled={mnemonic ? false : true} onClick={() => setShowMnemonic(true)}>{t("wallet_mnemonic_query")}</Button>
           </Row>
         }
         {
@@ -172,10 +174,12 @@ export default () => {
             <Col span={24} style={{ marginTop: "60px", textAlign: "center" }} >
               <Text style={{
                 textAlign: "center"
-              }}>请妥善保存助记词</Text>
+              }}>{t("wallet_mnemonic_keepStoreTip")}</Text>
               <Button style={{
                 marginTop: "12px", width: "100%"
-              }} type="primary" onClick={() => goNextClick()}>我已保存助记词</Button>
+              }} type="primary" onClick={() => goNextClick()}>
+                {t("wallet_mnemonic_stored")}
+              </Button>
             </Col>
           </Row>
         }

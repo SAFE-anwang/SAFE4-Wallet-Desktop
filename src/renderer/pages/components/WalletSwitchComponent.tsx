@@ -12,12 +12,14 @@ import useWalletName from '../../hooks/useWalletName';
 import { useMasternodeStorageContract, useMulticallContract, useSupernodeStorageContract } from '../../hooks/useContracts';
 import CallMulticallAggregate, { CallMulticallAggregateContractCall } from '../../state/multicall/CallMulticallAggregate';
 import { useBlockNumber } from '../../state/application/hooks';
+import { useTranslation } from 'react-i18next';
 
 const { Text } = Typography;
 
 export default () => {
 
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const walletsList = useWalletsList();
   const activeWallet = useWalletsActiveWallet();
   const dispatch = useDispatch();
@@ -168,7 +170,7 @@ export default () => {
           {menu}
           <Divider style={{ margin: '8px 0' }} />
           <Button style={{ width: "100%", height: "60px" }} type="text" icon={<PlusOutlined />} onClick={createNewWallet}>
-            创建新的钱包
+            {t("createNewWallet")}
           </Button>
         </div>
       )}

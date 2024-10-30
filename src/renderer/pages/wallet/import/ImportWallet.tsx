@@ -7,6 +7,7 @@ import { ethers } from "ethers";
 import { HDNode } from "ethers/lib/utils";
 import { applicationActionConfirmedImport } from "../../../state/application/action";
 import Safe3PrivateKey from "../../../utils/Safe3PrivateKey";
+import { useTranslation } from "react-i18next";
 
 const { Text } = Typography;
 
@@ -29,9 +30,11 @@ export default () => {
 
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const { t } = useTranslation();
   const [address, setAddress] = useState<string>();
   const [importType, setImportType] = useState<string>(Import_Type_Mnemonic);
-  const importTypeOptions = ["导入助记词", "导入私钥", "导入 Keystore"];
+
+  const importTypeOptions = [t("wallet_import_mnemonic"), t("wallet_import_privateKey"), t("wallet_import_keystore")];
 
   const [activePassword, setActivePassword] = useState<boolean>(false);
   const [activePath, setActivePath] = useState<boolean>(false);
@@ -77,7 +80,7 @@ export default () => {
           setAddress(undefined);
           setInputErrors({
             ...inputErrors,
-            mnemonic: "无效的助记词"
+            mnemonic: t("wallet_import_mnemonic_invalid")
           })
         }
       } catch (err) {
@@ -109,7 +112,7 @@ export default () => {
         setAddress(undefined)
         setInputErrors({
           ...inputErrors,
-          privateKey: "无效的私钥"
+          privateKey: t("wallet_import_privateKey_invalid")
         })
       }
     } else {
@@ -141,7 +144,7 @@ export default () => {
           if ( err && err.message == 'invalid password' ){
             setInputErrors({
               ...inputErrors,
-              keystorePWD:"密码错误"
+              keystorePWD:t("wallet_keystore_password_err")
             })
           } else {
             setInputErrors({
@@ -154,7 +157,7 @@ export default () => {
     } else {
       setInputErrors({
         ...inputErrors,
-        keystore:"请输入 Keystore JSON文件内容"
+        keystore:t("wallet_import_keystore_err_input")
       })
     }
   }, [params.keystore, params.keystorePWD]);
@@ -221,11 +224,11 @@ export default () => {
           <Col span={20}>
             <Text style={{
               fontSize: "28px"
-            }} strong>导入钱包</Text>
+            }} strong>{t("wallet_import")}</Text>
             <br />
             <Text style={{
               fontSize: "28px"
-            }} type="secondary" strong>选择导入方式</Text>
+            }} type="secondary" strong>{t("wallet_import_selectImportType")}</Text>
             <br />
             <Spin spinning={keystoreDecrypting}>
               <Row style={{ marginTop: "50px" }}>
@@ -234,13 +237,13 @@ export default () => {
                     options={importTypeOptions}
                     onChange={(value) => {
                       setAddress(undefined);
-                      if (value == '导入私钥') {
+                      if (value == t("wallet_import_privateKey")) {
                         setImportType(Import_Type_PrivateKey)
                         setParams({
                           ...params,
                           privateKey: undefined
                         })
-                      } else if (value == '导入助记词') {
+                      } else if (value == t("wallet_import_mnemonic")) {
                         setImportType(Import_Type_Mnemonic)
                         setActivePassword(false)
                         setActivePath(false)
@@ -250,7 +253,7 @@ export default () => {
                           password: undefined,
                           path: BIP44_Safe4_Path
                         })
-                      } else if (value == '导入 Keystore') {
+                      } else if (value == t("wallet_import_keystore")) {
                         setImportType(Import_Type_Keystore)
                         setParams({
                           ...params,
@@ -270,7 +273,7 @@ export default () => {
                 {
                   importType == Import_Type_PrivateKey && <>
                     <Col style={{ marginTop: "20px" }} span={24}>
-                      <Text type="secondary" strong>私钥</Text>
+                      <Text type="secondary" strong>{t("wallet_privateKey")}</Text>
                       <Input.TextArea status={inputErrors?.privateKey ? "error" : ""}
                         onChange={(event) => {
                           const inputPrivateKey = event.target.value.trim();
@@ -311,7 +314,7 @@ export default () => {
                 {
                   importType == Import_Type_Mnemonic && <>
                     <Col style={{ marginTop: "20px" }} span={24}>
-                      <Text type="secondary" strong>助记词</Text>
+                      <Text type="secondary" strong>{t("wallet_mnemonic")}</Text>
                       <Input.TextArea status={inputErrors?.mnemonic ? "error" : ""} onChange={(event) => {
                         const inputMnemonic = event.target.value;
                         if (ethers.utils.isValidMnemonic(inputMnemonic)) {
@@ -342,8 +345,8 @@ export default () => {
 
                     </Col>
                     <Col style={{ marginTop: "30px" }} span={24}>
-                      <Text type="secondary" strong>种子密码</Text>
-                      <Switch style={{ float: "right", marginBottom: "5px" }} checkedChildren="开启" unCheckedChildren="关闭"
+                      <Text type="secondary" strong>{t("wallet_mnemonic_password")}</Text>
+                      <Switch style={{ float: "right", marginBottom: "5px" }} checkedChildren={t("active")} unCheckedChildren={t("unactive")}
                         value={activePassword} onChange={setActivePassword} />
                       <Input.Password value={params.password} size="large" disabled={!activePassword} onChange={(event) => {
                         setParams({
@@ -354,7 +357,7 @@ export default () => {
                     </Col>
                     <Col style={{ marginTop: "30px" }} span={24}>
                       <Text type="secondary" strong>BIP44-Path</Text>
-                      <Switch style={{ float: "right", marginBottom: "5px" }} disabled checkedChildren="自定义" unCheckedChildren="默认"
+                      <Switch style={{ float: "right", marginBottom: "5px" }} disabled checkedChildren="自定义" unCheckedChildren={t("default")}
                         value={activePath} onChange={setActivePath} />
                       <Input size="large" value={params.path} disabled={!activePath} onChange={(event) => {
                         setParams({
@@ -390,7 +393,7 @@ export default () => {
                       }
                     </Col>
                     <Col style={{ marginTop: "30px" }} span={24}>
-                      <Text type="secondary" strong>文件密码</Text>
+                      <Text type="secondary" strong>{t("wallet_keystore_password")}</Text>
                       <Input.Password value={params.keystorePWD} size="large" onChange={(event) => {
                         setParams({
                           ...params,
@@ -411,17 +414,16 @@ export default () => {
                     </Col>
                     {
                       !address && <Col style={{ marginTop: "30px" }} span={24}>
-                        <Button type="primary" onClick={validateKeystore}>验证</Button>
+                        <Button type="primary" onClick={validateKeystore}>{t("validate")}</Button>
                       </Col>
                     }
-                   
                   </>
                 }
 
                 {
                   address && <Col style={{ marginTop: "30px" }} span={24}>
                     <Alert type="success" message={<>
-                      <Text type="secondary">钱包地址</Text><br />
+                      <Text type="secondary">{t("wallet_address")}</Text><br />
                       <Text strong>
                         {address}
                       </Text>
@@ -432,11 +434,10 @@ export default () => {
                 {
                   (importType == Import_Type_Mnemonic || importType == Import_Type_PrivateKey || (importType == Import_Type_Keystore && address) ) &&
                   <Col style={{ marginTop: "30px" }} span={24}>
-                    <Button type="primary" disabled={!address} onClick={importWallet}>确认</Button>
+                    <Button type="primary" disabled={!address} onClick={importWallet}>{t("confirm")}</Button>
                   </Col>
                 }
 
-               
               </Row>
             </Spin>
 

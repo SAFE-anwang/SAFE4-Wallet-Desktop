@@ -314,7 +314,7 @@ export default ({
           </Row>
         </>
       },
-      width: "150px"
+      width: "170px"
     },
     {
       title: '名称',
@@ -323,15 +323,13 @@ export default ({
       render: (name, supernodeVO: SupernodeInfo) => {
         return <>
           <Row>
-            <Col>
-              <Text title={name} strong style={{ width: "180px" }} ellipsis>
+            <Col span={24}>
+              <Text title={name} strong style={{ width: "170px" }} ellipsis>
                 {name}
               </Text>
             </Col>
-          </Row>
-          <Row>
             <Col span={24}>
-              <Text title={supernodeVO.description} type='secondary' style={{ width: "180px", display: "block" }} ellipsis>
+              <Text title={supernodeVO.description} type='secondary' style={{ width: "170px", display: "block" }} ellipsis>
                 {supernodeVO.description}
               </Text>
             </Col>

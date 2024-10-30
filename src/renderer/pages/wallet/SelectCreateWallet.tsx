@@ -7,6 +7,7 @@ import { applicationActionUpdateAtCreateWallet, applicationUpdateAfterSetPasswor
 import { useWalletsList } from "../../state/wallets/hooks";
 import { hasApplicationPasswordSetted } from "../../state/application/hooks";
 import { AfterSetPasswordTODO } from "../../state/application/reducer";
+import { useTranslation } from "react-i18next";
 
 const { Text } = Typography;
 
@@ -14,6 +15,7 @@ export default () => {
 
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const { t } = useTranslation();
   const walletsList = useWalletsList();
   const applicationPasswordSetted = hasApplicationPasswordSetted();
 
@@ -61,11 +63,11 @@ export default () => {
           <br /><br />
           <Text style={{
             fontSize: "28px"
-          }} strong>创建钱包</Text>
+          }} strong>{t("wallet_create")}</Text>
           <br /><br />
           <Text style={{
             fontSize: "18px"
-          }} type="secondary">通过创建一套基于BIP39标准的助记词</Text>
+          }} type="secondary">{t("wallet_create_desc")}</Text>
         </div>
       </Col>
       <Col span={12}>
@@ -76,11 +78,11 @@ export default () => {
           <br /><br />
           <Text style={{
             fontSize: "28px"
-          }} strong>导入钱包</Text>
+          }} strong>{t("wallet_import")}</Text>
           <br /><br />
           <Text style={{
             fontSize: "18px"
-          }} type="secondary">通过助记词,私钥来导入这个钱包</Text>
+          }} type="secondary">{t("wallet_import_desc")}</Text>
         </div>
       </Col>
     </Row>

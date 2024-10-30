@@ -1,5 +1,5 @@
 
-import { Typography, Button, Card, Divider, Statistic, Row, Col, Modal, Flex, Tooltip, Tabs, TabsProps, QRCode, Badge, Space, Alert } from 'antd';
+import { Typography, Button, Card, Divider, Statistic, Row, Col, Modal, Flex, Tooltip, Tabs, TabsProps, QRCode, Badge, Space, Alert, Table } from 'antd';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ethers } from 'ethers';
 import { useNavigate } from 'react-router-dom';
@@ -11,10 +11,13 @@ import ChecksumAddress from '../../utils/ChecksumAddress';
 import { applicationUpdateWalletTab } from '../../state/application/action';
 import { useWeb3React } from '@web3-react/core';
 import useSafeScan from '../../hooks/useSafeScan';
-
+import { DB_AddressActivity_Actions, DB_AddressActivity_Methods, DBAddressActivitySignal } from '../../../main/handlers/DBAddressActivitySingalHandler';
+import { IPC_CHANNEL, Safe4_Network_Config } from '../../config';
+import { DateFormat } from '../../utils/DateUtils';
+import EtherAmount from '../../utils/EtherAmount';
+import Safescan from '../components/Safescan';
 
 const { Title, Text } = Typography;
-
 
 export default () => {
 
@@ -30,8 +33,7 @@ export default () => {
   const doFetchGetTestCoin = useCallback(() => {
     if (chainId) {
       setSending(true);
-      console.log("fetch gettestcoin ==>" , API)
-      fetchGetTestCoin( API , { address: activeAccount })
+      fetchGetTestCoin(API, { address: activeAccount })
         .then(({ transactionHash, amount, address, from }: any) => {
           addTransaction({
             from: ChecksumAddress(from),
@@ -54,11 +56,85 @@ export default () => {
           setErr(err.message)
         })
     }
-  }, [activeAccount, chainId , API]);
+  }, [activeAccount, chainId, API]);
 
   useEffect(() => {
     setErr(undefined);
   }, [activeAccount]);
+
+  const columns = [
+    {
+      title: '领取时间',
+      dataIndex: 'timestamp',
+      key: 'timestamp',
+      render: (timestamp: number) => {
+        return <>{DateFormat(timestamp, "yyyy-MM-dd HH:mm:ss")}</>
+      }
+    },
+    {
+      title: '领取数量',
+      dataIndex: 'value',
+      key: 'value',
+      render: (value: any) => {
+        return <>
+          <Text strong><EtherAmount raw={value}></EtherAmount> SAFE</Text>
+        </>
+      }
+    },
+    {
+      title: '交易哈希',
+      dataIndex: 'transactionHash',
+      key: 'transactionHash',
+      render: (transactionHash: any) => {
+        return <>
+          <Text>{transactionHash}</Text>
+          <Text style={{float:"right"}}>
+            <Safescan url={`/tx/${transactionHash}`} />
+          </Text>
+        </>
+      }
+    },
+  ];
+
+  const [getCoinTransfers, setGetCoinTransfers] = useState();
+
+  useEffect(() => {
+    if (chainId) {
+      const method = DB_AddressActivity_Methods.getActivitiesFromToAction;
+      window.electron.ipcRenderer.sendMessage(IPC_CHANNEL, [DBAddressActivitySignal, method, [
+        chainId == Safe4_Network_Config.Testnet.chainId ? "0x0225302942D5f37dA1d18C1d2DE169C5b007aCAb" : "0x5DB242e60517a60B65140613D29e86334F2b5739",
+        activeAccount, DB_AddressActivity_Actions.Transfer, chainId
+      ]]);
+      window.electron.ipcRenderer.once(IPC_CHANNEL, (arg) => {
+        if (arg instanceof Array && arg[0] == DBAddressActivitySignal && arg[1] == method) {
+          const data = arg[2][0];
+          const hashes: {
+            [transactionHash: string]: {}
+          } = {}
+          const transfers = data.map((activity: any) => {
+            const { added_time, timestamp, data, block_number, transaction_hash } = activity;
+            const { from, to, value } = JSON.parse(data);
+            return {
+              timestamp: timestamp ? timestamp : added_time,
+              blockNumber: block_number,
+              transactionHash: transaction_hash,
+              from, to, value
+            }
+          }).sort((t0: any, t1: any) => {
+            return t1.timestamp - t0.timestamp
+          }).filter((transfer: any) => {
+            if (!hashes[transfer.transactionHash]) {
+              hashes[transfer.transactionHash] = {};
+              return true;
+            }
+            return false;
+          })
+          console.log(hashes)
+          setGetCoinTransfers(transfers);
+        }
+      });
+    }
+  }, [chainId, activeAccount]);
 
   return <>
     <Row style={{ height: "50px" }}>
@@ -81,6 +157,10 @@ export default () => {
               {err}
             </>} />
           }
+        </Card>
+        <Divider />
+        <Card title="领取记录">
+          <Table dataSource={getCoinTransfers} columns={columns} />
         </Card>
       </div>
     </div>

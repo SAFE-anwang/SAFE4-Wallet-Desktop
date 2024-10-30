@@ -9,11 +9,13 @@ import { useWalletsKeystores, useWalletsList } from "../../state/wallets/hooks";
 import { WalletKeystore } from "../../state/wallets/reducer";
 import { walletsLoadKeystores } from "../../state/wallets/action";
 import { applicationActionUpdateAtCreateWallet } from "../../state/application/action";
+import { useTranslation } from "react-i18next";
 
 export default () => {
 
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const { t } = useTranslation();
   const password = useApplicationPassword();
   const newMnemonic = useNewMnemonic();
   const walletsKeystores = useWalletsKeystores();
@@ -25,44 +27,44 @@ export default () => {
   const renderStempItems = () => {
     setTimeout(() => {
       setStepItems([{
-        title: '生成种子密钥',
-        description: "正在执行",
+        title: t("wallet_mnemonic_create_process0"),
+        description: t("wallet_mnemonic_create_process_status_executing"),
       },
       {
-        title: '生成钱包密钥',
-        description: "待执行",
+        title: t("wallet_mnemonic_create_process1"),
+        description: t("wallet_mnemonic_create_process_status_waiting"),
       },
       {
-        title: '本地加密存储钱包数据',
-        description: "待执行",
+        title: t("wallet_mnemonic_create_process2"),
+        description: t("wallet_mnemonic_create_process_status_waiting"),
       }]);
       setStepCurrent(0);
       setTimeout(() => {
         setStepItems([{
-          title: '生成种子密钥',
-          description: "完成",
+          title: t("wallet_mnemonic_create_process0"),
+          description: t("wallet_mnemonic_create_process_status_finished"),
         },
         {
-          title: '生成钱包密钥',
-          description: "正在执行",
+          title: t("wallet_mnemonic_create_process1"),
+          description: t("wallet_mnemonic_create_process_status_executing"),
         },
         {
-          title: '本地加密存储钱包数据',
-          description: "待执行",
+          title: t("wallet_mnemonic_create_process2"),
+          description: t("wallet_mnemonic_create_process_status_waiting"),
         }]);
         setStepCurrent(1);
         setTimeout(() => {
           setStepItems([{
-            title: '生成种子密钥',
-            description: "完成",
+            title: t("wallet_mnemonic_create_process0"),
+            description: t("wallet_mnemonic_create_process_status_finished"),
           },
           {
-            title: '生成钱包密钥',
-            description: "完成",
+            title: t("wallet_mnemonic_create_process1"),
+            description: t("wallet_mnemonic_create_process_status_finished"),
           },
           {
-            title: '本地加密存储钱包数据',
-            description: "正在执行",
+            title: t("wallet_mnemonic_create_process2"),
+            description: t("wallet_mnemonic_create_process_status_executing"),
           }]);
           setStepCurrent(2);
         }, 300);
@@ -71,18 +73,18 @@ export default () => {
   };
 
   useEffect(() => {
-    const remove = window.electron.ipcRenderer.on( IPC_CHANNEL, (arg) => {
+    const remove = window.electron.ipcRenderer.on(IPC_CHANNEL, (arg) => {
       if (arg instanceof Array && arg[0] == WalletSignal) {
         const method = arg[1];
         const result = arg[2][0];
-        if ( method == Wallet_Methods.generateWallet){
+        if (method == Wallet_Methods.generateWallet) {
           setNewWalletKeystore(result);
           dispatch(walletsLoadKeystores([result]));
-        }else if (method == Wallet_Methods.storeWallet){
+        } else if (method == Wallet_Methods.storeWallet) {
           const {
-            success, path , error
+            success, path, error
           } = result;
-          if ( success ) {
+          if (success) {
             setTimeout(() => {
               setStepCurrent(3);
               dispatch(applicationActionUpdateAtCreateWallet(false));
@@ -106,7 +108,7 @@ export default () => {
 
   useEffect(() => {
     if (newWalletKeystore?.address && password) {
-      window.electron.ipcRenderer.sendMessage(IPC_CHANNEL, [WalletSignal, Wallet_Methods.storeWallet, [walletsKeystores,password]]);
+      window.electron.ipcRenderer.sendMessage(IPC_CHANNEL, [WalletSignal, Wallet_Methods.storeWallet, [walletsKeystores, password]]);
     }
   }, [newWalletKeystore])
 
@@ -115,10 +117,10 @@ export default () => {
       <Spin spinning={true}>
         <Alert
           style={{
-            marginTop:"10%"
+            marginTop: "10%"
           }}
           type="info"
-          message="创建钱包"
+          message={t("wallet_create")}
           description={<>
             <Steps
               direction="vertical"
