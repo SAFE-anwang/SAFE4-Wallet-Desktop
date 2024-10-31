@@ -1,6 +1,7 @@
 import { TransactionRequest, TransactionResponse } from "@ethersproject/providers";
 import { Alert, Divider, Typography } from "antd";
 import { useMemo, useState } from "react"
+import { useTranslation } from "react-i18next";
 
 const { Text, Link } = Typography;
 
@@ -11,6 +12,7 @@ export default (): {
   response : TransactionResponse | undefined ,
   err : any
 } => {
+  const { t } = useTranslation();
   const [showErrorDetail, setShowErrorDetail] = useState(false);
   const [response, setTransactionResponse] = useState<TransactionResponse>();
   const [err, setErr] = useState<any>();
@@ -23,7 +25,7 @@ export default (): {
       <div style={{ marginBottom: "20px" }}>
         {
           err && <Alert
-            message="错误"
+            message={t("error")}
             description={
               <>
                 <Text>{err.reason}</Text>
@@ -31,7 +33,7 @@ export default (): {
                 {
                   !showErrorDetail && <Link onClick={() => {
                     setShowErrorDetail(true)
-                  }}>[查看错误信息]</Link>
+                  }}>[{t("error_view")}]</Link>
                 }
                 {
                   showErrorDetail && <>
@@ -49,7 +51,7 @@ export default (): {
         }
         {
           response && <Alert
-            message="交易哈希"
+            message={t("transactionHash")}
             description={
               <>
                 <Text>{response.hash}</Text>

@@ -3,21 +3,23 @@ import { Button, Col, Divider, Input, Modal, Row, Typography, Space, Alert } fro
 import { useETHBalances, useWalletsActiveAccount } from "../../../../state/wallets/hooks";
 import { CurrencyAmount, JSBI } from "@uniswap/sdk";
 import { ethers } from "ethers";
+import { useTranslation } from "react-i18next";
 const { Text } = Typography;
 
 const ZERO = CurrencyAmount.ether(JSBI.BigInt(0));
 
 export interface NormalLockParams {
-  amount : string , 
-  lockDay : number
+  amount: string,
+  lockDay: number
 }
 
 export default ({
   goNextCallback
 }: {
-  goNextCallback: ({}:NormalLockParams) => void
+  goNextCallback: ({ }: NormalLockParams) => void
 }) => {
 
+  const { t } = useTranslation();
   const activeAccount = useWalletsActiveAccount();
   const activeAccountETHBalance = useETHBalances([activeAccount])[activeAccount];
   const maxBalance = useMemo(() => {
@@ -42,65 +44,65 @@ export default ({
     amount: undefined
   });
 
-  const goNext = useCallback( () => {
+  const goNext = useCallback(() => {
     const { lockDay, amount } = params;
-    if (!lockDay && lockDay != 0){
-      inputErrors.lockDay = "请输入锁定天数";
+    if (!lockDay && lockDay != 0) {
+      inputErrors.lockDay = t("please_enter") + t("wallet_lock_lockday");
     }
     if (!amount) {
-      inputErrors.amount = "请输入锁仓数量";
+      inputErrors.amount = t("please_enter") + t("wallet_lock_amount");
     }
     if (amount) {
       try {
-        let _amount = CurrencyAmount.ether( ethers.utils.parseEther(amount).toBigInt() );
-        if ( _amount.greaterThan(maxBalance) ){
-          inputErrors.amount = "锁定数量大于持有数量";
+        let _amount = CurrencyAmount.ether(ethers.utils.parseEther(amount).toBigInt());
+        if (_amount.greaterThan(maxBalance)) {
+          inputErrors.amount = t("wallet_lock_amountgeavaiable");
         }
-        if ( !_amount.greaterThan(ZERO) ){
-          inputErrors.amount = "请输入有效的数量";
+        if (!_amount.greaterThan(ZERO)) {
+          inputErrors.amount = t("enter_correct") + t("wallet_lock_amount");
         }
       } catch (error) {
-        inputErrors.amount = "请输入正确的数量";
+        inputErrors.amount = t("enter_correct") + t("wallet_lock_amount");
       }
     }
     if (lockDay) {
       try {
         const _lockDay = JSBI.BigInt(lockDay);
-        if (JSBI.greaterThan( JSBI.BigInt(0) , _lockDay )){
-          inputErrors.lockDay = "请输入正确的天数";
+        if (JSBI.greaterThan(JSBI.BigInt(0), _lockDay)) {
+          inputErrors.lockDay = t("enter_correct") + t("wallet_lock_lockday");
         }
       } catch (error) {
-        inputErrors.lockDay = "请输入正确的天数";
+        inputErrors.lockDay = t("enter_correct") + t("wallet_lock_lockday");
       }
     }
-    if ( inputErrors.amount || inputErrors.lockDay ){
-      setInputErrors({...inputErrors})
+    if (inputErrors.amount || inputErrors.lockDay) {
+      setInputErrors({ ...inputErrors })
       return;
     }
-    goNextCallback( params );
+    goNextCallback(params);
 
-  } , [activeAccount, maxBalance, params] );
+  }, [activeAccount, maxBalance, params]);
 
   return <>
     <div style={{ minHeight: "300px" }}>
-      <Alert showIcon type="info" message="将账户中的SAFE锁仓到锁仓账户中,并在解锁高度后解锁." />
+      <Alert showIcon type="info" message={t("wallet_lock_tip0")} />
       <br />
       <Row >
         <Col span={14}>
-          <Text strong>数量</Text>
+          <Text strong>{t("wallet_lock_amount")}</Text>
           <br />
           <Space.Compact style={{ width: '100%' }}>
-            <Input  size="large" value={params.amount} onChange={(_input) => {
+            <Input size="large" value={params.amount} onChange={(_input) => {
               const amountInputValue = _input.target.value;
               setInputErrors({
                 ...inputErrors,
-                amount:undefined
+                amount: undefined
               })
               setParams({
                 ...params,
                 amount: amountInputValue
               })
-            }} placeholder="输入数量" />
+            }} placeholder={t("enter") + t("wallet_lock_amount")} />
             <Button size="large" onClick={() => {
               setInputErrors({
                 ...inputErrors,
@@ -110,11 +112,11 @@ export default ({
                 ...params,
                 amount: maxBalance.toFixed(18)
               })
-            }}>最大</Button>
+            }}>{t("wallet_send_max")}</Button>
           </Space.Compact>
         </Col>
         <Col span={10}>
-          <Text style={{ float: "right" }} strong>可用数量</Text>
+          <Text style={{ float: "right" }} strong>{t("wallet_current_available")}</Text>
           <br />
           <Text style={{ float: "right", fontSize: "18px", lineHeight: "36px" }}>
             {activeAccountETHBalance?.toFixed(6)}
@@ -127,20 +129,20 @@ export default ({
       <br />
       <Row >
         <Col span={14}>
-          <Text strong>锁仓天数</Text>
+          <Text strong>{t("wallet_lock_lockday")}</Text>
           <br />
           <Space.Compact style={{ width: '100%' }}>
             <Input size="large" onChange={(_input) => {
               const lockDayInputValue = _input.target.value;
               setInputErrors({
                 ...inputErrors,
-                lockDay:undefined
+                lockDay: undefined
               })
               setParams({
                 ...params,
                 lockDay: Number(lockDayInputValue)
               })
-            }} placeholder="输入锁仓天数" />
+            }} placeholder={t("enter") + t("wallet_lock_lockday")} />
           </Space.Compact>
         </Col>
         <Col span={10}>
@@ -158,7 +160,7 @@ export default ({
         <Col span={24}>
           <Button type="primary" style={{ float: "right" }} onClick={() => {
             goNext();
-          }}>下一步</Button>
+          }}>{t("next")}</Button>
         </Col>
       </Row>
     </div>

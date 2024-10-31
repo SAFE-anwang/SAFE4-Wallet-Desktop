@@ -10,6 +10,7 @@ import { BatchLockAert, BatchLockParams } from "./WalletBatchLockModal-Input";
 import { CurrencyAmount, JSBI } from "@uniswap/sdk";
 import { GetDiffInDays } from "../../../../utils/DateUtils";
 import AddressComponent from "../../../components/AddressComponent";
+import { useTranslation } from "react-i18next";
 const { Text, Link } = Typography;
 
 export default ({
@@ -20,6 +21,8 @@ export default ({
   close: () => void,
   setTxHash: (txHash: string) => void
 }) => {
+
+  const { t } = useTranslation();
   const activeAccount = useWalletsActiveAccount();
   const addTransaction = useTransactionAdder();
   const accountManaggerContract = useAccountManagerContract(true);
@@ -89,11 +92,11 @@ export default ({
       <br />
       <Row>
         <Col span={24}>
-          <Text type="secondary">从</Text>
+          <Text type="secondary">{t("wallet_send_from")}</Text>
         </Col>
         <Col span={24} style={{ paddingLeft: "5px" }} >
           {
-            activeAccount == batchLockParams.toAddress && <Text>普通账户</Text>
+            activeAccount == batchLockParams.toAddress && <Text>{t("wallet_account_normal")}</Text>
           }
           {
             activeAccount != batchLockParams.toAddress && <>
@@ -105,11 +108,11 @@ export default ({
       <br />
       <Row>
         <Col span={24}>
-          <Text type="secondary">到</Text>
+          <Text type="secondary">{t("wallet_send_to")}</Text>
         </Col>
         <Col span={24} style={{ paddingLeft: "5px" }} >
           {
-            activeAccount == batchLockParams.toAddress && <Text>锁仓账户</Text>
+            activeAccount == batchLockParams.toAddress && <Text>{t("wallet_account_locked")}</Text>
           }
           {
             activeAccount != batchLockParams.toAddress && <>
@@ -131,17 +134,17 @@ export default ({
             !sending && !render && <Button onClick={() => {
               doBatchLockTransaction()
             }} disabled={sending} type="primary" style={{ float: "right" }}>
-              广播交易
+              {t("wallet_send_status_broadcast")}
             </Button>
           }
           {
             sending && !render && <Button loading disabled type="primary" style={{ float: "right" }}>
-              发送中....
+             {t("wallet_send_status_sending")}
             </Button>
           }
           {
             render && <Button onClick={close} type="primary" style={{ float: "right" }}>
-              关闭
+            {t("wallet_send_status_close")}
             </Button>
           }
         </Col>

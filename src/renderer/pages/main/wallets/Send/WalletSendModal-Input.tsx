@@ -1,10 +1,10 @@
-import { Button, Col, Divider, Input, Modal, Row, Typography, Space, Alert, Switch } from "antd"
-import { Children, useCallback, useEffect, useMemo, useState } from "react";
-import { MemoryRouter as Router, Routes, Route, useNavigate } from 'react-router-dom';
+import { Button, Col, Divider, Input, Row, Typography, Space, Alert, Switch } from "antd"
+import { useCallback, useMemo, useState } from "react";
 import { ethers } from "ethers";
 import { useETHBalances, useWalletsActiveAccount } from "../../../../state/wallets/hooks";
 import AddressView from "../../../components/AddressView";
 import { CurrencyAmount, JSBI } from "@uniswap/sdk";
+import { useTranslation } from "react-i18next";
 
 const { Text } = Typography;
 
@@ -19,6 +19,7 @@ export default ({
   }) => void
 }) => {
 
+  const { t } = useTranslation();
   const activeAccount = useWalletsActiveAccount();
   const activeAccountETHBalance = useETHBalances([activeAccount])[activeAccount];
 
@@ -57,26 +58,26 @@ export default ({
   const goNext = useCallback(() => {
     const { to, amount , lockDay } = params;
     if (!to || !ethers.utils.isAddress(to)) {
-      inputErrors.to = "请输入正确的钱包地址";
+      inputErrors.to = t("wallet_send_entercorrectwalletaddress");
     }
     if (!amount) {
-      inputErrors.amount = "请输入发送数量";
+      inputErrors.amount = t("please_enter")+t("wallet_send_amount");
     }
     if (amount) {
       try {
         let _amount = CurrencyAmount.ether(ethers.utils.parseEther(amount).toBigInt());
         if (_amount.greaterThan(maxBalance)) {
-          inputErrors.amount = "转出数量大于持有数量";
+          inputErrors.amount = t("wallet_send_amountgeavaiable");
         }
         if (!_amount.greaterThan(ZERO)) {
-          inputErrors.amount = "请输入正确的数量";
+          inputErrors.amount = t("enter_correct")+t("wallet_send_amount");
         }
       } catch (error) {
-        inputErrors.amount = "请输入正确的数量";
+        inputErrors.amount = t("enter_correct")+t("wallet_send_amount");
       }
     }
     if ( openSendLock && ( !lockDay || Number.isNaN(lockDay) ) ){
-      inputErrors.lockDay = "请输入锁仓天数";
+      inputErrors.lockDay = t("enter_correct")+t("wallet_lock_lockday");
     }
     if (inputErrors.to || inputErrors.amount || inputErrors.lockDay) {
       setInputErrors({ ...inputErrors })
@@ -87,11 +88,11 @@ export default ({
 
   return <>
     <div style={{ minHeight: "300px" }}>
-      <Alert showIcon type="info" message="将账户中的SAFE发送到指定钱包地址" />
+      <Alert showIcon type="info" message={t("wallet_send_tip0")} />
       <br />
       <Row >
         <Col span={24}>
-          <Text strong>从</Text>
+          <Text strong>{t("wallet_send_from")}</Text>
           <br />
           <Text style={{ fontSize: "18px" }}>
             <AddressView address={activeAccount}></AddressView>
@@ -101,7 +102,7 @@ export default ({
       <br />
       <Row >
         <Col span={24}>
-          <Text strong>到</Text>
+          <Text strong>{t("wallet_send_to")}</Text>
           <br />
           <Input size="large" onChange={(_input) => {
             const toInputValue = _input.target.value;
@@ -113,7 +114,7 @@ export default ({
               ...inputErrors,
               to: undefined
             })
-          }} placeholder="输入到账地址"></Input>
+          }} placeholder={t("wallet_send_to_placeholder")}></Input>
         </Col>
         {
           inputErrors?.to && <Alert style={{ marginTop: "5px" }} type="error" showIcon message={inputErrors.to} />
@@ -122,7 +123,7 @@ export default ({
       <br />
       <Row >
         <Col span={14}>
-          <Text strong>数量</Text>
+          <Text strong>{t("wallet_send_amount")}</Text>
           <br />
           <Space.Compact style={{ width: '100%' }}>
             <Input size="large" value={params.amount} onChange={(_input) => {
@@ -135,7 +136,7 @@ export default ({
                 ...params,
                 amount: toInputValue
               })
-            }} placeholder="输入数量" />
+            }} placeholder={`${t("enter")+" "+t("wallet_send_amount")}`} />
             <Button size="large" onClick={() => {
               setInputErrors({
                 ...inputErrors,
@@ -145,11 +146,11 @@ export default ({
                 ...params,
                 amount: maxBalance.toFixed(18)
               })
-            }}>最大</Button>
+            }}>{t("wallet_send_max")}</Button>
           </Space.Compact>
         </Col>
         <Col span={10}>
-          <Text style={{ float: "right" }} strong>可用数量</Text>
+          <Text style={{ float: "right" }} strong>{t("wallet_current_available")}</Text>
           <br />
           <Text style={{ float: "right", fontSize: "18px", lineHeight: "36px" }}>
             {activeAccountETHBalance?.toFixed(6)}
@@ -163,7 +164,7 @@ export default ({
 
       <Row >
         <Col span={14}>
-          <Switch size="small" checkedChildren="开启" unCheckedChildren="关闭" defaultChecked={openSendLock}
+          <Switch size="small" checkedChildren={t("active")} unCheckedChildren={t("unactive")} defaultChecked={openSendLock}
             onClick={(value) => {
               setOpenSendLock(value);
               setParams({
@@ -175,7 +176,7 @@ export default ({
                 lockDay: undefined
               })
             }} />
-          <Text style={{ marginLeft: "5px" }} strong>锁仓</Text>
+          <Text style={{ marginLeft: "5px" }} strong>{t("wallet_lock")}</Text>
           <br />
           <Space.Compact style={{ width: '100%' }}>
             <Input value={params.lockDay} disabled={!openSendLock} size="large" onChange={(_input) => {
@@ -188,7 +189,7 @@ export default ({
                 ...params,
                 lockDay: Number(lockDayInputValue)
               })
-            }} placeholder="输入锁仓天数" />
+            }} placeholder={t("wallet_send_lockday_placeholder")} />
           </Space.Compact>
         </Col>
         <Col span={10}>
@@ -203,7 +204,7 @@ export default ({
 
       <Row style={{ width: "100%", textAlign: "right" }}>
         <Col span={24}>
-          <Button type="primary" style={{ float: "right" }} onClick={goNext}>下一步</Button>
+          <Button type="primary" style={{ float: "right" }} onClick={goNext}>{t("next")}</Button>
         </Col>
       </Row>
 

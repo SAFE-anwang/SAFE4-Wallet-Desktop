@@ -13,9 +13,11 @@ import { useApplicationPassword, useImportWalletParams } from "../../state/appli
 import { Import_Type_Mnemonic, Import_Type_PrivateKey } from "./import/ImportWallet";
 import { HDNode } from "ethers/lib/utils";
 import { ethers } from "ethers";
+import { useTranslation } from "react-i18next";
 
 export default () => {
 
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const password = useApplicationPassword();
@@ -33,32 +35,32 @@ export default () => {
     if (importType == Import_Type_PrivateKey) {
       setTimeout(() => {
         setStepItems([{
-          title: '导入钱包私钥',
-          description: "正在执行",
+          title: t("wallet_import_privateKey_process0"),
+          description: t("wallet_mnemonic_create_process_status_executing"),
         },
         {
-          title: '本地加密存储钱包数据',
-          description: "待执行",
+          title: t("wallet_import_privateKey_process1"),
+          description: t("wallet_mnemonic_create_process_status_waiting"),
         }]);
         setStepCurrent(0);
         setTimeout(() => {
           setStepItems([{
-            title: '导入钱包私钥',
-            description: "完成",
+            title: t("wallet_import_privateKey_process0"),
+            description: t("wallet_mnemonic_create_process_status_finished"),
           },
           {
-            title: '本地加密存储钱包数据',
-            description: "待执行",
+            title: t("wallet_import_privateKey_process1"),
+            description: t("wallet_mnemonic_create_process_status_waiting"),
           }]);
           setStepCurrent(1);
           setTimeout(() => {
             setStepItems([{
-              title: '导入钱包私钥',
-              description: "完成",
+              title: t("wallet_import_privateKey_process0"),
+              description: t("wallet_mnemonic_create_process_status_finished"),
             },
             {
-              title: '本地加密存储钱包数据',
-              description: "正在执行",
+              title: t("wallet_import_privateKey_process1"),
+              description: t("wallet_mnemonic_create_process_status_executing"),
             }]);
             setStepCurrent(2);
           }, 300);
@@ -67,44 +69,44 @@ export default () => {
     } else {
       setTimeout(() => {
         setStepItems([{
-          title: '生成种子密钥',
-          description: "正在执行",
+          title: t("wallet_mnemonic_create_process0"),
+          description: t("wallet_mnemonic_create_process_status_executing")
         },
         {
-          title: '生成钱包密钥',
-          description: "待执行",
+          title: t("wallet_mnemonic_create_process1"),
+          description: t("wallet_mnemonic_create_process_status_waiting"),
         },
         {
-          title: '本地加密存储钱包数据',
-          description: "待执行",
+          title: t("wallet_mnemonic_create_process2"),
+          description: t("wallet_mnemonic_create_process_status_waiting"),
         }]);
         setStepCurrent(0);
         setTimeout(() => {
           setStepItems([{
-            title: '生成种子密钥',
-            description: "完成",
+            title: t("wallet_mnemonic_create_process0"),
+            description: t("wallet_mnemonic_create_process_status_finished"),
           },
           {
-            title: '生成钱包密钥',
-            description: "正在执行",
+            title: t("wallet_mnemonic_create_process1"),
+            description: t("wallet_mnemonic_create_process_status_executing"),
           },
           {
-            title: '本地加密存储钱包数据',
-            description: "待执行",
+            title: t("wallet_mnemonic_create_process2"),
+            description: t("wallet_mnemonic_create_process_status_waiting"),
           }]);
           setStepCurrent(1);
           setTimeout(() => {
             setStepItems([{
-              title: '生成种子密钥',
-              description: "完成",
+              title: t("wallet_mnemonic_create_process0"),
+              description: t("wallet_mnemonic_create_process_status_finished"),
             },
             {
-              title: '生成钱包密钥',
-              description: "完成",
+              title: t("wallet_mnemonic_create_process1"),
+              description: t("wallet_mnemonic_create_process_status_finished"),
             },
             {
-              title: '本地加密存储钱包数据',
-              description: "正在执行",
+              title: t("wallet_mnemonic_create_process2"),
+              description: t("wallet_mnemonic_create_process_status_executing"),
             }]);
             setStepCurrent(2);
           }, 300);
@@ -176,9 +178,9 @@ export default () => {
 
   useEffect(() => {
     if (newWalletKeystore?.address && password) {
-      window.electron.ipcRenderer.sendMessage(IPC_CHANNEL, [WalletSignal, Wallet_Methods.storeWallet, [walletsKeystores,password]]);
+      window.electron.ipcRenderer.sendMessage(IPC_CHANNEL, [WalletSignal, Wallet_Methods.storeWallet, [walletsKeystores, password]]);
     }
-  }, [newWalletKeystore,password])
+  }, [newWalletKeystore, password])
 
   return (
     <>
@@ -189,7 +191,7 @@ export default () => {
             marginTop: "10%"
           }}
           type="info"
-          message="导入钱包"
+          message={t("wallet_import")}
           description={<>
             <Steps
               direction="vertical"

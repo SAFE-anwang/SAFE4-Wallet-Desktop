@@ -5,6 +5,7 @@ import WalletSendModalConfirm from "./WalletSendModal-Confirm";
 import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { applicationUpdateWalletTab } from "../../../../state/application/action";
+import { useTranslation } from "react-i18next";
 const { Text } = Typography;
 
 const STEP_INPUT = 0;
@@ -19,7 +20,7 @@ export default ({
   setOpenSendModal: (open: boolean) => void
 
 }) => {
-
+  const { t } = useTranslation();
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const [step, setStep] = useState(STEP_INPUT);
@@ -49,7 +50,7 @@ export default ({
   }, [txHash]);
 
   return <>
-    <Modal footer={null} destroyOnClose title="发送" style={{height: "300px"}} open={openSendModal} onCancel={cancel}>
+    <Modal footer={null} destroyOnClose title={t("wallet_send")} style={{height: "300px"}} open={openSendModal} onCancel={cancel}>
       <Divider />
       {
         step == STEP_INPUT && <WalletSendModalInput goNextCallback={({to,amount , lockDay}) => {

@@ -6,6 +6,7 @@ import { AccountRecord } from "../../../../../structs/AccountManager";
 import { applicationUpdateWalletTab } from "../../../../../state/application/action";
 import AddLockModalInput from "./AddLockModal-Input";
 import AddLockModalConfirm from "./AddLockModal-Confirm";
+import { useTranslation } from "react-i18next";
 
 const STEP_INPUT = 0;
 const STEP_CONFIRM = 1;
@@ -20,6 +21,7 @@ export default ({
   selectedAccountRecord?: AccountRecord
 }) => {
 
+  const { t } = useTranslation();
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const [step, setStep] = useState(STEP_INPUT);
@@ -37,7 +39,7 @@ export default ({
   }, [txHash]);
 
   return <>
-    <Modal footer={null} destroyOnClose title="追加锁仓天数" style={{ height: "300px" }} open={openAddModal} onCancel={cancel}>
+    <Modal footer={null} destroyOnClose title={t("wallet_locked_addLockDay")} style={{ height: "300px" }} open={openAddModal} onCancel={cancel}>
       {
         step == STEP_INPUT && selectedAccountRecord && <>
           <AddLockModalInput selectedAccountRecord={selectedAccountRecord} goNextCallback={(addLockDay) => {

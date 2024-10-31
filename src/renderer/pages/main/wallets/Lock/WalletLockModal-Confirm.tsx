@@ -6,6 +6,7 @@ import { SearchOutlined, SendOutlined, QrcodeOutlined, LockOutlined } from '@ant
 import { ethers } from "ethers";
 import { useAccountManagerContract } from "../../../../hooks/useContracts";
 import useTransactionResponseRender from "../../../components/useTransactionResponseRender";
+import { useTranslation } from "react-i18next";
 const { Text, Link } = Typography;
 
 export default ({
@@ -17,6 +18,8 @@ export default ({
   close: () => void,
   setTxHash: (txHash: string) => void
 }) => {
+
+  const { t } = useTranslation();
   const activeAccount = useWalletsActiveAccount();
   const addTransaction = useTransactionAdder();
   const accountManaggerContract = useAccountManagerContract(true);
@@ -74,28 +77,28 @@ export default ({
       <br />
       <Row>
         <Col span={24}>
-          <Text type="secondary">从</Text>
+          <Text type="secondary">{t("wallet_send_from")}</Text>
         </Col>
         <Col span={24} style={{ paddingLeft: "5px" }} >
-          <Text>普通账户</Text>
+          <Text>{t("wallet_account_normal")}</Text>
         </Col>
       </Row>
       <br />
       <Row>
         <Col span={24}>
-          <Text type="secondary">到</Text>
+          <Text type="secondary">{t("wallet_send_to")}</Text>
         </Col>
         <Col span={24} style={{ paddingLeft: "5px" }} >
-          <Text>锁仓账户</Text>
+          <Text>{t("wallet_account_locked")}</Text>
         </Col>
       </Row>
       <Divider />
       <Row >
         <Col span={24}>
-          <Text type="secondary">锁仓天数</Text>
+          <Text type="secondary">{t("wallet_lock_lockday")}</Text>
           <br />
           <Text style={{ fontSize: "18px" }}>
-            {lockDay} 天
+            {lockDay} {t("days")}
           </Text>
         </Col>
       </Row>
@@ -110,17 +113,17 @@ export default ({
                 lockDay
               })
             }} disabled={sending} type="primary" style={{ float: "right" }}>
-              广播交易
+              {t("wallet_send_status_broadcast")}
             </Button>
           }
           {
             sending && !render && <Button loading disabled type="primary" style={{ float: "right" }}>
-              发送中....
+              {t("wallet_send_status_sending")}
             </Button>
           }
           {
             render && <Button onClick={close} type="primary" style={{ float: "right" }}>
-              关闭
+             {t("wallet_send_status_close")}
             </Button>
           }
         </Col>

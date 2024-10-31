@@ -9,6 +9,7 @@ import 'dayjs/locale/zh-cn';
 import { RangePickerProps } from "antd/es/date-picker";
 import dayjs from "dayjs";
 import { DateFormat, GetNextMonth } from "../../../../utils/DateUtils";
+import { useTranslation } from "react-i18next";
 
 const { Text } = Typography;
 
@@ -33,6 +34,7 @@ export function BatchLockAert({
 }: {
   batchLockParams: BatchLockParams
 }) {
+  const { t } = useTranslation();
   const { perLockAmount, lockTimes, startLockMonth, periodMonth } = batchLockParams;
   let _totalLockAmount = "0";
   let _perLockAmount = "0";
@@ -50,15 +52,12 @@ export function BatchLockAert({
     <Row>
       <Col span={24}>
         <Text>
-          自 <Text strong>{startLockMonth}-01</Text> 开始,
-          每间隔 <Text strong>{periodMonth}</Text> 个月,
-          每次解锁 <Text strong>{_perLockAmount} </Text> SAFE
+          { t("wallet_batchLock_desc0" , { startLockMonth , periodMonth , _perLockAmount }) }
         </Text>
       </Col>
       <Col span={24}>
         <Text>
-          共解锁 <Text strong>{lockTimes}</Text> 次,
-          合计解锁 <Text strong>{_totalLockAmount} </Text> SAFE
+          { t("wallet_batchLock_desc1" , { lockTimes ,  _totalLockAmount}) }
         </Text>
       </Col>
     </Row>
@@ -72,6 +71,7 @@ export default ({
   goNextCallback: ({ }: BatchLockParams) => void
 }) => {
 
+  const { t } = useTranslation();
   const activeAccount = useWalletsActiveAccount();
   const activeAccountETHBalance = useETHBalances([activeAccount])[activeAccount];
   const maxBalance = useMemo(() => {
@@ -160,7 +160,7 @@ export default ({
     <div style={{ minHeight: "300px" }}>
       <Row >
         <Col span={14}>
-          <Text strong>每次锁仓数量</Text>
+          <Text strong>{t("wallet_batchLock_eachLockAmount")}</Text>
           <br />
           <Space.Compact style={{ width: '100%' }}>
             <Input size="large" onChange={(_input) => {
@@ -173,7 +173,7 @@ export default ({
                 ...params,
                 perLockAmount: perLockAmountInputValue
               })
-            }} placeholder="输入每次锁仓数量" />
+            }} placeholder={t("enter")+t("wallet_batchLock_eachLockAmount")} />
           </Space.Compact>
         </Col>
         <Col span={10}>
@@ -185,7 +185,7 @@ export default ({
       <br />
       <Row >
         <Col span={14}>
-          <Text strong>合计锁仓次数</Text>
+          <Text strong>{t("wallet_batchLock_totalLockCount")}</Text>
           <br />
           <Space.Compact style={{ width: '100%' }}>
             <Input value={params.lockTimes} size="large" onChange={(_input) => {
@@ -198,7 +198,7 @@ export default ({
                 ...params,
                 lockTimes: Number(lockTimesInputValue)
               })
-            }} placeholder="输入合计锁仓次数" />
+            }}/>
           </Space.Compact>
         </Col>
         <Col span={10}>
@@ -211,14 +211,14 @@ export default ({
       <br />
       <Row >
         <Col span={14}>
-          <Text strong>锁仓总数量</Text>
+          <Text strong>{t("wallet_batchLock_totalLockAmount")}</Text>
           <br />
           <Text strong style={{ float: "left", fontSize: "18px", lineHeight: "36px" }}>
             {totalLockAmount} SAFE
           </Text>
         </Col>
         <Col span={10}>
-          <Text style={{ float: "right" }} strong>可用数量</Text>
+          <Text style={{ float: "right" }} strong>{t("wallet_current_available")}</Text>
           <br />
           <Text type="secondary" style={{ float: "right", fontSize: "18px", lineHeight: "36px" }}>
             {activeAccountETHBalance?.toFixed(6)}
@@ -229,7 +229,7 @@ export default ({
       <br />
       <Row >
         <Col span={24}>
-          <Text strong>锁仓地址</Text>
+          <Text strong>{t("wallet_batchLock_lockWalletAddress")}</Text>
           <br />
           <Input value={params.toAddress} size="large" onChange={(_input) => {
             const toInputValue = _input.target.value;
@@ -241,7 +241,7 @@ export default ({
               ...inputErrors,
               toAddress: undefined
             })
-          }} placeholder="输入锁仓地址"></Input>
+          }} placeholder={t("enter")+t("wallet_batchLock_lockWalletAddress")}></Input>
         </Col>
         {
           inputErrors?.toAddress && <Alert style={{ marginTop: "5px" }} type="error" showIcon message={inputErrors.toAddress} />
@@ -252,7 +252,7 @@ export default ({
 
       <Row>
         <Col span={14}>
-          <Text strong>锁仓起始月份</Text>
+          <Text strong>{t("wallet_batchLock_startMonth")}</Text>
           <br />
           <Space.Compact style={{ width: '100%' }}>
             <DatePicker value={dayjs(params.startLockMonth)} disabledDate={disabledDate} size="large" style={{ width: "100%" }} locale={locale} picker="month"
@@ -275,7 +275,7 @@ export default ({
       <br />
       <Row >
         <Col span={14}>
-          <Text strong>锁仓间隔月份</Text>
+          <Text strong>{t("wallet_batchLock_periodMonth")}</Text>
           <br />
           <Space.Compact style={{ width: '100%' }}>
             <Input size="large" value={params.periodMonth} onChange={(_input) => {
@@ -288,7 +288,7 @@ export default ({
                 ...params,
                 periodMonth: Number(periodMonthInputValue)
               })
-            }} placeholder="输入锁仓天数" />
+            }}/>
           </Space.Compact>
         </Col>
         <Col span={10}>
@@ -308,7 +308,7 @@ export default ({
         <Col span={24}>
           <Button type="primary" style={{ float: "right" }} onClick={() => {
             goNext();
-          }}>下一步</Button>
+          }}>{t("next")}</Button>
         </Col>
       </Row>
     </div>

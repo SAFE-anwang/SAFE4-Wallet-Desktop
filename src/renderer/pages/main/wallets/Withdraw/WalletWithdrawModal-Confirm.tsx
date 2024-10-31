@@ -7,6 +7,7 @@ import { useAccountManagerContract } from "../../../../hooks/useContracts";
 import { AccountRecord } from "../../../../structs/AccountManager";
 import { RetweetOutlined } from '@ant-design/icons';
 import useTransactionResponseRender from "../../../components/useTransactionResponseRender";
+import { useTranslation } from "react-i18next";
 const { Text } = Typography;
 
 export default ({
@@ -17,6 +18,7 @@ export default ({
   cancel: () => void,
   setTxHash: (txHash: string) => void
 }) => {
+  const { t } = useTranslation();
   const activeAccount = useWalletsActiveAccount();
   const addTransaction = useTransactionAdder();
   const accountManaggerContract = useAccountManagerContract(true);
@@ -101,19 +103,19 @@ export default ({
           <br />
           <Row>
             <Col span={24}>
-              <Text type="secondary">从</Text>
+              <Text type="secondary">{t("wallet_send_from")}</Text>
             </Col>
             <Col span={24} style={{ paddingLeft: "5px" }} >
-              <Text>锁仓账户</Text>
+              <Text>{t("wallet_account_locked")}</Text>
             </Col>
           </Row>
           <br />
           <Row>
             <Col span={24}>
-              <Text type="secondary">到</Text>
+              <Text type="secondary">{t("wallet_send_to")}</Text>
             </Col>
             <Col span={24} style={{ paddingLeft: "5px" }} >
-              <Text>普通账户</Text>
+              <Text>{t("wallet_account_normal")}</Text>
             </Col>
           </Row>
         </>
@@ -129,19 +131,19 @@ export default ({
           <br />
           <Row>
             <Col span={24}>
-              <Text type="secondary">从</Text>
+              <Text type="secondary">{t("wallet_send_from")}</Text>
             </Col>
             <Col span={24} style={{ paddingLeft: "5px" }} >
-              <Text>锁仓账户</Text>
+              <Text>{t("wallet_account_locked")}</Text>
             </Col>
           </Row>
           <br />
           <Row>
             <Col span={24}>
-              <Text type="secondary">到</Text>
+              <Text type="secondary">{t("wallet_send_to")}</Text>
             </Col>
             <Col span={24} style={{ paddingLeft: "5px" }} >
-              <Text>普通账户</Text>
+              <Text>{t("wallet_account_normal")}</Text>
             </Col>
           </Row>
         </>
@@ -153,17 +155,17 @@ export default ({
             !sending && !render && <Button onClick={() => {
               doWithdrawTransaction()
             }} disabled={sending} type="primary" style={{ float: "right" }}>
-              广播交易
+              {t("wallet_send_status_broadcast")}
             </Button>
           }
           {
             sending && !render && <Button loading disabled type="primary" style={{ float: "right" }}>
-              发送中..
+              {t("wallet_send_status_sending")}
             </Button>
           }
           {
             render && <Button onClick={cancel} type="primary" style={{ float: "right" }}>
-              关闭
+              {t("wallet_send_status_close")}
             </Button>
           }
         </Col>

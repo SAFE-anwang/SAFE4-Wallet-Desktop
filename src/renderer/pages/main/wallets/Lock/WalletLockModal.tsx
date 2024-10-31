@@ -10,6 +10,8 @@ import { Tabs } from 'antd';
 import type { TabsProps } from 'antd';
 import WalletBatchLockModalInput, { BatchLockParams } from "./WalletBatchLockModal-Input";
 import WalletBatchLockModalConfirm from "./WalletBatchLockModal-Confirm";
+import { useWalletsActiveAccount } from "../../../../state/wallets/hooks";
+import { useTranslation } from "react-i18next";
 
 const STEP_INPUT = 0;
 const STEP_CONFIRM = 1;
@@ -26,10 +28,12 @@ export default ({
   openLockModal: boolean,
   setOpenLockModal: (open: boolean) => void
 }) => {
+  const { t } = useTranslation();
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const [step, setStep] = useState(STEP_INPUT);
   const [lockType, setLockType] = useState<LockType>(LockType.Normal);
+  const activeAccount = useWalletsActiveAccount();
 
   const initInputParams = {
     normalLockParams: {
@@ -40,7 +44,8 @@ export default ({
       perLockAmount: "",
       lockTimes: 36,
       startLockMonth: "",
-      periodMonth: 1
+      periodMonth: 1,
+      toAddress:activeAccount
     }
   }
   const [inputParams, setInputParams] = useState<{
@@ -65,12 +70,12 @@ export default ({
     return [
       {
         key: LockType.Normal,
-        label: '锁仓',
+        label: t("wallet_lock"),
         disabled : step == STEP_CONFIRM && lockType != LockType.Normal
       },
       {
         key: LockType.Batch,
-        label: '批量锁仓',
+        label: t("wallet_batchLock"),
         disabled : step == STEP_CONFIRM && lockType != LockType.Batch
       },
     ]

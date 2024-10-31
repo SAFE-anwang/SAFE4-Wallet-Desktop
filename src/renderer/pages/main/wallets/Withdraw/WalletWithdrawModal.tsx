@@ -6,6 +6,7 @@ import { AccountRecord } from "../../../../structs/AccountManager";
 import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { applicationUpdateWalletTab } from "../../../../state/application/action";
+import { useTranslation } from "react-i18next";
 
 const STEP_INPUT = 0;
 const STEP_CONFIRM = 1;
@@ -20,6 +21,7 @@ export default ({
   selectedAccountRecord ?: AccountRecord
 }) => {
 
+  const { t } = useTranslation();
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const [step, setStep] = useState(STEP_INPUT);
@@ -36,7 +38,7 @@ export default ({
   } , [txHash]);
 
   return <>
-    <Modal footer={null} destroyOnClose title="提现" style={{ height: "300px" }} open={openWithdrawModal} onCancel={cancel}>
+    <Modal footer={null} destroyOnClose title={t("wallet_withdraw")} style={{ height: "300px" }} open={openWithdrawModal} onCancel={cancel}>
       <Divider />
       {
         STEP_INPUT == step && <WalletWithdrawModalInput accountRecord={selectedAccountRecord} nextCallback={() => {

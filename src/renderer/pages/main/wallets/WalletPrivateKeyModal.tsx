@@ -33,12 +33,12 @@ export default ({
       setPWDError(undefined);
       setCurrentStep(STEP_2_SHOW);
     } else {
-      setPWDError("钱包密码错误");
+      setPWDError(t("wallet_password_error"));
     }
   }, [walletPassword, inputPWD]);
 
   return (<>
-    <Modal title="私钥" open={openPrivateKeyModal} width={"400px"} footer={null} closable onCancel={() => {
+    <Modal title={t("wallet_privateKey")} open={openPrivateKeyModal} width={"400px"} footer={null} closable onCancel={() => {
       setCurrentStep(STEP_0_WARNING);
       setOpenPrivateKeyModal(false);
     }}>
@@ -50,12 +50,14 @@ export default ({
             <Col span={24}>
               <Alert type="warning" showIcon message={<>
                 <Text style={{ fontSize: "18px" }}>
-                  您要查看的钱包私钥属于钱包高级机密信息，请确保您的电脑及正在连接的网络是安全的，并且身边没有其他人，没有摄像头正在摄像.
+                  {t("wallet_querysecret_privateKey_tip")}
                 </Text>
               </>} />
             </Col>
             <Col span={24} style={{ marginTop: "20px" }}>
-              <Button onClick={() => setCurrentStep(STEP_1_CONFIRMPWD)} size='large' type='primary' style={{ width: "100%" }}>确认安全,可以显示</Button>
+              <Button onClick={() => setCurrentStep(STEP_1_CONFIRMPWD)} size='large' type='primary' style={{ width: "100%" }}>
+                {t("wallet_querysecret_confirm_safety")}
+              </Button>
             </Col>
           </Row>
         </>
@@ -67,12 +69,12 @@ export default ({
             <Col span={24}>
               <Alert type="warning" showIcon message={<>
                 <Text style={{ fontSize: "18px" }}>
-                  您要查看的钱包私钥属于高级机密信息，请确保您的电脑及正在连接的网络是安全的，并且身边没有其他人，没有摄像头正在摄像.
+                  {t("wallet_querysecret_privateKey_tip")}
                 </Text>
               </>} />
             </Col>
             <Col span={24} style={{ marginTop: "20px" }}>
-              <Input.Password placeholder='输入钱包密码' size='large' onChange={(event) => {
+              <Input.Password placeholder={t("wallet_password_input")} size='large' onChange={(event) => {
                 const inputPWD = event.target.value;
                 setInputPWD(inputPWD);
                 setPWDError(undefined);
@@ -82,7 +84,9 @@ export default ({
               }
             </Col>
             <Col span={24} style={{ marginTop: "20px" }}>
-              <Button onClick={validateWalletPassword} size='large' type='primary' style={{ width: "100%" }}>显示钱包私钥</Button>
+              <Button onClick={validateWalletPassword} size='large' type='primary' style={{ width: "100%" }}>
+                {t("wallet_querysecret_privateKey_show")}
+              </Button>
             </Col>
           </Row>
         </>
@@ -90,7 +94,9 @@ export default ({
       {
         currentStep == STEP_2_SHOW && <>
           <Row>
-            <Text style={{ margin: "auto", marginTop: "20px", marginBottom: "20px" }} type='danger'>不要将您的私钥暴露给任何人。</Text>
+            <Text strong style={{ margin: "auto", marginTop: "20px", marginBottom: "20px" }} type='danger'>
+              {t("wallet_querysecret_privateKey_tip1")}
+            </Text>
           </Row>
           <Row style={{ width: "300px", textAlign: "center", margin: "auto" }}>
             <Text style={{ margin: "auto", marginTop: "20px", marginBottom: "20px" }} strong>

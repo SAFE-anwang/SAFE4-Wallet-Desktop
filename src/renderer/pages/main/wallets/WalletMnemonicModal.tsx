@@ -1,8 +1,8 @@
 
 
 import { Typography, Button, Divider, Statistic, Row, Col, Modal, Tabs, TabsProps, QRCode, Badge, Dropdown, Input, Spin, Alert } from 'antd';
-import { useCallback,useState } from 'react';
-import {useWalletsActiveKeystore} from '../../../state/wallets/hooks';
+import { useCallback, useState } from 'react';
+import { useWalletsActiveKeystore } from '../../../state/wallets/hooks';
 import { useApplicationPassword, useBlockNumber, useTimestamp } from '../../../state/application/hooks';
 import { useTranslation } from 'react-i18next';
 
@@ -32,14 +32,14 @@ export default ({
       setPWDError(undefined);
       setCurrentStep(STEP_2_SHOW);
     } else {
-      setPWDError("钱包密码错误");
+      setPWDError(t("wallet_password_error"));
     }
   }, [walletPassword, inputPWD]);
 
   return (<>
     {
       walletKeystore?.mnemonic &&
-      <Modal title="助记词" open={openMnemonicModal} width={"400px"} footer={null} closable onCancel={() => {
+      <Modal title={t("wallet_mnemonic")} open={openMnemonicModal} width={"400px"} footer={null} closable onCancel={() => {
         setCurrentStep(STEP_0_WARNING);
         setOpenMnemonicModal(false)
       }}>
@@ -50,12 +50,14 @@ export default ({
               <Col span={24}>
                 <Alert type="warning" showIcon message={<>
                   <Text style={{ fontSize: "18px" }}>
-                    您要查看的助记词属于高级机密信息，请确保您的电脑及正在连接的网络是安全的，并且身边没有其他人，没有摄像头正在摄像.
+                    {t("wallet_querysecret_mnemonic_tip")}
                   </Text>
                 </>} />
               </Col>
               <Col span={24} style={{ marginTop: "20px" }}>
-                <Button onClick={() => setCurrentStep(STEP_1_CONFIRMPWD)} size='large' type='primary' style={{ width: "100%" }}>确认安全,可以显示</Button>
+                <Button onClick={() => setCurrentStep(STEP_1_CONFIRMPWD)} size='large' type='primary' style={{ width: "100%" }}>
+                  {t("wallet_querysecret_confirm_safety")}
+                </Button>
               </Col>
             </Row>
           </>
@@ -66,12 +68,12 @@ export default ({
               <Col span={24}>
                 <Alert type="warning" showIcon message={<>
                   <Text style={{ fontSize: "18px" }}>
-                    您要查看的助记词属于高级机密信息，请确保您的电脑及正在连接的网络是安全的，并且身边没有其他人，没有摄像头正在摄像.
+                    {t("wallet_querysecret_mnemonic_tip")}
                   </Text>
                 </>} />
               </Col>
               <Col span={24} style={{ marginTop: "20px" }}>
-                <Input.Password placeholder='输入钱包密码' size='large' onChange={(event) => {
+                <Input.Password placeholder={t("wallet_password_input")} size='large' onChange={(event) => {
                   const inputPWD = event.target.value;
                   setInputPWD(inputPWD);
                   setPWDError(undefined);
@@ -81,7 +83,9 @@ export default ({
                 }
               </Col>
               <Col span={24} style={{ marginTop: "20px" }}>
-                <Button onClick={validateWalletPassword} size='large' type='primary' style={{ width: "100%" }}>显示助记词</Button>
+                <Button onClick={validateWalletPassword} size='large' type='primary' style={{ width: "100%" }}>
+                  {t("wallet_querysecret_mnemonic_show")}
+                </Button>
               </Col>
             </Row>
           </>
@@ -112,7 +116,7 @@ export default ({
               walletKeystore.password && <>
                 <Row style={{ width: "300px", textAlign: "left", margin: "auto", marginTop: "20px" }}>
                   <Col span={24}>
-                    <Text type='secondary' style={{ marginRight: "10px" }}>种子密码</Text>
+                    <Text type='secondary' style={{ marginRight: "10px" }}>{t("wallet_mnemonic_password")}</Text>
                   </Col>
                   <Col span={24}>
                     <Text strong>

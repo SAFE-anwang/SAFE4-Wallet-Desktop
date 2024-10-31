@@ -6,6 +6,7 @@ import { LockOutlined } from "@ant-design/icons";
 import { useMemo, useState } from "react";
 import { JSBI } from "@uniswap/sdk";
 import { EmptyContract } from "../../../../../constants/SystemContracts";
+import { useTranslation } from "react-i18next";
 
 const { Text } = Typography;
 
@@ -17,6 +18,7 @@ export default ({
   goNextCallback: (addLockDay: number) => void
 }) => {
 
+  const { t } = useTranslation();
   const blockNumber = useBlockNumber();
   const timestamp = useTimestamp();
 
@@ -40,16 +42,16 @@ export default ({
   const goNext = () => {
     let _addLockDayError;
     if (!addLockDay) {
-      _addLockDayError = "请输入追加锁仓天数";
+      _addLockDayError = t("please_enter")+t("wallet_locked_addLockDay");
     } else {
       try {
         const _lockDay = JSBI.BigInt(addLockDay);
         if (JSBI.greaterThan(JSBI.BigInt(1), _lockDay)) {
-          _addLockDayError = "请输入正确的天数";
+          _addLockDayError = t("enter_correct")+t("days");
         }
         goNextCallback(Number(_lockDay));
       } catch (error) {
-        _addLockDayError = "请输入正确的天数";
+        _addLockDayError = t("enter_correct")+t("days");
       }
     }
     if (!_addLockDayError) {
@@ -63,11 +65,11 @@ export default ({
     <Row>
       <Col span={24} style={{ marginTop: "20px" }}>
         <Alert type="info" showIcon message={<>
-          对当前的锁仓记录 <Text strong type="secondary">[ID={selectedAccountRecord?.id}]</Text> 追加锁仓天数
+          {t("wallet_addlockdays_tipforid")} <Text strong type="secondary">[ID={selectedAccountRecord?.id}]</Text> {t("wallet_addlockdays_addlockday")}
         </>} />
       </Col>
       <Col span={24} style={{ marginTop: "20px" }}>
-        <Text type="secondary">锁仓ID</Text>
+        <Text type="secondary">{t("wallet_locked_accountRecordLockId")}</Text>
         <br />
         <Text strong>
           {
@@ -77,12 +79,12 @@ export default ({
         </Text>
       </Col>
       <Col span={24} style={{ marginTop: "5px" }}>
-        <Text type="secondary">锁仓数量</Text>
+        <Text type="secondary">{t("wallet_locked_lockedAmount")}</Text>
         <br />
         <Text strong>{amount.toFixed(2)} SAFE</Text>
       </Col>
       <Col span={24} style={{ marginTop: "5px" }}>
-        <Text type="secondary">解锁高度</Text>
+        <Text type="secondary">{t("wallet_locked_unlockHeight")}</Text>
         <br />
         <Text strong type={locked ? "secondary" : "success"}>{unlockHeight}</Text>
         {
@@ -93,15 +95,15 @@ export default ({
       {
         isMemberOfNode &&
         <Col span={24}>
-          <Alert style={{ marginBottom: "20px" }} showIcon type="info" message={"参与创建节点的锁仓,每次追加锁仓时间不得低于360天"} />
+          <Alert style={{ marginBottom: "20px" }} showIcon type="info" message={t("wallet_addlockdays_tipfornode")} />
         </Col>
       }
       <Col span={24}>
-        <Text type="secondary" strong>追加锁仓天数</Text>
+        <Text type="secondary" strong>{t("wallet_locked_addLockDay")}</Text>
         <br />
         {
           !isMemberOfNode &&
-          <Input placeholder="输入追加锁仓天数" style={{ width: "30%" }} onChange={(event) => {
+          <Input placeholder={t("enter")+t("wallet_locked_addLockDay")} style={{ width: "30%" }} onChange={(event) => {
             const input = event.target.value.trim();
             setAddLockDay(input);
             setAddLockDayError(undefined);
@@ -120,7 +122,7 @@ export default ({
       </Col>
       <Divider style={{ marginTop: "20px", marginBottom: "20px" }} />
       <Col span={24}>
-        <Button style={{ float: "right" }} type="primary" onClick={goNext}>下一步</Button>
+        <Button style={{ float: "right" }} type="primary" onClick={goNext}>{t("next")}</Button>
       </Col>
     </Row>
   </>

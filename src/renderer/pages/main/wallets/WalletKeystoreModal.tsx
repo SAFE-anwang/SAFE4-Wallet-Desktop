@@ -9,6 +9,7 @@ import { applicationActionUpdateAtCreateWallet, applicationUpdateWalletTab } fro
 import { SendOutlined, QrcodeOutlined, LockOutlined, MoreOutlined } from '@ant-design/icons';
 import { useApplicationPassword, useBlockNumber, useTimestamp } from '../../../state/application/hooks';
 import { ethers } from 'ethers';
+import { useTranslation } from 'react-i18next';
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -23,6 +24,7 @@ export default ({
   setOpenKeystoreModal: (openKeystoreModal: boolean) => void
 }) => {
 
+  const { t } = useTranslation();
   const privateKey = useWalletsActivePrivateKey();
   const [keystore, setKeystore] = useState<string>();
   const [encrypting, setEncrypting] = useState<boolean>(false);
@@ -58,7 +60,7 @@ export default ({
       setPWDError(undefined);
       setCurrentStep(STEP_2_SHOW);
     } else {
-      setPWDError("钱包密码错误");
+      setPWDError(t("wallet_password_error"));
     }
   }, [walletPassword, inputPWD]);
 
@@ -75,12 +77,14 @@ export default ({
             <Col span={24}>
               <Alert type="warning" showIcon message={<>
                 <Text style={{ fontSize: "18px" }}>
-                  您要查看的 Keystore 属于钱包高级机密信息，请确保您的电脑及正在连接的网络是安全的，并且身边没有其他人，没有摄像头正在摄像.
+                  {t("wallet_querysecret_keystore_tip")}
                 </Text>
               </>} />
             </Col>
             <Col span={24} style={{ marginTop: "20px" }}>
-              <Button onClick={() => setCurrentStep(STEP_1_CONFIRMPWD)} size='large' type='primary' style={{ width: "100%" }}>确认安全,可以显示</Button>
+              <Button onClick={() => setCurrentStep(STEP_1_CONFIRMPWD)} size='large' type='primary' style={{ width: "100%" }}>
+                {t("wallet_querysecret_confirm_safety")}
+              </Button>
             </Col>
           </Row>
         </>
@@ -92,12 +96,12 @@ export default ({
             <Col span={24}>
               <Alert type="warning" showIcon message={<>
                 <Text style={{ fontSize: "18px" }}>
-                  您要查看的 Keystore 属于高级机密信息，请确保您的电脑及正在连接的网络是安全的，并且身边没有其他人，没有摄像头正在摄像.
+                  {t("wallet_querysecret_keystore_tip")}
                 </Text>
               </>} />
             </Col>
             <Col span={24} style={{ marginTop: "20px" }}>
-              <Input.Password placeholder='输入钱包密码' size='large' onChange={(event) => {
+              <Input.Password placeholder={t("wallet_password_input")} size='large' onChange={(event) => {
                 const inputPWD = event.target.value;
                 setInputPWD(inputPWD);
                 setPWDError(undefined);
@@ -107,7 +111,9 @@ export default ({
               }
             </Col>
             <Col span={24} style={{ marginTop: "20px" }}>
-              <Button onClick={validateWalletPassword} size='large' type='primary' style={{ width: "100%" }}>显示 Keystore</Button>
+              <Button onClick={validateWalletPassword} size='large' type='primary' style={{ width: "100%" }}>
+                {t("wallet_querysecret_keystore_show")}
+              </Button>
             </Col>
           </Row>
         </>
@@ -118,7 +124,13 @@ export default ({
         <>
           {
             encrypting && <>
-              <Text type='secondary'>正在执行使用您设置的钱包密码加密并导出Keystore标准文件</Text>
+              <Text type='secondary'>{t("wallet_querysecret_keystore_encrypting")}</Text>
+              <br /><br />
+            </>
+          }
+          {
+            !encrypting && <>
+              <Text type='secondary'>{t("wallet_querysecret_keystore_tip1")}</Text>
               <br /><br />
             </>
           }
@@ -128,7 +140,7 @@ export default ({
           <Divider />
           {
             keystore && <>
-              <Text copyable={{ text: keystore, icon: <>复制 Keystore 到剪切板</> }}>
+              <Text copyable={{ text: keystore, icon: <>{t("wallet_querysecret_keystore_copy")}</> }}>
               </Text>
             </>
           }

@@ -254,7 +254,7 @@ export default () => {
     <Modal title={t("wallet_receive")} open={openReceiveModal} width={"400px"} footer={null} closable onCancel={() => { setOpenReceiveModal(false) }}>
       <Divider />
       <Row>
-        <Text style={{ margin: "auto", marginTop: "20px", marginBottom: "20px" }} type='secondary'>资产只能在相同的网络中发送。</Text>
+        <Text style={{ margin: "auto", marginTop: "20px", marginBottom: "20px" }} type='secondary'>{t("wallet_receive_tip0")}</Text>
       </Row>
       <Row style={{ textAlign: "center" }}>
         {
