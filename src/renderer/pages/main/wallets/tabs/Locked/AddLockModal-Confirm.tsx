@@ -8,6 +8,7 @@ import { useTransactionAdder } from "../../../../../state/transactions/hooks";
 import { useAccountManagerContract } from "../../../../../hooks/useContracts";
 import { useCallback, useState } from "react";
 import useTransactionResponseRender from "../../../../components/useTransactionResponseRender";
+import { useTranslation } from "react-i18next";
 
 const { Text } = Typography;
 
@@ -23,6 +24,7 @@ export default ({
   setTxHash: (txHash: string) => void
 }) => {
 
+  const { t } = useTranslation();
   const activeAccount = useWalletsActiveAccount();
   const addTransaction = useTransactionAdder();
   const accountManaggerContract = useAccountManagerContract(true);
@@ -73,7 +75,7 @@ export default ({
         render
       }
       <Col span={24}>
-        <Text type="secondary">锁仓ID</Text>
+        <Text type="secondary">{t("wallet_locked_accountRecordLockId")}</Text>
         <br />
         <Text strong>
           {
@@ -83,12 +85,12 @@ export default ({
         </Text>
       </Col>
       <Col span={24} style={{ marginTop: "5px" }}>
-        <Text type="secondary">锁仓数量</Text>
+        <Text type="secondary">{t("wallet_locked_lockedAmount")}</Text>
         <br />
         <Text strong>{amount.toFixed(2)} SAFE</Text>
       </Col>
       <Col span={24} style={{ marginTop: "5px" }}>
-        <Text type="secondary">解锁高度</Text>
+        <Text type="secondary">{t("wallet_locked_unlockHeight")}</Text>
         <br />
         <Text strong type={locked ? "secondary" : "success"}>{unlockHeight}</Text>
         {
@@ -97,9 +99,9 @@ export default ({
       </Col>
       <Divider style={{ marginTop: "20px", marginBottom: "20px" }} />
       <Col span={24}>
-        <Text type="secondary" strong>追加锁仓天数</Text>
+        <Text type="secondary" strong>{t("wallet_locked_addLockDay")}</Text>
         <br />
-        <Text strong>{addLockDay} 天</Text>
+        <Text strong>{addLockDay} {t("days")}</Text>
       </Col>
       <Divider style={{ marginTop: "20px", marginBottom: "20px" }} />
       <Col span={24}>
@@ -109,17 +111,17 @@ export default ({
               !sending && !render && <Button onClick={() => {
                 doAddLockDay(selectedAccountRecord.id, addLockDay)
               }} disabled={sending} type="primary" style={{ float: "right" }}>
-                广播交易
+                {t("wallet_send_status_broadcast")}
               </Button>
             }
             {
               sending && !render && <Button loading disabled type="primary" style={{ float: "right" }}>
-                发送中....
+                {t("wallet_send_status_sending")}
               </Button>
             }
             {
               render && <Button onClick={close} type="primary" style={{ float: "right" }}>
-                关闭
+                {t("wallet_send_status_close")}
               </Button>
             }
           </Col>
