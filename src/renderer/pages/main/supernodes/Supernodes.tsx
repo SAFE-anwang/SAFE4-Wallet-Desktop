@@ -2,25 +2,23 @@
 import { Typography, Row, Col, Progress, Table, Badge, Button, Space, Card, Alert, Divider, Modal, Tabs, TabsProps, Spin } from 'antd';
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useMasternodeStorageContract, useSupernodeStorageContract } from '../../../hooks/useContracts';
-import { formatSupernodeInfo, SupernodeInfo } from '../../../structs/Supernode';
 import { useWalletsActiveAccount } from '../../../state/wallets/hooks';
-import { MasternodeInfo, formatMasternode } from '../../../structs/Masternode';
 import SupernodeList from './SupernodeList';
 import useAddrNodeInfo from '../../../hooks/useAddrIsNode';
+import { useTranslation } from 'react-i18next';
 
 const { Title, Text } = Typography;
 
-export const RenderNodeState = (state: number) => {
+export const RenderNodeState = (state: number, t?: any) => {
   switch (state) {
     case 0:
-      return <Badge status="success" text="初始化" />
+      return <Badge status="success" text={t ? t("wallet_supernodes_state_init") : "初始化"} />
     case 1:
-      return <Badge status="processing" text="在线" />
+      return <Badge status="processing" text={t ? t("wallet_supernodes_state_online") : "在线"} />
     case 2:
-      return <Badge status="error" text="异常" />
+      return <Badge status="error" text={t ? t("wallet_supernodes_state_error") : "异常"} />
     default:
-      return <Badge status="default" text="未知" />
+      return <Badge status="default" text={t ? t("wallet_supernodes_state_known") : "未知"} />
   }
 }
 
@@ -36,6 +34,7 @@ export function toFixedNoRound(number: number, decimalPlaces: number) {
 
 export default () => {
 
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const activeAccount = useWalletsActiveAccount();
   const activeAccountNodeInfo = useAddrNodeInfo(activeAccount);
@@ -45,18 +44,18 @@ export default () => {
     return [
       {
         key: 'list',
-        label: '超级节点列表',
+        label: t("wallet_supernodes_list"),
         children: <SupernodeList queryMySupernodes={false} queryJoinSupernodes={false} />,
       },
       {
         key: 'mySupernodes',
-        label: '我的超级节点',
+        label: t("wallet_supernodes_mine"),
         children: <SupernodeList queryMySupernodes={true} queryJoinSupernodes={false} />,
         disabled: activeAccountNodeInfo == undefined || (activeAccountNodeInfo?.isNode),
       },
       {
         key: 'myJoinedSupernodes',
-        label: '我加入的超级节点',
+        label: t("wallet_supernodes_join"),
         disabled: activeAccountNodeInfo == undefined || (activeAccountNodeInfo?.isNode),
         children: <SupernodeList queryMySupernodes={false} queryJoinSupernodes={true} />,
       },
@@ -81,14 +80,16 @@ export default () => {
       <div style={{ margin: "auto", width: "90%" }}>
         <Card>
           <Alert showIcon type='info' message={<>
-            <Text>超级节点将 Safe4 网络中的交易进行验证打包,写入区块链中</Text><br />
-            <Text>每一次成功写入区块,都可以获得超级节点奖励,并将奖励分配给它的创建者以及投票人</Text><br />
+            <Text>{t("wallet_supernodes_tip0")}</Text><br />
+            <Text>{t("wallet_supernodes_tip1")}</Text><br />
           </>} />
           <Divider />
           <>
             <Spin spinning={activeAccountNodeInfo == undefined}>
               <Button disabled={activeAccountNodeInfo == undefined || activeAccountNodeInfo?.isNode}
-                style={{ marginBottom: "5px" }} onClick={() => { navigate("/main/supernodes/selectRegisterMode") }}>创建超级节点</Button>
+                style={{ marginBottom: "5px" }} onClick={() => { navigate("/main/supernodes/selectRegisterMode") }}>
+                {t("wallet_supernodes_create")}
+              </Button>
               {
                 activeAccountNodeInfo?.isMN && <>
                   <Alert showIcon type='warning' message={<>

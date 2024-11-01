@@ -9,6 +9,7 @@ import { CloseCircleTwoTone, LoadingOutlined } from "@ant-design/icons";
 import { DateTimeFormat } from "../../utils/DateUtils";
 import { useWeb3React } from "@web3-react/core";
 import { Safe4_Network_Config } from "../../config";
+import { useTranslation } from "react-i18next";
 
 const { Text } = Typography;
 
@@ -50,18 +51,6 @@ export class CommandState {
   }
 }
 
-const DEFAULT_CONFIG = {
-  // 节点程序的下载地址
-  Safe4FileURL: "https://www.anwang.com/download/testnet/safe4_node/safe4-testnet.linux.latest.tar.gz",
-  Safe4FileMD5: "https://www.anwang.com/download/testnet/safe4_node/safe4-testnet.linux.latest.md5.json",
-  Safe4FileName: "safe4-testnet.linux.latest.tar.gz",
-  Safe4MD5Sum: "2bfc00d64eb813536b3db20f04ed0fd9",
-  // 从这里读区 geth 运行后写入的数据,从而加载 geth 的路径,以及data_dir
-  Safe4Info: ".safe4_info",
-  // 默认的 Safe4DataDir
-  Safe4DataDir: ".safe4/safetest",
-}
-
 /**
  * 进行脚本化交互的终端交互页面
  */
@@ -83,6 +72,7 @@ export default ({
   onError: () => void
 }) => {
 
+  const { t } = useTranslation();
   const terminalRef = useRef<HTMLDivElement>(null);
   const terminalInstance = useRef<Terminal | null>(null);
   const password = useApplicationPassword();
@@ -124,16 +114,16 @@ export default ({
     description: string | ReactNode
   }[] = [
       {
-        title: "等待执行",
-        description: "启动 Safe4 节点"
+        title: t("ssh2_connect_execute_state_waiting"),
+        description: t("ssh2_connect_execute_steps0")
       },
       {
-        title: "等待执行",
-        description: "上传节点地址加密 Keystore 文件"
+        title: t("ssh2_connect_execute_state_waiting"),
+        description:  t("ssh2_connect_execute_steps1")
       },
       {
-        title: "等待执行",
-        description: "获取节点 ENODE 信息"
+        title: t("ssh2_connect_execute_state_waiting"),
+        description:  t("ssh2_connect_execute_steps2")
       }
     ];
 
@@ -145,18 +135,18 @@ export default ({
       if (index < current) {
         return {
           ...step,
-          title: "已完成"
+          title: t("ssh2_connect_execute_state_finished")
         }
       }
       if (index == current) {
         if (!error) {
           return {
-            title: <><LoadingOutlined style={{ marginRight: "5px" }} />正在执行</>,
+            title: <><LoadingOutlined style={{ marginRight: "5px" }} />{t("ssh2_connect_execute_state_executing")}</>,
             description: description ?? step.description
           }
         } else {
           return {
-            title: <Text type="danger">执行失败</Text>,
+            title: <Text type="danger">{t("ssh2_connect_execute_state_error")}</Text>,
             description: <Text type="danger"><CloseCircleTwoTone twoToneColor="red" style={{ marginRight: "5px" }} />{error ?? step.description}</Text>
           }
         }
@@ -212,7 +202,7 @@ export default ({
         const stderr = args[0][0];
         term.write(`\x1b[34m${stderr}\x1b[0m`);
       });
-      term.write("等待连接...\r\n");
+      term.write( `${t("ssh2_connect_waiting")}\r\n`);
     }
     return () => {
       // Cleanup and dispose the terminal instance
@@ -254,13 +244,13 @@ export default ({
       password: undefined
     };
     if (!host) {
-      inputErrors.host = "请输入服务器IP";
+      inputErrors.host = t("please_enter") + t("ssh2_connect_serverip");
     }
     if (!username) {
-      inputErrors.username = "请输入用户名";
+      inputErrors.username = t("please_enter") + t("ssh2_connect_serveruser");
     }
     if (!password) {
-      inputErrors.password = "请输入密码"
+      inputErrors.password = t("please_enter") + t("ssh2_connect_password")
     }
     if (inputErrors.host || inputErrors.password || inputErrors.username) {
       setInputErrors(inputErrors);
@@ -285,11 +275,11 @@ export default ({
           if (msg.indexOf("authentication") > 0) {
             // 认证失败，账户密码错误
             console.log("认证失败");
-            setConnectError("认证失败,请检查用户名和密码是否正确.");
+            setConnectError(t("ssh2_connect_error_invalidlogin"));
           } else if (msg.indexOf("waiting") > 0) {
             // 连接超时
             console.log("连接超时");
-            setConnectError("连接超时,请检查服务器IP是否正确.");
+            setConnectError(t("ssh2_connect_error_timeout"));
           }
           setConnecting(false);
         });
@@ -382,7 +372,7 @@ export default ({
 
     if (term) {
       let needAttachIpc = false;
-      updateSteps(0, "检查 Safe4 进程是否运行");
+      updateSteps(0, t("ssh2_connect_exeucte_steps_checksafe4running"));
       const CMD_psSafe4_success = await CMD_psSafe4.execute(term);
       let keystoreExist = false;
       if (!CMD_psSafe4_success) {
@@ -413,16 +403,16 @@ export default ({
           () => console.log("")
         );
         // Safe4 节点进程不存在;
-        updateSteps(0, "检查 Safe4 节点程序安装文件 ");
+        updateSteps(0, t("ssh2_connect_exeucte_steps_checksafe4file"));
         const CMD_checkzip_success = await CMD_checkzip.execute(term);
         if (!CMD_checkzip_success) {
           // 需要从官网下载 Safe4 节点程序;
-          updateSteps(0, "下载 Safe4 节点程序");
+          updateSteps(0, t("ssh2_connect_exeucte_steps_downloadsafe4file"));
           const CMD_download_success = await CMD_download.execute(term);
         }
-        updateSteps(0, "解压 Safe4 节点程序");
+        updateSteps(0, t("ssh2_connect_exeucte_steps_unzipsafe4file"));
         const CMD_unzip_success = await CMD_unzip.execute(term);
-        updateSteps(0, "初始化节点地址 Keystore 文件");
+        updateSteps(0, t("ssh2_connect_exeucte_steps_initkeystore"));
         const CMD_mkdirDataDir_success = await CMD_mkdirDataDir.execute(term);
         const CMD_checkKeystore: CommandState = new CommandState(
           `find ${_Safe4DataDir}/keystore -type f -name "*${nodeAddress.substring(2).toLocaleLowerCase()}*" -print -quit | grep -q '.' && echo "Keystore file exists" || echo "Keystore file does not exist"`,
@@ -445,7 +435,7 @@ export default ({
 
         keystoreExist = await CMD_checkKeystore.execute(term);
         if (!keystoreExist) {
-          updateSteps(0, "正在生成节点地址 Keystore 文件");
+          updateSteps(0, t("ssh2_connect_exeucte_steps_createkeystore"));
           const { address, keystore } = await outputKeyStore();
           const keystoreStr = keystore.toString().replaceAll("\"", "\\\"");
           const hiddenKeystore = JSON.parse(keystore);
@@ -467,7 +457,7 @@ export default ({
           );
           keystoreExist = true;
         }
-        updateSteps(0, "启动 Safe4 节点程序");
+        updateSteps(0, t("ssh2_connect_execute_steps0"));
         const CMD_start: CommandState = new CommandState(
           isSupernode ? `cd ${_Safe4NodeDir} && ./start.sh ${inputParams.host} ${nodeAddress.toLowerCase()}`
             : `cd ${_Safe4NodeDir} && ./start.sh ${inputParams.host}`,
@@ -479,11 +469,11 @@ export default ({
         )
         const CMD_start_success = await CMD_start.execute(term);
       } else {
-        updateSteps(0, "Safe4 节点程序已运行");
+        updateSteps(0, t("ssh2_connect_execute_steps_safe4noderunning"));
         const CMD_catSafe4Info_success = await CMD_catSafe4Info.execute(term);
         needAttachIpc = true;
       }
-      updateSteps(1, "Safe4 节点程序已运行");
+      updateSteps(1, t("ssh2_connect_execute_steps_safe4noderunning"));
 
       const CMD_checkKeystore: CommandState = new CommandState(
         `find ${_Safe4DataDir}/keystore -type f -name "*${nodeAddress.substring(2).toLocaleLowerCase()}*" -print -quit | grep -q '.' && echo "Keystore file exists" || echo "Keystore file does not exist"`,
@@ -563,7 +553,7 @@ export default ({
         return;
       }
       if (!keystoreExist) {
-        updateSteps(1, "正在生成节点地址 Keystore 文件");
+        updateSteps(1, t("ssh2_connect_exeucte_steps_generatenodekeystore"));
         const { address, keystore } = await outputKeyStore();
         const keystoreStr = keystore.toString().replaceAll("\"", "\\\"");
         const hiddenKeystore = JSON.parse(keystore);
@@ -579,13 +569,13 @@ export default ({
           () => console.log(""),
           () => console.log("")
         )
-        updateSteps(1, "上传节点地址 Keystore 文件");
+        updateSteps(1, t("ssh2_connect_execute_steps_uploadnodekeystore"));
         const CMD_importKey_success = await CMD_importKey.execute(
           term,
           `echo "${hidden}" > ${targetFile}`
         );
       } else {
-        updateSteps(1, "节点地址 Keystore 文件已存在");
+        updateSteps(1, t("ssh2_connect_execute_steps_nodekeystoreexist"));
       }
       updateSteps(2);
       if (needAttachIpc) {
@@ -612,11 +602,11 @@ export default ({
         <Col span={8}>
           {
             current < 0 &&
-            <Card title={`SSH 连接`} style={{ width: "95%", height: "470px" }}>
+            <Card title={t("ssh2_connect")} style={{ width: "95%", height: "470px" }}>
               <Spin spinning={connecting}>
                 <Row>
                   <Col span={24}>
-                    <Text type="secondary">服务器IP</Text>
+                    <Text type="secondary">{t("ssh2_connect_serverip")}</Text>
                   </Col>
                   <Col span={24}>
                     <Input value={inputParams?.host} onChange={(event) => {
@@ -636,7 +626,7 @@ export default ({
                     }
                   </Col>
                   <Col span={24} style={{ marginTop: "10px" }}>
-                    <Text type="secondary">用户名</Text>
+                    <Text type="secondary">{t("ssh2_connect_serveruser")}</Text>
                   </Col>
                   <Col span={24}>
                     <Input value={inputParams.username} onChange={(event) => {
@@ -656,7 +646,7 @@ export default ({
                     }
                   </Col>
                   <Col span={24} style={{ marginTop: "10px" }}>
-                    <Text type="secondary">密码</Text>
+                    <Text type="secondary">{t("ssh2_connect_password")}</Text>
                   </Col>
                   <Col span={24}>
                     <Input.Password value={inputParams.password} onChange={(event) => {
@@ -689,10 +679,10 @@ export default ({
                 <Divider />
                 <Row style={{ marginTop: "20px" }}>
                   <Col span={24}>
-                    <Button onClick={doConnect} type="primary">连接</Button>
+                    <Button onClick={doConnect} type="primary">{t("ssh2_connect_button")}</Button>
                     <Button style={{ marginLeft: "20px" }} onClick={() => {
                       setOpenSSH2CMDTerminalNodeModal(false);
-                    }} type="default">关闭</Button>
+                    }} type="default">{t("close")}</Button>
                   </Col>
                 </Row>
               </Spin>
@@ -711,7 +701,7 @@ export default ({
               <Divider style={{ marginTop: "5px", marginBottom: "15px" }} />
               <Row>
                 <Col span={24}>
-                  <Text type="secondary">节点地址</Text>
+                  <Text type="secondary">{t("node_addresss")}</Text>
                 </Col>
                 <Col span={24}>
                   <AddressComponent address={nodeAddress} ellipsis />
@@ -735,7 +725,7 @@ export default ({
                       onSuccess(enode, nodeAddress)
                     }
                     setOpenSSH2CMDTerminalNodeModal(false);
-                  }}>返回</Button>
+                  }}>{t("return")}</Button>
               </Row>
             </Card>
           }

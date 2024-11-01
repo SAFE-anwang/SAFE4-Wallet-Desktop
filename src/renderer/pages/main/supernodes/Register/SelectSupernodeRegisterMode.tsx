@@ -1,16 +1,18 @@
-import { Alert, Button, Card, Col, Row,  Typography } from "antd";
+import { Alert, Button, Card, Col, Row, Typography } from "antd";
+import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 
 const { Text, Title } = Typography
 
 export default () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   return <>
 
     <Row style={{ height: "50px" }}>
       <Col span={12}>
         <Title level={4} style={{ lineHeight: "16px" }}>
-          创建超级节点
+          {t("wallet_supernodes_create")}
         </Title>
       </Col>
     </Row>
@@ -22,22 +24,22 @@ export default () => {
             <Button onClick={() => navigate("/main/supernodes/registerAssist")} style={{ height: "200px", width: "100%" }}>
               <Row>
                 <Col span={24}>
-                  <Text style={{ fontSize: "40px" }}>自动模式</Text>
+                  <Text style={{ fontSize: "40px" }}>{t("wallet_supernodes_mode_auto")}</Text>
                 </Col>
                 <Col span={24}>
-                  <Text type="secondary" style={{ fontSize: "20px" }}>已有云服务器,钱包通过SSH登陆辅助建立超级节点</Text>
+                  <Text type="secondary" style={{ fontSize: "20px", whiteSpace: "normal" }}>{t("wallet_supernodes_mode_auto_tip")}</Text>
                 </Col>
               </Row>
             </Button>
           </Col>
           <Col span={12} offset={6} style={{ marginTop: "100px" }} >
-            <Button onClick={() => navigate("/main/supernodes/register")}  style={{ height: "200px", width: "100%" }}>
+            <Button onClick={() => navigate("/main/supernodes/register")} style={{ height: "200px", width: "100%" }}>
               <Row>
                 <Col span={24}>
-                  <Text style={{ fontSize: "40px" }}>手动模式</Text>
+                  <Text style={{ fontSize: "40px" }}>{t("wallet_supernodes_mode_manual")}</Text>
                 </Col>
                 <Col span={24}>
-                  <Text type="secondary" style={{ fontSize: "20px" }}>已在服务器上配置超级节点,直接填入注册数据</Text>
+                  <Text type="secondary" style={{ fontSize: "20px", whiteSpace: "normal" }}>{t("wallet_supernodes_mode_manual_tip")}</Text>
                 </Col>
               </Row>
             </Button>

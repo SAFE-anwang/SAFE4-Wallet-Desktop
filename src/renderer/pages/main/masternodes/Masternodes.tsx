@@ -5,48 +5,50 @@ import { useNavigate } from 'react-router-dom';
 import { useWalletsActiveAccount } from '../../../state/wallets/hooks';
 import MasternodeList from './MasternodeList';
 import useAddrNodeInfo from '../../../hooks/useAddrIsNode';
+import { useTranslation } from 'react-i18next';
 const { Title, Text } = Typography;
 
 export default () => {
 
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const activeAccount = useWalletsActiveAccount();
-  const activeAccountNodeInfo = useAddrNodeInfo( activeAccount );
+  const activeAccountNodeInfo = useAddrNodeInfo(activeAccount);
   const [activeItemKey, setActiveItemKey] = useState("list");
 
   const items = useMemo<TabsProps['items']>(() => {
     return [
       {
         key: 'list',
-        label: '主节点列表',
+        label: t("wallet_masternodes_list"),
         children: <MasternodeList queryMyMasternodes={false} queryJoinMasternodes={false} />,
       },
       {
         key: 'myMasternodes',
-        label: '我的主节点',
+        label: t("wallet_masternodes_mine"),
         disabled: activeAccountNodeInfo == undefined || (activeAccountNodeInfo?.isNode),
         children: <MasternodeList queryMyMasternodes={true} queryJoinMasternodes={false} />,
       },
       {
         key: 'myJoinMasternodes',
-        label: '我加入的主节点',
+        label: t("wallet_masternodes_join"),
         disabled: activeAccountNodeInfo == undefined || (activeAccountNodeInfo?.isNode),
         children: <MasternodeList queryMyMasternodes={false} queryJoinMasternodes={true} />,
       },
     ]
   }, [activeAccount, activeAccountNodeInfo]);
 
-  useEffect( () => {
-    if ( activeAccountNodeInfo && activeAccountNodeInfo.isNode ){
+  useEffect(() => {
+    if (activeAccountNodeInfo && activeAccountNodeInfo.isNode) {
       setActiveItemKey("list");
     }
-  } , [ activeAccount , activeAccountNodeInfo ] )
+  }, [activeAccount, activeAccountNodeInfo])
 
   return <>
     <Row style={{ height: "50px" }}>
       <Col span={12}>
         <Title level={4} style={{ lineHeight: "16px" }}>
-          主节点
+          {t("masternode")}
         </Title>
       </Col>
     </Row>
@@ -56,18 +58,20 @@ export default () => {
           <Alert showIcon type="info" message={<>
             <Row>
               <Col span={24}>
-                <Text>成为主节点参与 Safe4 网络治理,提高网络的效率和安全性</Text>
+                <Text>{t("wallet_masternodes_tip0")}</Text>
               </Col>
               <Col span={24}>
-                <Text>区块打包时,会选取一个主节点作为见证人，并向这个主节点的创建者分发奖励</Text>
+                <Text>{t("wallet_masternodes_tip1")}</Text>
               </Col>
             </Row>
           </>} />
           <Divider />
           <>
-            <Spin spinning={ activeAccountNodeInfo == undefined }>
-              <Button disabled={ activeAccountNodeInfo == undefined || activeAccountNodeInfo?.isNode }
-                      style={{ marginBottom: "5px" }} onClick={() => { navigate("/main/masternodes/selectRegisterMode") }}>创建主节点</Button>
+            <Spin spinning={activeAccountNodeInfo == undefined}>
+              <Button disabled={activeAccountNodeInfo == undefined || activeAccountNodeInfo?.isNode}
+                style={{ marginBottom: "5px" }} onClick={() => { navigate("/main/masternodes/selectRegisterMode") }}>
+                  {t("wallet_masternodes_create")}
+                </Button>
               {
                 activeAccountNodeInfo?.isMN && <>
                   <Alert showIcon type='warning' message={<>
@@ -79,7 +83,7 @@ export default () => {
                 activeAccountNodeInfo?.isSN && <>
                   <Alert showIcon type='warning' message={<>
                     已经是超级节点
-                  </>}/>
+                  </>} />
                 </>
               }
             </Spin>

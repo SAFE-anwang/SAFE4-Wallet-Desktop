@@ -18,6 +18,7 @@ import { Safe4_Business_Config } from '../../../config';
 import { useBlockNumber } from '../../../state/application/hooks';
 import Masternode from './Masternode';
 import useAddrNodeInfo from '../../../hooks/useAddrIsNode';
+import { useTranslation } from 'react-i18next';
 
 const { Text } = Typography;
 const Masternodes_Page_Size = 10;
@@ -30,6 +31,7 @@ export default ({
   queryJoinMasternodes: boolean,
 }) => {
 
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
@@ -179,21 +181,21 @@ export default ({
 
   const columns: ColumnsType<MasternodeInfo> = [
     {
-      title: '状态',
+      title: t("wallet_masternodes_state"),
       dataIndex: 'state',
       key: 'state',
       render: (state) => {
         return <>
           <Row>
             <Col span={20}>
-              {RenderNodeState(state)}
+              {RenderNodeState(state, t)}
             </Col>
           </Row>
         </>
       },
     },
     {
-      title: '节点ID',
+      title: t("wallet_masternodes_id"),
       dataIndex: 'id',
       key: '_id',
       render: (id) => {
@@ -207,7 +209,7 @@ export default ({
       },
     },
     {
-      title: '主节点地址',
+      title: t("wallet_masternodes_address"),
       dataIndex: 'addr',
       key: 'addr',
       render: (addr) => {
@@ -223,7 +225,7 @@ export default ({
       },
     },
     {
-      title: '质押SAFE',
+      title: t("wallet_masternodes_stake"),
       dataIndex: 'id',
       key: '_id2',
       width: "300px",
@@ -252,16 +254,16 @@ export default ({
                       setOpenMasternodeModal(true);
                     }
                   }}>
-                  {couldAddPartner ? "加入合伙人" : "查看"}
+                  {couldAddPartner ? t("join") : t("view")}
                 </Button>
                 {
                   queryMyMasternodes &&
-                  <Button type={ masternodeInfo.state != 1 ? "primary" : "default" } size='small' style={{ float: "right" }}
+                  <Button type={masternodeInfo.state != 1 ? "primary" : "default"} size='small' style={{ float: "right" }}
                     onClick={() => {
                       dispatch(applicationControlUpdateEditMasternodeId(masternodeInfo.id));
                       navigate("/main/masternodes/selectSyncMode")
                     }}>
-                    同步
+                    {t("sync")}
                   </Button>
                 }
               </Space>
@@ -287,11 +289,11 @@ export default ({
           } else {
             setMasternodes([]);
             setPagination(undefined);
-            setQueryKeyError("主节点地址不存在");
+            setQueryKeyError( t("wallet_masternodes_address") + t("notExist") );
             setLoading(false);
           }
         } else {
-          setQueryKeyError("请输入合法的主节点地址");
+          setQueryKeyError( t("enter_correct") + t("wallet_masternodes_address") );
         }
       } else {
         const id = Number(queryKey);
@@ -305,11 +307,11 @@ export default ({
           } else {
             setMasternodes([]);
             setPagination(undefined);
-            setQueryKeyError("主节点ID不存在");
+            setQueryKeyError( t("wallet_masternodes_id") + t("notExist") );
             setLoading(false);
           }
         } else {
-          setQueryKeyError("请输入合法的主节点ID或地址");
+          setQueryKeyError(t("wallet_masternodes_query_invalid"));
         }
       }
     }
@@ -319,7 +321,7 @@ export default ({
     {
       <Row style={{ marginBottom: "20px" }}>
         <Col span={12}>
-          <Input.Search size='large' placeholder='主节点ID｜主节点地址' onChange={(event) => {
+          <Input.Search size='large' placeholder={`${t("wallet_masternodes_id")} | ${t("wallet_masternodes_address")}`} onChange={(event) => {
             setQueryKeyError(undefined);
             if (!event.target.value) {
               setQueryKey(undefined);
@@ -337,8 +339,8 @@ export default ({
       queryMyMasternodes && <Row style={{ marginBottom: "20px" }}>
         <Col span={24}>
           <Alert type='info' message={<>
-            <Text>对于状态错误的主节点,需要检查主节点信息与服务器主节点配置是否一致</Text><br/>
-            <Text>点击主节点的 <Text strong>同步</Text> 按钮,同步主节点信息与服务器主节点配置</Text>
+            <Text>{t("wallet_masternodes_mytip0")}</Text><br />
+            <Text>{t("wallet_masternodes_mytip1")} <Text strong>{t("sync")}</Text>,{t("wallet_masternodes_mytip2")}</Text>
           </>} />
         </Col>
       </Row>

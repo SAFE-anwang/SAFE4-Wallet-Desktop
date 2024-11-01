@@ -19,6 +19,7 @@ import { RenderNodeState } from './Supernodes';
 import useAddrNodeInfo from '../../../hooks/useAddrIsNode';
 import { AccountRecord, formatAccountRecord } from '../../../structs/AccountManager';
 import { DateTimeFormat } from '../../../utils/DateUtils';
+import { useTranslation } from 'react-i18next';
 
 const { Text } = Typography;
 
@@ -42,6 +43,7 @@ export default ({
   queryJoinSupernodes: boolean
 }) => {
 
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const blockNumber = useBlockNumber();
@@ -83,7 +85,7 @@ export default ({
 
   useEffect(() => {
     if (supernodeStorageContract) {
-      if ((pagination && pagination.current && pagination.current > 1)) {
+      if ((pagination && pagination.current && pagination.current > 1 && !queryKey)) {
         return;
       }
       if (queryKey) {
@@ -251,7 +253,7 @@ export default ({
 
   const columns: ColumnsType<SupernodeInfo> = [
     {
-      title: (queryMySupernodes || queryKey) ? '状态' : '排名',
+      title: (queryMySupernodes || queryKey) ? t("wallet_supernodes_state") : t("wallet_supernodes_rank"),
       dataIndex: 'id',
       key: '_id',
       render: (id, supernodeInfo: SupernodeInfo) => {
@@ -274,7 +276,7 @@ export default ({
           </Row>
           <Row>
             <Col>
-              <Text>{RenderNodeState(state)}</Text>
+              <Text>{RenderNodeState(state, t)}</Text>
             </Col>
           </Row>
           <Row>
@@ -294,7 +296,7 @@ export default ({
       width: "120px"
     },
     {
-      title: '得票数',
+      title: t("wallet_supernodes_voted"),
       dataIndex: 'id',
       key: '_id',
       render: (_, supernodeInfo: SupernodeInfo) => {
@@ -317,7 +319,7 @@ export default ({
       width: "170px"
     },
     {
-      title: '名称',
+      title: t("wallet_supernodes_name"),
       dataIndex: 'name',
       key: 'name',
       render: (name, supernodeVO: SupernodeInfo) => {
@@ -339,7 +341,7 @@ export default ({
       width: "150px"
     },
     {
-      title: '超级节点',
+      title: t("supernode"),
       dataIndex: 'addr',
       key: 'addr',
       render: (addr, supernodeInfo: SupernodeInfo) => {
@@ -350,7 +352,7 @@ export default ({
         return <>
           <Row>
             <Col span={4}>
-              <Text type='secondary'>地址:</Text>
+              <Text type='secondary'>{t("address")}</Text>
             </Col>
             <Col span={20}>
               <Text strong>
@@ -370,20 +372,20 @@ export default ({
                   <Button size='small' type={supernodeInfo.state != 1 ? "primary" : "default"} style={{ float: "right" }} onClick={() => {
                     dispatch(applicationControlUpdateEditSupernodeId(supernodeInfo.id));
                     navigate("/main/supernodes/selectSyncMode")
-                  }}>同步</Button>
+                  }}>{t("sync")}</Button>
                 }
                 {
                   couldAddPartner &&
                   <Button size='small' type='primary' style={{ float: "right" }} onClick={() => {
                     dispatch(applicationControlVoteSupernode(addr));
                     navigate("/main/supernodes/append");
-                  }}>加入合伙人</Button>
+                  }}>{t("join")}</Button>
                 }
                 {
                   couldVote && !couldAddPartner && <Button size='small' type='default' style={{ float: "right" }} onClick={() => {
                     dispatch(applicationControlVoteSupernode(addr));
                     navigate("/main/supernodes/vote");
-                  }}>投票</Button>
+                  }}>{t("vote")}</Button>
                 }
                 <Button size='small' type='default' style={{ float: "right" }} onClick={() => {
                   if (supernodeStorageContract) {
@@ -395,7 +397,7 @@ export default ({
                       .catch(err => {
                       })
                   }
-                }}>查看</Button>
+                }}>{t("view")}</Button>
               </Space>
             </Col>
           </Row>
@@ -420,11 +422,11 @@ export default ({
           } else {
             setSupernodes([]);
             setPagination(undefined);
-            setQueryKeyError("超级节点地址不存在");
+            setQueryKeyError(t("wallet_supernodes_address") + t("notExist") );
             setLoading(false);
           }
         } else {
-          setQueryKeyError("请输入合法的超级节点地址");
+          setQueryKeyError( t("enter_correct") + t("wallet_supernodes_address") );
         }
       } else {
         const id = Number(queryKey);
@@ -438,11 +440,11 @@ export default ({
           } else {
             setSupernodes([]);
             setPagination(undefined);
-            setQueryKeyError("超级节点ID不存在");
+            setQueryKeyError( t("wallet_supernodes_id")+t("notExist"));
             setLoading(false);
           }
         } else {
-          setQueryKeyError("请输入合法的主节点ID或地址");
+          setQueryKeyError(t("wallet_supernodes_query_invalid"));
         }
       }
     }
@@ -450,29 +452,27 @@ export default ({
 
   return <>
 
-    {
-      <Row style={{ marginBottom: "20px" }}>
-        <Col span={12}>
-          <Input.Search size='large' placeholder='超级节点ID｜超级节点地址' onChange={(event) => {
-            setQueryKeyError(undefined);
-            if (!event.target.value) {
-              setQueryKey(undefined);
-            }
-          }} onSearch={setQueryKey} />
-          {
-            queryKeyError &&
-            <Alert type='error' showIcon message={queryKeyError} style={{ marginTop: "5px" }} />
+    <Row style={{ marginBottom: "20px" }}>
+      <Col span={12}>
+        <Input.Search size='large' placeholder={t("wallet_supernodes_id")+" | "+t("wallet_supernodes_address")} onChange={(event) => {
+          setQueryKeyError(undefined);
+          if (!event.target.value) {
+            setQueryKey(undefined);
           }
-        </Col>
-      </Row>
-    }
+        }} onSearch={setQueryKey} />
+        {
+          queryKeyError &&
+          <Alert type='error' showIcon message={queryKeyError} style={{ marginTop: "5px" }} />
+        }
+      </Col>
+    </Row>
 
     {
       queryMySupernodes && <Row style={{ marginBottom: "20px" }}>
         <Col span={24}>
           <Alert type='info' message={<>
-            <Text>对于状态异常的超级节点,需要检查超级节点信息与服务器超级节点配置是否一致</Text><br />
-            <Text>点击超级节点的 <Text strong>同步</Text> 按钮,同步超级节点信息与服务器超级节点配置</Text>
+            <Text>{t("wallet_supernodes_my_tip0")}</Text><br />
+            <Text>{t("wallet_supernodes_my_tip1")} <Text strong>{t("sync")}</Text> ,{t("wallet_supernodes_my_tip2")}</Text>
           </>} />
         </Col>
       </Row>

@@ -14,6 +14,7 @@ import SSH2CMDTerminalNodeModal from '../../../components/SSH2CMDTerminalNodeMod
 import AddressComponent from '../../../components/AddressComponent';
 import { generateChildWallet, NodeAddressSelectType, SupportChildWalletType, SupportNodeAddressSelectType } from '../../../../utils/GenerateChildWallet';
 import useAddrNodeInfo from '../../../../hooks/useAddrIsNode';
+import { useTranslation } from 'react-i18next';
 const { Text, Title } = Typography;
 
 export const Supernode_Create_Type_NoUnion = 1;
@@ -33,6 +34,7 @@ export const InputRules = {
 
 export default () => {
 
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const supernodeStorageContract = useSupernodeStorageContract();
   const masternodeStorageContract = useMasternodeStorageContract();
@@ -106,47 +108,47 @@ export default () => {
     incentivePlan.creator = sliderVal[1] - sliderVal[0];
     incentivePlan.voter = 100 - sliderVal[1];
     if (!name) {
-      inputErrors.name = "请输入超级节点名称!";
+      inputErrors.name = t("please_enter") + t("wallet_supernodes_name");
     };
     if (name && (name.length < InputRules.name.min || name.length > InputRules.name.max)) {
-      inputErrors.name = `字符长度需要大于${InputRules.name.min}且小于${InputRules.name.max}`;
+      inputErrors.name = t("wallet_supernodes_name_lengthrule" , { min : InputRules.name.min , max:InputRules.name.max });
     }
     if (!enode) {
-      inputErrors.enode = "请输入超级节点ENODE!";
+      inputErrors.enode = t("please_enter") + t("wallet_supernodes_enode");
     } else {
       const isMatch = enodeRegex.test(enode);
       if (!isMatch) {
-        inputErrors.enode = "超级节点ENODE格式不正确!";
+        inputErrors.enode = t("enter_correct") + t("wallet_supernodes_enode");
       }
     }
     if (!address) {
-      inputErrors.address = "请输入超级节点地址";
+      inputErrors.address = t("please_enter") + t("wallet_supernodes_address");
     } else {
       try {
         if (!ethers.utils.isAddress(address)) {
-          inputErrors.address = "请输入合法的钱包地址";
+          inputErrors.address = t("enter_correct") + t("wallet_supernodes_address");
         }
         if (address == activeAccount) {
-          inputErrors.address = "不能使用当前账户作为超级节点地址";
+          inputErrors.address = t("wallet_supernodes_address_mustnotcurrentaccount");
         }
       } catch (error) {
-        inputErrors.address = "请输入合法的钱包地址";
+        inputErrors.address = t("enter_correct") + t("wallet_supernodes_address");
       }
     }
     if (!description) {
-      inputErrors.description = "请输入超级节点简介信息!"
+      inputErrors.description = t("please_enter") + t("wallet_supernodes_description");
     };
     if (description && (description.length < InputRules.description.min || description.length > InputRules.description.max)) {
-      inputErrors.description = `简介信息长度需要大于${InputRules.description.min}且小于${InputRules.description.max}`;
+      inputErrors.description =  t("wallet_supernodes_description_lengthrule" , { min : InputRules.description.min , max:InputRules.description.max });
     }
 
     if (createParams.createType == Supernode_Create_Type_NoUnion
       && !balance?.greaterThan(CurrencyAmount.ether(JSBI.BigInt(ethers.utils.parseEther(Safe4_Business_Config.Supernode.Create.LockAmount + ""))))) {
-      inputErrors.balance = "账户余额不足以支付超级节点创建费用";
+      inputErrors.balance = t("wallet_supernodes_notenoughtocreate");
     }
     if (createParams.createType == Supernode_create_type_Union
       && !balance?.greaterThan(CurrencyAmount.ether(JSBI.BigInt(ethers.utils.parseEther(Safe4_Business_Config.Supernode.Create.UnionLockAmount + ""))))) {
-      inputErrors.balance = "账户余额不足以支付超级节点创建费用";
+      inputErrors.balance = t("wallet_supernodes_notenoughtocreate");
     }
     if (inputErrors.name || inputErrors.enode || inputErrors.description || inputErrors.balance || inputErrors.address) {
       setInputErrors({ ...inputErrors });
@@ -205,16 +207,16 @@ export default () => {
           const addrIsFounder: boolean = addrIsFounderCall.result;
           const addrIsMasternodeFounder: boolean = addrIsMasternodeFounderCall.result;
           if (nameExists) {
-            inputErrors.name = "该名称已存在";
+            inputErrors.name = t("wallet_supernodes_nameexist");
           }
           if (addrExists || addrExistsInMasternodes) {
-            inputErrors.address = "该地址已经是节点地址,无法使用";
+            inputErrors.address = t("wallet_supernodes_address_isnodeaddress");
           }
           if (addrIsFounder || addrIsMasternodeFounder) {
-            inputErrors.address = "该地址已参与节点地址创建,无法使用"
+            inputErrors.address = t("wallet_supernodes_address_joinnode");
           }
           if (enodeExists || enodeExistsInMasternodes) {
-            inputErrors.enode = "该ENODE已存在";
+            inputErrors.enode = t("wallet_supernodes_enodeexist");
           }
           setChecking(false);
           if (nameExists || enodeExists || enodeExistsInMasternodes || addrExists || addrExistsInMasternodes) {
@@ -323,7 +325,7 @@ export default () => {
           navigate("/main/supernodes")
         }} />
         <Title level={4} style={{ lineHeight: "16px", float: "left" }}>
-          创建超级节点
+          {t("wallet_supernodes_create")}
         </Title>
       </Col>
     </Row>
@@ -333,7 +335,7 @@ export default () => {
         <div style={{ width: "50%", margin: "auto", marginTop: "20px" }}>
           <Row>
             <Col span={24}>
-              <Text type='secondary'>创建模式</Text><br />
+              <Text type='secondary'>{t("wallet_supernodes_create_mode")}</Text><br />
               <Radio.Group onChange={(e) => {
                 setInputErrors({
                   ...inputErrors,
@@ -345,8 +347,8 @@ export default () => {
                 })
               }} value={createParams.createType}>
                 <Space direction="horizontal">
-                  <Radio value={1}>独立</Radio>
-                  <Radio value={2}>众筹</Radio>
+                  <Radio value={1}>{t("wallet_supernodes_create_mode_single")}</Radio>
+                  <Radio value={2}>{t("wallet_supernodes_create_mode_join")}</Radio>
                 </Space>
               </Radio.Group>
             </Col>
@@ -354,7 +356,7 @@ export default () => {
           <br />
           <Row>
             <Col span={12} style={{ textAlign: "left" }}>
-              <Text type='secondary'>锁仓</Text><br />
+              <Text type='secondary'>{t("wallet_lock")}</Text><br />
               {
                 createParams.createType == Supernode_Create_Type_NoUnion &&
                 <Text strong>{NumberFormat(Safe4_Business_Config.Supernode.Create.LockAmount)} SAFE</Text>
@@ -366,7 +368,7 @@ export default () => {
               <br />
             </Col>
             <Col span={12} style={{ textAlign: "right" }}>
-              <Text type='secondary'>账户当前余额</Text><br />
+              <Text type='secondary'>{t("wallet_withdraw_currentavailable")}</Text><br />
               <Text type='secondary'>{balance?.toFixed(6)} SAFE</Text><br />
             </Col>
             <Col span={24}>
@@ -379,9 +381,9 @@ export default () => {
           <Divider />
           <Row>
             <Col span={24}>
-              <Text type='secondary'>名称</Text>
+              <Text type='secondary'>{t("wallet_supernodes_name")}</Text>
               <Input status={inputErrors.name ? "error" : ""}
-                value={createParams.name} placeholder='输入超级节点名称' onChange={(event) => {
+                value={createParams.name} placeholder={t("please_enter") + t("wallet_supernodes_name")} onChange={(event) => {
                   const inputName = event.target.value;
                   setInputErrors({
                     ...inputErrors,
@@ -401,17 +403,20 @@ export default () => {
           <Divider />
           <Row>
             <Col span={24}>
-              <Text type='secondary'>超级节点地址</Text>
+              <Text type='secondary'>{t("wallet_supernodes_address")}</Text>
               <Alert style={{ marginTop: "5px", marginBottom: "5px" }} type='warning' showIcon message={<>
                 <Row>
                   <Col span={24}>
-                    超级节点运行时,节点程序需要加载超级节点地址的私钥来签名区块.
+                    {t("wallet_supernodes_address_tip0")}
                   </Col>
                   <Col span={24}>
-                    由于该超级节点的私钥会被远程存放在您的节点服务器上,<Text type='danger' strong>请避免向这个超级节点地址进行资产转账.</Text>
+                    {t("wallet_supernodes_address_tip1")}
+                    <Text type='danger' strong>
+                      {t("wallet_supernodes_address_tip2")}
+                    </Text>
                   </Col>
                   <Col span={24}>
-                    钱包通过当前账户的种子密钥生成子地址作为超级节点地址
+                    {t("wallet_supernodes_address_tip3")}
                   </Col>
                 </Row>
               </>} />
@@ -461,14 +466,14 @@ export default () => {
                 {
                   enodeTips && <Col span={24} style={{ marginBottom: "10px", marginTop: "5px" }}>
                     <Alert type='info' message={<>
-                      <Text>ENODE是超级节点在 Safe4网络 中与其他节点进行通信时的标识</Text><br />
-                      <Text>对于网络中所有节点,该值都是<Text strong>唯一的</Text></Text>
+                      <Text>{t("wallet_supernodes_enode_tip0")}</Text><br />
+                      <Text>{t("wallet_supernodes_enode_tip1")}</Text>
                     </>} />
                   </Col>
                 }
                 <Input.TextArea style={{ height: "100px" }} status={inputErrors.enode ? "error" : ""}
                   disabled={helpResult ? true : false}
-                  value={createParams.enode} placeholder='输入超级节点ENODE' onChange={(event) => {
+                  value={createParams.enode} onChange={(event) => {
                     const inputEnode = event.target.value;
                     setInputErrors({
                       ...inputErrors,
@@ -488,9 +493,9 @@ export default () => {
           }
           <Divider />
           <Row>
-            <Text type='secondary'>超级节点简介</Text>
+            <Text type='secondary'>{t("wallet_supernodes_description")}</Text>
             <Input.TextArea style={{ height: "100px" }} status={inputErrors.description ? "error" : ""}
-              value={createParams.description} placeholder='请输入超级节点简介信息' onChange={(event) => {
+              value={createParams.description} placeholder={t("please_enter")+t("wallet_supernodes_description")} onChange={(event) => {
                 const inputDescription = event.target.value;
                 setInputErrors({
                   ...inputErrors,
@@ -508,7 +513,7 @@ export default () => {
           </Row>
           <Divider />
           <Row>
-            <Text type='secondary'>挖矿奖励分配方案</Text>
+            <Text type='secondary'>{t("wallet_supernodes_incentiveplan")}</Text>
             <br />
             <Slider style={{ width: "100%" }}
               range={{ draggableTrack: true }}
@@ -524,15 +529,15 @@ export default () => {
             <br />
             <Row style={{ width: "100%" }}>
               <Col span={8} style={{ textAlign: "left" }}>
-                <Text strong>合伙人</Text><br />
+                <Text strong>{t("wallet_supernodes_incentiveplan_members")}</Text><br />
                 <Text>{sliderVal[0]} %</Text>
               </Col>
               <Col span={8} style={{ textAlign: "center" }}>
-                <Text strong>创建者</Text><br />
+                <Text strong>{t("wallet_supernodes_incentiveplan_creator")}</Text><br />
                 <Text>{sliderVal[1] - sliderVal[0]}%</Text>
               </Col>
               <Col span={8} style={{ textAlign: "right" }}>
-                <Text strong>投票人</Text><br />
+                <Text strong>{t("wallet_supernodes_incentiveplan_voters")}</Text><br />
                 <Text>{100 - sliderVal[1]} %</Text>
               </Col>
             </Row>
@@ -560,7 +565,7 @@ export default () => {
               <Col span={24}>
                 <Button loading={checking} type="primary" onClick={() => {
                   nextClick();
-                }}>下一步</Button>
+                }}>{t("next")}</Button>
               </Col>
             }
           </Row>
