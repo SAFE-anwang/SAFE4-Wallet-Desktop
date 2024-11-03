@@ -16,6 +16,7 @@ import { useETHBalances, useWalletsActiveAccount, useWalletsActiveWallet } from 
 import { SystemContract } from "../../../../constants/SystemContracts";
 import { ONE, ZERO } from "../../../../utils/CurrentAmountUtils";
 import CreateModalConfirm from "./CreateModal-Confirm";
+import { useTranslation } from "react-i18next";
 
 const { Text, Title } = Typography;
 type RangePickerProps = GetProps<typeof DatePicker.RangePicker>;
@@ -23,17 +24,17 @@ dayjs.extend(customParseFormat);
 const { RangePicker } = DatePicker;
 
 const InputRules = {
-  title : {
-    min : 8,
-    max : 80
+  title: {
+    min: 8,
+    max: 80
   },
-  description : {
-    min : 8,
-    max : 600
+  description: {
+    min: 8,
+    max: 600
   },
-  payTimes : {
-    min : 1,
-    max : 100
+  payTimes: {
+    min: 1,
+    max: 100
   }
 }
 
@@ -49,12 +50,13 @@ const disabledDate: RangePickerProps['disabledDate'] = (current) => {
 
 export default () => {
 
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const activeAccount = useWalletsActiveAccount();
   const balances = useETHBalances([SystemContract.Proposal, activeAccount]);
   const activeAccountBalance = balances[activeAccount];
   const proposalContractBalance = balances[SystemContract.Proposal];
-  const [openCreateModal , setOpenCreateModal] = useState<boolean>(false);
+  const [openCreateModal, setOpenCreateModal] = useState<boolean>(false);
 
   const [params, setParams] = useState<{
     payType: PayType,
@@ -79,34 +81,34 @@ export default () => {
 
   const nextClick = useCallback(() => {
     const { title, description, payAmount, payTimes, startPayTime, endPayTime } = params;
-    if (!title) inputErrors.title = "请输入提案的标题"
-    if (!description) inputErrors.description = "请输入提案的描述"
-    if (!payTimes) inputErrors.payTimes = "请输入分期付款次数"
-    if (!startPayTime) inputErrors.payTime = "请选择付款日期"
-    if (!endPayTime) inputErrors.payTime = "请选择付款日期"
+    if (!title) inputErrors.title = t("please_enter") + t("wallet_proposals_title")
+    if (!description) inputErrors.description = t("please_enter") + t("wallet_proposals_description")
+    if (!payTimes) inputErrors.payTimes = t("please_enter") + t("wallet_proposals_paytype_times_count")
+    if (!startPayTime) inputErrors.payTime = t("please_enter") + t("wallet_proposals_sendtime")
+    if (!endPayTime) inputErrors.payTime = t("please_enter") + t("wallet_proposals_sendtime")
     if (!payAmount) {
-      inputErrors.payAmount = "请输入提案所需申请的SAFE数量"
+      inputErrors.payAmount = t("wallet_proposals_enterpayamount");
     } else {
 
-      if ( title && (title.length > InputRules.title.max || title.length < InputRules.title.min )){
-        inputErrors.title = `标题长度需要大于${InputRules.title.min}且小于${InputRules.title.max}`;
+      if (title && (title.length > InputRules.title.max || title.length < InputRules.title.min)) {
+        inputErrors.title = t("wallet_proposals_title_lengthrule", { min: InputRules.title.min, max: InputRules.title.max })
       }
-      if ( description && (description.length > InputRules.description.max || description.length < InputRules.description.min )){
-        inputErrors.description = `描述长度需要大于${InputRules.description.min}且小于${InputRules.description.max}`;
+      if (description && (description.length > InputRules.description.max || description.length < InputRules.description.min)) {
+        inputErrors.description = t("wallet_proposals_description_lengthrule", { min: InputRules.description.min, max: InputRules.description.max })
       }
-      if ( payTimes && payTimes > InputRules.payTimes.max ){
-        inputErrors.payTimes = `分期次数不能超过${InputRules.payTimes.max}`;
+      if (payTimes && payTimes > InputRules.payTimes.max) {
+        inputErrors.payTimes = t("wallet_proposals_paytimes_rule", { max: InputRules.payTimes.max })
       }
       try {
         const _payAmount = CurrencyAmount.ether(ethers.utils.parseEther(payAmount).toBigInt());
         if (!_payAmount.greaterThan(ZERO)) {
-          inputErrors.payAmount = "输入有效的SAFE数量"
+          inputErrors.payAmount = t("enter_correct") + t("wallet_proposals_payAmount")
         }
         if (proposalContractBalance && _payAmount.greaterThan(proposalContractBalance)) {
-          inputErrors.payAmount = "申请的SAFE数量不能大于提案资金池内的SAFE数量"
+          inputErrors.payAmount = t("wallet_proposals_payAmount_mustnotgatherpool")
         }
       } catch (err) {
-        inputErrors.payAmount = "输入正确的SAFE数量"
+        inputErrors.payAmount = t("enter_correct") + t("wallet_proposals_payAmount")
       }
     }
     if (inputErrors.title || inputErrors.description || inputErrors.payAmount
@@ -120,7 +122,7 @@ export default () => {
       if (!activeAccountBalance.greaterThan(ONE)) {
         setInputErrors({
           ...inputErrors,
-          notEnough: "没有足够的SAFE来支付创建提案的费用!"
+          notEnough: t("wallet_proposals_notenouthtocreate")
         })
         return;
       }
@@ -144,7 +146,7 @@ export default () => {
           navigate("/main/proposals")
         }} />
         <Title level={4} style={{ lineHeight: "16px", float: "left" }}>
-          创建提案
+          {t("wallet_proposals_create")}
         </Title>
       </Col>
     </Row>
@@ -154,8 +156,8 @@ export default () => {
         <div style={{ width: "50%", margin: "auto" }}>
           <Row>
             <Col span={24}>
-              <Text type='secondary'>标题</Text><br />
-              <Input status={inputErrors.title ? "error" : ""} value={params.title} placeholder="输入提案的标题" onChange={(event) => {
+              <Text type='secondary'>{t("wallet_proposals_title")}</Text><br />
+              <Input status={inputErrors.title ? "error" : ""} value={params.title} placeholder={t("enter") + t("wallet_proposals_title")} onChange={(event) => {
                 setParams({
                   ...params,
                   title: event.target.value
@@ -176,7 +178,7 @@ export default () => {
           <Divider />
           <Row>
             <Col span={24}>
-              <Text type='secondary'>描述</Text><br />
+              <Text type='secondary'>{t("wallet_proposals_description")}</Text><br />
               <Input.TextArea status={inputErrors.description ? "error" : ""} value={params.description} onChange={(event) => {
                 setParams({
                   ...params,
@@ -186,7 +188,7 @@ export default () => {
                   ...inputErrors,
                   description: undefined
                 })
-              }} placeholder="输入提案的描述" />
+              }} placeholder={t("enter") + t("wallet_proposals_description")} />
               {
                 inputErrors.description &&
                 <Alert style={{ marginTop: "5px" }} type="error" showIcon message={<>
@@ -198,7 +200,7 @@ export default () => {
           <Divider />
           <Row>
             <Col span={12}>
-              <Text type='secondary'>申请SAFE数量</Text><br />
+              <Text type='secondary'>{t("wallet_proposals_payAmount")}</Text><br />
               <Input status={inputErrors.payAmount ? "error" : ""} value={params.payAmount} onChange={(event) => {
                 setParams({
                   ...params,
@@ -208,10 +210,10 @@ export default () => {
                   ...inputErrors,
                   payAmount: undefined
                 })
-              }} placeholder="输入SAFE数量" />
+              }} placeholder={t("enter") + t("wallet_proposals_payAmount")} />
             </Col>
             <Col span={12} style={{ textAlign: "right" }}>
-              <Text type='secondary'>提案资金池余额</Text><br />
+              <Text type='secondary'>{t("wallet_proposals_poolbalance")}</Text><br />
               <Text type='secondary'>{proposalContractBalance?.toFixed(2)} SAFE</Text><br />
             </Col>
             {
@@ -224,23 +226,23 @@ export default () => {
           <Divider />
           <Row>
             <Col span={24}>
-              <Text type='secondary'>发放方式</Text><br />
+              <Text type='secondary'>{t("wallet_proposals_paytype")}</Text><br />
               <Radio.Group value={params.payType} onChange={(payType) => {
                 setParams({
                   ...params,
                   payType: payType.target.value,
-                  startPayTime : undefined,
-                  endPayTime : undefined
+                  startPayTime: undefined,
+                  endPayTime: undefined
                 })
               }}>
                 <Space direction="horizontal">
-                  <Radio value={PayType.ONETIME}>一次</Radio>
-                  <Radio value={PayType.TIMES}>分期</Radio>
+                  <Radio value={PayType.ONETIME}>{t("wallet_proposals_paytype_once")}</Radio>
+                  <Radio value={PayType.TIMES}>{t("wallet_proposals_paytype_times")}</Radio>
                 </Space>
               </Radio.Group>
             </Col>
             <Col style={{ marginTop: "10px" }} span={24}>
-              <Text type='secondary'>发放时间</Text><br />
+              <Text type='secondary'>{t("wallet_proposals_sendtime")}</Text><br />
               {
                 params.payType == PayType.ONETIME && <>
                   <DatePicker locale={locale} showNow={false} status={inputErrors.payTime ? "error" : ""}
@@ -301,7 +303,7 @@ export default () => {
                     </>} />
                   }
                   <br />
-                  <Text style={{ marginTop: "5px" }} type='secondary'>分期次数</Text><br />
+                  <Text style={{ marginTop: "5px" }} type='secondary'>{t("wallet_proposals_paytype_times_count")}</Text><br />
                   <InputNumber min={2} status={inputErrors.payTimes ? "error" : ""} value={params.payTimes} onChange={(num) => {
                     if (num) {
                       setParams({
@@ -335,7 +337,7 @@ export default () => {
                   </>} />
                 </Col>
                 <Col span={6} style={{ textAlign: "right" }}>
-                  <Text type='secondary'>当前账户余额</Text><br />
+                  <Text type='secondary'>{t("wallet_balance_currentavailable")}</Text><br />
                   <Text type='secondary'>{activeAccountBalance?.toFixed(2)} SAFE</Text><br />
                 </Col>
               </Row>
@@ -346,14 +348,14 @@ export default () => {
             <Col span={24}>
               <Button type="primary" onClick={() => {
                 nextClick();
-              }}>下一步</Button>
+              }}>{t("next")}</Button>
             </Col>
           </Row>
         </div>
       </Card>
     </Row>
 
-    <CreateModalConfirm openCreateModal={openCreateModal} setOpenCreateModal={setOpenCreateModal} createParams={ {...params} } />
+    <CreateModalConfirm openCreateModal={openCreateModal} setOpenCreateModal={setOpenCreateModal} createParams={{ ...params }} />
 
   </>
 }

@@ -15,10 +15,13 @@ import { useETHBalances, useWalletsActiveAccount } from "../../../../state/walle
 import { CheckCircleFilled, CloseCircleFilled, QuestionCircleFilled } from '@ant-design/icons';
 import VoteModalConfirm from "./VoteModal-Confirm";
 import { SystemContract } from "../../../../constants/SystemContracts";
+import { useTranslation } from "react-i18next";
 
 const { Text, Title } = Typography;
 
 export default () => {
+
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const proposalId = useSelector<AppState, number | undefined>(state => state.application.control.proposalId);
   const [proposalInfo, setProposalInfo] = useState<ProposalInfo>();
@@ -129,7 +132,7 @@ export default () => {
           navigate("/main/proposals")
         }} />
         <Title level={4} style={{ lineHeight: "16px", float: "left" }}>
-          提案:{proposalInfo?.title}
+          {t("wallet_proposal")}:{proposalInfo?.title}
         </Title>
       </Col>
     </Row>
@@ -141,7 +144,7 @@ export default () => {
             <Col span={24}>
               <Row>
                 <Col span={6}>
-                  <Text type='secondary'>提案ID:</Text>
+                  <Text type='secondary'>{t("wallet_proposals_id")}:</Text>
                 </Col>
                 <Col span={18}>
                   <Text strong>{proposalInfo?.id}</Text>
@@ -149,7 +152,7 @@ export default () => {
               </Row>
               <Row>
                 <Col span={6}>
-                  <Text type='secondary'>提案标题:</Text>
+                  <Text type='secondary'>{t("wallet_proposals_title")}:</Text>
                 </Col>
                 <Col span={18}>
                   <Text strong>{proposalInfo?.title}</Text>
@@ -157,7 +160,7 @@ export default () => {
               </Row>
               <Row>
                 <Col span={6}>
-                  <Text type='secondary'>创建人:</Text>
+                  <Text type='secondary'>{t("wallet_proposals_creator")}:</Text>
                 </Col>
                 <Col span={18}>
                   <Text strong> {
@@ -167,7 +170,7 @@ export default () => {
               </Row>
               <Row>
                 <Col span={6}>
-                  <Text type='secondary'>申请SAFE数量:</Text>
+                  <Text type='secondary'>{t("wallet_proposals_payAmount")}:</Text>
                 </Col>
                 <Col span={18}>
                   <Text strong>{proposalInfo?.payAmount.toFixed(6)} SAFE</Text>
@@ -178,7 +181,7 @@ export default () => {
 
               <Row>
                 <Col span={24}>
-                  <Text type='secondary'>提案简介:</Text>
+                  <Text type='secondary'>{t("wallet_proposals_description")}:</Text>
                 </Col>
                 <Col span={18}>
                   <Text strong>{proposalInfo?.description}</Text>
@@ -190,15 +193,15 @@ export default () => {
               <Row>
                 <Col span={12}>
                   <Row>
-                    <Col span={24}><Text type="secondary">发放方式</Text></Col>
+                    <Col span={24}><Text type="secondary">{t("wallet_proposals_paytype")}</Text></Col>
                     <Col span={24}>
                       <Col span={24}>
                         {
                           proposalInfo?.payTimes == 1 && proposalInfo.endPayTime && <>
                             {
                               <>
-                                <Text type="secondary">在</Text><Text strong style={{ marginLeft: "5px" }}>{DateTimeFormat(proposalInfo.endPayTime * 1000)}</Text><br />
-                                <Text type="secondary"><Text strong>一次性</Text> 发放 </Text> <Text strong style={{ marginLeft: "5px" }}>{proposalInfo.payAmount.toFixed(6)} SAFE</Text>
+                                <Text type="secondary">{t("wallet_proposals_pay_at")}</Text><Text strong style={{ marginLeft: "5px" }}>{DateTimeFormat(proposalInfo.endPayTime * 1000)}</Text><br />
+                                <Text type="secondary"><Text strong>{t("wallet_proposals_pay_onetime")}</Text> {t("wallet_proposals_pay_send")} </Text> <Text strong style={{ marginLeft: "5px" }}>{proposalInfo.payAmount.toFixed(6)} SAFE</Text>
 
                               </>
                             }
@@ -208,9 +211,9 @@ export default () => {
                           proposalInfo?.payTimes != 1 && proposalInfo?.endPayTime && proposalInfo.startPayTime && <>
                             {
                               <>
-                                <Text>在</Text><Text strong style={{ marginLeft: "5px", marginRight: "5px" }}>{DateTimeFormat(proposalInfo.startPayTime * 1000)}</Text>
-                                <Text>到</Text><Text strong style={{ marginLeft: "5px" }}>{DateTimeFormat(proposalInfo.endPayTime * 1000)}</Text><br />
-                                <Text><Text strong>分期{proposalInfo.payTimes}次</Text> 合计发放 </Text><Text strong style={{ marginLeft: "5px" }}>{proposalInfo.payAmount.toFixed(6)} SAFE</Text>
+                                <Text>{t("wallet_proposals_pay_at")}</Text><Text strong style={{ marginLeft: "5px", marginRight: "5px" }}>{DateTimeFormat(proposalInfo.startPayTime * 1000)}</Text>
+                                <Text>{t("wallet_proposals_pay_to")}</Text><Text strong style={{ marginLeft: "5px" }}>{DateTimeFormat(proposalInfo.endPayTime * 1000)}</Text><br />
+                                <Text><Text strong>{t("wallet_proposals_pay_times")} {proposalInfo.payTimes} {t("wallet_proposals_pay_times_count")}</Text> {t("wallet_proposals_pay_total")} </Text><Text strong style={{ marginLeft: "5px" }}>{proposalInfo.payAmount.toFixed(6)} SAFE</Text>
                               </>
                             }
                           </>
@@ -222,7 +225,7 @@ export default () => {
                 {
                   waitingVote &&
                   <Col span={12} style={{ textAlign: "right" }}>
-                    <Text type='secondary'>提案资金池余额</Text><br />
+                    <Text type='secondary'>{t("wallet_proposals_poolbalance")}</Text><br />
                     <Text type='secondary'>{proposalContractBalance?.toFixed(2)} SAFE</Text><br />
                   </Col>
                 }
@@ -230,7 +233,7 @@ export default () => {
               <Divider style={{ margin: "8px 0px" }} />
               <Row>
                 <Col span={24}>
-                  <Text type='secondary' style={{ marginRight: "20px" }}>投票状态:</Text>
+                  <Text type='secondary' style={{ marginRight: "20px" }}>{t("wallet_proposals_vote_state")}:</Text>
                   {
                     proposalInfo && <>
                       {RenderProposalState(proposalInfo.state, proposalInfo.startPayTime, timestamp)}
@@ -241,13 +244,13 @@ export default () => {
                   <Text>
                     {
                       voteStatistic && <>
-                        合计 <Text strong>{voteStatistic.agree + voteStatistic.reject + voteStatistic.abstain} 票</Text>
+                        {t("wallet_proposals_vote_total")} <Text strong>{voteStatistic.agree + voteStatistic.reject + voteStatistic.abstain} {t("wallet_proposals_vote_count")}</Text>
                         <Divider type="vertical" />
-                        同意 <Text type="success" strong>{voteStatistic.agree} 票</Text>
+                        {t("wallet_proposals_vote_agree")} <Text type="success" strong>{voteStatistic.agree} {t("wallet_proposals_vote_count")}</Text>
                         <Divider type="vertical" />
-                        拒绝 <Text type="danger" strong>{voteStatistic.reject} 票</Text>
+                        {t("wallet_proposals_vote_reject")} <Text type="danger" strong>{voteStatistic.reject} {t("wallet_proposals_vote_count")}</Text>
                         <Divider type="vertical" />
-                        弃权 <Text type="secondary" strong>{voteStatistic.abstain} 票</Text>
+                        {t("wallet_proposals_vote_abstain")} <Text type="secondary" strong>{voteStatistic.abstain} {t("wallet_proposals_vote_count")}</Text>
                       </>
                     }
                   </Text>
@@ -262,7 +265,7 @@ export default () => {
                       activeAccountTops && activeAccountTops.length == 0 && <>
                         <Col span={24}>
                           <Alert type="warning" showIcon message={<>
-                            拥有排名在前49且在线的超级节点的账户才可以进行投票
+                            {t("wallet_proposals_vote_tip0")}
                           </>} />
                         </Col>
                       </>
@@ -271,7 +274,7 @@ export default () => {
                       activeAccountTops && activeAccountTops.length > 0 && <>
                         <Col span={24}>
                           <Alert type="info" showIcon message={<>
-                            当前账户拥有排名在前49且在线的超级节点数量 <Text strong>{activeAccountTops.length}</Text>,可以对提案进行投票
+                            {t("wallet_proposals_vote_tip1")} <Text strong>{activeAccountTops.length}</Text>,{t("wallet_proposals_vote_tip2")}
                           </>} />
                           <br />
                           {
@@ -279,19 +282,19 @@ export default () => {
                               <Space>
                                 <Button icon={<CheckCircleFilled style={{
                                   color: "#52c41a", fontSize: "14px"
-                                }} />} onClick={() => doVote(1)}>同意</Button>
+                                }} />} onClick={() => doVote(1)}>{t("wallet_proposals_vote_agree")}</Button>
                                 <Button icon={<CloseCircleFilled style={{
                                   color: "#e53d3d", fontSize: "14px"
-                                }} />} onClick={() => doVote(2)}>拒绝</Button>
+                                }} />} onClick={() => doVote(2)}>{t("wallet_proposals_vote_reject")}</Button>
                                 <Button icon={<QuestionCircleFilled style={{
                                   color: "#c3a4a4", fontSize: "14px"
-                                }} />} onClick={() => doVote(3)}>弃权</Button>
+                                }} />} onClick={() => doVote(3)}>{t("wallet_proposals_vote_abstain")}</Button>
                               </Space>
                             </>
                           }
                           {
                             voteStatistic?.voted && <>
-                              已投 <Divider type="vertical" style={{ height: "24px" }} /> {RenderVoteResult(voteStatistic.voted)}
+                              {t("wallet_proposals_vote_voted")} <Divider type="vertical" style={{ height: "24px" }} /> {RenderVoteResult(voteStatistic.voted)}
                             </>
                           }
                         </Col>
@@ -302,7 +305,7 @@ export default () => {
               }
               {
                 voteStatistic?.voted && !waitingVote && <span style={{ lineHeight: "42px" }}>
-                  已投 <Divider type="vertical" style={{ height: "24px" }} /> {RenderVoteResult(voteStatistic.voted)}
+                  {t("wallet_proposals_vote_voted")} <Divider type="vertical" style={{ height: "24px" }} /> {RenderVoteResult(voteStatistic.voted)}
                 </span>
               }
             </Col>

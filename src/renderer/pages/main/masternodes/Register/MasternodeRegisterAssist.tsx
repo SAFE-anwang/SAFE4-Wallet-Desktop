@@ -340,7 +340,7 @@ export default () => {
           <br />
           <Row>
             <Col span={12} style={{ textAlign: "left" }}>
-              <Text type='secondary'>锁仓</Text><br />
+              <Text type='secondary'>{t("wallet_lock")}</Text><br />
               {
                 registerParams.registerType == Masternode_Create_Type_NoUnion &&
                 <Text strong>{NumberFormat(Safe4_Business_Config.Masternode.Create.LockAmount)} SAFE</Text>
@@ -352,7 +352,7 @@ export default () => {
               <br />
             </Col>
             <Col span={12} style={{ textAlign: "right" }}>
-              <Text type='secondary'>账户当前余额</Text><br />
+              <Text type='secondary'>{t("wallet_accountManager_avaiable")}</Text><br />
               <Text type='secondary'>{balance?.toFixed(6)} SAFE</Text><br />
             </Col>
             <Col span={24}>
@@ -364,17 +364,20 @@ export default () => {
           </Row>
           <Divider />
           <Row>
-            <Text type='secondary'>主节点地址</Text>
+            <Text type='secondary'>{t("wallet_masternodes_address")}</Text>
             <Alert style={{ marginTop: "5px", marginBottom: "5px" }} type='warning' showIcon message={<>
               <Row>
                 <Col span={24}>
-                  主节点运行时,节点程序需要加载主节点地址的私钥来签名见证凭证.
+                  {t("wallet_masternodes_address_tip0")}
                 </Col>
                 <Col span={24}>
-                  由于该主节点地址的私钥会被远程存放在您的节点服务器上,<Text type='danger' strong>请避免向这个主节点地址进行资产转账.</Text>
+                  {t("wallet_masternodes_address_tip1")},
+                  <Text type='danger' strong>
+                    {t("wallet_masternodes_address_tip2")}
+                  </Text>
                 </Col>
                 <Col span={24}>
-                  钱包通过当前账户的种子密钥派生一个新地址来作为主节点地址
+                  {t("wallet_masternodes_address_tip3")}
                 </Col>
               </Row>
             </>} />
@@ -426,14 +429,14 @@ export default () => {
                 {
                   enodeTips && <Col span={24} style={{ marginBottom: "10px", marginTop: "5px" }}>
                     <Alert type='info' message={<>
-                      <Text>ENODE是主节点在 Safe4网络 中与其他节点进行通信时的标识</Text><br />
-                      <Text>对于网络中所有节点,该值都是<Text strong>唯一的</Text></Text>
+                      <Text>{t("wallet_supernodes_enode_tip0")}</Text><br />
+                      <Text>{t("wallet_supernodes_enode_tip1")}</Text>
                     </>} />
                   </Col>
                 }
                 <Input.TextArea style={{ height: "100px" }} status={inputErrors.enode ? "error" : ""}
                   disabled={helpResult ? true : false}
-                  value={registerParams.enode} placeholder='输入主节点节点ENODE' onChange={(event) => {
+                  value={registerParams.enode} onChange={(event) => {
                     const inputEnode = event.target.value;
                     setInputErrors({
                       ...inputErrors,
@@ -453,9 +456,9 @@ export default () => {
           }
           <Divider />
           <Row>
-            <Text type='secondary'>简介</Text>
+            <Text type='secondary'>{t("wallet_masternodes_description")}</Text>
             <Input.TextArea style={{ height: "100px" }} status={inputErrors.description ? "error" : ""}
-              value={registerParams.description} placeholder='请输入主节点简介信息' onChange={(event) => {
+              value={registerParams.description} placeholder={t("please_enter") + t("wallet_masternodes_description")} onChange={(event) => {
                 const inputDescription = event.target.value;
                 setInputErrors({
                   ...inputErrors,
@@ -475,7 +478,7 @@ export default () => {
           {
             registerParams.registerType == Masternode_create_type_Union && <>
               <Row>
-                <Text type='secondary'>挖矿奖励分配方案</Text>
+                <Text type='secondary'>{t("wallet_supernodes_incentiveplan")}</Text>
                 <br />
                 <Slider style={{ width: "100%" }}
                   value={sliderVal}
@@ -488,11 +491,11 @@ export default () => {
                 <br />
                 <Row style={{ width: "100%" }}>
                   <Col span={12} style={{ textAlign: "left" }}>
-                    <Text strong>创建者</Text><br />
+                    <Text strong>{t("wallet_supernodes_incentiveplan_creator")}</Text><br />
                     <Text>{sliderVal} %</Text>
                   </Col>
                   <Col span={12} style={{ textAlign: "right" }}>
-                    <Text strong>合伙人</Text><br />
+                    <Text strong>{t("wallet_supernodes_incentiveplan_members")}</Text><br />
                     <Text>{100 - sliderVal} %</Text>
                   </Col>
                 </Row>
@@ -514,7 +517,7 @@ export default () => {
                 <Button disabled={nodeAddressSelectType != NodeAddressSelectType.GEN || activeAccountNodeInfo?.isNode} onClick={() => {
                   helpToCreate();
                 }} type='primary' style={{ float: "right" }}>
-                  下一步
+                  {t("next")}
                 </Button>
               </Col>
             }
@@ -523,7 +526,7 @@ export default () => {
               <Col span={24}>
                 <Button disabled={activeAccountNodeInfo?.isNode} loading={checking} type="primary" onClick={() => {
                   nextClick();
-                }}>下一步</Button>
+                }}>{t("next")}</Button>
               </Col>
             }
           </Row>

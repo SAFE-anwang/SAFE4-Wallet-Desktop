@@ -43,9 +43,9 @@ const configuration: webpack.Configuration = {
 
   mode: 'development',
 
-  // stats: {
-  //   warningsFilter: [/legacy JS API is deprecated/], // 忽略包含这部分文本的警告
-  // },
+  stats: {
+    warningsFilter: [/legacy JS API is deprecated/], // 忽略包含这部分文本的警告
+  },
 
   target: ['web', 'electron-renderer'],
 

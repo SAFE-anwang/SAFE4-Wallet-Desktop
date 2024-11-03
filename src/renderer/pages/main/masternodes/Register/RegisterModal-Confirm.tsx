@@ -13,6 +13,7 @@ import { useNavigate } from "react-router-dom";
 import { applicationUpdateWalletTab } from "../../../../state/application/action";
 import { Safe4_Business_Config } from "../../../../config";
 import { walletsUpdateUsedChildWalletAddress, walletsUpdateWalletChildWallets } from "../../../../state/wallets/action";
+import { useTranslation } from "react-i18next";
 
 const { Text } = Typography;
 
@@ -32,6 +33,7 @@ export default ({
     }
   }
 }) => {
+  const { t } = useTranslation();
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { registerType } = registerParams;
@@ -83,8 +85,8 @@ export default ({
         setSending(false);
         setTransactionResponse(response);
         dispatch(walletsUpdateUsedChildWalletAddress({
-          address ,
-          used : true
+          address,
+          used: true
         }));
       }).catch((err: any) => {
         setSending(false);
@@ -103,7 +105,7 @@ export default ({
     }
   }, [txHash]);
 
-  return <Modal title="创建主节点" open={openRegisterModal} footer={null} destroyOnClose onCancel={cancel}>
+  return <Modal title={t("wallet_masternodes_create")} open={openRegisterModal} footer={null} destroyOnClose onCancel={cancel}>
     <Divider />
     {
       render
@@ -124,26 +126,26 @@ export default ({
     <br />
     <Row>
       <Col span={24}>
-        <Text type="secondary">从</Text>
+        <Text type="secondary">{t("wallet_send_from")}</Text>
       </Col>
       <Col span={24} style={{ paddingLeft: "5px" }} >
-        <Text>普通账户</Text>
+        <Text>{t("wallet_account_normal")}</Text>
       </Col>
     </Row>
     <br />
     <Row>
       <Col span={24}>
-        <Text type="secondary">到</Text>
+        <Text type="secondary">{t("wallet_send_to")}</Text>
       </Col>
       <Col span={24} style={{ paddingLeft: "5px" }} >
-        <Text>锁仓账户</Text>
+        <Text>{t("wallet_account_lock")}</Text>
       </Col>
     </Row>
     <Divider />
     <Card size="small">
       <Row>
         <Col span={24}>
-          <Text type="secondary">主节点ENODE</Text>
+          <Text type="secondary">{t("wallet_masternodes_enode")}</Text>
         </Col>
         <Col span={24}>
           <Text>{registerParams.enode}</Text>
@@ -152,7 +154,7 @@ export default ({
       </Row>
       <Row>
         <Col span={24}>
-          <Text type="secondary">主节点简介</Text>
+          <Text type="secondary">{t("wallet_masternodes_description")}</Text>
         </Col>
         <Col span={24}>
           <Text>{registerParams.description}</Text>
@@ -166,17 +168,17 @@ export default ({
           !sending && !render && <Button onClick={() => {
             doRegisterMasternode();
           }} disabled={sending} type="primary" style={{ float: "right" }}>
-            广播交易
+            {t("wallet_send_status_broadcast")}
           </Button>
         }
         {
           sending && !render && <Button loading disabled type="primary" style={{ float: "right" }}>
-            发送中....
+            {t("wallet_send_status_sending")}
           </Button>
         }
         {
           render && <Button onClick={cancel} type="primary" style={{ float: "right" }}>
-            关闭
+            {t("wallet_send_status_close")}
           </Button>
         }
       </Col>

@@ -11,6 +11,7 @@ import NumberFormat from '../../../../utils/NumberFormat';
 import { Safe4_Business_Config } from '../../../../config';
 import CallMulticallAggregate, { CallMulticallAggregateContractCall } from '../../../../state/multicall/CallMulticallAggregate';
 import useAddrNodeInfo from '../../../../hooks/useAddrIsNode';
+import { useTranslation } from 'react-i18next';
 const { Text, Title } = Typography;
 
 export const Masternode_Create_Type_NoUnion = 1;
@@ -25,6 +26,7 @@ export const InputRules = {
 
 export default () => {
 
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const activeAccount = useWalletsActiveAccount();
   const balance = useETHBalances([activeAccount])[activeAccount];
@@ -73,38 +75,38 @@ export default () => {
     incentivePlan.creator = sliderVal;
     incentivePlan.partner = 100 - sliderVal;
     if (!enode) {
-      inputErrors.enode = "请输入主节点ENODE!";
+      inputErrors.enode = t("please_enter") + t("wallet_masternodes_enode");
     } else {
       const enodeRegex = /^enode:\/\/[0-9a-fA-F]{128}@(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}):(\d+)$/;
       const isMatch = enodeRegex.test(enode);
       if (!isMatch) {
-        inputErrors.enode = "主节点ENODE格式不正确!";
+        inputErrors.enode = t("enter_correct")+t("wallet_masternodes_enode");
       }
     }
     if (!address) {
-      inputErrors.address = "请输入主节点钱包地址";
+      inputErrors.address = t("please_enter") + t("wallet_masternodes_address");
     } else {
       if (!ethers.utils.isAddress(address)) {
-        inputErrors.address = "请输入合法的钱包地址";
+        inputErrors.address = t("enter_correct") + t("wallet_masternodes_address");
       }
     }
     if (!description) {
-      inputErrors.description = "请输入主节点简介信息!"
+      inputErrors.description = t("please_enter") + t("wallet_masternodes_description")
     };
     if (description && (description.length < InputRules.description.min || description.length > InputRules.description.max)) {
-      inputErrors.description = `简介信息长度需要大于${InputRules.description.min}且小于${InputRules.description.max}`;
+      inputErrors.description = t("wallet_masternodes_description_lengthrule" , {min: InputRules.description.min, max:InputRules.description.max})
     }
     if (registerParams.registerType == Masternode_Create_Type_NoUnion
       && !balance?.greaterThan(CurrencyAmount.ether(JSBI.BigInt(ethers.utils.parseEther(
         Safe4_Business_Config.Masternode.Create.LockAmount + ""
       ))))) {
-      inputErrors.balance = "账户余额不足以锁仓来创建主节点";
+      inputErrors.balance = t("wallet_masternodes_notenoughtocreate");
     }
     if (registerParams.registerType == Masternode_create_type_Union
       && !balance?.greaterThan(CurrencyAmount.ether(JSBI.BigInt(ethers.utils.parseEther(
         Safe4_Business_Config.Masternode.Create.UnionLockAmount + ""
       ))))) {
-      inputErrors.balance = "账户余额不足以锁仓来创建主节点";
+      inputErrors.balance = t("wallet_masternodes_notenoughtocreate");
     }
     if (inputErrors.enode || inputErrors.description || inputErrors.balance || inputErrors.address) {
       setInputErrors({ ...inputErrors });
@@ -158,26 +160,26 @@ export default () => {
         setChecking(false);
         if (addrExistsInMasternodes || addrExistsInSupernodes) {
           if (addrExistsInMasternodes) {
-            inputErrors.address = "该地址已经是主节点地址,无法使用";
+            inputErrors.address = t("wallet_masternodes_address_isnodeaddress");
           }
           if (addrExistsInSupernodes) {
-            inputErrors.address = "该地址已经是超级节点地址,无法使用";
+            inputErrors.address = t("wallet_masternodes_address_isnodeaddress");
           }
           setInputErrors({ ...inputErrors });
           return;
         }
         if (addrIsFounder || addrIsSupernodeFounder) {
           if (addrIsFounder) {
-            inputErrors.address = "该地址已参与主节点地址创建,无法使用";
+            inputErrors.address = t("wallet_masternodes_address_joinnode");
           }
           if (addrIsSupernodeFounder) {
-            inputErrors.address = "该地址已参与超级节点地址创建,无法使用";
+            inputErrors.address = t("wallet_masternodes_address_joinnode");
           }
           setInputErrors({ ...inputErrors });
           return;
         }
         if (enodeExistsInMasternodes || enodeExistsInSupernodes) {
-          inputErrors.enode = "该ENODE已被使用";
+          inputErrors.enode = t("wallet_masternodes_enodeexist");
           setInputErrors({ ...inputErrors });
           return;
         }
@@ -206,7 +208,7 @@ export default () => {
           navigate("/main/masternodes")
         }} />
         <Title level={4} style={{ lineHeight: "16px", float: "left" }}>
-          创建主节点
+          {t("wallet_masternodes_create")}
         </Title>
       </Col>
     </Row>
@@ -216,7 +218,7 @@ export default () => {
         <div style={{ width: "50%", margin: "auto", marginTop: "20px" }}>
           <Row>
             <Col span={24}>
-              <Text type='secondary'>创建模式</Text><br />
+              <Text type='secondary'>{t("wallet_masternodes_create_mode")}</Text><br />
               <Radio.Group onChange={(e) => {
                 setInputErrors({
                   ...inputErrors,
@@ -228,8 +230,8 @@ export default () => {
                 })
               }} value={registerParams.registerType}>
                 <Space direction="horizontal">
-                  <Radio value={1}>独立</Radio>
-                  <Radio value={2}>众筹</Radio>
+                  <Radio value={1}>{t("wallet_masternodes_create_mode_single")}</Radio>
+                  <Radio value={2}>{t("wallet_masternodes_create_mode_join")}</Radio>
                 </Space>
               </Radio.Group>
             </Col>
@@ -237,7 +239,7 @@ export default () => {
           <br />
           <Row>
             <Col span={12} style={{ textAlign: "left" }}>
-              <Text type='secondary'>锁仓</Text><br />
+              <Text type='secondary'>{t("wallet_lock")}</Text><br />
               {
                 registerParams.registerType == Masternode_Create_Type_NoUnion &&
                 <Text strong>{NumberFormat(Safe4_Business_Config.Masternode.Create.LockAmount)} SAFE</Text>
@@ -249,7 +251,7 @@ export default () => {
               <br />
             </Col>
             <Col span={12} style={{ textAlign: "right" }}>
-              <Text type='secondary'>账户当前余额</Text><br />
+              <Text type='secondary'>{t("wallet_balance_currentavailable")}</Text><br />
               <Text type='secondary'>{balance?.toFixed(6)} SAFE</Text><br />
             </Col>
             <Col span={24}>
@@ -261,9 +263,9 @@ export default () => {
           </Row>
           <Divider />
           <Row>
-            <Text type='secondary'>主节点地址</Text>
+            <Text type='secondary'>{t("wallet_masternodes_address")}</Text>
             <Col span={24}>
-              <Input value={registerParams.address} style={{ marginTop: "5px" }} placeholder='输入主节点地址' onChange={(event) => {
+              <Input value={registerParams.address} style={{ marginTop: "5px" }} placeholder={t("enter") + t("wallet_masternodes_address")} onChange={(event) => {
                 const input = event.target.value.trim();
                 setRegisterParams({
                   ...registerParams,
@@ -288,14 +290,14 @@ export default () => {
             {
               enodeTips && <Col span={24} style={{ marginBottom: "10px", marginTop: "5px" }}>
                 <Alert type='info' message={<>
-                  <Text>服务器上部署节点程序后,连接到节点终端输入</Text><br />
+                  <Text>{t("wallet_masternodes_enode_gettip0")}</Text><br />
                   <Text strong code>admin.nodeInfo</Text><br />
-                  获取节点的ENODE信息
+                  {t("wallet_masternodes_enode_gettip1")}
                 </>} />
               </Col>
             }
             <Input.TextArea style={{ height: "100px" }} status={inputErrors.enode ? "error" : ""}
-              value={registerParams.enode} placeholder='输入主节点节点ENODE' onChange={(event) => {
+              value={registerParams.enode} placeholder={t("enter") + t("wallet_masternodes_ende")} onChange={(event) => {
                 const inputEnode = event.target.value;
                 setInputErrors({
                   ...inputErrors,
@@ -313,9 +315,9 @@ export default () => {
           </Row>
           <Divider />
           <Row>
-            <Text type='secondary'>简介</Text>
+            <Text type='secondary'>{t("wallet_masternodes_description")}</Text>
             <Input.TextArea style={{ height: "100px" }} status={inputErrors.description ? "error" : ""}
-              value={registerParams.description} placeholder='请输入主节点简介信息' onChange={(event) => {
+              value={registerParams.description} placeholder={t("enter") + t("wallet_masternodes_description")} onChange={(event) => {
                 const inputDescription = event.target.value;
                 setInputErrors({
                   ...inputErrors,
@@ -335,7 +337,7 @@ export default () => {
           {
             registerParams.registerType == Masternode_create_type_Union && <>
               <Row>
-                <Text type='secondary'>挖矿奖励分配方案</Text>
+                <Text type='secondary'>{t("wallet_supernodes_incentiveplan")}</Text>
                 <br />
                 <Slider style={{ width: "100%" }}
                   value={sliderVal}
@@ -348,11 +350,11 @@ export default () => {
                 <br />
                 <Row style={{ width: "100%" }}>
                   <Col span={12} style={{ textAlign: "left" }}>
-                    <Text strong>创建者</Text><br />
+                    <Text strong>{t("wallet_supernodes_incentiveplan_creator")}</Text><br />
                     <Text>{sliderVal} %</Text>
                   </Col>
                   <Col span={12} style={{ textAlign: "right" }}>
-                    <Text strong>合伙人</Text><br />
+                    <Text strong>{t("wallet_supernodes_incentiveplan_members")}</Text><br />
                     <Text>{100 - sliderVal} %</Text>
                   </Col>
                 </Row>
@@ -372,7 +374,7 @@ export default () => {
               }
               <Button disabled={activeAccountNodeInfo?.isNode} loading={checking} type="primary" onClick={() => {
                 nextClick();
-              }}>下一步</Button>
+              }}>{t("next")}</Button>
             </Col>
           </Row>
         </div>

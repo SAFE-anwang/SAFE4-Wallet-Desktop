@@ -1,6 +1,7 @@
 import { Alert, Badge, Button, Col, Input, Row, Table, Typography } from "antd";
 import { ColumnsType } from "antd/es/table";
 import { useCallback, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { useMulticallContract, useProposalContract } from "../../../hooks/useContracts"
@@ -52,6 +53,7 @@ export default ({
 }: {
   queryMyProposals?: boolean
 }) => {
+  const { t } = useTranslation();
   const proposalContract = useProposalContract();
   const activeAccount = useWalletsActiveAccount();
   const multicallContract = useMulticallContract();
@@ -162,7 +164,7 @@ export default ({
 
   const columns: ColumnsType<ProposalInfo> = [
     {
-      title: '提案ID',
+      title: t("wallet_proposals_id"),
       dataIndex: 'id',
       key: '_id',
       render: (id, proposalInfo) => {
@@ -176,7 +178,7 @@ export default ({
       },
     },
     {
-      title: '状态',
+      title: t("wallet_proposals_state"),
       dataIndex: 'state',
       key: 'state',
       render: (state, proposalInfo: ProposalInfo) => {
@@ -190,7 +192,7 @@ export default ({
       },
     },
     {
-      title: '创建人',
+      title: t("wallet_proposals_creator"),
       dataIndex: 'creator',
       key: 'creator',
       render: (creator, proposalInfo) => {
@@ -207,7 +209,7 @@ export default ({
       },
     },
     {
-      title: '标题',
+      title: t("wallet_proposals_title"),
       dataIndex: 'title',
       key: 'title',
       render: (title, proposalInfo) => {
@@ -223,7 +225,7 @@ export default ({
       },
     },
     {
-      title: '申请SAFE数量',
+      title: t("wallet_proposals_payAmount"),
       dataIndex: 'payAmount',
       key: 'payAmount',
       render: (payAmount, proposalInfo) => {
@@ -239,7 +241,7 @@ export default ({
       },
     },
     {
-      title: '截止日期',
+      title: t("wallet_proposals_endtime"),
       dataIndex: 'startPayTime',
       key: 'startPayTime',
       render: (startPayTime, proposalInfo) => {
@@ -255,7 +257,7 @@ export default ({
       },
     },
     {
-      title: '操作',
+      title: t("wallet_proposals_operation"),
       dataIndex: 'id',
       key: '_id',
       render: (id) => {
@@ -265,7 +267,7 @@ export default ({
               <Button onClick={() => {
                 dispatch(applicationControlVoteProposal(id))
                 navigate("/main/proposals/vote")
-              }}>查看</Button>
+              }}>{t("view")}</Button>
             </Col>
           </Row>
         </>

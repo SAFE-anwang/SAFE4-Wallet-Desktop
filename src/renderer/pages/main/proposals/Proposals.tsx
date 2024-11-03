@@ -1,4 +1,6 @@
 import { Alert, Col, Row, Typography, Card, Divider, Button, Tabs, TabsProps } from "antd";
+import { t } from "i18next";
+import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import ProposalList from "./ProposalList";
 
@@ -6,17 +8,18 @@ const { Text, Title } = Typography;
 
 export default () => {
 
+  const { t } = useTranslation();
   const navigate = useNavigate();
 
   const items: TabsProps['items'] = [
     {
       key: 'list',
-      label: '提案列表',
+      label: t("wallet_proposals_list"),
       children: <ProposalList />,
     },
     {
       key: 'myproposals',
-      label: '我的提案',
+      label: t("wallet_proposals_mine"),
       children: <ProposalList queryMyProposals={true} />,
     },
   ];
@@ -26,7 +29,7 @@ export default () => {
     <Row style={{ height: "50px" }}>
       <Col span={12}>
         <Title level={4} style={{ lineHeight: "16px" }}>
-          提案
+          {t("proposals")}
         </Title>
       </Col>
     </Row>
@@ -35,13 +38,13 @@ export default () => {
       <div style={{ margin: "auto", width: "90%" }}>
         <Card style={{ marginBottom: "20px" }}>
           <Alert showIcon type="info" message={<>
-            <Text>支付 <Text strong>1 SAFE</Text> 来创建提案从资金池里获取SAFE</Text><br />
-            <Text>只有超级节点的创建者才有权限进行投票</Text>
+            <Text>{t("wallet_proposals_create_tip0")} <Text strong>1 SAFE</Text> {t("wallet_proposals_create_tip1")}</Text><br />
+            <Text>{t("wallet_proposals_create_tip2")}</Text>
           </>} />
           <Divider />
           <Button onClick={() => {
             navigate("/main/proposals/create")
-          }}>发起提案</Button>
+          }}>{t("wallet_proposals_create")}</Button>
         </Card>
         <Card>
           <Tabs items={items}></Tabs>
