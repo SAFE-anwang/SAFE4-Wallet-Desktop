@@ -6,6 +6,7 @@ import { AvailableSafe3Info, formatAvailableSafe3Info, formatLockedSafe3Info, Lo
 import { ZERO } from "../../../utils/CurrentAmountUtils";
 import { CurrencyAmount } from "@uniswap/sdk";
 import { CallMulticallAggregateContractCall, SyncCallMulticallAggregate } from "../../../state/multicall/CallMulticallAggregate";
+import { useTranslation } from "react-i18next";
 
 const { Text } = Typography;
 const LockedTxLimit = 10;
@@ -32,6 +33,7 @@ export default ({
   setSafe3Asset: (safe3Asset?: Safe3Asset) => void
 }) => {
 
+  const { t } = useTranslation();
   const safe3Contract = useSafe3Contract();
   const masternodeStorageContract = useMasternodeLogicContract();
   const multicallContract = useMulticallContract();
@@ -164,7 +166,7 @@ export default ({
         safe3Address && <>
           <Spin spinning={safe3AddressAssetLoading}>
             <Col span={24} style={{ marginTop: "5px" }}>
-              <Text strong type="secondary">账户余额</Text><br />
+              <Text strong type="secondary">{t("wallet_redeems_safe3_avaialbe")}</Text><br />
             </Col>
             <Col span={24}>
               <Text strong delete={
@@ -172,9 +174,9 @@ export default ({
               }>{safe3AddressAsset?.availableSafe3Info?.amount.toFixed(2)} SAFE</Text><br />
             </Col>
             <Col span={24} style={{ marginTop: "5px" }}>
-              <Text strong type="secondary">锁仓余额</Text>
+              <Text strong type="secondary">{t("wallet_redeems_safe3_locked")}</Text>
               <Divider type="vertical" />
-              <Text type="secondary">(锁仓记录:{safe3AddressAsset?.locked?.lockedNum})</Text>
+              <Text type="secondary">({t("wallet_redeems_safe3_lockedrecords")}:{safe3AddressAsset?.locked?.lockedNum})</Text>
             </Col>
             <Col span={24}>
               <Text delete={
@@ -184,7 +186,7 @@ export default ({
             {
               safe3AddressAsset?.masternode && <>
                 <Col span={24} style={{ marginTop: "5px" }}>
-                  <Text strong type="secondary">主节点</Text><br />
+                  <Text strong type="secondary">{t("wallet_redeems_safe3_masternode")}</Text><br />
                 </Col>
                 <Text strong delete={
                   safe3AddressAsset.masternode.redeemHeight > 0

@@ -71,7 +71,7 @@ export default () => {
     {
       key: '1',
       label: <>
-        提案投票记录
+        {t("wallet_proposals_votes_list")}
       </>,
       children: <ProposalVoteInfos voteInfos={voteInfos} />,
     },

@@ -5,23 +5,22 @@ import "@xterm/xterm/css/xterm.css";
 import BatchRedeemStep2, { Safe3QueryResult, Safe3RedeemStatistic } from "./BatchRedeemStep2";
 import BatchRedeemStep3 from "./BatchRedeemStep3";
 import BatchRedeemStep1, { AddressPrivateKeyMap } from "./BatchRedeemStep1";
+import { useTranslation } from "react-i18next";
 
 const { Text, Title } = Typography
 
 export default () => {
 
+  const { t } = useTranslation();
   const steps = [
     {
-      title: '导出私钥',
-      content: 'First-content',
+      title: t("wallet_redeems_batch_step1"),
     },
     {
-      title: '检索资产',
-      content: 'First-content',
+      title: t("wallet_redeems_batch_step2"),
     },
     {
-      title: '资产迁移',
-      content: 'Second-content',
+      title: t("wallet_redeems_batch_step3"),
     },
   ];
   const items = steps.map((item) => ({ key: item.title, title: item.title }));
@@ -50,7 +49,7 @@ export default () => {
     <Row style={{ height: "50px" }}>
       <Col span={12}>
         <Title level={4} style={{ lineHeight: "16px" }}>
-          Safe3 资产迁移
+          {t("wallet_redeems")}
         </Title>
       </Col>
     </Row>

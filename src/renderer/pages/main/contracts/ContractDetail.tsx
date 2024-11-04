@@ -13,11 +13,13 @@ import { useWeb3React } from '@web3-react/core';
 import { ContractCompileSignal, ContractCompile_Methods } from '../../../../main/handlers/ContractCompileHandler';
 import { applicationControlContractVO } from '../../../state/application/action';
 import useSafeScan from '../../../hooks/useSafeScan';
+import { useTranslation } from 'react-i18next';
 
 const { Title, Text } = Typography;
 
 export default () => {
 
+  const { t } = useTranslation();
   const { chainId } = useWeb3React();
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -62,7 +64,7 @@ export default () => {
     }
   }, [chainId, contractVO]);
 
-  const {URL , API} = useSafeScan();
+  const { URL, API } = useSafeScan();
 
   useEffect(() => {
     if (contractVO) {
@@ -70,7 +72,7 @@ export default () => {
       if (contractVO.name) {
         const { address, name } = contractVO;
         setLoading(true);
-        fetchContractCompile( API ,  { address }).then(data => {
+        fetchContractCompile(API, { address }).then(data => {
           setContractCompileVO(data);
           setLoading(false);
         });
@@ -83,7 +85,7 @@ export default () => {
   const doVerifyContractLocal = useCallback(() => {
     if (contractVO && contractLocal && contractLocal.sourceCode) {
       setVerifying(true);
-      fetchContractVerifyForSingle( API ,  {
+      fetchContractVerifyForSingle(API, {
         contractAddress: contractLocal.address,
         contractSourceCode: contractLocal.sourceCode,
         optimizerEnabled: contractLocal.compileOption.optimizer.enabled,
@@ -117,7 +119,7 @@ export default () => {
       },
       {
         key: 'contractCall',
-        label: '调用合约',
+        label: t("wallet_contracts_call"),
         disabled: !(_abi),
         children: (contractVO && _abi) ? <ContractCall address={contractVO.address} abi={_abi} /> : <></>,
       }
@@ -131,7 +133,7 @@ export default () => {
           navigate("/main/contracts")
         }} />
         <Title level={4} style={{ lineHeight: "16px" }}>
-          智能合约
+          {t("wallets_contracts")}
         </Title>
       </Col>
     </Row>
@@ -145,11 +147,11 @@ export default () => {
                 <Alert showIcon type='info' message={<>
                   <Row>
                     <Col span={24}>
-                      <Text style={{ float: "left" }}>合约已通过源码验证,可在浏览器上查看合约源码了解合约执行内容.</Text>
+                      <Text style={{ float: "left" }}>{t("wallet_contracts_verify_tip_verified")}</Text>
                       <Button size='small' style={{ float: "right" }} onClick={() => {
                         window.open(`${URL}/address/${contractVO?.address}`)
                       }} >
-                        <Text type='success'>查看源码</Text>
+                        <Text type='success'>{t("wallet_contracts_viewsource")}</Text>
                       </Button>
                     </Col>
                   </Row>
@@ -161,11 +163,11 @@ export default () => {
                 <Alert showIcon type='warning' message={<>
                   <Row>
                     <Col span={24}>
-                      <Text style={{ float: "left" }}>合约未在浏览器上验证源码,通过浏览器验证合约后,所有用户都可加载 合约ABI 调用该合约</Text>
+                      <Text style={{ float: "left" }}>{t("wallet_contracts_verify_tip_unverify")}</Text>
                       <Button size='small' style={{ float: "right" }} onClick={() => {
-                        window.open(`${config.Safescan_URL}/verifyContract?a=${contractVO?.address}`)
+                        window.open(`${URL}/verifyContract?a=${contractVO?.address}`)
                       }}>
-                        <Text type='warning'>验证合约</Text>
+                        <Text type='warning'>{t("wallet_contracts_verify")}</Text>
                       </Button>
                     </Col>
                   </Row>
@@ -177,7 +179,7 @@ export default () => {
           <Col span={12}>
             <Row>
               <Col span={24}>
-                <Text type='secondary'>合约地址</Text>
+                <Text type='secondary'>{t("wallet_contracts_address")}</Text>
               </Col>
               <Col span={24}>
                 <Text strong>{contractVO?.address}</Text>
@@ -187,18 +189,18 @@ export default () => {
           <Col span={12}>
             <Row>
               <Col span={24}>
-                <Text type='secondary'>合约名称</Text>
+                <Text type='secondary'>{t("wallet_contracts_name")}</Text>
               </Col>
 
               <Col span={24}>
                 <Spin spinning={verifying}>
                   {
                     !contractVO?.name && contractLocal && contractLocal.sourceCode && <>
-                      <Tooltip title="该合约通过本地钱包部署,但未在浏览器验证合约源码,点击上传验证一键开源合约代码">
+                      <Tooltip title={t("wallet_contracts_updatetoverifytip")}>
                         <QuestionCircleTwoTone style={{ cursor: "pointer" }} twoToneColor='#7e7e7e' />
                       </Tooltip>
                       <Text style={{ marginLeft: "6px" }} type='secondary' italic>{contractLocal.name}</Text>
-                      <Button onClick={doVerifyContractLocal} size='small' type='primary' style={{ float: "right", marginRight: "12px" }}>上传验证</Button>
+                      <Button onClick={doVerifyContractLocal} size='small' type='primary' style={{ float: "right", marginRight: "12px" }}>{t("wallet_contracts_uploadtoverify")}</Button>
                     </>
                   }
                   {

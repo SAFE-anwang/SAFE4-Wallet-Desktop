@@ -15,6 +15,8 @@ import { ContractCompileSignal, ContractCompile_Methods } from '../../../../main
 import { useWeb3React } from '@web3-react/core';
 import { useTransactionAdder } from '../../../state/transactions/hooks';
 import { DB_AddressActivity_Actions } from '../../../../main/handlers/DBAddressActivitySingalHandler';
+import { useTranslation } from 'react-i18next';
+import Safescan, { SafescanComponentType } from '../../components/Safescan';
 
 const { Title, Text, Link } = Typography;
 
@@ -22,6 +24,7 @@ const now = () => new Date().getTime()
 
 export default () => {
 
+  const { t } = useTranslation();
   const { chainId } = useWeb3React();
   const addTransaction = useTransactionAdder();
   const navigate = useNavigate();
@@ -29,8 +32,8 @@ export default () => {
   const directDeploy = useSelector<AppState, boolean | undefined>(state => state.application.control.directDeploy);
 
   const compile = useSelector<AppState, {
-    sourceCode: string, abi: string, bytecode: string, name: string ,
-    compileOption : {
+    sourceCode: string, abi: string, bytecode: string, name: string,
+    compileOption: {
       compileVersion: string,
       evmVersion: string,
       optimizer: {
@@ -39,14 +42,14 @@ export default () => {
       }
     }
   } | undefined>(state => state.application.control.compile);
-  const { abi, bytecode, name, sourceCode , compileOption } = useMemo(() => {
+  const { abi, bytecode, name, sourceCode, compileOption } = useMemo(() => {
     if (!compile || directDeploy) {
       return {
         abi: undefined,
         bytecode: undefined,
         name: undefined,
         sourceCode: undefined,
-        compileOption : undefined,
+        compileOption: undefined,
       }
     }
     return compile;
@@ -103,10 +106,10 @@ export default () => {
     setDeployError(undefined);
 
     if (!params?.abi) {
-      inputErrors.abi = "请输入合约ABI"
+      inputErrors.abi = t("enter") + t("wallet_contracts_deploy_contractabi")
     }
     if (!params?.bytecode) {
-      inputErrors.bytecode = "请输入合约字节码"
+      inputErrors.bytecode = t("enter") + t("wallet_contracts_deploy_contractbytecode")
     }
     if (inputErrors.abi || inputErrors.bytecode) {
       setInputErrors({
@@ -122,14 +125,14 @@ export default () => {
       setDeploying(true);
       contractFactory.deploy(...constructorValues).then((contract) => {
         const transactionHash = contract.deployTransaction.hash;
-        console.log("deploy transaction :" , contract.deployTransaction)
+        console.log("deploy transaction :", contract.deployTransaction)
         addTransaction({ to: contract.address }, contract.deployTransaction, {
           call: {
             from: signer.address,
             to: contract.address,
             input: contract.deployTransaction.data,
-            value: "0" ,
-            type : DB_AddressActivity_Actions.Create
+            value: "0",
+            type: DB_AddressActivity_Actions.Create
           }
         });
 
@@ -146,7 +149,7 @@ export default () => {
             sourceCode,
             compileOption: JSON.stringify(compileOption),
             transactionHash,
-            addedTime : now()
+            addedTime: now()
           }
         ]]);
 
@@ -167,7 +170,7 @@ export default () => {
           navigate("/main/contracts")
         }} />
         <Title level={4} style={{ lineHeight: "16px" }}>
-          合约部署
+          {t("wallet_contracts_deploy")}
         </Title>
       </Col>
     </Row>
@@ -178,13 +181,13 @@ export default () => {
           {
             directDeploy &&
             <Alert type='info' message={<>
-              通过智能合约编辑器 (<Link onClick={() => window.open("https://remix.ethereum.org")}>Remix</Link>) 等工具编写合约后,将合约编译出的ABI和字节码复制到输入框来部署合约.
+              {t("wallet_contracts_deploy_dotip0")} (<Link onClick={() => window.open("https://remix.ethereum.org")}>Remix</Link>) {t("wallet_contracts_deploy_dotip1")}
             </>} />
           }
           <Spin spinning={deploying}>
             <Row style={{ marginTop: "20px" }}>
               <Col span={24}>
-                <Text strong type='secondary'>合约ABI</Text>
+                <Text strong type='secondary'>{t("wallet_contracts_deploy_contractabi")}</Text>
               </Col>
               <Col span={24} style={{ marginTop: "5px" }}>
                 <Input.TextArea defaultValue={abi} onBlur={(event) => {
@@ -204,7 +207,7 @@ export default () => {
               }
 
               <Col span={24} style={{ marginTop: "20px" }}>
-                <Text strong type='secondary'>合约字节码(Bytecode)</Text>
+                <Text strong type='secondary'>{t("wallet_contracts_deploy_contractbytecode")}</Text>
               </Col>
               <Col span={24} style={{ marginTop: "5px" }}>
                 <Input.TextArea defaultValue={bytecode} onBlur={(event) => {
@@ -242,13 +245,15 @@ export default () => {
                   deployHash && <Alert style={{ marginBottom: "20px" }} showIcon type='success' message={<>
                     <Row>
                       <Col span={24}>
-                        <Text>交易哈希:{deployHash}</Text>
-                        <Link onClick={() => window.open(`${config.Safescan_URL}/tx/${deployHash}`)} style={{ float: "right" }}>浏览器上查看</Link>
-                      </Col>
-                    </Row>
+                        <Text>{t("transactionHash")}:{deployHash}</Text>
+                        <Text style={{ float: "right" }} >
+                          <Safescan url={`/tx/${deployHash}`} type={SafescanComponentType.Link} />
+                        </Text>
+                    </Col>
+                  </Row>
                   </>} />
                 }
-                <Button onClick={deployContract} type='primary'>部署</Button>
+                <Button onClick={deployContract} type='primary'>{t("wallet_contracts_deploy_button")}</Button>
               </Col>
             </Row>
           </Spin>

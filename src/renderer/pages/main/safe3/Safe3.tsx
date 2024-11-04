@@ -13,6 +13,7 @@ import { useETHBalances, useWalletsActiveAccount } from "../../../state/wallets/
 import { CurrencyAmount } from "@uniswap/sdk";
 import Safe3AssetRender, { Safe3Asset } from "./Safe3AssetRender";
 import { useTransactionAdder } from "../../../state/transactions/hooks";
+import { useTranslation } from "react-i18next";
 
 const { Text, Title } = Typography;
 
@@ -32,20 +33,7 @@ const isSafe3Address = (input: string) => {
   return safe3AddressBase58Regex.test(input);
 }
 
-const steps = [
-  {
-    title: '资产查询',
-    content: 'First-content',
-  },
-  {
-    title: '验证私钥',
-    content: 'First-content',
-  },
-  {
-    title: '资产迁移',
-    content: 'Second-content',
-  },
-];
+
 
 export interface TxExecuteStatus {
   txHash?: string,
@@ -55,14 +43,28 @@ export interface TxExecuteStatus {
 
 export default () => {
 
+  const { t } = useTranslation();
   const activeAccount = useWalletsActiveAccount();
   const [current, setCurrent] = useState(0);
-  const items = steps.map((item) => ({ key: item.title, title: item.title }));
+
   const addTransaction = useTransactionAdder();
 
   const [safe3Address, setSafe3Address] = useState<string>();
   const [safe3PrivateKey, setSafe3PrivateKey] = useState<string>();
   const [safe4TargetAddress, setSafe4TargetAddress] = useState<string>(activeAccount);
+
+  const steps = [
+    {
+      title: t("wallet_redeems_single_step0"),
+    },
+    {
+      title: t("wallet_redeems_single_step1"),
+    },
+    {
+      title: t("wallet_redeems_single_step2"),
+    },
+  ];
+  const items = steps.map((item) => ({ key: item.title, title: item.title }));
 
   const [inputErrors, setInputErrors] = useState<{
     safe3PrivateKeyError?: string,
@@ -134,7 +136,7 @@ export default () => {
       } else {
         setInputErrors({
           ...inputErrors,
-          safe3Address: "请输入正确的Safe3钱包地址"
+          safe3Address: t("enter_correct") + t("wallet_redeems_safe3_address")
         });
       }
     }
@@ -156,13 +158,13 @@ export default () => {
         } else {
           setInputErrors({
             ...inputErrors,
-            safe3PrivateKeyError: "私钥与钱包地址不匹配"
+            safe3PrivateKeyError: t("wallet_redeems_safe3_privatekey_notmatch")
           });
         }
       } else {
         setInputErrors({
           ...inputErrors,
-          safe3PrivateKeyError: "请输入该地址从 Safe3 桌面钱包导出的私钥"
+          safe3PrivateKeyError: t("wallet_redeems_safe3_privatekey_enterfromsafe3wallet")
         });
       }
     }
@@ -318,7 +320,7 @@ export default () => {
     <Row style={{ height: "50px" }}>
       <Col span={12}>
         <Title level={4} style={{ lineHeight: "16px" }}>
-          Safe3 资产迁移
+          {t("wallet_redeems")}
         </Title>
       </Col>
     </Row>
@@ -327,14 +329,14 @@ export default () => {
       <div style={{ margin: "auto", width: "90%" }}>
         <Card>
           <Alert showIcon type="info" message={<>
-            <Text>将 Safe3 网络的资产迁移到 Safe4 网络 (当前测试使用 Safe3 网络 2024年9月之前的资产快照)</Text><br />
-            <Text>您输入的私钥只在当前界面用于本地验证以及数据签名.</Text><br />
+            <Text>{t("wallet_redeems_tip0")}</Text><br />
+            <Text>{t("wallet_redeems_tip1")}</Text><br />
           </>} />
           <Steps style={{ marginTop: "20px" }} current={current} items={items} />
           <Row style={{ marginTop: "20px" }}>
             {/****************** Safe3 钱包地址 *********************/}
             <Col span={24}>
-              <Text strong type="secondary">Safe3 钱包地址</Text>
+              <Text strong type="secondary">{t("wallet_redeems_safe3_address")}</Text>
             </Col>
             <Col span={24} style={{ marginTop: "5px" }}>
               <Input value={safe3Address} disabled={redeeming} size="large" onChange={(event) => {
@@ -375,10 +377,10 @@ export default () => {
               safe3Asset && <>
                 <Divider />
                 <Col span={24}>
-                  <Text strong type="secondary">Safe3 钱包私钥</Text>
+                  <Text strong type="secondary">{t("wallet_redeems_safe3_privatekey")}</Text>
                 </Col>
                 <Col span={24} style={{ marginTop: "5px" }}>
-                  <Input placeholder="输入钱包私钥"
+                  <Input placeholder={t("enter") + t("wallet_redeems_safe3_privatekey")}
                     value={safe3PrivateKey}
                     disabled={redeeming} size="large" onChange={(event) => {
                       const value = event.target.value;
@@ -410,10 +412,10 @@ export default () => {
                 <Divider />
                 <Col span={24}>
                   <Alert type="info" showIcon message={<>
-                    默认使用当前钱包地址来接收迁移资产
+                    {t("wallet_redeems_safe4_address_tip")}
                   </>} />
                   <Col span={24} style={{ marginTop: "20px" }}>
-                    <Text strong type="secondary">Safe4 钱包地址</Text>
+                    <Text strong type="secondary">{t("wallet_redeems_safe4_address")}</Text>
                   </Col>
                   <Col span={24}>
                     <Input disabled={redeeming} size="large"
@@ -422,7 +424,7 @@ export default () => {
                         if (!ethers.utils.isAddress(input)) {
                           setInputErrors({
                             ...inputErrors,
-                            safe4TargetAddress: "请输入合法的Safe4钱包地址"
+                            safe4TargetAddress: t("enter_correct") + t("wallet_redeems_safe4_address")
                           })
                         } else {
                           setInputErrors({
@@ -436,7 +438,7 @@ export default () => {
                         if (!ethers.utils.isAddress(input)) {
                           setInputErrors({
                             ...inputErrors,
-                            safe4TargetAddress: "请输入合法的Safe4钱包地址"
+                            safe4TargetAddress: t("enter_correct") + t("wallet_redeems_safe4_address")
                           })
                         } else {
                           setInputErrors({
@@ -456,7 +458,7 @@ export default () => {
                       !inputErrors?.safe4TargetAddress && warningSafe4TargetAddress && <>
                         <Alert style={{ marginTop: "5px" }} type="warning"
                           showIcon message={<>
-                            您输入的资产接收地址并不是当前钱包地址，请仔细确认该地址是否为您期望用于接收资产的地址.
+                            {t("wallet_redeems_safe4_address_warning")}
                           </>} />
                       </>
                     }
@@ -467,7 +469,7 @@ export default () => {
                     notEnough && <>
                       <Alert style={{ marginBottom: "5px" }} showIcon type="error" message={
                         <>
-                          当前正在使用的钱包没有 SAFE 来支付迁移资产所需要支付的手续费。
+                          {t("wallet_redeems_notenough")}
                         </>
                       } />
                     </>
@@ -480,7 +482,7 @@ export default () => {
                     onClick={() => {
                       executeRedeem();
                     }}>
-                    迁移
+                    {t("wallet_redeems_button")}
                   </Button>
 
                   {
@@ -491,13 +493,13 @@ export default () => {
                           redeemTxHashs?.avaiable && <>
                             {
                               redeemTxHashs.avaiable.status == 1 && <>
-                                <Text type="secondary">可用余额迁移交易哈希</Text><br />
+                                <Text type="secondary">{t("wallet_redeems_available_txhash")}</Text><br />
                                 <Text strong>{redeemTxHashs.avaiable.txHash}</Text> <br />
                               </>
                             }
                             {
                               redeemTxHashs.avaiable.status == 0 && <>
-                                <Text type="secondary">可用余额迁移交易失败</Text><br />
+                                <Text type="secondary">{t("wallet_redeems_available_error")}</Text><br />
                                 <Text strong type="danger">
                                   <CloseCircleTwoTone twoToneColor="red" style={{ marginRight: "5px" }} />
                                   {redeemTxHashs.avaiable.error}
@@ -510,13 +512,13 @@ export default () => {
                           redeemTxHashs?.locked && <>
                             {
                               redeemTxHashs.locked.status == 1 && <>
-                                <Text type="secondary">锁仓余额迁移交易哈希</Text><br />
+                                <Text type="secondary">{t("wallet_redeems_locked_txhash")}</Text><br />
                                 <Text strong>{redeemTxHashs.locked.txHash}</Text> <br />
                               </>
                             }
                             {
                               redeemTxHashs.locked.status == 0 && <>
-                                <Text type="secondary">锁仓余额迁移交易失败</Text><br />
+                                <Text type="secondary">{t("wallet_redeems_locked_error")}</Text><br />
                                 <Text strong type="danger">
                                   <CloseCircleTwoTone twoToneColor="red" style={{ marginRight: "5px" }} />
                                   {redeemTxHashs.locked.error}
@@ -529,13 +531,13 @@ export default () => {
                           redeemTxHashs?.masternode && <>
                             {
                               redeemTxHashs.masternode.status == 1 && <>
-                                <Text type="secondary">主节点迁移交易哈希</Text><br />
+                                <Text type="secondary">{t("wallet_redeems_masternode_txhash")}</Text><br />
                                 <Text strong>{redeemTxHashs.masternode.txHash}</Text> <br />
                               </>
                             }
                             {
                               redeemTxHashs.masternode.status == 0 && <>
-                                <Text type="secondary">主节点迁移交易失败</Text><br />
+                                <Text type="secondary">{t("wallet_redeems_masternode_error")}</Text><br />
                                 <Text strong type="danger">
                                   <CloseCircleTwoTone twoToneColor="red" style={{ marginRight: "5px" }} />
                                   {redeemTxHashs.masternode.error}

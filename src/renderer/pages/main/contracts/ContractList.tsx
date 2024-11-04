@@ -10,6 +10,7 @@ import { applicationControlContractVO } from '../../../state/application/action'
 import { CheckCircleTwoTone, FileAddOutlined, QuestionCircleFilled, QuestionCircleTwoTone, QuestionOutlined, WalletTwoTone } from '@ant-design/icons';
 import useSafeScan from '../../../hooks/useSafeScan';
 import AddressComponent from '../../components/AddressComponent';
+import { useTranslation } from 'react-i18next';
 const { Title, Text } = Typography;
 
 const Supernode_Page_Size = 10;
@@ -21,6 +22,7 @@ export default ({
   localContracts: any[];
   queryContracts: boolean;
 }) => {
+  const { t } = useTranslation();
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
@@ -70,7 +72,7 @@ export default ({
 
   const columns: ColumnsType<ContractVO> = [
     {
-      title: '合约地址',
+      title: t("wallet_contracts_address"),
       dataIndex: 'address',
       key: 'address',
       render: (address, contractVO: ContractVO) => {
@@ -85,19 +87,19 @@ export default ({
       width: "80px"
     },
     {
-      title: '创建账户',
+      title: t("wallet_contracts_creator"),
       dataIndex: 'creator',
       key: 'creator',
       render: (creator, supernodeVO: ContractVO) => {
         return <>
           <Row>
             <Col span={24} style={{ width: "80px" }}>
-            {
-              creator && <AddressComponent address={creator} ellipsis copyable />
-            }
-            {
-              !creator && <Text strong>GENESIS</Text>
-            }
+              {
+                creator && <AddressComponent address={creator} ellipsis copyable />
+              }
+              {
+                !creator && <Text strong>GENESIS</Text>
+              }
             </Col>
           </Row>
         </>
@@ -105,7 +107,7 @@ export default ({
       width: "80px"
     },
     {
-      title: '部署时间',
+      title: t("wallet_contracts_deploytime"),
       dataIndex: 'creatorTimestamp',
       key: 'creatorTimestamp',
       render: (creatorTimestamp, contractVO: ContractVO) => {
@@ -123,7 +125,7 @@ export default ({
       width: "50px"
     },
     {
-      title: '合约名称',
+      title: t("wallet_contracts_name"),
       dataIndex: 'name',
       key: 'name',
       render: (name, contractVO: ContractVO) => {
@@ -144,7 +146,7 @@ export default ({
                   {
                     !name && dbName && <>
                       <Col span={2} style={{ paddingTop: "5px", float: "left" }}>
-                        <Tooltip title="该合约通过本地钱包部署,但未在浏览器开源合约源码">
+                        <Tooltip title={t("wallet_contracts_localdeploy")}>
                           <QuestionCircleTwoTone style={{ cursor: "pointer" }} twoToneColor='#7e7e7e' />
                         </Tooltip>
                       </Col>
@@ -157,7 +159,7 @@ export default ({
                     name && <>
                       <Col span={2} style={{ paddingTop: "5px", float: "left" }}>
                         {
-                          queryContracts && <Tooltip title="已进行开源验证的智能合约">
+                          queryContracts && <Tooltip title={t("wallet_contracts_opensource")}>
                             <CheckCircleTwoTone style={{ cursor: "pointer" }} twoToneColor='#74d13be0' />
                           </Tooltip>
                         }
@@ -173,7 +175,7 @@ export default ({
                   <Button style={{ float: "right" }} onClick={() => {
                     dispatch(applicationControlContractVO(contractVO))
                     navigate("/main/contracts/detail")
-                  }}>查看</Button>
+                  }}>{t("view")}</Button>
                 </Col>
               </Row>
             </Col>

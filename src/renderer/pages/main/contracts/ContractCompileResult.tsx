@@ -5,15 +5,16 @@ import { useEffect, useMemo } from 'react';
 import { useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { applicationControlCompile, applicationControlDirectDeploy } from '../../../state/application/action';
+import { useTranslation } from 'react-i18next';
 
 const { Title, Text, Paragraph } = Typography;
 
 export default ({
-  sourceCode , compileResult, compileOption
+  sourceCode, compileResult, compileOption
 }: {
-  sourceCode : string,
+  sourceCode: string,
   compileResult: string,
-  compileOption : {
+  compileOption: {
     compileVersion: string,
     evmVersion: string,
     optimizer: {
@@ -23,6 +24,7 @@ export default ({
   }
 }) => {
 
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const { contracts, errors, sources } = useMemo(() => {
@@ -64,17 +66,17 @@ export default ({
               <Button type='primary' onClick={(event) => {
                 event.stopPropagation();
                 dispatch(applicationControlDirectDeploy(false));
-                dispatch( applicationControlCompile({
+                dispatch(applicationControlCompile({
                   sourceCode,
                   compileResult,
-                  abi : JSON.stringify(abi),
-                  bytecode : bytecode.object,
-                  name : contractName ,
+                  abi: JSON.stringify(abi),
+                  bytecode: bytecode.object,
+                  name: contractName,
                   compileOption
                 }));
                 navigate("/main/contracts/deploy");
               }} size='small' style={{ float: "right" }}>
-                部署
+                {t("wallet_contracts_deploy_button")}
               </Button>
             </Col>
           </Row>,
@@ -89,7 +91,7 @@ export default ({
             </Col>
             <Col span={24} style={{ marginTop: "20px" }}>
               <Paragraph copyable={{ text: bytecode.object }}>
-                <Text type='secondary' strong>字节码(Bytecode)</Text>
+                <Text type='secondary' strong>{t("wallet_contracts_deploy_contractbytecode")}</Text>
               </Paragraph>
               <Text>
                 {bytecode.object}

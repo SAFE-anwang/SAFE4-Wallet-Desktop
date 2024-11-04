@@ -3,11 +3,12 @@ import { VoteInfo } from "../../../../structs/Proposal"
 import AddressView from "../../../components/AddressView";
 import { Typography } from "antd";
 import { CheckCircleFilled, CloseCircleFilled, QuestionCircleFilled } from '@ant-design/icons';
+import { useTranslation } from "react-i18next";
 
 
 const { Text } = Typography;
 
-export const RenderVoteResult = (voteResult: number) => {
+export const RenderVoteResult = (voteResult: number, t?: any) => {
   switch (voteResult) {
     case 1:
       return <>
@@ -15,7 +16,9 @@ export const RenderVoteResult = (voteResult: number) => {
           <CheckCircleFilled style={{
             color: "#52c41a", fontSize: "16px", marginRight: "10px", marginLeft: "10px"
           }} />
-          <Text type="success">同意</Text>
+          <Text type="success">
+            {t ? t("wallet_proposals_vote_agree") : "同意"}
+          </Text>
         </Text>
       </>
     case 2:
@@ -24,7 +27,9 @@ export const RenderVoteResult = (voteResult: number) => {
           <CloseCircleFilled style={{
             color: "#e53d3d", fontSize: "16px", marginRight: "10px", marginLeft: "10px"
           }} />
-          <Text type="danger">拒绝</Text>
+          <Text type="danger">
+            {t ? t("wallet_proposals_vote_reject") : "拒绝"}
+          </Text>
         </Text>
       </>
     case 3:
@@ -33,7 +38,9 @@ export const RenderVoteResult = (voteResult: number) => {
           <QuestionCircleFilled style={{
             color: "#c3a4a4", fontSize: "16px", marginRight: "10px", marginLeft: "10px"
           }} />
-          <Text type="secondary">弃权</Text>
+          <Text type="secondary">
+            {t ? t("wallet_proposals_vote_abstain") : "期权"}
+          </Text>
         </Text>
       </>
   }
@@ -45,11 +52,11 @@ export default ({
   voteInfos?: VoteInfo[]
 }) => {
 
-
+  const { t } = useTranslation();
 
   const columns: ColumnsType<VoteInfo> = [
     {
-      title: '超级节点',
+      title: t("wallet_proposals_votes_supernode"),
       dataIndex: 'voter',
       key: 'voter',
       render: (voter) => {
@@ -59,11 +66,11 @@ export default ({
       }
     },
     {
-      title: '投票结果',
+      title: t("wallet_proposals_votes_result"),
       dataIndex: 'voteResult',
       key: 'voteResult',
       render: (voteResult) => {
-        return <>{RenderVoteResult(voteResult)}</>
+        return <>{RenderVoteResult(voteResult , t)}</>
       }
     },
   ];

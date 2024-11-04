@@ -7,6 +7,7 @@ import CallMulticallAggregate, { CallMulticallAggregateContractCall } from "../.
 import { CurrencyAmount, JSBI } from "@uniswap/sdk";
 import { ZERO } from "../../../utils/CurrentAmountUtils";
 import EtherAmount from "../../../utils/EtherAmount";
+import { useTranslation } from "react-i18next";
 
 const { Text, Title } = Typography
 
@@ -45,6 +46,8 @@ export default ({
   setSafe3RedeemList: (list: Safe3QueryResult[]) => void,
   setSafe3RedeemStatistic: (statistic: Safe3RedeemStatistic) => void,
 }) => {
+
+  const { t } = useTranslation();
   const safe3Contract = useSafe3Contract();
   const multicallContract = useMulticallContract();
   const [addressResultMap, setAddressResultMap] = useState<{
@@ -345,14 +348,14 @@ export default ({
 
   const columns: TableProps<Safe3QueryResult>['columns'] = [
     {
-      title: '钱包地址',
+      title: t("wallet_redeems_batch_col_address"),
       dataIndex: 'address',
       key: 'address',
       render: (text) => <>{text}</>,
       width: "40%"
     },
     {
-      title: '可用资产',
+      title: t("wallet_redeems_batch_col_available"),
       dataIndex: 'address',
       key: 'address0',
       render: (address) => {
@@ -378,7 +381,7 @@ export default ({
       width: "20%"
     },
     {
-      title: '锁仓资产',
+      title: t("wallet_redeems_batch_col_locked"),
       dataIndex: 'address',
       key: 'address1',
       render: (address) => {
@@ -417,7 +420,7 @@ export default ({
       width: "20%"
     },
     {
-      title: '主节点',
+      title: t("wallet_redeems_batch_col_masternode"),
       dataIndex: 'address',
       key: 'address2',
       render: (address) => {
@@ -457,21 +460,23 @@ export default ({
       <Col span={16}>
         <Row>
           <Col span={8}>
-            <Statistic value={safe3AddressArr.length} title="解析地址总数" />
+            {/* 加载解析地址总数 */}
+            <Statistic value={safe3AddressArr.length} title={t("wallet_redeems_batch_totalparseaddrcount")} />
           </Col>
           <Col span={8}>
-            <Statistic value={statistic.needRedeemAddressCount} title="待迁移资产地址总数" />
+            {/* 待迁移资产地址总数 */}
+            <Statistic value={statistic.needRedeemAddressCount} title={t("wallet_redeems_batch_totalwaitaddrcount")} />
           </Col>
         </Row>
         <Row style={{ marginTop: "10px" }}>
           <Col span={8}>
-            <Statistic value={statistic.needRedeemTotalAvailableAmount.toFixed(2)} title="待迁移总可用资产" />
+            <Statistic value={statistic.needRedeemTotalAvailableAmount.toFixed(2)} title={t("wallet_redeems_batch_totalwaitavailable")} />
           </Col>
           <Col span={8}>
-            <Statistic value={statistic.needRedeemTotalLockedAmount.toFixed(2)} title="待迁移总锁仓资产" />
+            <Statistic value={statistic.needRedeemTotalLockedAmount.toFixed(2)} title={t("wallet_redeems_batch_totalwaitlocked")} />
           </Col>
           <Col span={8}>
-            <Statistic value={statistic.needRedeemMasternodeCounts} title="待迁移主节点数量" />
+            <Statistic value={statistic.needRedeemMasternodeCounts} title={t("wallet_redeems_batch_totalwaitmasternode")} />
           </Col>
         </Row>
       </Col>
@@ -482,7 +487,7 @@ export default ({
     {
       allFinish && needRedeemList.length == 0 &&
       <Alert style={{ marginBottom: "20px" }} type="warning" showIcon message={<>
-        没有需要进行迁移资产的账户
+        {t("wallet_redeems_batch_none")}
       </>} />
     }
     <Button type="primary" disabled={!allFinish || needRedeemList.length == 0} onClick={nextClick}>下一步</Button>

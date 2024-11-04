@@ -10,6 +10,7 @@ import { Safe3QueryResult, Safe3RedeemStatistic } from "./BatchRedeemStep2";
 import { TxExecuteStatus } from "../safe3/Safe3";
 import { CloseCircleTwoTone } from "@ant-design/icons";
 import { useTransactionAdder } from "../../../state/transactions/hooks";
+import { useTranslation } from "react-i18next";
 
 const { Text } = Typography;
 const redeemNeedAmount = "0.01";
@@ -21,6 +22,7 @@ export default ({
   safe3RedeemStatistic: Safe3RedeemStatistic,
   addressPrivateKeyMap: AddressPrivateKeyMap
 }) => {
+  const { t } = useTranslation();
   const activeAccount = useWalletsActiveAccount();
   const balance = useETHBalances([activeAccount])[activeAccount];
   const addTransaction = useTransactionAdder();
@@ -175,27 +177,27 @@ export default ({
   return <>
     <Row style={{ marginTop: "20px" }}>
       <Col span={6}>
-        <Statistic value={safe3RedeemStatistic.addressCount} title="待迁移资产地址总数" />
+        <Statistic value={safe3RedeemStatistic.addressCount} title={t("wallet_redeems_batch_totalwaitaddrcount")} />
       </Col>
       <Col span={6}>
-        <Statistic value={safe3RedeemStatistic.totalAvailable.toFixed(2)} title="待迁移总可用资产" />
+        <Statistic value={safe3RedeemStatistic.totalAvailable.toFixed(2)} title={t("wallet_redeems_batch_totalwaitavailable")} />
       </Col>
       <Col span={6}>
-        <Statistic value={safe3RedeemStatistic.totalLocked.toFixed(2)} title="待迁移总锁仓资产" />
+        <Statistic value={safe3RedeemStatistic.totalLocked.toFixed(2)} title={t("wallet_redeems_batch_totalwaitlocked")} />
       </Col>
       <Col span={6}>
-        <Statistic value={safe3RedeemStatistic.totalMasternodes} title="待迁移主节点数量" />
+        <Statistic value={safe3RedeemStatistic.totalMasternodes} title={t("wallet_redeems_batch_totalwaitmasternode")} />
       </Col>
     </Row>
     <Divider />
     <Row>
       <Col span={24}>
         <Alert type="info" showIcon message={<>
-          默认使用当前钱包地址来接收迁移资产
+          {t("wallet_redeems_safe4_address_tip")}
         </>} />
       </Col>
       <Col span={24} style={{ marginTop: "20px" }}>
-        <Text type="secondary">Safe4 钱包地址</Text>
+        <Text type="secondary">{t("wallet_redeems_safe4_address")}</Text>
       </Col>
       <Col span={24}>
         <Input size="large" status={warningSafe4TargetAddress ? "warning" : ""} value={safe4TargetAddress} onChange={(event) => {
@@ -203,7 +205,7 @@ export default ({
           if (!ethers.utils.isAddress(input)) {
             setInputErrors({
               ...inputErrors,
-              safe4TargetAddress: "请输入合法的Safe4钱包地址"
+              safe4TargetAddress: t("enter_correct") + t("wallet_redeems_safe4_address")
             })
           } else {
             setInputErrors({
@@ -217,7 +219,7 @@ export default ({
           if (!ethers.utils.isAddress(input)) {
             setInputErrors({
               ...inputErrors,
-              safe4TargetAddress: "请输入合法的Safe4钱包地址"
+              safe4TargetAddress: t("enter_correct") + t("wallet_redeems_safe4_address")
             })
           } else {
             setInputErrors({
@@ -237,7 +239,7 @@ export default ({
           !inputErrors?.safe4TargetAddress && warningSafe4TargetAddress && <>
             <Alert style={{ marginTop: "5px" }} type="warning"
               showIcon message={<>
-                您输入的资产接收地址并不是当前钱包地址，请仔细确认该地址是否为您期望用于接收资产的地址.
+                {t("wallet_redeems_safe4_address_warning")}
               </>} />
           </>
         }
@@ -252,13 +254,13 @@ export default ({
             redeemTxHashs?.avaiable && <>
               {
                 redeemTxHashs.avaiable.status == 1 && <>
-                  <Text type="secondary">可用余额迁移交易哈希</Text><br />
+                  <Text type="secondary">{t("wallet_redeems_available_txhash")}</Text><br />
                   <Text strong>{redeemTxHashs.avaiable.txHash}</Text> <br />
                 </>
               }
               {
                 redeemTxHashs.avaiable.status == 0 && <>
-                  <Text type="secondary">可用余额迁移交易失败</Text><br />
+                  <Text type="secondary">{t("wallet_redeems_available_error")}</Text><br />
                   <Text strong type="danger">
                     <CloseCircleTwoTone twoToneColor="red" style={{ marginRight: "5px" }} />
                     {redeemTxHashs.avaiable.error}
@@ -271,13 +273,13 @@ export default ({
             redeemTxHashs?.locked && <>
               {
                 redeemTxHashs.locked.status == 1 && <>
-                  <Text type="secondary">锁仓余额迁移交易哈希</Text><br />
+                  <Text type="secondary">{t("wallet_redeems_locked_txhash")}</Text><br />
                   <Text strong>{redeemTxHashs.locked.txHash}</Text> <br />
                 </>
               }
               {
                 redeemTxHashs.locked.status == 0 && <>
-                  <Text type="secondary">锁仓余额迁移交易失败</Text><br />
+                  <Text type="secondary">{t("wallet_redeems_locked_error")}</Text><br />
                   <Text strong type="danger">
                     <CloseCircleTwoTone twoToneColor="red" style={{ marginRight: "5px" }} />
                     {redeemTxHashs.locked.error}
@@ -290,13 +292,13 @@ export default ({
             redeemTxHashs?.masternode && <>
               {
                 redeemTxHashs.masternode.status == 1 && <>
-                  <Text type="secondary">主节点迁移交易哈希</Text><br />
+                  <Text type="secondary">{t("wallet_redeems_masternode_txhash")}</Text><br />
                   <Text strong>{redeemTxHashs.masternode.txHash}</Text> <br />
                 </>
               }
               {
                 redeemTxHashs.masternode.status == 0 && <>
-                  <Text type="secondary">主节点迁移交易失败</Text><br />
+                  <Text type="secondary">{t("wallet_redeems_masternode_error")}</Text><br />
                   <Text strong type="danger">
                     <CloseCircleTwoTone twoToneColor="red" style={{ marginRight: "5px" }} />
                     {redeemTxHashs.masternode.error}
@@ -313,12 +315,12 @@ export default ({
       notEnough && <>
         <Alert style={{ marginBottom: "5px" }} showIcon type="error" message={
           <>
-            当前正在使用的钱包没有 SAFE 来支付迁移资产所需要支付的手续费。
+            {t("wallet_redeems_notenough")}
           </>
         } />
       </>
     }
-    <Button type="primary" loading={redeeming} disabled={notEnough || redeemTxHashs != undefined} onClick={executeRedeem}>迁移</Button>
+    <Button type="primary" loading={redeeming} disabled={notEnough || redeemTxHashs != undefined} onClick={executeRedeem}>{t("wallet_redeems_button")}</Button>
 
 
   </>

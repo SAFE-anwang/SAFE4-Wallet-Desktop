@@ -16,11 +16,13 @@ import { IPC_CHANNEL, Safe4_Network_Config } from '../../config';
 import { DateFormat } from '../../utils/DateUtils';
 import EtherAmount from '../../utils/EtherAmount';
 import Safescan from '../components/Safescan';
+import { useTranslation } from 'react-i18next';
 
 const { Title, Text } = Typography;
 
 export default () => {
 
+  const { t } = useTranslation();
   const activeAccount = useWalletsActiveAccount();
   const [err, setErr] = useState<string>();
   const [sending, setSending] = useState<boolean>(false);
@@ -53,7 +55,17 @@ export default () => {
         })
         .catch((err: any) => {
           setSending(false);
-          setErr(err.message)
+          const { code, message } = JSON.parse(err.message);
+          if (code == "11101") {
+            setErr(t("wallet_getcoins_error_getalready"));
+          } else if (code == "11102") {
+            setErr(t("wallet_getcoins_error_empty"))
+          } else if (code == "11103") {
+            setErr(t("wallet_getcoins_error_ipfilled"))
+          }
+          else {
+            setErr(t("wallet_getcoins_error_empty"))
+          }
         })
     }
   }, [activeAccount, chainId, API]);
@@ -64,7 +76,7 @@ export default () => {
 
   const columns = [
     {
-      title: '领取时间',
+      title: t("wallet_getcoins_col_time"),
       dataIndex: 'timestamp',
       key: 'timestamp',
       render: (timestamp: number) => {
@@ -72,7 +84,7 @@ export default () => {
       }
     },
     {
-      title: '领取数量',
+      title: t("wallet_getcoins_col_amount"),
       dataIndex: 'value',
       key: 'value',
       render: (value: any) => {
@@ -82,13 +94,13 @@ export default () => {
       }
     },
     {
-      title: '交易哈希',
+      title: t("wallet_getcoins_col_transactionHash"),
       dataIndex: 'transactionHash',
       key: 'transactionHash',
       render: (transactionHash: any) => {
         return <>
           <Text>{transactionHash}</Text>
-          <Text style={{float:"right"}}>
+          <Text style={{ float: "right" }}>
             <Safescan url={`/tx/${transactionHash}`} />
           </Text>
         </>
@@ -140,7 +152,7 @@ export default () => {
     <Row style={{ height: "50px" }}>
       <Col span={12}>
         <Title level={4} style={{ lineHeight: "16px" }}>
-          领取测试币
+          {t("wallet_getcoins")}
         </Title>
       </Col>
     </Row>
@@ -148,10 +160,10 @@ export default () => {
       <div style={{ margin: "auto", width: "90%" }}>
         <Card style={{ marginBottom: "20px" }}>
           <Alert type='info' showIcon message={<>
-            <Text>每个地址每天只能领取 <Text strong>一次</Text> 测试币</Text>
+            <Text>{t("wallet_getcoins_tip0")} <Text strong>{t("wallet_getcoins_tip1", { count: 1 })}</Text></Text>
           </>} />
           <Divider />
-          <Button disabled={(err || sending) ? true : false} onClick={doFetchGetTestCoin}>点击领取</Button><br /><br />
+          <Button disabled={(err || sending) ? true : false} onClick={doFetchGetTestCoin}>{t("wallet_getcoins_button")}</Button><br /><br />
           {
             err && <Alert type='error' showIcon message={<>
               {err}

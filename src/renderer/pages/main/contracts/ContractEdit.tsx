@@ -16,6 +16,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { applicationControlDirectDeploy } from '../../../state/application/action';
 import { AppState } from '../../../state';
 import { EvmVersionOptions } from './Compile_Option';
+import { useTranslation } from 'react-i18next';
 
 const { Title, Text, Link } = Typography;
 
@@ -44,6 +45,7 @@ const Solidity_Template = "pragma solidity >=0.8.2 <0.9.0 ;\n\n"
 
 export default () => {
 
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
@@ -139,7 +141,7 @@ export default () => {
           navigate("/main/contracts")
         }} />
         <Title level={4} style={{ lineHeight: "16px" }}>
-          编辑合约
+          {t("wallet_contracts_edit")}
         </Title>
       </Col>
     </Row>
@@ -149,12 +151,12 @@ export default () => {
 
         <Card>
           <Alert type='info' showIcon message={<>
-            <Text>在编辑框中编写智能合约,点击编译按钮将其部署到 Safe4 网络 (<Link onClick={() => window.open("https://docs.soliditylang.org/zh/v0.8.17/")}>Soliditiy 使用文档</Link>)</Text>
+            <Text>{t("wallet_contracts_deploy_tip0")} (<Link onClick={() => window.open("https://docs.soliditylang.org/zh/v0.8.17/")}>{t("wallet_contracts_deploy_link_soliditydoc")}</Link>)</Text>
             <br />
-            <Text>已有 ABI 和合约字节码(Bytecode),也可以选择 <Link onClick={() => {
+            <Text>{t("wallet_contracts_deploy_tip1")} <Link onClick={() => {
               dispatch(applicationControlDirectDeploy(true));
               navigate("/main/contracts/deploy")
-            }}>直接部署</Link></Text>
+            }}>{t("wallet_contracts_deploy_link_direct")}</Link></Text>
           </>} />
           <Divider />
 
@@ -162,7 +164,7 @@ export default () => {
             <Row>
 
               <Col span={8}>
-                <Text type='secondary'>Solidity 编译版本</Text><br />
+                <Text type='secondary'>{t("wallet_contracts_deploy_compile_solcversion")}</Text><br />
                 <Select style={{ borderRadius: "8px", width: "80%" }}
                   value={compileOption.compileVersion}
                   options={solcVersionOptions}
@@ -177,7 +179,7 @@ export default () => {
               </Col>
 
               <Col span={8}>
-                <Text type='secondary'>EVM 版本</Text><br />
+                <Text type='secondary'>{t("wallet_contracts_deploy_compile_evmversion")}</Text><br />
                 <Select style={{ borderRadius: "8px", width: "80%" }}
                   value={compileOption.evmVersion}
                   options={EvmVersionOptions}
@@ -194,7 +196,7 @@ export default () => {
               <Col span={8}>
                 <Text type='secondary'>Enable optimization</Text><br />
                 <Switch style={{ marginRight: "5px" }}
-                  checkedChildren="开启" unCheckedChildren="关闭" value={compileOption.optimizer.enabled}
+                  checkedChildren={t("active")} unCheckedChildren={t("unacitve")} value={compileOption.optimizer.enabled}
                   onChange={(value) => {
                     setCompileOption({
                       ...compileOption,
@@ -222,7 +224,7 @@ export default () => {
             </Row>
             <Row style={{ marginTop: "20px" }}>
               <Col span={24}>
-                <Button type='primary' icon={<ReloadOutlined />} onClick={doSolccompile}>编译</Button>
+                <Button type='primary' icon={<ReloadOutlined />} onClick={doSolccompile}>{t("wallet_contracts_deploy_compile")}</Button>
               </Col>
               {
                 compileResult && <Col span={24} style={{ marginTop: "20px" }}>
