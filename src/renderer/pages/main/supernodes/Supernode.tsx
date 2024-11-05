@@ -9,6 +9,7 @@ import { useMulticallContract, useSupernodeVoteContract } from '../../../hooks/u
 import { useEffect, useMemo, useState } from 'react';
 import SupernodeVoters from './SupernodeVoters';
 import AddressComponent from '../../components/AddressComponent';
+import { useTranslation } from 'react-i18next';
 
 const { Text } = Typography;
 
@@ -18,6 +19,7 @@ export default ({
   supernodeInfo: SupernodeInfo
 }) => {
 
+  const { t } = useTranslation();
   const supernodeVoteContract = useSupernodeVoteContract();
   const [totalVoteNum, setTotalVoteNum] = useState<CurrencyAmount>();
   const [totalVoteAmount, setTotalVoteAmount] = useState<CurrencyAmount>();
@@ -37,26 +39,26 @@ export default ({
     return [{
       key: '1',
       label: <>
-        创建人 <Divider type='vertical' /> 合伙人
+        {t("wallet_supernodes_incentiveplan_creator")} <Divider type='vertical' /> {t("wallet_supernodes_incentiveplan_members")}
       </>,
       children: <Members memberInfos={supernodeInfo.founders} />,
     },
     {
       key: '2',
       label: <>
-        投票人
+        {t("wallet_supernodes_incentiveplan_voters")}
       </>,
       children: <SupernodeVoters supernodeAddr={supernodeInfo.addr} />,
     }];
   }, [supernodeInfo.addr])
 
   return <>
-    <Card title="超级节点详情" style={{ width: "100%", marginTop: "50px" }}>
+    <Card title={t("wallet_supernodes_detail")} style={{ width: "100%", marginTop: "50px" }}>
       <Row>
         <Col span={16}>
           <Row>
             <Col span={6}>
-              <Text type='secondary'>节点ID:</Text>
+              <Text type='secondary'>{t("wallet_supernodes_id")}</Text>
             </Col>
             <Col span={18}>
               <Text strong>{supernodeInfo.id}</Text>
@@ -64,7 +66,7 @@ export default ({
           </Row>
           <Row style={{ marginTop: "5px" }}>
             <Col span={6}>
-              <Text type='secondary'>节点状态:</Text>
+              <Text type='secondary'>{t("wallet_supernodes_state")}</Text>
             </Col>
             <Col span={18}>
               <Text strong>{RenderNodeState(supernodeInfo.state)}</Text>
@@ -72,7 +74,7 @@ export default ({
           </Row>
           <Row style={{ marginTop: "5px" }}>
             <Col span={6}>
-              <Text type='secondary'>节点地址:</Text>
+              <Text type='secondary'>{t("wallet_supernodes_address")}</Text>
             </Col>
             <Col span={16}>
               <Text strong>
@@ -82,7 +84,7 @@ export default ({
           </Row>
           <Row style={{ marginTop: "5px" }}>
             <Col span={6}>
-              <Text type='secondary'>节点名称:</Text>
+              <Text type='secondary'>{t("wallet_supernodes_name")}</Text>
             </Col>
             <Col span={18}>
               <Text strong>{supernodeInfo.name}</Text>
@@ -90,7 +92,7 @@ export default ({
           </Row>
           <Row style={{ marginTop: "5px" }}>
             <Col span={6}>
-              <Text type='secondary'>创建者:</Text>
+              <Text type='secondary'>{t("wallet_supernodes_creator")}</Text>
             </Col>
             <Col span={16}>
               <Text strong>
@@ -100,10 +102,10 @@ export default ({
           </Row>
         </Col>
         <Col span={8}>
-          <Text type='secondary'>挖矿奖励分配:</Text><br /><br />
+          <Text type='secondary'>{t("wallet_supernodes_incentiveplan")}</Text><br /><br />
           <Row>
             <Col span={10}>
-              <Text strong>创建者 {supernodeInfo.incentivePlan.creator}%</Text>
+              <Text strong>{t("wallet_supernodes_incentiveplan_creator")} {supernodeInfo.incentivePlan.creator}%</Text>
             </Col>
             <Col span={14}>
               <Progress percent={supernodeInfo.incentivePlan.creator} showInfo={false} />
@@ -111,7 +113,7 @@ export default ({
           </Row>
           <Row>
             <Col span={10}>
-              <Text strong>合伙人 {supernodeInfo.incentivePlan.partner}%</Text>
+              <Text strong>{t("wallet_supernodes_incentiveplan_members")} {supernodeInfo.incentivePlan.partner}%</Text>
             </Col>
             <Col span={14}>
               <Progress percent={supernodeInfo.incentivePlan.partner} showInfo={false} />
@@ -119,7 +121,7 @@ export default ({
           </Row>
           <Row>
             <Col span={10}>
-              <Text strong>投票人 {supernodeInfo.incentivePlan.voter}%</Text>
+              <Text strong>{t("wallet_supernodes_incentiveplan_voters")} {supernodeInfo.incentivePlan.voter}%</Text>
             </Col>
             <Col span={14}>
               <Progress percent={supernodeInfo.incentivePlan.voter} showInfo={false} />
@@ -129,7 +131,7 @@ export default ({
       </Row>
       <Row style={{ marginTop: "5px" }}>
         <Col span={4}>
-          <Text type='secondary'>创建质押:</Text>
+          <Text type='secondary'>{t("wallet_supernodes_createstake")}</Text>
         </Col>
         <Col span={20}>
           <Text strong>
@@ -144,7 +146,7 @@ export default ({
       </Row>
       <Row style={{ marginTop: "5px" }}>
         <Col span={4}>
-          <Text type='secondary'>投票质押:</Text>
+          <Text type='secondary'>{t("wallet_supernodes_votestake")}</Text>
         </Col>
         <Col span={20}>
           <Text strong>
@@ -154,7 +156,7 @@ export default ({
       </Row>
       <Row style={{ marginTop: "5px" }}>
         <Col span={4}>
-          <Text type='secondary'>节点ENODE:</Text>
+          <Text type='secondary'>{t("wallet_supernodes_enode")}</Text>
         </Col>
         <Col span={20}>
           <Text strong>{supernodeInfo.enode}</Text>
@@ -162,7 +164,7 @@ export default ({
       </Row>
       <Row style={{ marginTop: "5px" }}>
         <Col span={4}>
-          <Text type='secondary'>节点描述:</Text>
+          <Text type='secondary'>{t("wallet_supernodes_description")}</Text>
         </Col>
         <Col span={20}>
           <Text strong>{supernodeInfo.description}</Text>

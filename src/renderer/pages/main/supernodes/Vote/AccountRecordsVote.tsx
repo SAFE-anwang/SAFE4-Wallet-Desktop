@@ -19,6 +19,7 @@ import { fetchSuperNodeAddresses } from '../../../../services/supernode';
 import type { TabsProps } from 'antd';
 import { useBlockNumber } from '../../../../state/application/hooks';
 import useAddrNodeInfo from '../../../../hooks/useAddrIsNode';
+import { useTranslation } from 'react-i18next';
 
 const { Text } = Typography;
 const AccountRecords_Page_Size = 24;
@@ -29,6 +30,7 @@ export default ({
   supernodeInfo?: SupernodeInfo,
   supernodeAddresses: string[]
 }) => {
+  const { t } = useTranslation();
   const accountManagerContract = useAccountManagerContract();
   const activeAccount = useWalletsActiveAccount();
   const blockNumber = useBlockNumber();
@@ -151,7 +153,7 @@ export default ({
             label: <>
               <div key={accountRecord.id} style={{ margin: "15px 15px" }}>
                 <Row>
-                  <Col>锁仓记录ID:</Col>
+                  <Col>{t("wallet_locked_accountRecordLockId")}:</Col>
                   <Col>{accountRecord.id}</Col>
                 </Row>
                 <Row style={{ fontSize: "12px" }}>{accountRecord.amount.toFixed(2)} SAFE</Row>
@@ -187,17 +189,17 @@ export default ({
   const [checkedAccountRecords, setCheckedAccountRecords] = useState<AccountRecord[]>([]);
 
   return <>
-    <Card title="选择锁仓记录对超级节点进行投票" style={{ width: "100%" }}>
+    <Card title={t("wallet_supernodes_votes_locked_title")} style={{ width: "100%" }}>
       <>
         <Checkbox indeterminate={indeterminate} checked={checkAll} onChange={onAccountRecordCheckAllChange}>
           选择全部可用锁仓记录
         </Checkbox>
         <Alert style={{ marginTop: "20px" }} type='info' showIcon message={
           <>
-            <Text>必须同时满足如下条件的锁仓记录才可以进行投票</Text><br />
-            <Text>1. 未关联超级节点的锁仓记录</Text><br />
-            <Text>2. 未投票的锁仓记录</Text><br />
-            <Text>3. 锁仓数量大于 <Text strong>1 SAFE</Text></Text><br />
+            <Text>{t("wallet_supernodes_votes_locked_tips")}</Text><br />
+            <Text>1. {t("wallet_supernodes_votes_locked_tip0")}</Text><br />
+            <Text>2. {t("wallet_supernodes_votes_locked_tip1")}</Text><br />
+            <Text>3. {t("wallet_supernodes_votes_locked_tip2")} <Text strong>1 SAFE</Text></Text><br />
           </>
         } />
         <Divider />
@@ -218,7 +220,7 @@ export default ({
               setCheckedAccountRecords(checkedAccountRecords);
             }
           }}>
-            投票
+            {t("vote")}
           </Button>
           {
             activeAccountNodeInfo && activeAccountNodeInfo.isSN &&

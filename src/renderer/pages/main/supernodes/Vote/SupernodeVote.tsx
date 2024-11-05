@@ -13,11 +13,13 @@ import type { TabsProps } from 'antd';
 import AccountRecordsVote from './AccountRecordsVote';
 import InputAmountVote from './InputAmountVote';
 import useSafeScan from '../../../../hooks/useSafeScan';
+import { useTranslation } from 'react-i18next';
 
 const { Text, Title } = Typography;
 
 export default () => {
 
+  const { t } = useTranslation();
   const supernodeAddr = useSelector<AppState, string | undefined>(state => state.application.control.vote);
   const [supernodeAddresses, setSupernodeAddresses] = useState<string[]>([]);
   const supernodeStorageContract = useSupernodeStorageContract();
@@ -27,12 +29,12 @@ export default () => {
   const items: TabsProps['items'] = [
     {
       key: 'inputAmount',
-      label: 'SAFE投票',
+      label: t("wallet_supernodes_votes_safe"),
       children: <InputAmountVote supernodeInfo={supernodeInfo} supernodeAddresses={supernodeAddresses} />,
     },
     {
       key: 'accountRecords',
-      label: '锁仓记录投票',
+      label: t("wallet_supernodes_votes_locked"),
       children: <AccountRecordsVote supernodeInfo={supernodeInfo} supernodeAddresses={supernodeAddresses} />
     }
   ];
@@ -60,7 +62,7 @@ export default () => {
           navigate("/main/supernodes")
         }} />
         <Title level={4} style={{ lineHeight: "16px", float: "left" }}>
-          超级节点投票
+          {t("wallet_supernodes_votes")}
         </Title>
       </Col>
     </Row>

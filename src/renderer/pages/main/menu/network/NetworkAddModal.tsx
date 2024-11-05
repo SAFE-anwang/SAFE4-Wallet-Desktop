@@ -6,6 +6,7 @@ import { IPC_CHANNEL } from "../../../../config";
 import { isSafe4Mainnet, isSafe4Network, isSafe4Testnet } from "../../../../utils/Safe4Network";
 import { useDispatch } from "react-redux";
 import { applicationAddRpcConfig } from "../../../../state/application/action";
+import { useTranslation } from "react-i18next";
 
 const { Text } = Typography;
 
@@ -16,6 +17,7 @@ export default ({
   cancel: () => void
 }) => {
 
+  const { t } = useTranslation();
   const [inputRpc, setInputRpc] = useState<string>();
   const [inputRpcError,setInputRpcError] = useState<string>();
   const dispatch = useDispatch();
@@ -39,7 +41,7 @@ export default ({
     if (!activeStatus || activeStatus.isActiving) {
       return <>
         <Badge status="warning"></Badge>
-        <Text style={{ marginLeft: "5px" }}>正在连接</Text>
+        <Text style={{ marginLeft: "5px" }}>{t("wallet_network_state_connecting")}</Text>
       </>
     }
     if (activeStatus.isActive) {
@@ -50,7 +52,7 @@ export default ({
     }
     return <>
       <Badge status="error"></Badge>
-      <Text style={{ marginLeft: "5px" }}>网络异常</Text>
+      <Text style={{ marginLeft: "5px" }}>{t("wallet_network_state_connecterror")}</Text>
     </>
   }
 
@@ -58,10 +60,10 @@ export default ({
     if (chainId) {
       if (isSafe4Network(chainId)) {
         if (isSafe4Testnet(chainId)) {
-          return <Text type="success">测试网</Text>
+          return <Text type="success">{t("testnet")}</Text>
         }
         if (isSafe4Mainnet(chainId)) {
-          return <Text>主网</Text>
+          return <Text>{t("mainnet")}</Text>
         }
       } else {
         return <Text type="secondary">[{name}]</Text>
@@ -101,9 +103,9 @@ export default ({
             endpoint : inputRpc
           } ) );
           cancel();
-          message.success("添加成功");
+          message.success(t("wallet_network_add_success"));
         }else{
-          setInputRpcError("仅支持 Safe4 网络的 Endpoint")
+          setInputRpcError(t("wallet_network_add_onlysafe4"))
         }
       }).catch((err: any) => {
         setActiveStatus({
@@ -112,12 +114,12 @@ export default ({
         })
       })
     } else {
-      setInputRpcError("请输入 Endpoint")
+      setInputRpcError(t("enter") + t("wallet_network_endpoint"))
     }
   }, [inputRpc, chainId])
 
   return <>
-    <Modal footer={null} destroyOnClose title="添加 RPC" style={{ height: "300px" }} open={openAddModal} onCancel={() => {
+    <Modal footer={null} destroyOnClose title={t("wallet_network_add_rpcendpoint")} style={{ height: "300px" }} open={openAddModal} onCancel={() => {
       setInputRpc(undefined);
       cancel();
     }}>
@@ -149,7 +151,7 @@ export default ({
         <Col span={24} style={{ textAlign: "right" }}>
           <Button onClick={() => {
             onSaveClick();
-          }} loading={activeStatus?.isActiving}>保存</Button>
+          }} loading={activeStatus?.isActiving}>{t("save")}</Button>
         </Col>
       </Row>
     </Modal>

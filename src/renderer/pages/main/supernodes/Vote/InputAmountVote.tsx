@@ -8,6 +8,7 @@ import { Button, Col, Divider, Input, Modal, Row, Typography, Space, Alert } fro
 import { SupernodeInfo } from "../../../../structs/Supernode";
 import InputVoteModalConfirm from "./ InputVoteModal-Confirm";
 import useAddrNodeInfo from "../../../../hooks/useAddrIsNode";
+import { useTranslation } from "react-i18next";
 
 const { Text } = Typography;
 
@@ -18,6 +19,7 @@ export default ({
   supernodeAddresses: string[]
 }) => {
 
+  const { t } = useTranslation();
   const activeAccount = useWalletsActiveAccount();
   const activeAccountETHBalance = useETHBalances([activeAccount])[activeAccount];
   const maxBalance = useMemo(() => {
@@ -45,19 +47,19 @@ export default ({
   const onClickVote = () => {
     const { amount } = params;
     if (!amount) {
-      inputErrors.amount = "请输入用于投票的SAFE数量";
+      inputErrors.amount = t("enter") + t("wallet_supernodes_votes_amount");
     }
     if (amount) {
       try {
         let _amount = CurrencyAmount.ether(ethers.utils.parseEther(amount).toBigInt());
         if (_amount.greaterThan(maxBalance)) {
-          inputErrors.amount = "用于投票的SAFE数量大于持有数量";
+          inputErrors.amount = t("wallet_supernodes_votes_amount_notenough")
         }
         if (ONE.greaterThan(_amount)) {
-          inputErrors.amount = "必须大于 1 SAFE";
+          inputErrors.amount = t("wallet_supernodes_votes_amount_mush1safe");
         }
       } catch (error) {
-        inputErrors.amount = "请输入正确的数量";
+        inputErrors.amount = t("enter") + t("wallet_supernodes_votes_amount") ;
       }
     }
     if (inputErrors.amount) {
@@ -68,13 +70,13 @@ export default ({
   }
 
   return <>
-    <Card title="使用账户中的SAFE余额进行投票">
+    <Card title={t("wallet_supernodes_votes_safe_title")}>
       <Alert style={{ marginBottom: "20px" }} showIcon message={<>
-        用于投票的SAFE将会在锁仓账户中创建一个新的锁仓记录
+        {t("wallet_supernodes_votes_safe_tip")}
       </>} />
       <Row >
         <Col span={14}>
-          <Text strong>数量</Text>
+          <Text strong>{t("wallet_supernodes_votes_amount")}</Text>
           <br />
           <Space.Compact style={{ width: '100%' }}>
             <Input size="large" value={params.amount} onChange={(_input) => {
@@ -87,7 +89,7 @@ export default ({
                 ...params,
                 amount: amountInputValue
               })
-            }} placeholder="输入数量" />
+            }}/>
             <Button size="large" onClick={() => {
               setInputErrors({
                 ...inputErrors,
@@ -97,11 +99,11 @@ export default ({
                 ...params,
                 amount: maxBalance.toFixed(18)
               })
-            }}>最大</Button>
+            }}>{t("wallet_send_max")}</Button>
           </Space.Compact>
         </Col>
         <Col span={10}>
-          <Text style={{ float: "right" }} strong>可用数量</Text>
+          <Text style={{ float: "right" }} strong>{t("wallet_balance_currentavailable")}</Text>
           <br />
           <Text style={{ float: "right", fontSize: "18px", lineHeight: "36px" }}>
             {activeAccountETHBalance?.toFixed(6)}
@@ -117,7 +119,7 @@ export default ({
           <Spin spinning={activeAccountNodeInfo == undefined} >
             <Button disabled={(params.amount ? false : true) && activeAccountNodeInfo && !activeAccountNodeInfo.isSN} type="primary" style={{ float: "left" }} onClick={() => {
               onClickVote()
-            }}>投票</Button>
+            }}>{t("vote")}</Button>
             {
               activeAccountNodeInfo && activeAccountNodeInfo.isSN &&
               <Alert style={{ marginTop: "5px" }} showIcon type="warning" message={<>

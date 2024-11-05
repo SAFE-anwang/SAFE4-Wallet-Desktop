@@ -5,6 +5,7 @@ import { ColumnsType } from "antd/es/table";
 import AddressView from "../../components/AddressView";
 import { Typography, Table } from 'antd';
 import AddressComponent from "../../components/AddressComponent";
+import { useTranslation } from "react-i18next";
 
 const { Text } = Typography;
 
@@ -21,6 +22,7 @@ export default ({
   supernodeAddr: string
 }) => {
 
+  const { t } = useTranslation();
   const supernodeVoteContract = useSupernodeVoteContract();
   const [votersNumArr, setVotersNumArr] = useState<VotersNum[]>();
   const [pagination, setPagination] = useState<{
@@ -79,7 +81,7 @@ export default ({
 
   const columns: ColumnsType<VotersNum> = [
     {
-      title: '地址',
+      title: t("address"),
       dataIndex: 'address',
       key: 'address',
       render: (addr) => {
@@ -91,7 +93,7 @@ export default ({
       }
     },
     {
-      title: '得票数量',
+      title: t("votes"),
       dataIndex: 'num',
       key: 'num',
       render: (num) => {

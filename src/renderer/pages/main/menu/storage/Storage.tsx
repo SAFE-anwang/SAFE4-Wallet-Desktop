@@ -8,11 +8,13 @@ import {
   LeftOutlined
 } from '@ant-design/icons';
 import { AppState } from '../../../../state';
+import { useTranslation } from 'react-i18next';
 
 const { Title, Text } = Typography;
 
 export default () => {
 
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const data = useSelector<AppState, { [key: string]: any }>(state => state.application.data);
 
@@ -34,16 +36,16 @@ export default () => {
 
           <Row>
             <Col span={24}>
-              <Text type='secondary'>本地数据库</Text>
+              <Text type='secondary'>{t("wallet_storage_localdb")}</Text>
             </Col>
             <Col span={24}>
               <Text>{data["database"]}</Text>
             </Col>
           </Row>
 
-          <Row style={{marginTop:"20px"}}>
+          <Row style={{ marginTop: "20px" }}>
             <Col span={24}>
-              <Text type='secondary'>钱包文件</Text>
+              <Text type='secondary'>{t("wallet_storage_walletfile")}</Text>
             </Col>
             <Col span={24}>
               <Text>{data["kys"]}</Text>

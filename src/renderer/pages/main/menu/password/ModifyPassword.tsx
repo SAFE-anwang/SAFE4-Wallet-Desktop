@@ -11,11 +11,13 @@ import { IPC_CHANNEL } from '../../../../config';
 import { Wallet_Methods, WalletSignal } from '../../../../../main/handlers/WalletSignalHandler';
 import { useDispatch } from 'react-redux';
 import { applicationSetPassword } from '../../../../state/application/action';
+import { useTranslation } from 'react-i18next';
 
 const { Title, Text } = Typography;
 
 export default () => {
 
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const password = useApplicationPassword();
   const walletsKeystores = useWalletsKeystores();
@@ -51,13 +53,13 @@ export default () => {
       confirmNewPwd?: string
     } = {};
     if (password != inputPwd) {
-      inputErrors.inputPwd = "密码错误";
+      inputErrors.inputPwd = t("wallet_modifypwd_pwderror");
     }
     if (!PasswordRegex.test(inputNewPwd)) {
-      inputErrors.inputNewPwd = "密码长度必须大于8,且必须包含大小写字母及特殊符号";
+      inputErrors.inputNewPwd = t("wallet_modifypwd_pwdnotmatch");
     }
     if (confirmNewPwd != inputNewPwd) {
-      inputErrors.confirmNewPwd = "两次输入的新密码不一致";
+      inputErrors.confirmNewPwd = t("wallet_modifypwd_newpwdnotsame");
     }
     if (inputErrors.inputPwd || inputErrors.inputNewPwd || inputErrors.confirmNewPwd) {
       setInputErrors({
@@ -91,7 +93,7 @@ export default () => {
           navigate("/main/menu")
         }} />
         <Title level={4} style={{ lineHeight: "16px", float: "left" }}>
-          修改钱包密码
+          {t("wallet_modifypwd")}
         </Title>
       </Col>
     </Row>
@@ -102,8 +104,8 @@ export default () => {
           modifyResult && modifyResult.success &&
           <Result
             status="success"
-            title="密码修改成功!"
-            subTitle="钱包文件已使用您新设置的密码进行加密"
+            title={t("wallet_modifypwd_success")}
+            subTitle={t("wallet_modifypwd_success_tip")}
           />
         }
         {
@@ -112,10 +114,10 @@ export default () => {
             <Spin spinning={modifing}>
               <Row>
                 <Col span={24}>
-                  <Text type='secondary'>钱包当前密码</Text>
+                  <Text type='secondary'>{t("wallet_modifypwd_current")}</Text>
                 </Col>
                 <Col span={24}>
-                  <Input.Password size='large' value={inputParams.inputPwd} placeholder='输入当前密码' onChange={(event) => {
+                  <Input.Password size='large' value={inputParams.inputPwd} placeholder={t("enter") + t("wallet_modifypwd_current")} onChange={(event) => {
                     const input = event.target.value;
                     setInputParams({
                       ...inputParams,
@@ -134,10 +136,10 @@ export default () => {
               </Row>
               <Row style={{ marginTop: "20px" }}>
                 <Col span={24}>
-                  <Text type='secondary'>钱包新密码</Text>
+                  <Text type='secondary'>{t("wallet_modifypwd_new")}</Text>
                 </Col>
                 <Col span={24}>
-                  <Input.Password size='large' placeholder='输入新密码' onChange={(event) => {
+                  <Input.Password size='large' placeholder={t("enter") + t("wallet_modifypwd_new")} onChange={(event) => {
                     const input = event.target.value;
                     setInputParams({
                       ...inputParams,
@@ -156,10 +158,10 @@ export default () => {
               </Row>
               <Row style={{ marginTop: "20px" }}>
                 <Col span={24}>
-                  <Text type='secondary'>确认钱包新密码</Text>
+                  <Text type='secondary'>{t("wallet_modifypwd_confirm")}</Text>
                 </Col>
                 <Col span={24}>
-                  <Input.Password size='large' placeholder='再次输入新密码' onChange={(event) => {
+                  <Input.Password size='large' placeholder={t("wallet_modifypwd_confirm_placehold")} onChange={(event) => {
                     const input = event.target.value;
                     setInputParams({
                       ...inputParams,
@@ -178,7 +180,7 @@ export default () => {
               </Row>
               <Row style={{ marginTop: "20px" }}>
                 <Col span={24}>
-                  <Button type='primary' onClick={modifyPassword}>确认修改</Button>
+                  <Button type='primary' onClick={modifyPassword}>{t("wallet_modifypwd_doconfirm")}</Button>
                 </Col>
               </Row>
             </Spin>

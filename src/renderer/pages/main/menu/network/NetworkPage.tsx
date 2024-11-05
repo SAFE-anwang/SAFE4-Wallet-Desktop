@@ -11,11 +11,13 @@ import { useEffect, useState } from 'react';
 import { IPC_CHANNEL, Safe4_Network_Config } from '../../../../config';
 import NetworkAddModal from './NetworkAddModal';
 import { RpcConfigSignal, RpcConfigSingalHandler, RpcConfig_Methods } from '../../../../../main/handlers/RpcConfigSignalHandler';
+import { useTranslation } from 'react-i18next';
 
 const { Title, Text } = Typography;
 
 export default () => {
 
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { provider, chainId, isActivating, isActive } = useWeb3React();
   const rpcConfigs = useApplicationRpcConfigs();
@@ -23,13 +25,13 @@ export default () => {
   const [endpoints, setEndpoints] = useState<{
     [endpoint: string]: number
   }>();
-  const [openAddModal ,setOpenAddModal] = useState<boolean>(false);
+  const [openAddModal, setOpenAddModal] = useState<boolean>(false);
 
   const renderActiveStatus = () => {
     if (isActivating) {
       return <>
         <Badge status="warning"></Badge>
-        <Text style={{ marginLeft: "5px" }}>正在连接</Text>
+        <Text style={{ marginLeft: "5px" }}>{t("wallet_network_state_connecting")}</Text>
       </>
     }
     if (isActive) {
@@ -40,7 +42,7 @@ export default () => {
     }
     return <>
       <Badge status="error"></Badge>
-      <Text style={{ marginLeft: "5px" }}>网络异常</Text>
+      <Text style={{ marginLeft: "5px" }}>{t("wallet_network_state_connecterror")}</Text>
     </>
   }
 
@@ -48,10 +50,10 @@ export default () => {
     if (chainId) {
       if (isSafe4Network(chainId)) {
         if (isSafe4Testnet(chainId)) {
-          return <Text type="success">测试网</Text>
+          return <Text type="success">{t("testnet")}</Text>
         }
         if (isSafe4Mainnet(chainId)) {
-          return <Text>主网</Text>
+          return <Text>{t("mainnet")}</Text>
         }
       } else {
         return <Text type="secondary">[{provider?.network.name}]</Text>
@@ -83,21 +85,21 @@ export default () => {
           navigate("/main/menu")
         }} />
         <Title level={4} style={{ lineHeight: "16px", float: "left" }}>
-          网络
+          {t("wallet_network")}
         </Title>
       </Col>
     </Row>
 
     <div style={{ width: "100%", paddingTop: "40px" }}>
       <div style={{ margin: "auto", width: "60%" }}>
-        <Card title="正在使用的网络" style={{ marginBottom: "20px" }}>
+        <Card title={t("wallet_network_using")} style={{ marginBottom: "20px" }}>
           <Row style={{ marginBottom: "20px" }}>
             <Col span={12}>
-              <Text type='secondary'>网络类型</Text><br />
+              <Text type='secondary'>{t("wallet_network_type")}</Text><br />
               {renderActiveStatus()}
             </Col>
             <Col span={12}>
-              <Text type='secondary'>服务地址(Endpoint)</Text><br />
+              <Text type='secondary'>{t("wallet_network_endpoint")}</Text><br />
               <Text>{provider?.connection.url}</Text>
             </Col>
           </Row>
@@ -105,13 +107,13 @@ export default () => {
         <Divider />
         <Card title={<>
           <Row>
-            <Col span={24} style={{textAlign:"right"}}>
-              <Button onClick={()=>setOpenAddModal(true)}>添加</Button>
+            <Col span={24} style={{ textAlign: "right" }}>
+              <Button onClick={() => setOpenAddModal(true)}>{t("wallet_network_add")}</Button>
             </Col>
           </Row>
         </>}>
           <Alert style={{ marginBottom: "30px" }} showIcon type='info' message={<>
-            仅支持 Safe4 网络的端点服务,您也可以连接自己的 Safe4 节点.
+            {t("wallet_network_tip")}
           </>} />
           {
             endpoints && Object.keys(endpoints)
@@ -119,7 +121,6 @@ export default () => {
                 return <NetworkOption endpoint={endpoint} />
               })
           }
-
           {/* <NetworkOption endpoint='http://172.104.162.94:8545' />
           <NetworkOption endpoint='http://47.107.47.210:8545' />
           <NetworkOption endpoint='https://arb1.arbitrum.io/rpc' />
@@ -129,7 +130,7 @@ export default () => {
       </div>
     </div>
 
-    <NetworkAddModal openAddModal={openAddModal} cancel={() => {setOpenAddModal(false)}} />
+    <NetworkAddModal openAddModal={openAddModal} cancel={() => { setOpenAddModal(false) }} />
 
   </>
 }
