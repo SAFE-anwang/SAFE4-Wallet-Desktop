@@ -17,16 +17,14 @@ import AddressComponent from "../../../components/AddressComponent";
 import SSH2CMDTerminalNodeModal from "../../../components/SSH2CMDTerminalNodeModal";
 import { formatSupernodeInfo, SupernodeInfo } from "../../../../structs/Supernode";
 import { walletsUpdateUsedChildWalletAddress } from "../../../../state/wallets/action";
-import { useWeb3React } from "@web3-react/core";
-import { CurrencyAmount } from "@uniswap/sdk";
-import { ZERO } from "../../../../utils/CurrentAmountUtils";
+import { useTranslation } from "react-i18next";
 
 const { Text, Title } = Typography
 
 export default () => {
 
+  const { t } = useTranslation();
   const navigate = useNavigate();
-  const { provider } = useWeb3React();
   const editSupernodeId = useSelector((state: AppState) => state.application.control.editSupernodeId);
   const [supernodeInfo, setSupernodeInfo] = useState<SupernodeInfo>();
   const masternodeStorageContract = useMasternodeStorageContract();
@@ -151,7 +149,7 @@ export default () => {
         })
       return options;
     }
-  }, [activeAccount, activeAccountChildWallets, nodeAddressSelectType, supernodeInfo ]);
+  }, [activeAccount, activeAccountChildWallets, nodeAddressSelectType, supernodeInfo]);
 
   // 子钱包加载后,自动设置可用的第一个子钱包作为默认选择;
   useEffect(() => {
@@ -175,7 +173,7 @@ export default () => {
         });
       }
     }
-  }, [supernodeInfo, selectChildWalletOptions, nodeAddressSelectType,helpResult]);
+  }, [supernodeInfo, selectChildWalletOptions, nodeAddressSelectType, helpResult]);
 
   const doUpdate = useCallback(async () => {
     if (masternodeStorageContract && supernodeStorageContract && multicallContract && supernodeLogicContract && supernodeInfo) {
@@ -184,23 +182,24 @@ export default () => {
         address?: string, enode?: string, description?: string
       } = {};
       if (!address) {
-        inputErrors.address = "请输入超级节点地址";
+        inputErrors.address = t("please_enter") + t("wallet_supernodes_address");
       } else if (!ethers.utils.isAddress(address)) {
-        inputErrors.address = "请输入合法的超级节点地址";
+        inputErrors.address = t("enter_correct") + t("wallet_supernodes_address");
       }
       if (!enode) {
-        inputErrors.enode = "请输入超级节点ENODE";
+        inputErrors.enode = t("please_enter") + t("wallet_supernodes_enode");
       } else {
         const isMatch = enodeRegex.test(enode);
         if (!isMatch) {
-          inputErrors.enode = "超级节点ENODE格式不正确!";
+          inputErrors.enode = t("enter_correct") + t("wallet_supernodes_enode");
         }
       }
       if (!description) {
-        inputErrors.description = "请输入超级节点简介";
+        inputErrors.description = t("please_enter") + t("wallet_supernodes_description");
       } else if (description.length < InputRules.description.min || description.length > InputRules.description.max) {
-        inputErrors.description = `简介信息长度需要大于${InputRules.description.min}且小于${InputRules.description.max}`;
+        inputErrors.description = t("wallet_supernodes_description_lengthrule", { min: InputRules.description.min, max: InputRules.description.max })
       }
+
       if (inputErrors.address || inputErrors.enode || inputErrors.description) {
         setInputErrors(inputErrors);
         return;
@@ -235,18 +234,18 @@ export default () => {
         const addrIsSupernodeFounder: boolean = addrExistInSupernodesCall.result;
         if (addrExistsInMasternodes || addrExistsInSupernodes) {
           if (addrExistsInMasternodes) {
-            inputErrors.address = "该地址已经是主节点地址,无法使用";
+            inputErrors.address = t("wallet_supernodes_address_isnodeaddress");
           }
           if (addrExistsInSupernodes) {
-            inputErrors.address = "该地址已经是超级节点地址,无法使用";
+            inputErrors.address = t("wallet_supernodes_address_isnodeaddress");
           }
         }
         if (addrIsFounder || addrIsSupernodeFounder) {
           if (addrIsFounder) {
-            inputErrors.address = "该地址已参与主点地址创建,无法使用";
+            inputErrors.address = t('wallet_supernodes_address_joinnode');
           }
           if (addrIsSupernodeFounder) {
-            inputErrors.address = "该地址已参与超级节点地址创建,无法使用";
+            inputErrors.address = t("wallet_supernodes_address_joinnode");
           }
         }
       }
@@ -266,7 +265,7 @@ export default () => {
         const enodeExistsInMasternodes: boolean = enodeExistCall.result;
         const enodeExistsInSupernodes: boolean = enodeExistInSupernodesCall.result;
         if (enodeExistsInMasternodes || enodeExistsInSupernodes) {
-          inputErrors.enode = "该ENODE已被使用";
+          inputErrors.enode = t("wallet_supernodes_enodeexist");
         }
       }
       if (inputErrors.address || inputErrors.enode) {
@@ -419,7 +418,7 @@ export default () => {
           navigate("/main/supernodes")
         }} />
         <Title level={4} style={{ lineHeight: "16px" }}>
-          同步超级节点信息
+          {t("wallet_supernodes_sync")}
         </Title>
       </Col>
     </Row>
@@ -429,13 +428,13 @@ export default () => {
         <div style={{ width: "50%", margin: "auto" }}>
           <Row style={{ marginTop: "20px" }}>
             <Col span={24}>
-              <Text type="secondary">超级节点ID</Text>
+              <Text type="secondary">{t("wallet_supernodes_id")}</Text>
             </Col>
             <Col>
               <Text strong>{supernodeInfo?.id}</Text>
             </Col>
             <Col span={24} style={{ marginTop: "20px" }}>
-              <Text type="secondary">创建者</Text>
+              <Text type="secondary">{t("wallet_supernodes_creator")}</Text>
             </Col>
             <Col span={24}>
               {
@@ -445,14 +444,14 @@ export default () => {
             {
               isNodeCreator && <>
                 <Col span={24} style={{ marginTop: "20px" }}>
-                  <Text type="secondary">超级节点地址</Text>
+                  <Text type="secondary">{t("wallet_supernodes_address")}</Text>
                   <Alert style={{ marginTop: "5px", marginBottom: "5px" }} type='warning' showIcon message={<>
                     <Row>
                       <Col span={24}>
-                        超级节点运行时,节点程序需要加载超级节点地址的私钥来签名见证凭证.
+                        {t("wallet_supernodes_address_tip0")}
                       </Col>
                       <Col span={24}>
-                        由于该超级节点地址的私钥会被远程存放在您的节点服务器上,<Text type='danger' strong>请避免向这个超级节点地址进行资产转账.</Text>
+                        {t("wallet_supernodes_address_tip1")},<Text type='danger' strong>{t("wallet_supernodes_address_tip2")}</Text>
                       </Col>
                     </Row>
                   </>} />
@@ -471,7 +470,7 @@ export default () => {
                       <Space style={{ height: "20px" }} direction="vertical">
                         <Radio disabled={walletsActiveKeystore?.mnemonic == undefined}
                           value={NodeAddressSelectType.GEN}>
-                          钱包通过当前账户的种子密钥生成子地址作为超级节点地址
+                          {t("wallet_supernodes_address_tip3")}
                         </Radio>
                       </Space>
                     </Radio.Group>
@@ -552,7 +551,7 @@ export default () => {
                 }
                 <Divider />
                 <Col span={24}>
-                  <Text type="secondary">超级节点名称</Text>
+                  <Text type="secondary">{t("wallet_supernodes_name")}</Text>
                 </Col>
                 <Col span={24}>
                   <Input value={updateParams.name} onChange={(event) => {
@@ -572,7 +571,7 @@ export default () => {
                 </Col>
                 <Divider />
                 <Col span={24}>
-                  <Text type="secondary">超级节点简介</Text>
+                  <Text type="secondary">{t("wallet_supernodes_description")}</Text>
                 </Col>
                 <Col span={24}>
                   <Input.TextArea style={{ height: "100px" }} value={updateParams.description} onChange={(event) => {
@@ -604,13 +603,13 @@ export default () => {
                       updateResult.address && <>
                         {
                           updateResult.address.status == 1 && <>
-                            <Text type="secondary">地址更新交易哈希</Text><br />
+                            <Text type="secondary">{t("wallet_supernodes_sync_txhash_address")}</Text><br />
                             <Text strong>{updateResult.address.txHash}</Text> <br />
                           </>
                         }
                         {
                           updateResult.address.status == 0 && <>
-                            <Text type="secondary">地址更新失败</Text><br />
+                            <Text type="secondary">{t("wallet_supernodes_sync_error_address")}</Text><br />
                             <Text strong type="danger">
                               <CloseCircleTwoTone twoToneColor="red" style={{ marginRight: "5px" }} />
                               {updateResult.address.error}
@@ -623,13 +622,13 @@ export default () => {
                       updateResult.enode && <>
                         {
                           updateResult.enode.status == 1 && <>
-                            <Text type="secondary">ENODE更新交易哈希</Text><br />
+                            <Text type="secondary">{t("wallet_supernodes_sync_txhash_enode")}</Text><br />
                             <Text strong>{updateResult.enode.txHash}</Text> <br />
                           </>
                         }
                         {
                           updateResult.enode.status == 0 && <>
-                            <Text type="secondary">ENODE更新失败</Text><br />
+                            <Text type="secondary">{t("wallet_supernodes_sync_error_enode")}</Text><br />
                             <Text strong type="danger">
                               <CloseCircleTwoTone twoToneColor="red" style={{ marginRight: "5px" }} />
                               {updateResult.enode.error}
@@ -642,13 +641,13 @@ export default () => {
                       updateResult.name && <>
                         {
                           updateResult.name.status == 1 && <>
-                            <Text type="secondary">名称更新交易哈希</Text><br />
+                            <Text type="secondary">{t("wallet_supernodes_sync_txhash_name")}</Text><br />
                             <Text strong>{updateResult.name.txHash}</Text> <br />
                           </>
                         }
                         {
                           updateResult.name.status == 0 && <>
-                            <Text type="secondary">名称更新失败</Text><br />
+                            <Text type="secondary">{t("wallet_supernodes_sync_error_name")}</Text><br />
                             <Text strong type="danger">
                               <CloseCircleTwoTone twoToneColor="red" style={{ marginRight: "5px" }} />
                               {updateResult.name.error}
@@ -661,13 +660,13 @@ export default () => {
                       updateResult.description && <>
                         {
                           updateResult.description.status == 1 && <>
-                            <Text type="secondary">简介更新交易哈希</Text><br />
+                            <Text type="secondary">{t("wallet_supernodes_sync_txhash_description")}</Text><br />
                             <Text strong>{updateResult.description.txHash}</Text> <br />
                           </>
                         }
                         {
                           updateResult.description.status == 0 && <>
-                            <Text type="secondary">简介更新失败</Text><br />
+                            <Text type="secondary">{t("wallet_supernodes_sync_error_description")}</Text><br />
                             <Text strong type="danger">
                               <CloseCircleTwoTone twoToneColor="red" style={{ marginRight: "5px" }} />
                               {updateResult.description.error}
@@ -677,7 +676,7 @@ export default () => {
                       </>
                     }
                     <br />
-                    <Text italic>更新数据交易发出后,等待交易确认,超级节点的信息才会同步更新到 Safe4 网络</Text>
+                    <Text italic>{t("wallet_supernodes_sync_update_tip")}</Text>
                   </>} />
                 </>
               }
@@ -686,7 +685,7 @@ export default () => {
             <Col span={24} style={{ textAlign: "right" }}>
               {
                 !helpResult && isNodeCreator && <>
-                  <Button disabled={nodeAddressSelectType != NodeAddressSelectType.GEN} onClick={() => helpToCreate()} type='primary'>下一步</Button>
+                  <Button disabled={nodeAddressSelectType != NodeAddressSelectType.GEN} onClick={() => helpToCreate()} type='primary'>{t("next")}</Button>
                 </>
               }
               {
@@ -694,12 +693,12 @@ export default () => {
                   {
                     !needUpdate &&
                     <Alert style={{ textAlign: "left" }} showIcon type="info" message={<>
-                      超级节点信息与超级节点服务器数据一致,无需调用合约更新数据
+                      {t("wallet_supernodes_sync_update_notneed")}
                     </>} />
                   }
                   {
                     needUpdate &&
-                    <Button disabled={!isNodeCreator || updateResult != undefined} type="primary" onClick={doUpdate} loading={updating}>更新</Button>
+                    <Button disabled={!isNodeCreator || updateResult != undefined} type="primary" onClick={doUpdate} loading={updating}>{t("update")}</Button>
                   }
                 </>
               }

@@ -1,17 +1,19 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { Alert, Button, Card, Col, Divider, Input, Radio, Row, Select, Space, Spin, Typography } from "antd";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 const { Text, Title } = Typography
 
 export default () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   return <>
 
     <Row style={{ height: "50px" }}>
       <Col span={12}>
         <Title level={4} style={{ lineHeight: "16px" }}>
-          同步超级节点数据
+          {t("wallet_supernodes_sync")}
         </Title>
       </Col>
     </Row>
@@ -23,10 +25,10 @@ export default () => {
             <Button onClick={() => navigate("/main/supernodes/syncAssist")} style={{ height: "200px", width: "100%" }}>
               <Row>
                 <Col span={24}>
-                  <Text style={{ fontSize: "40px" }}>自动模式</Text>
+                  <Text style={{ fontSize: "40px" }}>{t("wallet_supernodes_sync_mode_auto")}</Text>
                 </Col>
                 <Col span={24}>
-                  <Text type="secondary" style={{ fontSize: "20px" }}>已有云服务器,钱包通过SSH登陆辅助同步超级节点信息</Text>
+                  <Text type="secondary" style={{ fontSize: "20px", whiteSpace: "normal" }}>{t("wallet_supernodes_sync_mode_auto_tip")}</Text>
                 </Col>
               </Row>
             </Button>
@@ -35,10 +37,10 @@ export default () => {
             <Button onClick={() => navigate("/main/supernodes/sync")} style={{ height: "200px", width: "100%" }}>
               <Row>
                 <Col span={24}>
-                  <Text style={{ fontSize: "40px" }}>手动模式</Text>
+                  <Text style={{ fontSize: "40px" }}>{t("wallet_supernodes_sync_mode_manual")}</Text>
                 </Col>
                 <Col span={24}>
-                  <Text type="secondary" style={{ fontSize: "20px" }}>已在服务器配置超级节点,直接更新同步超级节点信息</Text>
+                  <Text type="secondary" style={{ fontSize: "20px", whiteSpace: "normal" }}>{t("wallet_supernodes_sync_mode_manual_tip")}</Text>
                 </Col>
               </Row>
             </Button>

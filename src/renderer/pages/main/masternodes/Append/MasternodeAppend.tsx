@@ -14,11 +14,13 @@ import AppendModalConfirm from './AppendModal-Confirm';
 import Masternode from '../Masternode';
 import useAddrNodeInfo from '../../../../hooks/useAddrIsNode';
 import { Safe4_Business_Config } from '../../../../config';
+import { useTranslation } from 'react-i18next';
 
 const { Text, Title } = Typography;
 
 export default () => {
 
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const masternodeAppend = useSelector<AppState, string | undefined>(state => state.application.control.masternodeAppend);
   const masternodeStorageContract = useMasternodeStorageContract();
@@ -94,10 +96,7 @@ export default () => {
           navigate("/main/masternodes")
         }} />
         <Title level={4} style={{ lineHeight: "16px", float: "left" }}>
-          主节点
-          {
-            params && params.left > 0 && <>联合创建</>
-          }
+          {t("wallet_masternodes_joins")}
         </Title>
       </Col>
     </Row>
@@ -107,11 +106,11 @@ export default () => {
         {
           params && params.left > 0 && <>
             <Row>
-              <Card title="通过锁仓SAFE来成为这个主节点的合伙人" style={{ width: "100%", marginBottom: "50px" }}>
+              <Card title={t("wallet_masternodes_joins_title")} style={{ width: "100%", marginBottom: "50px" }}>
                 <>
                   <Row>
                     <Col span={24}>
-                      <Text type="secondary">主节点剩余份额</Text>
+                      <Text type="secondary">{t("wallet_masternodes_joins_left")}</Text>
                     </Col>
                     <Col span={24}>
                       <Text style={{ fontSize: "20px" }} strong>{params?.left} SAFE</Text>
@@ -120,7 +119,7 @@ export default () => {
                   <Divider style={{ marginTop: "5px", marginBottom: "15px" }} />
                   <Row >
                     <Col span={10}>
-                      <Text strong>锁仓数量</Text>
+                      <Text strong>{t("wallet_masternodes_joins_amount")}</Text>
                       <br />
                       <Text style={{ fontSize: "20px" }} strong>{params?.value} SAFE</Text>
                       {
@@ -146,7 +145,7 @@ export default () => {
                       }
                     </Col>
                     <Col span={14}>
-                      <Text type='secondary' style={{ float: "right" }} strong>账户余额</Text>
+                      <Text type='secondary' style={{ float: "right" }} strong>{t("wallet_balance_currentavailable")}</Text>
                       <br />
                       <Text style={{ float: "right", fontSize: "20px", lineHeight: "36px" }}>
                         {balance?.toFixed(6)} SAFE
@@ -156,7 +155,7 @@ export default () => {
                   <Divider style={{ marginTop: "0px" }} />
                   <Spin spinning={activeAccountNodeInfo == undefined}>
                     <Button disabled={activeAccountNodeInfo?.isNode} type='primary' onClick={nextClick}>
-                      成为合伙人
+                      {t("wallet_masternodes_joins_button")}
                     </Button>
                     {
                       activeAccountNodeInfo?.isNode &&

@@ -14,10 +14,14 @@ import AppendModalConfirm from './AppendModal-Confirm';
 import Supernode from '../Supernode';
 import { Safe4_Business_Config } from '../../../../config';
 import useAddrNodeInfo from '../../../../hooks/useAddrIsNode';
+import { useTransaction } from '../../../../state/transactions/hooks';
+import { useTranslation } from 'react-i18next';
 
 const { Text, Title } = Typography;
 
 export default () => {
+
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const supernodeAddr = useSelector<AppState, string | undefined>(state => state.application.control.vote);
   const supernodeStorageContract = useSupernodeStorageContract();
@@ -92,7 +96,7 @@ export default () => {
           navigate("/main/supernodes")
         }} />
         <Title level={4} style={{ lineHeight: "16px", float: "left" }}>
-          超级节点联合创立
+          {t("wallet_supernodes_joins")}
         </Title>
       </Col>
     </Row>
@@ -100,11 +104,11 @@ export default () => {
     <div style={{ width: "100%", paddingTop: "40px", minWidth: "1000px" }}>
       <div style={{ margin: "auto", width: "90%" }}>
         <Row>
-          <Card title="通过锁仓SAFE来成为这个超级节点的合伙人" style={{ width: "100%" }}>
+          <Card title={t("wallet_supernodes_joins_title")} style={{ width: "100%" }}>
             <>
               <Row>
                 <Col span={24}>
-                  <Text type="secondary">超级节点剩余份额</Text>
+                  <Text type="secondary">{t("wallet_supernodes_joins_left")}</Text>
                 </Col>
                 <Col span={24}>
                   <Text style={{ fontSize: "20px" }} strong>{params?.left} SAFE</Text>
@@ -113,7 +117,7 @@ export default () => {
               <Divider />
               <Row >
                 <Col span={10}>
-                  <Text strong>数量</Text>
+                  <Text strong>{t("amount")}</Text>
                   <br />
                   <Text style={{ fontSize: "20px" }} strong>{params?.value} SAFE</Text>
                   {
@@ -139,7 +143,7 @@ export default () => {
                   }
                 </Col>
                 <Col span={14}>
-                  <Text type='secondary' style={{ float: "right" }} strong>账户余额</Text>
+                  <Text type='secondary' style={{ float: "right" }} strong>{t("wallet_balance_currentavailable")}</Text>
                   <br />
                   <Text style={{ float: "right", fontSize: "20px", lineHeight: "36px" }}>
                     {balance?.toFixed(6)} SAFE

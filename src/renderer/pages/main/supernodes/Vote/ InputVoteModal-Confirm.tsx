@@ -15,6 +15,7 @@ import { useNavigate } from "react-router-dom";
 import { applicationUpdateWalletTab } from "../../../../state/application/action";
 import useTransactionResponseRender from "../../../components/useTransactionResponseRender";
 import { ethers } from "ethers";
+import { useTranslation } from "react-i18next";
 
 const { Text, Link } = Typography;
 
@@ -28,6 +29,7 @@ export default ({
   supernodeInfo: SupernodeInfo,
   amount: string
 }) => {
+  const { t } = useTranslation();
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const [sending, setSending] = useState<boolean>(false);
@@ -75,7 +77,7 @@ export default ({
   }, [supernodeInfo, supernodeVoteContract, activeAccount,amount]);
 
   return <>
-    <Modal footer={null} destroyOnClose title="投票" width="600px" open={openVoteModal} onCancel={cancel}>
+    <Modal footer={null} destroyOnClose title={t("wallet_supernodes_votes")} width="600px" open={openVoteModal} onCancel={cancel}>
       <Divider />
       {
         render
@@ -88,35 +90,35 @@ export default ({
       </Row>
       <Row >
         <Col span={24}>
-          <Text type="secondary">从</Text>
+          <Text type="secondary">{t("wallet_send_from")}</Text>
         </Col>
         <Col span={24} style={{ paddingLeft: "5px" }} >
-          <Text>普通账户</Text>
+          <Text>{t("wallet_account_normal")}</Text>
         </Col>
       </Row>
       <br />
       <Row>
         <Col span={24}>
-          <Text type="secondary">到</Text>
+          <Text type="secondary">{t("wallet_send_from")}</Text>
         </Col>
         <Col span={24} style={{ paddingLeft: "5px" }} >
-          <Text>锁仓账户</Text>
+          <Text>{t("wallet_account_locked")}</Text>
         </Col>
       </Row>
       <Divider />
       <Row>
         <Col span={24}>
-          <Text type="secondary">投票到</Text>
+          <Text type="secondary">{t("wallet_supernodes_votes_to")}</Text>
         </Col>
         <Col span={24} style={{ paddingLeft: "5px" }} >
-          <Text strong>超级节点</Text>
+          <Text strong>{t("supernode")}</Text>
         </Col>
         <Divider style={{ margin: "8px 0px" }} />
         <Col span={24}>
-          <Card size="small">
+          <Card size="small" style={{marginTop:"20px"}}>
             <Row>
               <Col span={24}>
-                <Text type="secondary">超级节点ID</Text>
+                <Text type="secondary">{t("wallet_supernodes_id")}</Text>
               </Col>
               <Col span={24}>
                 <Text>{supernodeInfo.id}</Text>
@@ -125,7 +127,7 @@ export default ({
             </Row>
             <Row>
               <Col span={24}>
-                <Text type="secondary">超级节点地址</Text>
+                <Text type="secondary">{t("wallet_supernodes_address")}</Text>
               </Col>
               <Col span={24}>
                 <Text><AddressView address={supernodeInfo.addr} /></Text>
@@ -134,7 +136,7 @@ export default ({
             </Row>
             <Row>
               <Col span={24}>
-                <Text type="secondary">超级节点名称</Text>
+                <Text type="secondary">{t("wallet_supernodes_name")}</Text>
               </Col>
               <Col span={24}>
                 <Text>{supernodeInfo.name}</Text>
@@ -143,7 +145,7 @@ export default ({
             </Row>
             <Row>
               <Col span={24}>
-                <Text type="secondary">超级节点简介</Text>
+                <Text type="secondary">{t("wallet_supernodes_description")}</Text>
               </Col>
               <Col span={24}>
                 <Text>{supernodeInfo.description}</Text>
@@ -159,17 +161,17 @@ export default ({
             !sending && !render && <Button onClick={() => {
               doVoteSupernode();
             }} disabled={sending} type="primary" style={{ float: "right" }}>
-              广播交易
+              {t("wallet_send_status_broadcast")}
             </Button>
           }
           {
             sending && !render && <Button loading disabled type="primary" style={{ float: "right" }}>
-              发送中....
+              {t("wallet_send_status_sending")}
             </Button>
           }
           {
             render && <Button onClick={cancel} type="primary" style={{ float: "right" }}>
-              关闭
+              {t("wallet_send_status_close")}
             </Button>
           }
         </Col>
