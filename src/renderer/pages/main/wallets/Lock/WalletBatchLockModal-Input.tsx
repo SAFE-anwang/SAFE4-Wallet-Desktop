@@ -52,12 +52,12 @@ export function BatchLockAert({
     <Row>
       <Col span={24}>
         <Text>
-          { t("wallet_batchLock_desc0" , { startLockMonth , periodMonth , _perLockAmount }) }
+          {t("wallet_batchLock_desc0", { startLockMonth, periodMonth, _perLockAmount })}
         </Text>
       </Col>
       <Col span={24}>
         <Text>
-          { t("wallet_batchLock_desc1" , { lockTimes ,  _totalLockAmount}) }
+          {t("wallet_batchLock_desc1", { lockTimes, _totalLockAmount })}
         </Text>
       </Col>
     </Row>
@@ -111,16 +111,16 @@ export default ({
     const { perLockAmount, lockTimes, startLockMonth, periodMonth, toAddress } = params;
 
     if (!perLockAmount) {
-      inputErrors.perLockAmount = "请输入每次锁仓数量";
+      inputErrors.perLockAmount = t("please_enter") + t("wallet_batchLock_eachLockAmount");
     }
     if (!lockTimes || !(lockTimes > 0)) {
-      inputErrors.lockTimes = "请输入合计锁仓次数";
+      inputErrors.lockTimes = t("please_enter") + t("wallet_batchLock_totalLockCount");
     }
     if (!startLockMonth) {
       inputErrors.lockTimes = "请选择锁仓起始月份";
     }
     if (!toAddress || !ethers.utils.isAddress(toAddress)) {
-      inputErrors.toAddress = "请输入锁仓地址";
+      inputErrors.toAddress = t("enter_correct") + t("wallet_batchLock_lockWalletAddress");
     }
     if (!periodMonth || !(periodMonth > 0)) {
       inputErrors.periodMonth = "请输入锁仓间隔月份";
@@ -129,10 +129,10 @@ export default ({
       try {
         let _amount = CurrencyAmount.ether(ethers.utils.parseEther(perLockAmount).toBigInt());
         if (!_amount.greaterThan(ZERO)) {
-          inputErrors.perLockAmount = "请输入有效的数量";
+          inputErrors.perLockAmount = t("enter_correct") + t("wallet_lock_amount");
         }
       } catch (error) {
-        inputErrors.perLockAmount = "请输入正确的数量";
+        inputErrors.perLockAmount = t("enter_correct") + t("wallet_lock_amount");
       }
     }
     if (inputErrors.perLockAmount || inputErrors.lockTimes || inputErrors.startLockMonth || inputErrors.periodMonth || inputErrors.toAddress) {
@@ -173,7 +173,7 @@ export default ({
                 ...params,
                 perLockAmount: perLockAmountInputValue
               })
-            }} placeholder={t("enter")+t("wallet_batchLock_eachLockAmount")} />
+            }} placeholder={t("enter") + t("wallet_batchLock_eachLockAmount")} />
           </Space.Compact>
         </Col>
         <Col span={10}>
@@ -198,7 +198,7 @@ export default ({
                 ...params,
                 lockTimes: Number(lockTimesInputValue)
               })
-            }}/>
+            }} />
           </Space.Compact>
         </Col>
         <Col span={10}>
@@ -241,7 +241,7 @@ export default ({
               ...inputErrors,
               toAddress: undefined
             })
-          }} placeholder={t("enter")+t("wallet_batchLock_lockWalletAddress")}></Input>
+          }} placeholder={t("enter") + t("wallet_batchLock_lockWalletAddress")}></Input>
         </Col>
         {
           inputErrors?.toAddress && <Alert style={{ marginTop: "5px" }} type="error" showIcon message={inputErrors.toAddress} />
@@ -288,7 +288,7 @@ export default ({
                 ...params,
                 periodMonth: Number(periodMonthInputValue)
               })
-            }}/>
+            }} />
           </Space.Compact>
         </Col>
         <Col span={10}>

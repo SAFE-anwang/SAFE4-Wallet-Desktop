@@ -16,11 +16,13 @@ import { CallMulticallAggregateContractCall, SyncCallMulticallAggregate } from "
 import { enodeRegex } from "../../supernodes/Register/SupernodeRegister";
 import { InputRules } from "../Register/MasternodeRegister";
 import AddressComponent from "../../../components/AddressComponent";
+import { useTranslation } from "react-i18next";
 
 const { Text, Title } = Typography
 
 export default () => {
 
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const editMasternodeId = useSelector((state: AppState) => state.application.control.editMasternodeId);
   const [masternodeInfo, setMasternodeInfo] = useState<MasternodeInfo>();
@@ -29,7 +31,6 @@ export default () => {
   const masternodeLogicContract = useMasternodeLogicContract(true);
   const addTransaction = useTransactionAdder();
   const multicallContract = useMulticallContract();
-  const walletsActiveKeystore = useWalletsActiveKeystore();
   const activeAccount = useWalletsActiveAccount();
 
   const [updating, setUpdating] = useState<boolean>(false);
@@ -84,22 +85,22 @@ export default () => {
         address?: string, enode?: string, description?: string
       } = {};
       if (!address) {
-        inputErrors.address = "请输入主节点地址";
+        inputErrors.address = t("enter") + t("wallet_masternodes_address");
       } else if (!ethers.utils.isAddress(address)) {
-        inputErrors.address = "请输入合法的主节点地址";
+        inputErrors.address = t("enter_correct") + t("wallet_masternodes_address");
       }
       if (!enode) {
-        inputErrors.enode = "请输入主节点ENODE";
+        inputErrors.enode = t("enter") + t("wallet_masternodes_enode");
       } else {
         const isMatch = enodeRegex.test(enode);
         if (!isMatch) {
-          inputErrors.enode = "主节点ENODE格式不正确!";
+          inputErrors.enode = t("enter_correct") + t("wallet_masternodes_enode");
         }
       }
       if (!description) {
-        inputErrors.description = "请输入主节点简介";
+        inputErrors.description = t("enter") + t("wallet_masternodes_description");
       } else if (description.length < InputRules.description.min || description.length > InputRules.description.max) {
-        inputErrors.description = `简介信息长度需要大于${InputRules.description.min}且小于${InputRules.description.max}`;
+        inputErrors.description = t("wallet_masternodes_description_lengthrule", { min: InputRules.description.min, max: InputRules.description.max })
       }
       if (inputErrors.address || inputErrors.enode || inputErrors.description) {
         setInputErrors(inputErrors);
@@ -135,18 +136,18 @@ export default () => {
         const addrIsSupernodeFounder: boolean = addrExistInSupernodesCall.result;
         if (addrExistsInMasternodes || addrExistsInSupernodes) {
           if (addrExistsInMasternodes) {
-            inputErrors.address = "该地址已经是主节点地址,无法使用";
+            inputErrors.address = t("wallet_masternodes_address_isnodeaddress");
           }
           if (addrExistsInSupernodes) {
-            inputErrors.address = "该地址已经是超级节点地址,无法使用";
+            inputErrors.address = t("wallet_masternodes_address_isnodeaddress");
           }
         }
         if (addrIsFounder || addrIsSupernodeFounder) {
           if (addrIsFounder) {
-            inputErrors.address = "该地址已参与主节点地址创建,无法使用";
+            inputErrors.address = t("wallet_masternodes_address_joinnode");
           }
           if (addrIsSupernodeFounder) {
-            inputErrors.address = "该地址已参与超级节点地址创建,无法使用";
+            inputErrors.address = t("wallet_masternodes_address_joinnode");
           }
         }
       }
@@ -166,7 +167,7 @@ export default () => {
         const enodeExistsInMasternodes: boolean = enodeExistCall.result;
         const enodeExistsInSupernodes: boolean = enodeExistInSupernodesCall.result;
         if (enodeExistsInMasternodes || enodeExistsInSupernodes) {
-          inputErrors.enode = "该ENODE已被使用";
+          inputErrors.enode = t("wallet_masternodes_enodeexist");
         }
       }
       if (inputErrors.address || inputErrors.enode) {
@@ -271,7 +272,7 @@ export default () => {
           navigate("/main/masternodes")
         }} />
         <Title level={4} style={{ lineHeight: "16px" }}>
-          同步主节点数据
+          {t("wallet_masternodes_sync")}
         </Title>
       </Col>
     </Row>
@@ -282,13 +283,13 @@ export default () => {
 
           <Row style={{ marginTop: "20px" }}>
             <Col span={24}>
-              <Text type="secondary">主节点ID</Text>
+              <Text type="secondary">{t("wallet_masternodes_id")}</Text>
             </Col>
             <Col>
               <Text strong>{masternodeInfo?.id}</Text>
             </Col>
             <Col span={24} style={{ marginTop: "20px" }}>
-              <Text type="secondary">创建者</Text>
+              <Text type="secondary">{t("wallet_masternodes_creator")}</Text>
             </Col>
             <Col span={24}>
               {
@@ -298,10 +299,10 @@ export default () => {
             {
               isNodeCreator && <>
                 <Col span={24} style={{ marginTop: "20px" }}>
-                  <Text type="secondary">主节点地址</Text>
+                  <Text type="secondary">{t("wallet_masternodes_address")}</Text>
                 </Col>
                 <Col span={24}>
-                  <Input style={{ marginTop: "5px" }} value={updateParams?.address} placeholder='输入主节点地址'
+                  <Input style={{ marginTop: "5px" }} value={updateParams?.address} placeholder={t("please_enter")+t("wallet_masternodes_address")}
                     onChange={(event) => {
                       const input = event.target.value.trim();
                       setUpdateParams({
@@ -342,7 +343,7 @@ export default () => {
 
                 <Divider />
                 <Col span={24}>
-                  <Text type="secondary">主节点简介</Text>
+                  <Text type="secondary">{t("wallet_masternodes_description")}</Text>
                 </Col>
                 <Col span={24}>
                   <Input.TextArea style={{ height: "100px" }} value={updateParams.description} onChange={(event) => {
@@ -369,18 +370,18 @@ export default () => {
               {
                 updateResult &&
                 <>
-                  <Alert style={{ marginTop: "20px" , marginBottom:"20px" }} type="success" message={<>
+                  <Alert style={{ marginTop: "20px", marginBottom: "20px" }} type="success" message={<>
                     {
                       updateResult.address && <>
                         {
                           updateResult.address.status == 1 && <>
-                            <Text type="secondary">地址更新交易哈希</Text><br />
+                            <Text type="secondary">{t("wallet_masternodes_sync_txhash_address")}</Text><br />
                             <Text strong>{updateResult.address.txHash}</Text> <br />
                           </>
                         }
                         {
                           updateResult.address.status == 0 && <>
-                            <Text type="secondary">地址更新失败</Text><br />
+                            <Text type="secondary">{t("wallet_masternodes_sync_error_address")}</Text><br />
                             <Text strong type="danger">
                               <CloseCircleTwoTone twoToneColor="red" style={{ marginRight: "5px" }} />
                               {updateResult.address.error}
@@ -393,13 +394,13 @@ export default () => {
                       updateResult.enode && <>
                         {
                           updateResult.enode.status == 1 && <>
-                            <Text type="secondary">ENODE更新交易哈希</Text><br />
+                            <Text type="secondary">{t("wallet_masternodes_sync_txhash_enode")}</Text><br />
                             <Text strong>{updateResult.enode.txHash}</Text> <br />
                           </>
                         }
                         {
                           updateResult.enode.status == 0 && <>
-                            <Text type="secondary">ENODE更新失败</Text><br />
+                            <Text type="secondary">{t("wallet_masternodes_sync_error_enode")}</Text><br />
                             <Text strong type="danger">
                               <CloseCircleTwoTone twoToneColor="red" style={{ marginRight: "5px" }} />
                               {updateResult.enode.error}
@@ -412,13 +413,13 @@ export default () => {
                       updateResult.description && <>
                         {
                           updateResult.description.status == 1 && <>
-                            <Text type="secondary">简介更新交易哈希</Text><br />
+                            <Text type="secondary">{t("wallet_masternodes_sync_txhash_description")}</Text><br />
                             <Text strong>{updateResult.description.txHash}</Text> <br />
                           </>
                         }
                         {
                           updateResult.description.status == 0 && <>
-                            <Text type="secondary">简介更新失败</Text><br />
+                            <Text type="secondary">{t("wallet_masternodes_sync_error_description")}</Text><br />
                             <Text strong type="danger">
                               <CloseCircleTwoTone twoToneColor="red" style={{ marginRight: "5px" }} />
                               {updateResult.description.error}
@@ -428,7 +429,7 @@ export default () => {
                       </>
                     }
                     <br />
-                    <Text italic>更新数据交易发出后,等待交易确认,主节点的信息才会同步更新到整个 Safe4 网络</Text>
+                    <Text italic>{t("wallet_masternodes_sync_update_tip")}</Text>
                   </>} />
                 </>
               }
@@ -437,7 +438,7 @@ export default () => {
             <Col span={24} style={{ textAlign: "right" }}>
               {
                 isNodeCreator &&
-                <Button disabled={!needUpdate || (updateResult != undefined && !updating) } type="primary" onClick={doUpdate} loading={updating}>更新</Button>
+                <Button disabled={!needUpdate || (updateResult != undefined && !updating)} type="primary" onClick={doUpdate} loading={updating}>{t("update")}</Button>
               }
               {
                 !isNodeCreator && <>

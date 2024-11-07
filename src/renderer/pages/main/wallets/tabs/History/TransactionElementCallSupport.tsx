@@ -16,6 +16,7 @@ import TransactionELementCallAMBatchDeposit from "./TransactionElementCallAMBatc
 import TransactionElementCallSNChange from "./TransactionElementCallSNChange";
 import TransactionElementCallMNChange from "./TransactionElementCallMNChange";
 import TransactionElementCallAMAddLockDay from "./TransactionElementCallAMAddLockDay";
+import { useTranslation } from "react-i18next";
 
 export default ({ transaction, setClickTransaction, support }: {
   transaction: TransactionDetails,
@@ -25,6 +26,9 @@ export default ({ transaction, setClickTransaction, support }: {
     inputDecodeResult: any
   }
 }) => {
+
+  const { t } = useTranslation();
+
   const SelectCallRender = useCallback(() => {
     const to = transaction.call?.to;
     switch (to) {
@@ -118,28 +122,28 @@ export default ({ transaction, setClickTransaction, support }: {
           transaction={transaction}
           setClickTransaction={setClickTransaction}
           support={support}
-          title="更新超级节点名称"
+          title={t("wallet_history_sn_update_name")}
         />
       case SupportSupernodeLogicFunctions.ChangeAddress:
         return <TransactionElementCallSNChange
           transaction={transaction}
           setClickTransaction={setClickTransaction}
           support={support}
-          title="更新超级节点地址"
+          title={t("wallet_history_sn_update_address")}
         />
       case SupportSupernodeLogicFunctions.ChangeDescription:
         return <TransactionElementCallSNChange
           transaction={transaction}
           setClickTransaction={setClickTransaction}
           support={support}
-          title="更新超级节点简介"
+          title={t("wallet_history_sn_update_description")}
         />
       case SupportSupernodeLogicFunctions.ChangeEncode:
         return <TransactionElementCallSNChange
           transaction={transaction}
           setClickTransaction={setClickTransaction}
           support={support}
-          title="更新超级节点ENODE"
+          title={t("wallet_history_sn_update_enode")}
         />
       default:
         return <></>
@@ -162,21 +166,21 @@ export default ({ transaction, setClickTransaction, support }: {
         />
       case SupportMasternodeLogicFunctions.ChangeAddress:
         return <TransactionElementCallMNChange
-          title="更新主节点地址"
+          title={t("wallet_history_mn_update_address")}
           transaction={transaction}
           setClickTransaction={setClickTransaction}
           support={support}
         />
       case SupportMasternodeLogicFunctions.ChangeEncode:
         return <TransactionElementCallMNChange
-          title="更新主节点ENODE"
+          title={t("wallet_history_mn_update_enode")}
           transaction={transaction}
           setClickTransaction={setClickTransaction}
           support={support}
         />
       case SupportMasternodeLogicFunctions.ChangeDescription:
         return <TransactionElementCallMNChange
-          title="更新主节点简介"
+          title={t("wallet_history_mn_update_description")}
           transaction={transaction}
           setClickTransaction={setClickTransaction}
           support={support}

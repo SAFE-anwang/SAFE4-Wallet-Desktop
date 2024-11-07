@@ -1,13 +1,9 @@
 
-import { Col, Row, Avatar, List, Typography, Modal, Button } from "antd";
-import { useTransaction, useTransactions } from "../../../../../state/transactions/hooks";
-import { LoadingOutlined, FileDoneOutlined, LockOutlined } from '@ant-design/icons';
-import { Spin } from 'antd';
+import { Row, List, Typography} from "antd";
+import { FileDoneOutlined } from '@ant-design/icons';
 import { useCallback, useMemo, useState } from "react";
 import { TransactionDetails } from "../../../../../state/transactions/reducer";
-import { ethers } from "ethers";
 import EtherAmount from "../../../../../utils/EtherAmount";
-import { useWalletsActiveAccount } from "../../../../../state/wallets/hooks";
 import DecodeSupportFunction from "../../../../../constants/DecodeSupportFunction";
 import TransactionElementTemplate from "./TransactionElementTemplate";
 import AccountManagerSafeDeposit from "./AccountManagerSafeDeposit";
@@ -16,6 +12,7 @@ import TransactionElementCallSupport from "./TransactionElementCallSupport";
 import AccountManagerSafeWithdraw from "./AccountManagerSafeWithdraw";
 import TransactionElementTokenTransfer from "./TransactionElementTokenTransfer";
 import { SAFE_LOGO } from "../../../../../assets/logo/AssetsLogo";
+import { useTranslation } from "react-i18next";
 
 const { Text } = Typography;
 
@@ -24,6 +21,7 @@ export default ({ transaction, setClickTransaction }: {
   transaction: TransactionDetails,
   setClickTransaction: (transaction: TransactionDetails) => void
 }) => {
+  const { t } = useTranslation();
   const {
     status,
     call,
@@ -55,10 +53,10 @@ export default ({ transaction, setClickTransaction }: {
 
   const RenderTokenTransfer = useCallback(() => {
     let firstTokenTransfer = undefined;
-    if ( tokenTransfers ){
-      Object.keys( tokenTransfers )
-        .forEach( (eventLogIndex , index : number) => {
-          if ( index == 0 ){ firstTokenTransfer = tokenTransfers[eventLogIndex] }
+    if (tokenTransfers) {
+      Object.keys(tokenTransfers)
+        .forEach((eventLogIndex, index: number) => {
+          if (index == 0) { firstTokenTransfer = tokenTransfers[eventLogIndex] }
         })
     }
     const tokenTransfer = call?.tokenTransfer ? call.tokenTransfer : tokenTransfers ? firstTokenTransfer : undefined;
@@ -86,7 +84,7 @@ export default ({ transaction, setClickTransaction }: {
         <Row style={{ width: "100%" }}>
           <span style={{ width: "100%" }}>
             <TransactionElementTemplate status={status} icon={<FileDoneOutlined style={{ color: "black" }} />}
-              title={action == "Create" ? "合约部署" : "合约调用"} description={call?.to} assetFlow={<Text strong> <>- {value && EtherAmount({ raw: value })} SAFE</> </Text>} />
+              title={action == "Create" ? t("wallet_history_contract_deploy") : t("wallet_history_contract_call")} description={call?.to} assetFlow={<Text strong> <>- {value && EtherAmount({ raw: value })} SAFE</> </Text>} />
           </span>
           {
             accountManagerDatas && Object
@@ -119,7 +117,7 @@ export default ({ transaction, setClickTransaction }: {
                 return <span style={{ width: "100%", marginTop: "20px" }}>
                   <TransactionElementTemplate
                     icon={SAFE_LOGO}
-                    title="接收"
+                    title={t("wallet_history_received")}
                     status={status}
                     description={from}
                     assetFlow={<>

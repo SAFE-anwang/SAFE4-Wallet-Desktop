@@ -21,11 +21,13 @@ import { TimeNodeRewardSignal, TimeNodeReward_Methods } from "../../../../../../
 import useSafeScan from "../../../../../hooks/useSafeScan";
 import { DeleteOutlined } from "@ant-design/icons";
 import ClearHistoryConfirmModal from "./ClearHistoryConfirmModal";
+import { useTranslation } from "react-i18next";
 
-const { Text } = Typography; 
+const { Text } = Typography;
 
 export default () => {
 
+  const { t } = useTranslation();
   const { chainId } = useWeb3React();
   const activeAccount = useWalletsActiveAccount();
   const transactions = useTransactions(activeAccount);
@@ -42,7 +44,7 @@ export default () => {
     const timeNodeRewardsGetAll = TimeNodeReward_Methods.getAll;
     if (activeAccount && chainId && latestBlockNumber > 0) {
       if (activeAccount != addressActivityFetch?.address || chainId != addressActivityFetch.chainId) {
-        window.electron.ipcRenderer.sendMessage(IPC_CHANNEL, [DBAddressActivitySignal, addressActivtiesLoadActivities, [activeAccount,chainId]]);
+        window.electron.ipcRenderer.sendMessage(IPC_CHANNEL, [DBAddressActivitySignal, addressActivtiesLoadActivities, [activeAccount, chainId]]);
       }
       window.electron.ipcRenderer.sendMessage(IPC_CHANNEL, [TimeNodeRewardSignal, timeNodeRewardsGetAll, [activeAccount, chainId]]);
       return window.electron.ipcRenderer.on(IPC_CHANNEL, (arg) => {
@@ -138,7 +140,7 @@ export default () => {
         }
       });
     }
-  }, [activeAccount, chainId,latestBlockNumber])
+  }, [activeAccount, chainId, latestBlockNumber])
 
   const walletTab = useSelector<AppState, string | undefined>(state => state.application.control.walletTab);
   useEffect(() => {
@@ -151,29 +153,29 @@ export default () => {
   return <>
     <Row style={{ marginBottom: "20px" }}>
       <Col span={12}>
-        <Switch checkedChildren="开启" unCheckedChildren="关闭" value={showNodeReward} style={{ float: "left" }}
+        <Switch checkedChildren={t("active")} unCheckedChildren={t("inactive")} value={showNodeReward} style={{ float: "left" }}
           onChange={setShowNodeReward} />
-        <Text style={{ marginLeft: "5px", float: "left" }}>显示挖矿奖励</Text>
+        <Text style={{ marginLeft: "5px", float: "left" }}>{t("wallet_history_viewrewards")}</Text>
       </Col>
       <Col span={12} style={{ textAlign: "right" }}>
-        <Tooltip title="清空该地址关联的历史记录,然后将自动从浏览器接口重新同步.">
-          <Button onClick={() => setOpenClearHistoryModal(true)} type="dashed" icon={<DeleteOutlined />}>清空记录</Button>
+        <Tooltip title={t("wallet_history_clear_tip1")}>
+          <Button onClick={() => setOpenClearHistoryModal(true)} type="dashed" icon={<DeleteOutlined />}>{t("wallet_history_clear")}</Button>
         </Tooltip>
       </Col>
     </Row>
     {
       Object.keys(transactions).sort((d1, d2) => TimestampTheStartOf(d2) - TimestampTheStartOf(d1))
-        .filter( date => {
-          const txns =  transactions[date].transactions;
+        .filter(date => {
+          const txns = transactions[date].transactions;
           const rewardAmount = transactions[date].systemRewardAmount;
           let standardTxnAcount = 0;
-          txns.forEach( txn => {
-            const { refFrom , refTo , action } = txn;
-            if ( (refFrom && refTo) || (action == DB_AddressActivity_Actions.AM_Deposit || action == DB_AddressActivity_Actions.AM_Transfer ) ){
-              standardTxnAcount ++;
+          txns.forEach(txn => {
+            const { refFrom, refTo, action } = txn;
+            if ((refFrom && refTo) || (action == DB_AddressActivity_Actions.AM_Deposit || action == DB_AddressActivity_Actions.AM_Transfer)) {
+              standardTxnAcount++;
             }
           });
-          return standardTxnAcount > 0 || rewardAmount.greaterThan(ZERO) ;
+          return standardTxnAcount > 0 || rewardAmount.greaterThan(ZERO);
           // return true;
         })
         .map(date => {
@@ -189,7 +191,7 @@ export default () => {
             {
               systemRewardAmount.greaterThan(ZERO) && showNodeReward && <>
                 <Divider dashed style={{ marginTop: "5px", marginBottom: "5px" }} />
-                <Text strong style={{ color: "#104499" }}>挖矿奖励  +{systemRewardAmount.toFixed(6)} SAFE</Text>
+                <Text strong style={{ color: "#104499" }}>{t("wallet_history_rewards")}  +{systemRewardAmount.toFixed(6)} SAFE</Text>
                 <Divider dashed style={{ marginTop: "5px", marginBottom: "20px" }} />
               </>
             }
@@ -210,7 +212,7 @@ export default () => {
         })
     }
 
-    <Modal title="交易明细" closable footer={null} open={clickTransaction != null} onCancel={() => setClickTransaction(undefined)}>
+    <Modal title={t("wallet_txdetails")} closable footer={null} open={clickTransaction != null} onCancel={() => setClickTransaction(undefined)}>
       <Divider />
       {clickTransaction && <TransactionDetailsView transaction={clickTransaction} />}
     </Modal>

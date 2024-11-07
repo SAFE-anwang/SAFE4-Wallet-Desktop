@@ -4,6 +4,7 @@ import TransactionElementTemplate from "./TransactionElementTemplate";
 import EtherAmount from "../../../../../utils/EtherAmount";
 import { useWalletsActiveAccount } from "../../../../../state/wallets/hooks";
 import { useMemo } from "react";
+import { useTranslation } from "react-i18next";
 
 const { Text } = Typography;
 
@@ -15,8 +16,8 @@ export default ({
   value: string | undefined,
   status: number | undefined
 }) => {
+  const { t } = useTranslation();
   const activeAccount = useWalletsActiveAccount();
-
   const lockIntoItSelf = useMemo(() => {
     return to == activeAccount;
   }, [to, activeAccount]);
@@ -24,7 +25,7 @@ export default ({
   return <>
     <TransactionElementTemplate
       icon={<LockOutlined style={{ color: "black" }} />}
-      title="批量锁仓"
+      title={t("wallet_history_am_batchlock")}
       status={status}
       description={to}
       assetFlow={<>

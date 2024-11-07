@@ -2,6 +2,7 @@ import { Typography, } from "antd";
 import { LockOutlined } from '@ant-design/icons';
 import TransactionElementTemplate from "./TransactionElementTemplate";
 import EtherAmount from "../../../../../utils/EtherAmount";
+import { useTranslation } from "react-i18next";
 
 const { Text } = Typography;
 
@@ -13,11 +14,11 @@ export default ({
     value: string | undefined,
     status: number | undefined ,
 }) => {
-
+    const { t } = useTranslation();
     return <>
         <TransactionElementTemplate
             icon={<LockOutlined style={{ color: "black" }} />}
-            title= { "加入超级节点合伙人" }
+            title= { t("wallet_history_sn_join") }
             status={status}
             description={to}
             assetFlow={<>

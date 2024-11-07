@@ -1,22 +1,16 @@
 
 import { Col, Row, Avatar, List, Typography, Modal, Button } from "antd";
-import { useTransaction, useTransactions } from "../../../../../state/transactions/hooks";
-import { LoadingOutlined, FileDoneOutlined, LockOutlined } from '@ant-design/icons';
-import { Spin } from 'antd';
 import { useCallback, useMemo, useState } from "react";
 import { TransactionDetails } from "../../../../../state/transactions/reducer";
-import { ethers } from "ethers";
 import EtherAmount from "../../../../../utils/EtherAmount";
-import { useWalletsActiveAccount } from "../../../../../state/wallets/hooks";
-import DecodeSupportFunction from "../../../../../constants/DecodeSupportFunction";
 import TransactionElementTemplate from "./TransactionElementTemplate";
 import AccountManagerSafeDeposit from "./AccountManagerSafeDeposit";
 import { DB_AddressActivity_Actions } from "../../../../../../main/handlers/DBAddressActivitySingalHandler";
-import TransactionElementCallSupport from "./TransactionElementCallSupport";
 import AccountManagerSafeWithdraw from "./AccountManagerSafeWithdraw";
 import AccountManagerSafeTransfer from "./AccountManagerSafeTransfer";
 import TransactionElementTokenTransfer from "./TransactionElementTokenTransfer";
 import { SAFE_LOGO } from "../../../../../assets/logo/AssetsLogo";
+import { useTranslation } from "react-i18next";
 const { Text } = Typography;
 
 
@@ -25,6 +19,7 @@ export default ({ transaction, setClickTransaction }: {
   setClickTransaction: (transaction: TransactionDetails) => void
 }) => {
 
+  const { t } = useTranslation();
   const {
     accountManagerDatas,
     internalTransfers,
@@ -63,7 +58,7 @@ export default ({ transaction, setClickTransaction }: {
                 return <span style={{ width: "100%", marginTop }}>
                   <TransactionElementTemplate
                     icon={SAFE_LOGO}
-                    title="接收"
+                    title={t("wallet_history_received")}
                     status={1}
                     description={from}
                     assetFlow={<>

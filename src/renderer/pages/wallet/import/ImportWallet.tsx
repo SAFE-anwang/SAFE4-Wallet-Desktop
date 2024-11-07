@@ -346,7 +346,7 @@ export default () => {
                     </Col>
                     <Col style={{ marginTop: "30px" }} span={24}>
                       <Text type="secondary" strong>{t("wallet_mnemonic_password")}</Text>
-                      <Switch style={{ float: "right", marginBottom: "5px" }} checkedChildren={t("active")} unCheckedChildren={t("unactive")}
+                      <Switch style={{ float: "right", marginBottom: "5px" }} checkedChildren={t("active")} unCheckedChildren={t("inactive")}
                         value={activePassword} onChange={setActivePassword} />
                       <Input.Password value={params.password} size="large" disabled={!activePassword} onChange={(event) => {
                         setParams({

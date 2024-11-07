@@ -9,6 +9,7 @@ import { ethers } from "ethers";
 import EtherAmount from "../../../../../utils/EtherAmount";
 import { useWalletsActiveAccount } from "../../../../../state/wallets/hooks";
 import { SAFE_LOGO } from "../../../../../assets/logo/AssetsLogo";
+import { useTranslation } from "react-i18next";
 
 const { Text } = Typography;
 
@@ -19,6 +20,7 @@ export default ({ transaction , setClickTransaction }: {
   transaction: TransactionDetails ,
   setClickTransaction : (transaction : TransactionDetails) => void
 }) => {
+  const { t } = useTranslation();
   const {
     status,
     receipt,
@@ -56,8 +58,8 @@ export default ({ transaction , setClickTransaction }: {
         }
         title={<>
           <Text strong>
-            {txType == TX_TYPE_RECEIVE && "接收"}
-            {txType == TX_TYPE_SEND && "发送"}
+            {txType == TX_TYPE_RECEIVE && t("wallet_history_received")}
+            {txType == TX_TYPE_SEND && t("wallet_history_send")}
           </Text>
         </>}
         description={

@@ -10,6 +10,7 @@ import { useTransaction } from "../../../../../state/transactions/hooks";
 import { useMemo } from "react";
 import config from "../../../../../config";
 import Safescan from "../../../../components/Safescan";
+import { useTranslation } from "react-i18next";
 
 const { Safescan_URL } = config;
 const { Text } = Typography;
@@ -41,7 +42,7 @@ export default ({
     }
   }, [tx])
   const activeAccount = useWalletsActiveAccount();
-
+  const { t } = useTranslation();
   return <>
 
     <Row>
@@ -52,7 +53,7 @@ export default ({
               color: "#52c41a", fontSize: "50px", float: "left", marginRight: "20px", marginLeft: "20px"
             }} />
             <div>
-              <Text style={{ fontSize: "16px" }}>成功</Text><br />
+              <Text style={{ fontSize: "16px" }}>{t("wallet_txdetails_state_success")}</Text><br />
               <Text style={{ fontSize: "16px" }} type="secondary">{DateTimeFormat(addedTime)}</Text>
             </div>
           </>
@@ -64,7 +65,7 @@ export default ({
               />} >
             </Spin>
             <div>
-              <Text style={{ fontSize: "16px" }}>等待</Text><br />
+              <Text style={{ fontSize: "16px" }}>{t("wallet_txdetails_state_pending")}</Text><br />
               <Text style={{ fontSize: "16px" }} type="secondary">{addedTime && DateTimeFormat(addedTime)}</Text>
             </div>
           </>
@@ -75,7 +76,7 @@ export default ({
               color: "#e53d3d", fontSize: "50px", float: "left", marginRight: "20px", marginLeft: "20px"
             }} />
             <div>
-              <Text style={{ fontSize: "16px" }}>失败</Text><br />
+              <Text style={{ fontSize: "16px" }}>{t("wallet_txdetails_state_failed")}</Text><br />
               <Text style={{ fontSize: "16px" }} type="secondary">{DateTimeFormat(addedTime)}</Text>
             </div>
           </>
@@ -85,16 +86,16 @@ export default ({
 
     <Divider />
 
-    <Text type="secondary" style={{ fontSize: "12px" }}>详情</Text><br />
+    <Text type="secondary" style={{ fontSize: "12px" }}>{t("wallet_txdetails_details")}</Text><br />
     <Card style={{ marginTop: "8px" }}>
       <Row>
         <Col span={12}>
-          <Text type="secondary">交易哈希</Text>
+          <Text type="secondary">{t("transactionHash")}</Text>
         </Col>
-        <Col span={12} style={{textAlign:"right"}}>
+        <Col span={12} style={{ textAlign: "right" }}>
           <Safescan url={`/tx/${hash}`} />
         </Col>
-        <Col span={24} style={{marginTop:"5px"}}>
+        <Col span={24} style={{ marginTop: "5px" }}>
           <Text>{hash}</Text>
         </Col>
       </Row>
@@ -104,15 +105,15 @@ export default ({
     {
       /** transfer 交易 */
       transfer && <>
-        <Text type="secondary" style={{ fontSize: "12px" }}>交易</Text><br />
+        <Text type="secondary" style={{ fontSize: "12px" }}>{t("transaction")}</Text><br />
         <Card title={<>
           <TokenLogo />
           <Text strong style={{ fontSize: "16px", lineHeight: "32px", marginLeft: "10px" }}>
             {
-              activeAccount == transfer.from && <>发送</>
+              activeAccount == transfer.from && <>{t("wallet_send")}</>
             }
             {
-              activeAccount == transfer.to && <>接收</>
+              activeAccount == transfer.to && <>{t("wallet_receive")}</>
             }
           </Text>
         </>} style={{ marginTop: "8px" }}>
@@ -128,10 +129,10 @@ export default ({
           }
           <br /><br />
 
-          <Text type="secondary">从</Text><br />
+          <Text type="secondary">{t("wallet_send_from")}</Text><br />
           <div style={{ marginLeft: "5px" }}><AddressView address={transfer.from} /></div><br />
 
-          <Text type="secondary">到</Text><br />
+          <Text type="secondary">{t("wallet_send_to")}</Text><br />
           <div style={{ marginLeft: "5px" }}><AddressView address={transfer.to} /></div><br />
         </Card>
       </>

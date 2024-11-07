@@ -79,7 +79,7 @@ export default () => {
               <WalletOutlined />
             </Col>
             <Col span={20}>
-              {t("modifyWalletPassword")}
+              {t("changeWalletPassword")}
             </Col>
             <Col span={2} style={{ textAlign: "center" }}>
               <RightOutlined />

@@ -164,7 +164,7 @@ export default ({
 
       <Row >
         <Col span={14}>
-          <Switch size="small" checkedChildren={t("active")} unCheckedChildren={t("unactive")} defaultChecked={openSendLock}
+          <Switch size="small" checkedChildren={t("active")} unCheckedChildren={t("inactive")} defaultChecked={openSendLock}
             onClick={(value) => {
               setOpenSendLock(value);
               setParams({

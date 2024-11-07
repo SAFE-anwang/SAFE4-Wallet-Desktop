@@ -72,7 +72,7 @@ export default () => {
     <Row style={{ height: "50px" }}>
       <Col span={12}>
         <Title level={4} style={{ lineHeight: "16px" }}>
-          超级节点
+          {t("supernode")}
         </Title>
       </Col>
     </Row>

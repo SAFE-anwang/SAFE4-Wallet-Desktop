@@ -6,6 +6,7 @@ import { useMemo } from "react";
 import { JSBI } from "@uniswap/sdk";
 import { useWalletsActiveAccount } from "../../../../../state/wallets/hooks";
 import EtherAmount from "../../../../../utils/EtherAmount";
+import { useTranslation } from "react-i18next";
 
 const { Text } = Typography;
 
@@ -26,16 +27,17 @@ export default ({
   locked: JSBI,
 }) => {
 
+  const { t } = useTranslation();
   const activeAccount = useWalletsActiveAccount();
 
   const _functionName = useMemo(() => {
     switch (functionName) {
       case SupportSafe3Functions.BatchRedeemAvailable:
-        return "迁移 Safe";
+        return t("wallet_history_redeem_available");
       case SupportSafe3Functions.BatchRedeemLocked:
-        return "迁移 锁仓";
+        return t("wallet_history_redeem_locked");
       case SupportSafe3Functions.BatchRedeemMasterNode:
-        return "迁移 主节点";
+        return t("wallet_history_redeem_masternode");
       default:
     }
     return "";
@@ -70,7 +72,7 @@ export default ({
     <TransactionElementTemplate
       icon={<ApiOutlined style={{ color: "black" }} />}
       title={<>
-        <Text>资产迁移<Divider type="vertical" /><Text>{_functionName}</Text></Text>
+        <Text>{t("wallet_history_redeem")}<Divider type="vertical" /><Text>{_functionName}</Text></Text>
       </>}
       status={status}
       description={<>
