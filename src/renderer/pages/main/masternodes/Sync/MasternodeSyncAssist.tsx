@@ -121,12 +121,12 @@ export default () => {
                   <Row>
                     {
                       exist && (address != helpResult?.nodeAddress) && <Col span={6}>
-                        <Text type='secondary'>[已注册]</Text>
+                        <Text type='secondary'>[{t("wallet_childwallet_registed")}]</Text>
                       </Col>
                     }
                     {
                       (address == masternodeInfo.addr || address == helpResult?.nodeAddress) && <Col span={6}>
-                        <Text type='secondary'>[当前节点]</Text>
+                        <Text type='secondary'>[{t("wallet_childwallet_currentnode")}]</Text>
                       </Col>
                     }
                     <Col span={18}>
@@ -626,7 +626,7 @@ export default () => {
               }
               {
                 !isNodeCreator && <>
-                  <Alert style={{ marginTop: "5px", textAlign: "left" }} type="warning" showIcon message={"只有节点的创建人才能操作该节点"} />
+                  <Alert style={{ marginTop: "5px", textAlign: "left" }} type="warning" showIcon message={t("wallet_node_sync_error")} />
                 </>
               }
             </Col>

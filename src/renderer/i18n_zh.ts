@@ -577,4 +577,10 @@ export default {
   wallet_address_local:"本地钱包",
   wallet_address_current:"当前钱包",
 
+  wallet_childwallet_registed:"已注册",
+  wallet_childwallet_currentnode:"当前节点",
+  wallet_childwallet_loading:"正在加载可用的主节点地址",
+  wallet_childwallet_error:"当前账户没有种子密钥(助记词),无法派生子地址.不可使用辅助功能",
+  wallet_node_sync_error:"只有节点的创建人才能操作该节点",
+
 }

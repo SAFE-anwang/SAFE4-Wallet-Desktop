@@ -7,11 +7,13 @@ const { Text, Paragraph, Link } = Typography;
 export default ({
   address,
   ellipsis,
-  copyable
+  copyable,
+  qrcode
 }: {
   address: string,
   ellipsis?: boolean,
   copyable?: boolean,
+  qrcode?: boolean,
 }) => {
   const { t } = useTranslation();
   const { isLocal, isActive, name } = isLocalWallet(address);
@@ -36,11 +38,13 @@ export default ({
       {
         copyable && <Paragraph style={{ float: "right", height: "8px" }} copyable={{ text: address }} />
       }
-      <Link onClick={() => setOpenAddressQRCode(true)}>
-        <Tooltip title={t("wallet_address_qrcode_view")}>
-          <QrcodeOutlined style={{ float: "right", marginTop: "4px", marginRight: "6px" }} />
-        </Tooltip>
-      </Link>
+      {
+        qrcode && <Link onClick={() => setOpenAddressQRCode(true)}>
+          <Tooltip title={t("wallet_address_qrcode_view")}>
+            <QrcodeOutlined style={{ float: "right", marginTop: "4px", marginRight: "6px" }} />
+          </Tooltip>
+        </Link>
+      }
       {
         isLocal && !isActive &&
         <Tooltip title={`${t("wallet_address_local")}:${name}`}>

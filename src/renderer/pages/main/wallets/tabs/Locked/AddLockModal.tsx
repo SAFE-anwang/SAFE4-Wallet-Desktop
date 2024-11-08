@@ -14,11 +14,11 @@ const STEP_CONFIRM = 1;
 export default ({
   openAddModal,
   setOpenAddModal,
-  selectedAccountRecord
+  selectedAccountRecord,
 }: {
   openAddModal: boolean,
   setOpenAddModal: (open: boolean) => void
-  selectedAccountRecord?: AccountRecord
+  selectedAccountRecord?: AccountRecord,
 }) => {
 
   const { t } = useTranslation();
@@ -33,8 +33,8 @@ export default ({
     setOpenAddModal(false);
     if (txHash) {
       setTxHash(undefined);
-      dispatch(applicationUpdateWalletTab("history"));
-      navigate("/main/wallet");
+      // dispatch(applicationUpdateWalletTab("history"));
+      // navigate("/main/wallet");
     }
   }, [txHash]);
 

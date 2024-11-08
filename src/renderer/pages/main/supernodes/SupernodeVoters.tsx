@@ -87,7 +87,7 @@ export default ({
       render: (addr) => {
         return <>
           <div style={{width:"70%"}}>
-            <AddressComponent address={addr} />
+            <AddressComponent address={addr} qrcode copyable />
           </div>
         </>
       }

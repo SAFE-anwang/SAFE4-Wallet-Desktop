@@ -320,7 +320,7 @@ export default () => {
     <Row style={{ height: "50px" }}>
       <Col span={12}>
         <Title level={4} style={{ lineHeight: "16px" }}>
-          {t("wallet_redeems")}
+          {t("safe3AssetRedeem")}
         </Title>
       </Col>
     </Row>

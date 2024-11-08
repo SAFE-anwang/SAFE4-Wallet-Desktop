@@ -165,7 +165,7 @@ export default () => {
                 </Col>
                 <Col span={10}>
                   {
-                    proposalInfo && <AddressComponent address={proposalInfo?.creator} />
+                    proposalInfo && <AddressComponent address={proposalInfo?.creator} qrcode copyable />
                   }
                 </Col>
               </Row>

@@ -356,7 +356,7 @@ export default ({
             </Col>
             <Col span={20}>
               <Text strong>
-                <AddressComponent address={addr} ellipsis copyable />
+                <AddressComponent address={addr} ellipsis copyable qrcode />
               </Text>
             </Col>
           </Row>

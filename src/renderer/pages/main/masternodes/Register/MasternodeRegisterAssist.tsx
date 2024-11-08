@@ -248,11 +248,11 @@ export default () => {
                 <Col span={16}>
                   <Row>
                     {
-                      exist && <Col span={4}>
-                        <Text type='secondary'>[已注册]</Text>
+                      exist && <Col span={6}>
+                        <Text type='secondary'>[{t("wallet_childwallet_registed")}]</Text>
                       </Col>
                     }
-                    <Col span={20}>
+                    <Col span={18}>
                       <AddressComponent ellipsis address={address} />
                     </Col>
                   </Row>

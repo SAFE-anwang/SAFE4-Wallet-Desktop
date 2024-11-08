@@ -1,7 +1,9 @@
 import { Alert, Col, Row, Typography, Card, Divider, Button, Tabs, TabsProps } from "antd";
 import { t } from "i18next";
+import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
+import { useBlockNumber } from "../../../state/application/hooks";
 import ProposalList from "./ProposalList";
 
 const { Text, Title } = Typography;
@@ -10,6 +12,10 @@ export default () => {
 
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const blockNumber = useBlockNumber();
+  const openCreateProposal = useMemo( () => {
+    return blockNumber >= 86400;
+  } , [ blockNumber ] )
 
   const items: TabsProps['items'] = [
     {
@@ -29,7 +35,7 @@ export default () => {
     <Row style={{ height: "50px" }}>
       <Col span={12}>
         <Title level={4} style={{ lineHeight: "16px" }}>
-          {t("proposals")}
+          {t("proposal")}
         </Title>
       </Col>
     </Row>
@@ -42,7 +48,7 @@ export default () => {
             <Text>{t("wallet_proposals_create_tip2")}</Text>
           </>} />
           <Divider />
-          <Button onClick={() => {
+          <Button disabled={!openCreateProposal} onClick={() => {
             navigate("/main/proposals/create")
           }}>{t("wallet_proposals_create")}</Button>
         </Card>

@@ -5,10 +5,12 @@ import AddressComponent from "./AddressComponent";
 import { useTranslation } from "react-i18next";
 import { useAccountManagerContract, useMulticallContract } from "../../hooks/useContracts";
 import { useEffect, useState } from "react";
-import { AccountRecord, formatAccountRecord } from "../../structs/AccountManager";
+import { AccountRecord, formatAccountRecord, formatRecordUseInfo } from "../../structs/AccountManager";
 import { useBlockNumber, useTimestamp } from "../../state/application/hooks";
 import { DateTimeFormat } from "../../utils/DateUtils";
 import { LockOutlined, UnlockOutlined, ClockCircleOutlined } from "@ant-design/icons";
+import { useWalletsActiveAccount } from "../../state/wallets/hooks";
+import AddLockModal from "../main/wallets/tabs/Locked/AddLockModal";
 
 const { Text } = Typography;
 
@@ -23,13 +25,18 @@ export default ({
   const multicallContract = useMulticallContract();
   const accountManagerContract = useAccountManagerContract();
   const [_memberInfos, setMemberInfos] = useState<MemberInfo[]>();
+  const activeAccount = useWalletsActiveAccount();
+
+  const [openAddModal, setOpenAddModal] = useState(false);
+  const [selectedAccountRecord, setSelectedAccountRecord] = useState<AccountRecord>();
+
   const columns: ColumnsType<MemberInfo> = [
     {
       title: t("wallet_locked_accountRecordLockId"),
       dataIndex: 'lockID',
       key: 'lockID',
       render: (lockID, memberInfo) => {
-        let unlockHeight = memberInfo.unlockHeight;
+        let unlockHeight = memberInfo.accountRecord?.unlockHeight;
         let locked = true;
         let unlockDateTime = undefined;
         if (unlockHeight) {
@@ -44,17 +51,17 @@ export default ({
             !locked && <UnlockOutlined />
           }
           <Text strong style={{ marginLeft: "5px" }}>{lockID}</Text>
-
         </>
       }
     },
     {
       title: t("wallet_locked_unlockHeight"),
-      dataIndex: 'unlockHeight',
+      dataIndex: 'lockID',
       key: 'unlockHeight',
-      render: (unlockHeight, memberInfo) => {
+      render: (_, memberInfo) => {
         let locked = true;
         let unlockDateTime = undefined;
+        let unlockHeight = memberInfo.accountRecord?.unlockHeight;
         if (unlockHeight) {
           locked = unlockHeight > blockNumber;
           unlockDateTime = unlockHeight - blockNumber > 0 ? DateTimeFormat(((unlockHeight - blockNumber) * 30 + timestamp) * 1000) : undefined;
@@ -68,7 +75,16 @@ export default ({
               </Text>
             </Tooltip>
           }
-          <Button type="link" title="追加锁仓天数" icon={<ClockCircleOutlined />} style={{ float: "right" }} size="small">Add</Button>
+          {
+            !unlockDateTime && <Text type="warning">{unlockHeight}</Text>
+          }
+          {
+            activeAccount == memberInfo.addr &&
+            <Button onClick={() => {
+              setSelectedAccountRecord(memberInfo.accountRecord);
+              setOpenAddModal(true);
+            }} title={t("wallet_locked_addLockDay")} icon={<ClockCircleOutlined />} style={{ float: "right" }} size="small">{t("wallet_locked_addLockDay")}</Button>
+          }
         </Text>
       }
     },
@@ -79,7 +95,7 @@ export default ({
       render: (addr) => {
         return <>
           <div style={{ width: "100%" }}>
-            <AddressComponent address={addr} ellipsis copyable />
+            <AddressComponent address={addr} ellipsis copyable qrcode />
           </div>
         </>
       }
@@ -98,32 +114,46 @@ export default ({
     setMemberInfos(memberInfos);
     if (multicallContract && accountManagerContract) {
       const getRecordByIDFragment = accountManagerContract.interface.getFunction("getRecordByID");
-      const getRecordByIDCalls = memberInfos.map(memberInfo => {
-        const { lockID } = memberInfo;
-        return [
+      const getRecordUseInfoFragment = accountManagerContract?.interface?.getFunction("getRecordUseInfo");
+      const getRecordByIDCalls = [];
+      const getRecordUseInfoCalls = [];
+      for (let i = 0; i < memberInfos.length; i++) {
+        getRecordByIDCalls.push([
           accountManagerContract.address,
-          accountManagerContract.interface.encodeFunctionData(getRecordByIDFragment, [lockID])
-        ]
-      });
-      multicallContract.callStatic.aggregate(getRecordByIDCalls)
+          accountManagerContract?.interface.encodeFunctionData(getRecordByIDFragment, [memberInfos[i].lockID])
+        ]);
+        getRecordUseInfoCalls.push([
+          accountManagerContract.address,
+          accountManagerContract?.interface.encodeFunctionData(getRecordUseInfoFragment, [memberInfos[i].lockID])
+        ]);
+      }
+      const accountRecords: AccountRecord[] = [];
+      multicallContract.callStatic.aggregate(getRecordByIDCalls.concat(getRecordUseInfoCalls))
         .then(data => {
-          const multicallDatas = data[1];
-          multicallDatas.map((raw: any) => {
-            const _accountRecord = accountManagerContract.interface.decodeFunctionResult(getRecordByIDFragment, raw)[0];
-            return formatAccountRecord(_accountRecord);
-          }).forEach((accountRecord: AccountRecord) => {
+          const raws = data[1];
+          const half = raws.length / 2;
+          for (let i = half - 1; i >= 0; i--) {
+            const _accountRecord = accountManagerContract?.interface.decodeFunctionResult(getRecordByIDFragment, raws[i])[0];
+            const _recordUseInfo = accountManagerContract?.interface.decodeFunctionResult(getRecordUseInfoFragment, raws[half + i])[0];
+            const accountRecord = formatAccountRecord(_accountRecord);
+            accountRecord.recordUseInfo = formatRecordUseInfo(_recordUseInfo);
+            accountRecords.push(accountRecord);
+          }
+          accountRecords.forEach(accountRecord => {
             memberInfos.forEach(memberInfo => {
               if (memberInfo.lockID == accountRecord.id) {
-                memberInfo.unlockHeight = accountRecord.unlockHeight;
+                memberInfo.accountRecord = accountRecord;
               }
             });
-            setMemberInfos([...memberInfos]);
           })
-        })
+          setMemberInfos([...memberInfos]);
+        });
     }
   }, [memberInfos, multicallContract, accountManagerContract])
 
   return <>
     <Table dataSource={_memberInfos} columns={columns} />
+    <AddLockModal selectedAccountRecord={selectedAccountRecord}
+      openAddModal={openAddModal} setOpenAddModal={setOpenAddModal} />
   </>
 }

@@ -704,7 +704,7 @@ export default ({
                   <Text type="secondary">{t("node_addresss")}</Text>
                 </Col>
                 <Col span={24}>
-                  <AddressComponent address={nodeAddress} ellipsis />
+                  <AddressComponent address={nodeAddress} ellipsis copyable qrcode />
                 </Col>
                 <Col span={24}>
                   <Text type="secondary">ENODE</Text>

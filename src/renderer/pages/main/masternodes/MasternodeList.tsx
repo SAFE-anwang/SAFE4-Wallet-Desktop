@@ -215,9 +215,9 @@ export default ({
       render: (addr) => {
         return <>
           <Row>
-            <Col span={20}>
+            <Col span={24}>
               <Text strong>
-                <AddressComponent address={addr} />
+                <AddressComponent address={addr} qrcode copyable />
               </Text>
             </Col>
           </Row>

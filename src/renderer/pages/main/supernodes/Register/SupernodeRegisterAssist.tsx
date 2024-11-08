@@ -268,11 +268,11 @@ export default () => {
                 <Col span={16}>
                   <Row>
                     {
-                      exist && <Col span={4}>
-                        <Text type='secondary'>[已注册]</Text>
+                      exist && <Col span={6}>
+                        <Text type='secondary'>[{t("wallet_childwallet_registed")}]</Text>
                       </Col>
                     }
-                    <Col span={20}>
+                    <Col span={18}>
                       <AddressComponent ellipsis address={address} />
                     </Col>
                   </Row>
@@ -383,7 +383,7 @@ export default () => {
             <Col span={24}>
               <Text type='secondary'>{t("wallet_supernodes_name")}</Text>
               <Input status={inputErrors.name ? "error" : ""}
-                value={createParams.name} placeholder={t("please_enter") + t("wallet_supernodes_name")} onChange={(event) => {
+                value={createParams.name} placeholder={t("enter") + t("wallet_supernodes_name")} onChange={(event) => {
                   const inputName = event.target.value;
                   setInputErrors({
                     ...inputErrors,
@@ -425,7 +425,7 @@ export default () => {
                   {
                     nodeAddressSelectType == NodeAddressSelectType.INPUT &&
                     <Alert showIcon type="error" message={<>
-                      当前账户没有种子密钥(助记词),无法派生子地址.不可使用辅助功能
+                      {t("wallet_childwallet_error")}
                     </>} />
                   }
                   {
@@ -435,7 +435,7 @@ export default () => {
                         width: "100%",
                         marginTop: "5px"
                       }}
-                      placeholder="正在加载可用的超级节点地址..."
+                      placeholder={t("wallet_childwallet_loading")}
                       options={selectChildWalletOptions}
                       disabled={helpResult ? true : false}
                       onChange={(value) => {

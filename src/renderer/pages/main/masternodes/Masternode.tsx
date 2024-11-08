@@ -51,7 +51,7 @@ export default ({
             </Col>
             <Col span={16}>
               <Text strong>
-                <AddressComponent address={masternodeInfo.addr} />
+                <AddressComponent address={masternodeInfo.addr} qrcode copyable />
               </Text>
             </Col>
           </Row>
@@ -61,7 +61,7 @@ export default ({
             </Col>
             <Col span={16}>
               <Text strong>
-                <AddressComponent address={masternodeInfo.creator} />
+                <AddressComponent address={masternodeInfo.creator} qrcode copyable />
               </Text>
             </Col>
           </Row>

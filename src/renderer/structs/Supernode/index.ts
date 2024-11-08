@@ -1,4 +1,5 @@
 import { CurrencyAmount, JSBI } from "@uniswap/sdk";
+import { AccountRecord } from "../AccountManager";
 
 /**
  *     struct StateInfo {
@@ -31,7 +32,7 @@ export interface MemberInfo {
     addr: string,
     amount: CurrencyAmount,
     height: number,
-    unlockHeight ?: number
+    accountRecord ?: AccountRecord
 }
 export function formatMemberInfo(memberInfo: any): MemberInfo {
     const { lockID, addr, amount, height } = memberInfo;

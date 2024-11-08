@@ -574,4 +574,10 @@ export default {
   wallet_address_local: "Local Wallet",
   wallet_address_current: "Current Wallet",
 
+  wallet_childwallet_registed: "Registered",
+  wallet_childwallet_currentnode: "Current",
+  wallet_childwallet_loading: "Loading available master node addresses",
+  wallet_childwallet_error: "The current account does not have a seed key (mnemonic), unable to derive child addresses. Auxiliary functions cannot be used.",
+  wallet_node_sync_error: "Only the creator of the node can operate this node",
+
 }

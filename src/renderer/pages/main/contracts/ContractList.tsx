@@ -79,7 +79,7 @@ export default ({
         return <>
           <Row>
             <Col span={24} style={{ width: "80px" }}>
-              <AddressComponent address={address} ellipsis copyable />
+              <AddressComponent address={address} ellipsis copyable qrcode />
             </Col>
           </Row>
         </>

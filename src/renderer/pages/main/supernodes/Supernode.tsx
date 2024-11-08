@@ -77,7 +77,7 @@ export default ({
             </Col>
             <Col span={16}>
               <Text strong>
-                <AddressComponent address={supernodeInfo.addr} />
+                <AddressComponent address={supernodeInfo.addr} qrcode copyable />
               </Text>
             </Col>
           </Row>
@@ -95,7 +95,7 @@ export default ({
             </Col>
             <Col span={16}>
               <Text strong>
-                <AddressComponent address={supernodeInfo.creator} />
+                <AddressComponent address={supernodeInfo.creator} qrcode copyable />
               </Text>
             </Col>
           </Row>

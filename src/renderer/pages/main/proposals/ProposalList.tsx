@@ -199,7 +199,7 @@ export default ({
           <Row>
             <Col span={24}>
               <Text strong style={{ color: RenderTextColor(proposalInfo.state, proposalInfo.startPayTime, timestamp) }} >
-                <AddressComponent address={creator} ellipsis />
+                <AddressComponent address={creator} ellipsis copyable qrcode />
               </Text>
             </Col>
           </Row>
