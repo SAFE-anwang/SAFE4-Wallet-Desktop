@@ -10,25 +10,24 @@ import { useTimestamp } from "../../../state/application/hooks";
 import { useWalletsActiveAccount } from "../../../state/wallets/hooks";
 import { formatProposalInfo, ProposalInfo } from "../../../structs/Proposal";
 import { DateTimeFormat } from "../../../utils/DateUtils";
-import AddressView from "../../components/AddressView";
-import Masternodes from "../masternodes/Masternodes";
+import AddressComponent from "../../components/AddressComponent";
 
 const { Text } = Typography;
 const Proposals_Page_Size = 10;
 
-export const RenderProposalState = (state: number, startPayTime: number, latestBlockTimestamp: number) => {
+export const RenderProposalState = (state: number, startPayTime: number, latestBlockTimestamp: number, t ?: any) => {
   switch (state) {
     case 0:
       if (latestBlockTimestamp >= startPayTime) {
-        return <Badge status="default" text={<Text style={{ color: "#00000040" }}>失效</Text>} />
+        return <Badge status="default" text={<Text style={{ color: "#00000040" }}>{t ? t("wallet_proposals_state_invalid") : "失效"}</Text>} />
       }
-      return <Badge status="processing" text="正在投票" />
+      return <Badge status="processing" text={t ? t("wallet_proposals_state_voting") : "正在投票"} />
     case 1:
-      return <Badge status="success" text={<Text strong type="success">通过</Text>} />
+      return <Badge status="success" text={<Text strong type="success">{t ? t("wallet_proposals_state_pass") : "通过"}</Text>} />
     case 2:
-      return <Badge status="error" text="未通过" />
+      return <Badge status="error" text={t ? t("wallet_proposals_state_rejected") : "未通过"} />
     default:
-      return <Badge status="default" text={<Text style={{ color: "#00000040" }}>失效</Text>} />
+      return <Badge status="default" text={<Text style={{ color: "#00000040" }}>{t ? t("wallet_proposals_state_invalid") : "失效"}</Text>} />
   }
 }
 
@@ -107,7 +106,7 @@ export default ({
           })
       }
     }
-  }, [proposalContract, activeAccount, timestamp , queryKey]);
+  }, [proposalContract, activeAccount, timestamp, queryKey]);
 
   useEffect(() => {
     if (pagination && proposalContract && multicallContract) {
@@ -124,7 +123,7 @@ export default ({
         setLoading(true);
         if (queryMyProposals) {
           //  function getMines(uint _start, uint _count) external view returns (uint[] memory);
-          proposalContract.callStatic.getMines(activeAccount , position, offset)
+          proposalContract.callStatic.getMines(activeAccount, position, offset)
             .then((proposalIds: any) => {
               multicallGetProposalInfoByIds(proposalIds)
             });
@@ -139,7 +138,7 @@ export default ({
         setProposalInfos(undefined);
       }
     }
-  }, [pagination , activeAccount]);
+  }, [pagination, activeAccount]);
 
   const multicallGetProposalInfoByIds = useCallback((_proposalIds: any) => {
     if (multicallContract && proposalContract) {
@@ -164,7 +163,7 @@ export default ({
 
   const columns: ColumnsType<ProposalInfo> = [
     {
-      title: t("wallet_proposals_id"),
+      title: "ID",
       dataIndex: 'id',
       key: '_id',
       render: (id, proposalInfo) => {
@@ -185,7 +184,7 @@ export default ({
         return <>
           <Row>
             <Col span={24}>
-              {RenderProposalState(state, proposalInfo.startPayTime, timestamp)}
+              {RenderProposalState(state, proposalInfo.startPayTime, timestamp , t)}
             </Col>
           </Row>
         </>
@@ -196,12 +195,11 @@ export default ({
       dataIndex: 'creator',
       key: 'creator',
       render: (creator, proposalInfo) => {
-        const _addr = creator.substring(0, 10) + "...." + creator.substring(creator.length - 8);
         return <>
           <Row>
             <Col span={24}>
               <Text strong style={{ color: RenderTextColor(proposalInfo.state, proposalInfo.startPayTime, timestamp) }} >
-                <AddressView address={_addr}></AddressView>
+                <AddressComponent address={creator} ellipsis />
               </Text>
             </Col>
           </Row>
@@ -280,19 +278,19 @@ export default ({
       const id = Number(queryKey);
       if (id && id > 0) {
         setLoading(true);
-        const proposalInfo = formatProposalInfo(await proposalContract.callStatic.getInfo( id ));
-        if ( id == proposalInfo.id ){
+        const proposalInfo = formatProposalInfo(await proposalContract.callStatic.getInfo(id));
+        if (id == proposalInfo.id) {
           setProposalInfos([proposalInfo]);
           setPagination(undefined);
           setLoading(false);
-        }else{
-          setQueryKeyError("提案ID不存在")
+        } else {
+          setQueryKeyError(t("wallet_proposals_id") + " " + t("notExist"))
           setProposalInfos([]);
           setPagination(undefined);
           setLoading(false);
         }
       } else {
-        setQueryKeyError("请输入合法的提案ID");
+        setQueryKeyError(t("enter_correct") + t("wallet_proposals_id"));
       }
 
     }
@@ -304,7 +302,7 @@ export default ({
       !queryMyProposals &&
       <Row style={{ marginBottom: "20px" }}>
         <Col span={12}>
-          <Input.Search size='large' placeholder='提案ID' onChange={(event) => {
+          <Input.Search size='large' placeholder={t("enter") + t("wallet_proposals_id")} onChange={(event) => {
             setQueryKeyError(undefined);
             if (!event.target.value) {
               setQueryKey(undefined);

@@ -40,4 +40,8 @@ export const walletsUpdateUsedChildWalletAddress = createAction<{ address: strin
   "wallets/updateUsedChildWalletAddress"
 )
 
+export const walletsClearWalletChildWallets = createAction(
+  "wallets/clearWalletChildWallets"
+)
+
 

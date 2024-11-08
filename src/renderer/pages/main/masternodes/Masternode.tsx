@@ -31,7 +31,7 @@ export default ({
         <Col span={16}>
           <Row>
             <Col span={6}>
-              <Text type='secondary'>{t("wallet_masternodes_id")}</Text>
+              <Text type='secondary'>{t("node_id")}</Text>
             </Col>
             <Col span={18}>
               <Text strong>{masternodeInfo.id}</Text>
@@ -39,7 +39,7 @@ export default ({
           </Row>
           <Row style={{ marginTop: "5px" }}>
             <Col span={6}>
-              <Text type='secondary'>{t("wallet_masternodes_state")}</Text>
+              <Text type='secondary'>{t("node_state")}</Text>
             </Col>
             <Col span={18}>
               <Text strong>{RenderNodeState(masternodeInfo.state, t)}</Text>
@@ -47,7 +47,7 @@ export default ({
           </Row>
           <Row style={{ marginTop: "5px" }}>
             <Col span={6}>
-              <Text type='secondary'>{t("wallet_masternodes_address")}</Text>
+              <Text type='secondary'>{t("node_address")}</Text>
             </Col>
             <Col span={16}>
               <Text strong>
@@ -57,7 +57,7 @@ export default ({
           </Row>
           <Row style={{ marginTop: "5px" }}>
             <Col span={6}>
-              <Text type='secondary'>{t("wallet_masternodes_creator")}</Text>
+              <Text type='secondary'>{t("node_creator")}</Text>
             </Col>
             <Col span={16}>
               <Text strong>
@@ -103,7 +103,7 @@ export default ({
       </Row>
       <Row style={{ marginTop: "5px" }}>
         <Col span={4}>
-          <Text type='secondary'>{t("wallet_masternodes_enode")}</Text>
+          <Text type='secondary'>{t("node_enode")}</Text>
         </Col>
         <Col span={20}>
           <Text strong>{masternodeInfo.enode}</Text>
@@ -111,7 +111,7 @@ export default ({
       </Row>
       <Row style={{ marginTop: "5px" }}>
         <Col span={4}>
-          <Text type='secondary'>{t("wallet_masternodes_description")}</Text>
+          <Text type='secondary'>{t("node_description")}</Text>
         </Col>
         <Col span={20}>
           <Text strong>{masternodeInfo.description}</Text>

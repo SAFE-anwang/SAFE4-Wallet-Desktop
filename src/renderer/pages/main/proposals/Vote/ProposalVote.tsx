@@ -16,6 +16,7 @@ import { CheckCircleFilled, CloseCircleFilled, QuestionCircleFilled } from '@ant
 import VoteModalConfirm from "./VoteModal-Confirm";
 import { SystemContract } from "../../../../constants/SystemContracts";
 import { useTranslation } from "react-i18next";
+import AddressComponent from "../../../components/AddressComponent";
 
 const { Text, Title } = Typography;
 
@@ -45,13 +46,13 @@ export default () => {
   const blockNumber = useBlockNumber();
   const [openVoteModal, setOpenVoteModal] = useState<boolean>(false);
   const [voteResult, setVoteResult] = useState<number>(3);
-  const [activeAccountTops,setActiveAccountTops] = useState<string[]>();
-  useEffect( () => {
-    if ( supernodeStorageContract ){
-      supernodeStorageContract.callStatic.getTops4Creator( activeAccount )
-        .then( setActiveAccountTops )
+  const [activeAccountTops, setActiveAccountTops] = useState<string[]>();
+  useEffect(() => {
+    if (supernodeStorageContract) {
+      supernodeStorageContract.callStatic.getTops4Creator(activeAccount)
+        .then(setActiveAccountTops)
     }
-  } , [ activeAccount , blockNumber , supernodeStorageContract ] )
+  }, [activeAccount, blockNumber, supernodeStorageContract])
 
   useEffect(() => {
     if (proposalId && proposalContract) {
@@ -162,10 +163,10 @@ export default () => {
                 <Col span={6}>
                   <Text type='secondary'>{t("wallet_proposals_creator")}:</Text>
                 </Col>
-                <Col span={18}>
-                  <Text strong> {
-                    proposalInfo && <Text strong><AddressView address={proposalInfo?.creator} /></Text>
-                  }</Text>
+                <Col span={10}>
+                  {
+                    proposalInfo && <AddressComponent address={proposalInfo?.creator} />
+                  }
                 </Col>
               </Row>
               <Row>
@@ -202,7 +203,6 @@ export default () => {
                               <>
                                 <Text type="secondary">{t("wallet_proposals_pay_at")}</Text><Text strong style={{ marginLeft: "5px" }}>{DateTimeFormat(proposalInfo.endPayTime * 1000)}</Text><br />
                                 <Text type="secondary"><Text strong>{t("wallet_proposals_pay_onetime")}</Text> {t("wallet_proposals_pay_send")} </Text> <Text strong style={{ marginLeft: "5px" }}>{proposalInfo.payAmount.toFixed(6)} SAFE</Text>
-
                               </>
                             }
                           </>
@@ -236,7 +236,7 @@ export default () => {
                   <Text type='secondary' style={{ marginRight: "20px" }}>{t("wallet_proposals_vote_state")}:</Text>
                   {
                     proposalInfo && <>
-                      {RenderProposalState(proposalInfo.state, proposalInfo.startPayTime, timestamp)}
+                      {RenderProposalState(proposalInfo.state, proposalInfo.startPayTime, timestamp , t)}
                     </>
                   }
                 </Col>

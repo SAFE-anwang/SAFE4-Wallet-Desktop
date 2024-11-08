@@ -2,7 +2,6 @@
 import { CurrencyAmount, JSBI } from '@uniswap/sdk';
 import { Typography, Row, Col, Progress, Card, Divider, TabsProps, Tabs } from 'antd';
 import { SupernodeInfo } from '../../../structs/Supernode';
-import AddressView from '../../components/AddressView';
 import Members from '../../components/Members';
 import { RenderNodeState } from './Supernodes';
 import { useMulticallContract, useSupernodeVoteContract } from '../../../hooks/useContracts';
@@ -58,7 +57,7 @@ export default ({
         <Col span={16}>
           <Row>
             <Col span={6}>
-              <Text type='secondary'>{t("wallet_supernodes_id")}</Text>
+              <Text type='secondary'>{t("node_id")}</Text>
             </Col>
             <Col span={18}>
               <Text strong>{supernodeInfo.id}</Text>
@@ -66,15 +65,15 @@ export default ({
           </Row>
           <Row style={{ marginTop: "5px" }}>
             <Col span={6}>
-              <Text type='secondary'>{t("wallet_supernodes_state")}</Text>
+              <Text type='secondary'>{t("node_state")}</Text>
             </Col>
             <Col span={18}>
-              <Text strong>{RenderNodeState(supernodeInfo.state)}</Text>
+              <Text strong>{RenderNodeState(supernodeInfo.state , t)}</Text>
             </Col>
           </Row>
           <Row style={{ marginTop: "5px" }}>
             <Col span={6}>
-              <Text type='secondary'>{t("wallet_supernodes_address")}</Text>
+              <Text type='secondary'>{t("node_address")}</Text>
             </Col>
             <Col span={16}>
               <Text strong>
@@ -84,7 +83,7 @@ export default ({
           </Row>
           <Row style={{ marginTop: "5px" }}>
             <Col span={6}>
-              <Text type='secondary'>{t("wallet_supernodes_name")}</Text>
+              <Text type='secondary'>{t("node_name")}</Text>
             </Col>
             <Col span={18}>
               <Text strong>{supernodeInfo.name}</Text>
@@ -92,7 +91,7 @@ export default ({
           </Row>
           <Row style={{ marginTop: "5px" }}>
             <Col span={6}>
-              <Text type='secondary'>{t("wallet_supernodes_creator")}</Text>
+              <Text type='secondary'>{t("node_creator")}</Text>
             </Col>
             <Col span={16}>
               <Text strong>
@@ -156,7 +155,7 @@ export default ({
       </Row>
       <Row style={{ marginTop: "5px" }}>
         <Col span={4}>
-          <Text type='secondary'>{t("wallet_supernodes_enode")}</Text>
+          <Text type='secondary'>{t("node_enode")}</Text>
         </Col>
         <Col span={20}>
           <Text strong>{supernodeInfo.enode}</Text>
@@ -164,7 +163,7 @@ export default ({
       </Row>
       <Row style={{ marginTop: "5px" }}>
         <Col span={4}>
-          <Text type='secondary'>{t("wallet_supernodes_description")}</Text>
+          <Text type='secondary'>{t("node_description")}</Text>
         </Col>
         <Col span={20}>
           <Text strong>{supernodeInfo.description}</Text>

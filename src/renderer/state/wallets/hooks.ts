@@ -426,6 +426,7 @@ export function useActiveAccountChildWallets(type: SupportChildWalletType) {
   if (!activeAccountKeystore) {
     return;
   }
+  const { chainId } = useWeb3React();
   const multicall = useMulticallContract();
   const supernodeContract = useSupernodeStorageContract();
   const masternodeContract = useMasternodeStorageContract();
@@ -518,6 +519,6 @@ export function useActiveAccountChildWallets(type: SupportChildWalletType) {
         }
       }
     }
-  }, [childTypeWallets, multicall, nodeStorageContract, activeAccountKeystore, walletUsedAddressed])
+  }, [childTypeWallets, multicall, nodeStorageContract, activeAccountKeystore, walletUsedAddressed, chainId])
   return childTypeWallets;
 }

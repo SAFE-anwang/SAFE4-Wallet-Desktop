@@ -30,7 +30,8 @@ export interface MemberInfo {
     lockID: number,
     addr: string,
     amount: CurrencyAmount,
-    height: number
+    height: number,
+    unlockHeight ?: number
 }
 export function formatMemberInfo(memberInfo: any): MemberInfo {
     const { lockID, addr, amount, height } = memberInfo;

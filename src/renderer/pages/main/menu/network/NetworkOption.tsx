@@ -6,6 +6,7 @@ import { isSafe4Mainnet, isSafe4Network, isSafe4Testnet } from "../../../../util
 import { useDispatch } from "react-redux";
 import { applicationBlockchainUpdateBlockNumber, applicationUpdateWeb3Rpc } from "../../../../state/application/action";
 import { clearAllTransactions } from "../../../../state/transactions/actions";
+import { walletsClearWalletChildWallets } from "../../../../state/wallets/action";
 
 const { Text } = Typography;
 
@@ -32,6 +33,7 @@ export default ({
         chainId: chainId,
         endpoint: endpoint
       }));
+      dispatch( walletsClearWalletChildWallets() )
     }
   }
 

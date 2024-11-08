@@ -84,7 +84,7 @@ export default ({
           </Row>
         </>
       },
-      width: "80px"
+      width: "140px"
     },
     {
       title: t("wallet_contracts_creator"),
@@ -104,7 +104,7 @@ export default ({
           </Row>
         </>
       },
-      width: "80px"
+      width: "140px"
     },
     {
       title: t("wallet_contracts_deploytime"),

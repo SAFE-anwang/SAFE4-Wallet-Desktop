@@ -39,7 +39,7 @@ export const RenderVoteResult = (voteResult: number, t?: any) => {
             color: "#c3a4a4", fontSize: "16px", marginRight: "10px", marginLeft: "10px"
           }} />
           <Text type="secondary">
-            {t ? t("wallet_proposals_vote_abstain") : "期权"}
+            {t ? t("wallet_proposals_vote_abstain") : "弃权"}
           </Text>
         </Text>
       </>

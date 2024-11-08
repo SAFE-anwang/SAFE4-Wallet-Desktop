@@ -1,7 +1,5 @@
 import { createReducer } from '@reduxjs/toolkit';
-import { walletsInitList, walletsLoadKeystores, walletsLoadWalletNames, walletsUpdateActiveWallet, walletsUpdateUsedChildWalletAddress, walletsUpdateWalletChildWallets, walletsUpdateWalletName } from './action';
-import { IPC_CHANNEL } from '../../config';
-import { WalletNameSignal, WalletName_Methods } from '../../../main/handlers/WalletNameHandler';
+import { walletsClearWalletChildWallets, walletsInitList, walletsLoadKeystores, walletsLoadWalletNames, walletsUpdateActiveWallet, walletsUpdateUsedChildWalletAddress, walletsUpdateWalletChildWallets, walletsUpdateWalletName } from './action';
 import { SupportChildWalletType } from '../../utils/GenerateChildWallet';
 
 export interface ERC20Token {
@@ -55,8 +53,8 @@ export interface Wallets {
         }
       }
     }
-  } ,
-  walletUsedAddress : string[],
+  },
+  walletUsedAddress: string[],
 
 }
 
@@ -67,7 +65,7 @@ const initialState: Wallets = {
   list: [],
   walletNames: {},
   walletChildWallets: {},
-  walletUsedAddress:[]
+  walletUsedAddress: []
 }
 
 
@@ -245,10 +243,14 @@ export default createReducer(initialState, (builder) => {
 
   builder.addCase(walletsUpdateUsedChildWalletAddress, (state, { payload }) => {
     const { address, used } = payload;
-    if ( address && used ){
-      state.walletUsedAddress.push( address );
+    if (address && used) {
+      state.walletUsedAddress.push(address);
     }
   });
+
+  builder.addCase(walletsClearWalletChildWallets, (state, _) => {
+    state.walletChildWallets = {};
+  })
 
 });
 

@@ -26,6 +26,7 @@ import { ERC20TokensSignal, ERC20Tokens_Methods } from '../../../../main/handler
 import { ethers } from 'ethers';
 import { loadERC20Tokens } from '../../../state/transactions/actions';
 import { useTranslation } from 'react-i18next';
+import useSafeScan from '../../../hooks/useSafeScan';
 
 const { Title, Text, Paragraph, Link } = Typography;
 
@@ -51,6 +52,7 @@ export default () => {
   const [openSendModal, setOpenSendModal] = useState<boolean>(false);
   const [openLockModal, setOpenLockMoal] = useState<boolean>(false);
   const [openEditNameModal, setOpenEditNameModal] = useState<boolean>(false);
+  const { URL } = useSafeScan();
 
   const tabItems: TabsProps['items'] = [
     {
@@ -122,7 +124,7 @@ export default () => {
         <a onClick={() => {
           setOpenKeystoreModal(true);
         }} >
-            {t("wallet_keystore")}
+          {t("wallet_keystore")}
         </a>
       ),
     })
@@ -150,8 +152,8 @@ export default () => {
               name, symbol, decimals: decims
             }
           });
-          if ( Object.keys(tokens).length > 0 ) {
-            dispatch( loadERC20Tokens(tokens) )
+          if (Object.keys(tokens).length > 0) {
+            dispatch(loadERC20Tokens(tokens))
           }
         }
       });
@@ -186,7 +188,11 @@ export default () => {
         }
         {
           !isActivating && isActive && <>
-            <Text style={{ marginLeft: "10px" }}>{renderNetworkType}<Divider type='vertical' style={{ marginLeft: "12px", marginRight: "12px" }} />{latestBlockNumber}</Text>
+            <Text style={{ marginLeft: "10px" }}>{renderNetworkType}<Divider type='vertical' style={{ marginLeft: "12px", marginRight: "12px" }} />
+              <Link onClick={() => {
+                window.open(URL);
+              }}> {latestBlockNumber}</Link>
+            </Text>
             <Divider type='vertical' />
             <Text type='secondary'>{DateTimeFormat(timestamp * 1000)}</Text>
           </>
