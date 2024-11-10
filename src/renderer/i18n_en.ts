@@ -24,6 +24,7 @@ export default {
   stake: "Stake",
   votes: "Votes",
   update: "Update",
+  operation_confirm: "Operation Confirm",
   transaction: "Transaction",
   node_id: "Node ID",
   node_state: "Node State",
@@ -210,6 +211,7 @@ export default {
   wallet_supernodes_my_tip0: "For supernodes with abnormal state, check if the supernode information matches the server supernode configuration.",
   wallet_supernodes_my_tip1: "Click on the supernode's",
   wallet_supernodes_my_tip2: "Synchronize supernode information with server supernode configuration",
+  wallet_supernodes_my_tip3: "The locked stake used to create a supernode can only earn mining rewards within the lock-up period",
   wallet_supernodes_description: "Supernode Description",
   wallet_supernodes_incentiveplan: "Mining Reward Distribution Plan",
   wallet_supernodes_incentiveplan_members: "Partners",
@@ -268,7 +270,6 @@ export default {
   wallet_supernodes_sync_update_tip: "After the transaction to update data is sent, wait for transaction confirmation before the supernode information syncs to the Safe4 network",
   wallet_supernodes_sync_update_notneed: "Supernode information matches the data on the supernode server; no contract update needed",
 
-
   ssh2_connect: "SSH Connection",
   ssh2_connect_serverip: "Server IP",
   ssh2_connect_serveruser: "Username",
@@ -311,6 +312,7 @@ export default {
   wallet_masternodes_mytip0: "For masternodes with erroneous state, check if the masternode information matches the server masternode configuration.",
   wallet_masternodes_mytip1: "Click on the masternode's",
   wallet_masternodes_mytip2: "Synchronize masternode information with server masternode configuration",
+  wallet_masternodes_my_tip3: "The locked stake used to create a masternode can only earn mining rewards within the lock-up period",
   wallet_masternodes_mode_auto: "Automatic Mode",
   wallet_masternodes_mode_auto_tip: "If you have a cloud server, the wallet automatically establishes a masternode via SSH login.",
   wallet_masternodes_mode_manual: "Manual Mode",
@@ -348,9 +350,10 @@ export default {
   wallet_masternodes_sync_error_address: "Address Update Failed",
   wallet_masternodes_sync_txhash_enode: "ENODE Update Transaction Hash",
   wallet_masternodes_sync_error_enode: "ENODE Update Failed",
+  wallet_masternodes_sync_txhash_description: "Description Update Transaction Hash",
+  wallet_masternodes_sync_error_description: "Description Update Failed",
   wallet_masternodes_sync_update_tip: "After the transaction to update data is sent, wait for transaction confirmation before the masternode information syncs to the Safe4 network",
   wallet_masternodes_sync_update_notneed: "Masternode information matches the data on the masternode server; no contract update needed",
-
 
   wallet_proposals_create: "Create Proposal",
   wallet_proposals_create_tip0: "Payment",
@@ -537,6 +540,8 @@ export default {
   wallet_history_contract_call: "Contract Call",
   wallet_history_contract_deploy: "Contract Deployment",
   wallet_history_am_withdraw: "Withdraw",
+  wallet_history_am_transfer: "Transfer",
+  wallet_history_am_transfer_byproposal: "Proposal Passed",
   wallet_history_am_lock: "Lock",
   wallet_history_am_batchlock: "Batch Lock",
   wallet_history_am_addlockdays: "Add Lock-Up Days",

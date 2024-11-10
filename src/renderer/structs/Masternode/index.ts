@@ -1,3 +1,4 @@
+import { AccountRecord } from "../AccountManager";
 import { IncentivePlan, MemberInfo, StateInfo, formatIncentivePlan, formatMemberInfo, formatStateInfo } from "../Supernode";
 
 /**
@@ -28,7 +29,9 @@ export interface MasternodeInfo {
   incentivePlan: IncentivePlan,
   lastRewardHeight: number,
   createHeight: number,
-  updateHeight: number
+  updateHeight: number,
+
+  accountRecord ?: AccountRecord
 }
 export function formatMasternode( masternode : any) : MasternodeInfo {
   const {

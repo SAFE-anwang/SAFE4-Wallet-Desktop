@@ -2,7 +2,7 @@
 
 
 import { Typography, Button, Row, Col, Modal, Space, Alert, Input } from 'antd';
-import { useMasternodeStorageContract, useMulticallContract } from '../../../hooks/useContracts';
+import { useAccountManagerContract, useMasternodeStorageContract, useMulticallContract } from '../../../hooks/useContracts';
 import { useCallback, useEffect, useState } from 'react';
 import { MasternodeInfo, formatMasternode } from '../../../structs/Masternode';
 import Table, { ColumnsType } from 'antd/es/table';
@@ -15,10 +15,13 @@ import { useWalletsActiveAccount } from '../../../state/wallets/hooks';
 import { RenderNodeState } from '../supernodes/Supernodes';
 import AddressComponent from '../../components/AddressComponent';
 import { Safe4_Business_Config } from '../../../config';
-import { useBlockNumber } from '../../../state/application/hooks';
+import { useBlockNumber, useTimestamp } from '../../../state/application/hooks';
 import Masternode from './Masternode';
 import useAddrNodeInfo from '../../../hooks/useAddrIsNode';
 import { useTranslation } from 'react-i18next';
+import { AccountRecord, formatAccountRecord, formatRecordUseInfo } from '../../../structs/AccountManager';
+import { DateTimeFormat } from '../../../utils/DateUtils';
+import { LockOutlined, UnlockOutlined } from '@ant-design/icons';
 
 const { Text } = Typography;
 const Masternodes_Page_Size = 10;
@@ -34,7 +37,8 @@ export default ({
   const { t } = useTranslation();
   const navigate = useNavigate();
   const dispatch = useDispatch();
-
+  const timestamp = useTimestamp();
+  const accountManagerContract = useAccountManagerContract();
   const multicallContract = useMulticallContract();
   const masternodeStorageContract = useMasternodeStorageContract();
   const [loading, setLoading] = useState<boolean>(false);
@@ -149,7 +153,7 @@ export default ({
   }, [pagination]);
 
   const loadMasternodeInfos = useCallback((addresses: string[]) => {
-    if (masternodeStorageContract && multicallContract) {
+    if (masternodeStorageContract && multicallContract && accountManagerContract) {
       // function getInfo(address _addr) external view returns (MasterNodeInfo memory);
       const fragment = masternodeStorageContract.interface.getFunction("getInfo")
       const calls = addresses.map((address: string) => [
@@ -162,33 +166,83 @@ export default ({
             const _masternode = masternodeStorageContract.interface.decodeFunctionResult(fragment, raw)[0];
             return formatMasternode(_masternode);
           });
+          let _masternodes: MasternodeInfo[] = [];
           if (queryMyMasternodes) {
-            const _masternodes = masternodes.filter(masternode => masternode.creator == activeAccount)
+            _masternodes = masternodes.filter(masternode => masternode.creator == activeAccount)
               .sort((m0: MasternodeInfo, m1: MasternodeInfo) => m1.id - m0.id);
-            setMasternodes(_masternodes);
           } else if (queryJoinMasternodes) {
-            const _masternodes = masternodes.filter(masternode => masternode.founders.map(founder => founder.addr).indexOf(activeAccount) > 0)
+            _masternodes = masternodes.filter(masternode => masternode.founders.map(founder => founder.addr).indexOf(activeAccount) > 0)
               .sort((m0: MasternodeInfo, m1: MasternodeInfo) => m1.id - m0.id);
-            setMasternodes(_masternodes);
           } else {
-            // then set masternodes ...
-            setMasternodes(masternodes.sort((m0: MasternodeInfo, m1: MasternodeInfo) => m1.id - m0.id));
+            _masternodes = masternodes.sort((m0: MasternodeInfo, m1: MasternodeInfo) => m1.id - m0.id);
           }
-          setLoading(false);
+
+          const getRecordByIDFragment = accountManagerContract.interface.getFunction("getRecordByID");
+          const getRecordUseInfoFragment = accountManagerContract?.interface?.getFunction("getRecordUseInfo");
+          const getRecordByIDCalls = [];
+          const getRecordUseInfoCalls = [];
+          for (let i = 0; i < _masternodes.length; i++) {
+            getRecordByIDCalls.push([
+              accountManagerContract.address,
+              accountManagerContract?.interface.encodeFunctionData(getRecordByIDFragment, [_masternodes[i].founders[0].lockID])
+            ]);
+            getRecordUseInfoCalls.push([
+              accountManagerContract.address,
+              accountManagerContract?.interface.encodeFunctionData(getRecordUseInfoFragment, [_masternodes[i].founders[0].lockID])
+            ]);
+          }
+          const accountRecords: AccountRecord[] = [];
+          multicallContract.callStatic.aggregate(getRecordByIDCalls.concat(getRecordUseInfoCalls))
+            .then(data => {
+              const raws = data[1];
+              const half = raws.length / 2;
+              for (let i = half - 1; i >= 0; i--) {
+                const _accountRecord = accountManagerContract?.interface.decodeFunctionResult(getRecordByIDFragment, raws[i])[0];
+                const _recordUseInfo = accountManagerContract?.interface.decodeFunctionResult(getRecordUseInfoFragment, raws[half + i])[0];
+                const accountRecord = formatAccountRecord(_accountRecord);
+                accountRecord.recordUseInfo = formatRecordUseInfo(_recordUseInfo);
+                accountRecords.push(accountRecord);
+              }
+              accountRecords.forEach(accountRecord => {
+                _masternodes.forEach(masternodeInfo => {
+                  if (masternodeInfo.founders[0].lockID == accountRecord.id) {
+                    masternodeInfo.accountRecord = accountRecord;
+                  }
+                });
+              })
+              setMasternodes(_masternodes);
+              setLoading(false);
+            });
         })
     }
-  }, [masternodeStorageContract, multicallContract, queryJoinMasternodes, queryMyMasternodes, activeAccount])
+  }, [masternodeStorageContract, multicallContract, accountManagerContract, queryJoinMasternodes, queryMyMasternodes, activeAccount])
 
   const columns: ColumnsType<MasternodeInfo> = [
     {
       title: t("wallet_masternodes_state"),
       dataIndex: 'state',
       key: 'state',
-      render: (state) => {
+      render: (state, masternodeInfo) => {
+        const { accountRecord } = masternodeInfo;
+        let locked = true;
+        let unlockHeight = accountRecord?.unlockHeight;
+        console.log("masternode =", masternodeInfo);
+        console.log("masternode.accountRecord ==", masternodeInfo.accountRecord);
+        let unlockDateTime = undefined;
+        if (unlockHeight) {
+          locked = unlockHeight > blockNumber;
+          unlockDateTime = unlockHeight - blockNumber > 0 ? DateTimeFormat(((unlockHeight - blockNumber) * 30 + timestamp) * 1000) : undefined;
+        }
         return <>
           <Row>
-            <Col span={20}>
+            <Col span={24}>
               {RenderNodeState(state, t)}
+              {
+                locked && <LockOutlined style={{ float: "right", marginTop: "4px" }} />
+              }
+              {
+                !locked && <UnlockOutlined style={{ float: "right", marginTop: "4px" }} />
+              }
             </Col>
           </Row>
         </>
@@ -289,11 +343,11 @@ export default ({
           } else {
             setMasternodes([]);
             setPagination(undefined);
-            setQueryKeyError( t("wallet_masternodes_address") + t("notExist") );
+            setQueryKeyError(t("wallet_masternodes_address") + t("notExist"));
             setLoading(false);
           }
         } else {
-          setQueryKeyError( t("enter_correct") + t("wallet_masternodes_address") );
+          setQueryKeyError(t("enter_correct") + t("wallet_masternodes_address"));
         }
       } else {
         const id = Number(queryKey);
@@ -307,7 +361,7 @@ export default ({
           } else {
             setMasternodes([]);
             setPagination(undefined);
-            setQueryKeyError( t("wallet_masternodes_id") + t("notExist") );
+            setQueryKeyError(t("wallet_masternodes_id") + t("notExist"));
             setLoading(false);
           }
         } else {
@@ -340,7 +394,8 @@ export default ({
         <Col span={24}>
           <Alert type='info' message={<>
             <Text>{t("wallet_masternodes_mytip0")}</Text><br />
-            <Text>{t("wallet_masternodes_mytip1")} <Text strong>{t("sync")}</Text>,{t("wallet_masternodes_mytip2")}</Text>
+            <Text>{t("wallet_masternodes_mytip1")} <Text strong>{t("sync")}</Text>,{t("wallet_masternodes_mytip2")}</Text><br />
+            <Text strong>{t("wallet_masternodes_my_tip3")}</Text><br />
           </>} />
         </Col>
       </Row>

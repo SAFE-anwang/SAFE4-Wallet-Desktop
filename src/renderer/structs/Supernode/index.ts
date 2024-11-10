@@ -126,7 +126,7 @@ export interface SupernodeInfo {
 
     totalVoteNum ?: CurrencyAmount,
     totalAmount  ?: CurrencyAmount,
-    unlockHeight ?: number
+    accountRecord ?: AccountRecord
 
 }
 

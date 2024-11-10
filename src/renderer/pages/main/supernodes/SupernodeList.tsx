@@ -17,9 +17,10 @@ import { ZERO } from '../../../utils/CurrentAmountUtils';
 import { useBlockNumber, useTimestamp } from '../../../state/application/hooks';
 import { RenderNodeState } from './Supernodes';
 import useAddrNodeInfo from '../../../hooks/useAddrIsNode';
-import { AccountRecord, formatAccountRecord } from '../../../structs/AccountManager';
+import { AccountRecord, formatAccountRecord, formatRecordUseInfo } from '../../../structs/AccountManager';
 import { DateTimeFormat } from '../../../utils/DateUtils';
 import { useTranslation } from 'react-i18next';
+import { LockOutlined, UnlockFilled, UnlockOutlined } from '@ant-design/icons';
 
 const { Text } = Typography;
 
@@ -50,7 +51,7 @@ export default ({
   const timestamp = useTimestamp();
   const supernodeStorageContract = useSupernodeStorageContract();
   const supernodeVoteContract = useSupernodeVoteContract();
-  const accountManagerAccount = useAccountManagerContract();
+  const accountManagerContract = useAccountManagerContract();
   const multicallContract = useMulticallContract();
   const activeAccount = useWalletsActiveAccount();
   const [supernodes, setSupernodes] = useState<SupernodeInfo[]>([]);
@@ -136,7 +137,7 @@ export default ({
   }, [supernodeStorageContract, activeAccount, blockNumber, queryKey]);
 
   const loadSupernodeInfoList = useCallback((addresses: string[]) => {
-    if (supernodeStorageContract && supernodeVoteContract && accountManagerAccount && multicallContract) {
+    if (supernodeStorageContract && supernodeVoteContract && accountManagerContract && multicallContract) {
       // function getInfo(address _addr) external view returns (MasterNodeInfo memory);
       const fragment = supernodeStorageContract.interface.getFunction("getInfo")
       const getInfoCalls = addresses.map((address: string) => [
@@ -181,33 +182,45 @@ export default ({
             }
           }
 
-          const getRecordByIDFragment = accountManagerAccount.interface.getFunction("getRecordByID");
-          const getRecordByIDCalls = supernodeInfos.map(supernodeInfo => {
-            const { lockID } = supernodeInfo.founders[0];
-            return [
-              accountManagerAccount.address,
-              accountManagerAccount.interface.encodeFunctionData(getRecordByIDFragment, [lockID])
-            ]
-          });
-          multicallContract.callStatic.aggregate(getRecordByIDCalls)
+          const getRecordByIDFragment = accountManagerContract.interface.getFunction("getRecordByID");
+          const getRecordUseInfoFragment = accountManagerContract?.interface?.getFunction("getRecordUseInfo");
+          const getRecordByIDCalls = [];
+          const getRecordUseInfoCalls = [];
+          for (let i = 0; i < supernodeInfos.length; i++) {
+            getRecordByIDCalls.push([
+              accountManagerContract.address,
+              accountManagerContract?.interface.encodeFunctionData(getRecordByIDFragment, [supernodeInfos[i].founders[0].lockID])
+            ]);
+            getRecordUseInfoCalls.push([
+              accountManagerContract.address,
+              accountManagerContract?.interface.encodeFunctionData(getRecordUseInfoFragment, [supernodeInfos[i].founders[0].lockID])
+            ]);
+          }
+          const accountRecords: AccountRecord[] = [];
+          multicallContract.callStatic.aggregate(getRecordByIDCalls.concat(getRecordUseInfoCalls))
             .then(data => {
-              const multicallDatas = data[1];
-              multicallDatas.map((raw: any) => {
-                const _accountRecord = accountManagerAccount.interface.decodeFunctionResult(getRecordByIDFragment, raw)[0];
-                return formatAccountRecord(_accountRecord);
-              }).forEach((accountRecord: AccountRecord) => {
+              const raws = data[1];
+              const half = raws.length / 2;
+              for (let i = half - 1; i >= 0; i--) {
+                const _accountRecord = accountManagerContract?.interface.decodeFunctionResult(getRecordByIDFragment, raws[i])[0];
+                const _recordUseInfo = accountManagerContract?.interface.decodeFunctionResult(getRecordUseInfoFragment, raws[half + i])[0];
+                const accountRecord = formatAccountRecord(_accountRecord);
+                accountRecord.recordUseInfo = formatRecordUseInfo(_recordUseInfo);
+                accountRecords.push(accountRecord);
+              }
+              accountRecords.forEach(accountRecord => {
                 supernodeInfos.forEach(supernodeInfo => {
                   if (supernodeInfo.founders[0].lockID == accountRecord.id) {
-                    supernodeInfo.unlockHeight = accountRecord.unlockHeight;
+                    supernodeInfo.accountRecord = accountRecord;
                   }
-                })
+                });
               })
               setSupernodes(supernodeInfos);
               setLoading(false);
-            })
+            });
         })
     }
-  }, [supernodeStorageContract, supernodeVoteContract, accountManagerAccount, multicallContract, queryMySupernodes, queryJoinSupernodes, activeAccount]);
+  }, [supernodeStorageContract, supernodeVoteContract, accountManagerContract, multicallContract, queryMySupernodes, queryJoinSupernodes, activeAccount]);
 
   useEffect(() => {
     if (pagination && supernodeStorageContract && supernodeVoteContract && multicallContract) {
@@ -257,8 +270,9 @@ export default ({
       dataIndex: 'id',
       key: '_id',
       render: (id, supernodeInfo: SupernodeInfo) => {
-        const { state, unlockHeight } = supernodeInfo;
+        const { state, accountRecord } = supernodeInfo;
         let locked = true;
+        let unlockHeight = accountRecord?.unlockHeight;
         let unlockDateTime = undefined;
         if (unlockHeight) {
           locked = unlockHeight > blockNumber;
@@ -275,20 +289,14 @@ export default ({
             </Col>
           </Row>
           <Row>
-            <Col>
+            <Col span={24}>
               <Text>{RenderNodeState(state, t)}</Text>
-            </Col>
-          </Row>
-          <Row>
-            <Col>
-              {/* {
-                queryMySupernodes && <>
-                  <Text strong type={locked ? "secondary" : "success"}>{ }</Text>
-                  {
-                    unlockDateTime && <Text strong style={{ float: "right" }} type="secondary">[{unlockDateTime}]</Text>
-                  }
-                </>
-              } */}
+              {
+                locked && <LockOutlined style={{ float: "right", marginTop: "4px" }} />
+              }
+              {
+                !locked && <UnlockOutlined style={{ float: "right", marginTop: "4px" }} />
+              }
             </Col>
           </Row>
         </>
@@ -422,11 +430,11 @@ export default ({
           } else {
             setSupernodes([]);
             setPagination(undefined);
-            setQueryKeyError(t("wallet_supernodes_address") + t("notExist") );
+            setQueryKeyError(t("wallet_supernodes_address") + t("notExist"));
             setLoading(false);
           }
         } else {
-          setQueryKeyError( t("enter_correct") + t("wallet_supernodes_address") );
+          setQueryKeyError(t("enter_correct") + t("wallet_supernodes_address"));
         }
       } else {
         const id = Number(queryKey);
@@ -440,7 +448,7 @@ export default ({
           } else {
             setSupernodes([]);
             setPagination(undefined);
-            setQueryKeyError( t("wallet_supernodes_id")+t("notExist"));
+            setQueryKeyError(t("wallet_supernodes_id") + t("notExist"));
             setLoading(false);
           }
         } else {
@@ -454,7 +462,7 @@ export default ({
 
     <Row style={{ marginBottom: "20px" }}>
       <Col span={12}>
-        <Input.Search size='large' placeholder={t("wallet_supernodes_id")+" | "+t("wallet_supernodes_address")} onChange={(event) => {
+        <Input.Search size='large' placeholder={t("wallet_supernodes_id") + " | " + t("wallet_supernodes_address")} onChange={(event) => {
           setQueryKeyError(undefined);
           if (!event.target.value) {
             setQueryKey(undefined);
@@ -472,7 +480,8 @@ export default ({
         <Col span={24}>
           <Alert type='info' message={<>
             <Text>{t("wallet_supernodes_my_tip0")}</Text><br />
-            <Text>{t("wallet_supernodes_my_tip1")} <Text strong>{t("sync")}</Text> ,{t("wallet_supernodes_my_tip2")}</Text>
+            <Text>{t("wallet_supernodes_my_tip1")} <Text strong>{t("sync")}</Text> ,{t("wallet_supernodes_my_tip2")}</Text><br />
+            <Text strong>{t("wallet_supernodes_my_tip3")}</Text><br />
           </>} />
         </Col>
       </Row>
