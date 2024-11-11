@@ -9,6 +9,8 @@ import { useIERC20Contract } from "../../../../../hooks/useContracts";
 import useTransactionResponseRender from "../../../../components/useTransactionResponseRender";
 import AddressView from "../../../../components/AddressView";
 import { Token, TokenAmount } from "@uniswap/sdk";
+import { useTranslation } from "react-i18next";
+import AddressComponent from "../../../../components/AddressComponent";
 
 const { Text } = Typography;
 
@@ -24,6 +26,7 @@ export default ({
   close: () => void,
 }) => {
 
+  const { t } = useTranslation();
   const signer = useWalletsActiveSigner();
   const activeAccount = useWalletsActiveAccount();
   const addTransaction = useTransactionAdder();
@@ -90,30 +93,26 @@ export default ({
 
       <Row >
         <Col span={24}>
-          <Text type="secondary">代币合约地址</Text>
+          <Text type="secondary">{t("wallet_tokens_contract")}</Text>
           <br />
-          <Text style={{ fontSize: "18px" }}>
-            <AddressView address={token.address} />
-          </Text>
+          <AddressComponent style={{ fontSize: "16px" }} address={token.address} qrcode copyable />
         </Col>
       </Row>
       <Divider />
       <Row >
         <Col span={24}>
-          <Text strong>从</Text>
+          <Text strong>{t("wallet_send_from")}</Text>
           <br />
-          <Text style={{ fontSize: "18px" }}>
-            <AddressView address={activeAccount} />
-          </Text>
+          <AddressComponent style={{ fontSize: "16px" }} address={activeAccount} qrcode copyable />
         </Col>
       </Row>
       <br />
       <Row >
         <Col span={24}>
-          <Text strong>到</Text>
+          <Text strong>{t("wallet_send_to")}</Text>
           <br />
           <Text style={{ fontSize: "18px" }}>
-            <AddressView address={to} />
+            <AddressComponent style={{ fontSize: "16px" }} address={to} qrcode copyable />
           </Text>
         </Col>
       </Row>
@@ -125,17 +124,17 @@ export default ({
             !sending && !render && <Button icon={<SendOutlined />} onClick={() => {
               doSendTransaction({ to, amount });
             }} disabled={sending} type="primary" style={{ float: "right" }}>
-              广播交易
+              {t("wallet_send_status_broadcast")}
             </Button>
           }
           {
             sending && !render && <Button loading disabled type="primary" style={{ float: "right" }}>
-              发送中....
+              {t("wallet_send_status_sending")}
             </Button>
           }
           {
             render && <Button onClick={close} type="primary" style={{ float: "right" }}>
-              关闭
+              {t("wallet_send_status_close")}
             </Button>
           }
         </Col>

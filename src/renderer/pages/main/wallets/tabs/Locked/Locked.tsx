@@ -12,13 +12,14 @@ import { DateTimeFormat } from "../../../../../utils/DateUtils";
 import { ZERO } from "../../../../../utils/CurrentAmountUtils";
 import AddLockModal from "./AddLockModal";
 import { useTranslation } from "react-i18next";
+import AddressComponent from "../../../../components/AddressComponent";
 
 const { Text } = Typography;
 const AccountRecords_Page_Size = 5;
 
 export default () => {
 
-  const {t} = useTranslation();
+  const { t } = useTranslation();
   const activeAccount = useWalletsActiveAccount();
   const safe4balance = useSafe4Balance([activeAccount])[activeAccount];
   const blockNumber = useBlockNumber();
@@ -93,7 +94,7 @@ export default () => {
         })
       }
     }
-  }, [accountManagerContract , queryAccountRecordId]);
+  }, [accountManagerContract, queryAccountRecordId]);
 
   useEffect(() => {
     if (pagination && pagination.current != 1) {
@@ -127,7 +128,7 @@ export default () => {
               multicallGetAccountRecordByIds(accountRecordIds);
             })
         } else {
-          multicallGetAccountRecordByIds( [queryAccountRecordId] )
+          multicallGetAccountRecordByIds([queryAccountRecordId])
         }
       } else {
         setAccountRecords([]);
@@ -137,7 +138,7 @@ export default () => {
 
   const multicallGetAccountRecordByIds = useCallback((_accountRecordIds: any) => {
     if (multicallContract && accountManagerContract) {
-      const accountRecordIds = _accountRecordIds.map((_id: any) => _id.toNumber ? _id.toNumber() : _id )
+      const accountRecordIds = _accountRecordIds.map((_id: any) => _id.toNumber ? _id.toNumber() : _id)
         .filter((id: number) => id > 0)
       // .sort((id0: number, id1: number) => id1 - id0)
       const getRecordByIDFragment = accountManagerContract?.interface?.getFunction("getRecordByID");
@@ -164,7 +165,7 @@ export default () => {
             const _recordUseInfo = accountManagerContract?.interface.decodeFunctionResult(getRecordUseInfoFragment, raws[half + i])[0];
             const accountRecord = formatAccountRecord(_accountRecord);
             accountRecord.recordUseInfo = formatRecordUseInfo(_recordUseInfo);
-            if ( accountRecord.addr == activeAccount ){
+            if (accountRecord.addr == activeAccount) {
               accountRecords.push(accountRecord);
             }
           }
@@ -221,7 +222,7 @@ export default () => {
         <Col span={17}>
           <Divider orientation="center" style={{ fontSize: "14px", marginTop: "-23px" }}>{t("wallet_locked_accountRecordUseInfo")}</Divider>
           <Row>
-            <Col span={16}>
+            <Col span={13}>
               <Text strong type="secondary">{t("wallet_locked_memberOfNode")}</Text><br />
               {
                 frozenAddr == EmptyContract.EMPTY && <>
@@ -230,11 +231,11 @@ export default () => {
               }
               {
                 frozenAddr != EmptyContract.EMPTY && <>
-                  <Text><AddressView address={frozenAddr} /></Text>
+                  <AddressComponent address={frozenAddr} copyable qrcode />
                 </>
               }
             </Col>
-            <Col span={8}>
+            <Col offset={3} span={8}>
               <Text strong type="secondary" style={{ float: "right" }}>{t("wallet_locked_stakeRelease")}</Text><br />
               <Text strong style={{ float: "right", color: unfreezeHeight > blockNumber ? "#104499" : "#27c92d" }}>
                 {unfreezeHeight == 0 ? "-" : unfreezeHeight}
@@ -249,7 +250,7 @@ export default () => {
           </Row>
           <Divider style={{ margin: "4px 0" }} />
           <Row>
-            <Col span={16}>
+            <Col span={13}>
               <Text strong type="secondary">{t("wallet_locked_votedSupernode")}</Text><br />
               {
                 votedAddr == EmptyContract.EMPTY && <>
@@ -258,11 +259,11 @@ export default () => {
               }
               {
                 votedAddr != EmptyContract.EMPTY && <>
-                  <Text>{votedAddr}</Text>
+                  <AddressComponent address={votedAddr} qrcode copyable />
                 </>
               }
             </Col>
-            <Col span={8}>
+            <Col offset={3} span={8}>
               <Text strong type="secondary" style={{ float: "right" }}>{t("wallet_locked_stakeRelease")}</Text><br />
               <Text strong style={{ float: "right", color: releaseHeight > blockNumber ? "#104499" : "#27c92d" }}>
                 {releaseHeight == 0 ? "-" : releaseHeight}
@@ -334,17 +335,17 @@ export default () => {
     <Card title={t("wallet_locked_list")} style={{ marginTop: "40px" }}>
 
       <Input.Search size="large" placeholder={t("wallet_locked_placehold_inputAccountRecordId")} onChange={(event) => {
-        if ( !event.target.value.trim() ){
+        if (!event.target.value.trim()) {
           setQueryAccountRecordId(undefined);
         }
-      }} onSearch={( value ) => {
+      }} onSearch={(value) => {
         const id = Number(value);
-        if ( id ){
+        if (id) {
           setQueryAccountRecordId(id);
         } else {
 
         }
-      }}/>
+      }} />
       {
         accountRecordZERO && (pagination && pagination.current == 1) && !queryAccountRecordId && <>
           {RenderAccountRecord(accountRecordZERO)}

@@ -226,8 +226,6 @@ export default ({
         const { accountRecord } = masternodeInfo;
         let locked = true;
         let unlockHeight = accountRecord?.unlockHeight;
-        console.log("masternode =", masternodeInfo);
-        console.log("masternode.accountRecord ==", masternodeInfo.accountRecord);
         let unlockDateTime = undefined;
         if (unlockHeight) {
           locked = unlockHeight > blockNumber;
@@ -408,7 +406,7 @@ export default ({
       })
     }} dataSource={masternodes} columns={columns} size="large" pagination={pagination} />
 
-    <Modal destroyOnClose open={openMasternodeModal} width={1000} footer={null} closable onCancel={() => {
+    <Modal destroyOnClose open={openMasternodeModal} width={1100} footer={null} closable onCancel={() => {
       setOpenMasternodeInfo(undefined);
       setOpenMasternodeModal(false);
     }}>

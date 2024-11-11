@@ -7,6 +7,7 @@ import { useDispatch } from "react-redux";
 import { applicationBlockchainUpdateBlockNumber, applicationUpdateWeb3Rpc } from "../../../../state/application/action";
 import { clearAllTransactions } from "../../../../state/transactions/actions";
 import { walletsClearWalletChildWallets } from "../../../../state/wallets/action";
+import { useTranslation } from "react-i18next";
 
 const { Text } = Typography;
 
@@ -16,6 +17,7 @@ export default ({
   endpoint: string
 }) => {
   const { provider } = useWeb3React();
+  const { t } = useTranslation();
   const dispatch = useDispatch();
   const activeEndpoint = provider?.connection.url;
   const [chainId, setChainId] = useState<number | undefined>();
@@ -27,13 +29,13 @@ export default ({
 
   const switchWeb3ReactConnect = () => {
     if (chainId) {
-      dispatch( applicationBlockchainUpdateBlockNumber({blockNumber:0,timestamp:0}) )
-      dispatch( clearAllTransactions("") );
+      dispatch(applicationBlockchainUpdateBlockNumber({ blockNumber: 0, timestamp: 0 }))
+      dispatch(clearAllTransactions(""));
       dispatch(applicationUpdateWeb3Rpc({
         chainId: chainId,
         endpoint: endpoint
       }));
-      dispatch( walletsClearWalletChildWallets() )
+      dispatch(walletsClearWalletChildWallets())
     }
   }
 
@@ -63,7 +65,7 @@ export default ({
     if (!activeStatus || activeStatus.isActiving) {
       return <>
         <Badge status="warning"></Badge>
-        <Text style={{ marginLeft: "5px" }}>正在连接</Text>
+        <Text style={{ marginLeft: "5px" }}>{t("wallet_network_state_connecting")}</Text>
       </>
     }
     if (activeStatus.isActive) {
@@ -74,7 +76,7 @@ export default ({
     }
     return <>
       <Badge status="error"></Badge>
-      <Text style={{ marginLeft: "5px" }}>网络异常</Text>
+      <Text style={{ marginLeft: "5px" }}>{t("wallet_network_state_connecterror")}</Text>
     </>
   }
 
@@ -82,10 +84,10 @@ export default ({
     if (chainId) {
       if (isSafe4Network(chainId)) {
         if (isSafe4Testnet(chainId)) {
-          return <Text type="success">测试网</Text>
+          return <Text type="success">{t("testnet")}</Text>
         }
         if (isSafe4Mainnet(chainId)) {
-          return <Text>主网</Text>
+          return <Text>{t("mainnet")}</Text>
         }
       } else {
         return <Text type="secondary">[{name}]</Text>
@@ -94,27 +96,27 @@ export default ({
   }
 
   const cantUseable = () => {
-    if (chainId && isSafe4Network( chainId ) ) {
+    if (chainId && isSafe4Network(chainId)) {
       return endpoint == activeEndpoint;
     }
     return true;
   }
 
   return <>
-    <Card key={endpoint} size='small' style={{ marginBottom: "10px" , background: endpoint == activeEndpoint ? "#efefef" : "" }}>
+    <Card key={endpoint} size='small' style={{ marginBottom: "10px", background: endpoint == activeEndpoint ? "#efefef" : "" }}>
       <Row>
         <Col span={6}>
           {renderActiveStatus()}
         </Col>
         <Col span={12}>
-          <Text strong = { endpoint == activeEndpoint }>
+          <Text strong={endpoint == activeEndpoint}>
             {endpoint}
           </Text>
         </Col>
         <Col span={6} style={{ textAlign: "center" }}>
           <Space>
             <Button disabled={cantUseable()} size='small' onClick={switchWeb3ReactConnect}>
-              使用
+              {t("use")}
             </Button>
           </Space>
         </Col>

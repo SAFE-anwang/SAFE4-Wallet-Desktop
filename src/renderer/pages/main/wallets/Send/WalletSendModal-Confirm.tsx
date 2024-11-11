@@ -9,6 +9,7 @@ import AddressView from "../../../components/AddressView";
 import useTransactionResponseRender from "../../../components/useTransactionResponseRender";
 import { useAccountManagerContract } from "../../../../hooks/useContracts";
 import { useTranslation } from "react-i18next";
+import AddressComponent from "../../../components/AddressComponent";
 
 const { Text } = Typography;
 
@@ -109,7 +110,7 @@ export default ({
           <Text strong>{t("wallet_send_from")}</Text>
           <br />
           <Text style={{ fontSize: "18px" }}>
-            <AddressView address={activeAccount} />
+            <AddressComponent style={{ fontSize: "16px" }} address={activeAccount} copyable qrcode />
           </Text>
         </Col>
       </Row>
@@ -119,7 +120,7 @@ export default ({
           <Text strong>{t("wallet_send_to")}</Text>
           <br />
           <Text style={{ fontSize: "18px" }}>
-            <AddressView address={to} />
+            <AddressComponent style={{ fontSize: "16px" }} address={to} copyable qrcode />
           </Text>
         </Col>
       </Row>

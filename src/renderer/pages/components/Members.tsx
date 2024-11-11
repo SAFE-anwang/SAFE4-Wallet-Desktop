@@ -105,7 +105,7 @@ export default ({
       dataIndex: 'amount',
       key: 'amount',
       render: (amount) => {
-        return <Text strong>{amount.toFixed(6)} SAFE</Text>
+        return <Text strong>{amount.toFixed(2)} SAFE</Text>
       }
     },
   ];

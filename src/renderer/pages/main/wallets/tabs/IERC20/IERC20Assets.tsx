@@ -1,10 +1,6 @@
 import { Avatar, Button, Card, Col, Divider, Row, Typography } from "antd"
 import { RightOutlined, WalletOutlined, AppstoreAddOutlined } from "@ant-design/icons";
 import { useEffect, useState } from "react";
-import { IPC_CHANNEL } from "../../../../../config";
-import { ERC20Tokens_Methods, ERC20TokenSignalHandler, ERC20TokensSignal } from "../../../../../../main/handlers/ERC20TokenSignalHandler";
-import { useWeb3React } from "@web3-react/core";
-import { useMultipleContractSingleData } from "../../../../../state/multicall/hooks";
 import { ChainId, Token, TokenAmount } from "@uniswap/sdk";
 import { useTokenBalances, useWalletsActiveAccount } from "../../../../../state/wallets/hooks";
 import TokenSendModal from "./TokenSendModal";
@@ -13,10 +9,14 @@ import TokenAddModal from "./TokenAddModal";
 import { ERC20_LOGO, SAFE_LOGO } from "../../../../../assets/logo/AssetsLogo";
 import AddressView from "../../../../components/AddressView";
 import AddressComponent from "../../../../components/AddressComponent";
+import { useWeb3React } from "@web3-react/core";
+import { useTranslation } from "react-i18next";
 const { Text } = Typography;
 
 export default () => {
 
+  const { t } = useTranslation();
+  const { chainId } = useWeb3React();
   const [erc20Tokens, setERC20Tokens] = useState<Token[]>([]);
   const activeAccount = useWalletsActiveAccount();
   const [openTokenSendModal, setOpenTokenSendModal] = useState(false);
@@ -27,24 +27,28 @@ export default () => {
 
   useEffect(() => {
     if (tokens) {
-      const erc20Tokens = Object.keys(tokens).map(address => {
-        const { name, symbol, decimals } = tokens[address];
-        const token = new Token(
-          ChainId.MAINNET,
-          address, decimals,
-          symbol, name
-        );
-        return token;
-      });
+      const erc20Tokens = Object.keys(tokens)
+        .filter(address => {
+          return tokens[address].chainId == chainId
+        })
+        .map(address => {
+          const { name, symbol, decimals } = tokens[address];
+          const token = new Token(
+            ChainId.MAINNET,
+            address, decimals,
+            symbol, name
+          );
+          return token;
+        });
       setERC20Tokens(erc20Tokens);
     }
-  }, [tokens]);
+  }, [tokens, chainId]);
 
 
   return <>
     <Row>
       <Col span={24}>
-        <Button onClick={() => { setOpenTokenAddModal(true) }} type="primary" icon={<AppstoreAddOutlined />}>添加</Button>
+        <Button onClick={() => { setOpenTokenAddModal(true) }} type="primary" icon={<AppstoreAddOutlined />}>{t("add")}</Button>
       </Col>
     </Row>
 
@@ -52,7 +56,7 @@ export default () => {
       erc20Tokens && <Card className="menu-item-container" style={{ marginBottom: "20px", marginTop: "20px" }}>
         {
           erc20Tokens.map((erc20Token, index) => {
-            const { address, name, symbol } = erc20Token;
+            const { address, name, symbol, chainId } = erc20Token;
             return <>
               {
                 index > 0 && <>
@@ -77,14 +81,14 @@ export default () => {
                     </Col>
                   </Row>
                 </Col>
-                <Col span={12} style={{ paddingRight: "30px",paddingTop:"5px" }}>
+                <Col span={12} style={{ paddingRight: "30px", paddingTop: "5px" }}>
                   <Row>
                     <Col span={24} style={{ lineHeight: "35px", marginTop: "5px" }}>
-                      <Text style={{ float: "right" }} type="secondary">合约地址</Text>
+                      <Text style={{ float: "right" }} type="secondary">{t("wallet_tokens_contract")}</Text>
                     </Col>
                     <Col span={24} style={{ lineHeight: "35px" }}>
-                      <Text style={{ float: "right" , marginTop:"10px" }}>
-                        <AddressComponent address={address} copyable></AddressComponent>
+                      <Text style={{ float: "right", marginTop: "10px" }}>
+                        <AddressComponent address={address} copyable qrcode />
                       </Text>
                     </Col>
                   </Row>

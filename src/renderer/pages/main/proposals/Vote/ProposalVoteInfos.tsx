@@ -4,6 +4,7 @@ import AddressView from "../../../components/AddressView";
 import { Typography } from "antd";
 import { CheckCircleFilled, CloseCircleFilled, QuestionCircleFilled } from '@ant-design/icons';
 import { useTranslation } from "react-i18next";
+import AddressComponent from "../../../components/AddressComponent";
 
 
 const { Text } = Typography;
@@ -61,16 +62,17 @@ export default ({
       key: 'voter',
       render: (voter) => {
         return <>
-          <AddressView address={voter}></AddressView>
+          <AddressComponent address={voter} copyable qrcode />
         </>
-      }
+      },
+      width: "50%"
     },
     {
       title: t("wallet_proposals_votes_result"),
       dataIndex: 'voteResult',
       key: 'voteResult',
       render: (voteResult) => {
-        return <>{RenderVoteResult(voteResult , t)}</>
+        return <>{RenderVoteResult(voteResult, t)}</>
       }
     },
   ];

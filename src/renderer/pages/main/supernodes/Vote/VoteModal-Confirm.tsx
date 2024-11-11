@@ -94,7 +94,7 @@ export default ({
   }, [accountRecordIds, supernodeInfo, supernodeVoteContract, activeAccount]);
 
   return <>
-    <Modal footer={null} destroyOnClose title={"wallet_supernodes_votes"} width="600px" open={openVoteModal} onCancel={cancel}>
+    <Modal footer={null} destroyOnClose title={t("wallet_supernodes_votes")} width="600px" open={openVoteModal} onCancel={cancel}>
       <Divider />
       {
         render

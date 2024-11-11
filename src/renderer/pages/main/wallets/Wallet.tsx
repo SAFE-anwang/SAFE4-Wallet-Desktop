@@ -143,13 +143,14 @@ export default () => {
             [address: string]: {
               name: string,
               symbol: string,
-              decimals: number
+              decimals: number,
+              chainId: number
             }
           } = {}
           data.forEach((erc20Token: any) => {
-            const { address, name, symbol, decims } = erc20Token;
+            const { address, name, symbol, decims, chain_id } = erc20Token;
             tokens[ethers.utils.getAddress(address)] = {
-              name, symbol, decimals: decims
+              name, symbol, decimals: decims, chainId: chain_id
             }
           });
           if (Object.keys(tokens).length > 0) {

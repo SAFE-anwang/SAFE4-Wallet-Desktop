@@ -33,6 +33,8 @@ export default {
   node_creator: "Creator",
   node_description: "Node Description",
   node_enode: "Node ENODE",
+  add: "Add",
+  use:"Use",
 
   welcome: "Entering Decentralized Network",
   enterWalletPassword: "Enter Wallet Password",
@@ -585,4 +587,13 @@ export default {
   wallet_childwallet_error: "The current account does not have a seed key (mnemonic), unable to derive child addresses. Auxiliary functions cannot be used.",
   wallet_node_sync_error: "Only the creator of the node can operate this node",
 
+  wallet_tokens_add: "Add Token",
+  wallet_tokens_contract: "Contract Address of Token",
+  wallet_tokens_name: "Name",
+  wallet_tokens_symbol: "Symbol",
+  wallet_tokens_decimals: "Decimals",
+  wallet_tokens_balance: "Balance",
+  wallet_tokens_send: "Send Token",
+  wallet_tokens_add_error: "Only tokens that meet the token standard can be added. Please check if the contract address is correct.",
+  wallet_tokens_send_tip: "Send the token {{tokenName}} from the account to the specified wallet address",
 }

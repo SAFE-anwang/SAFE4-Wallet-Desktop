@@ -5,6 +5,7 @@ import { useETHBalances, useWalletsActiveAccount } from "../../../../state/walle
 import AddressView from "../../../components/AddressView";
 import { CurrencyAmount, JSBI } from "@uniswap/sdk";
 import { useTranslation } from "react-i18next";
+import AddressComponent from "../../../components/AddressComponent";
 
 const { Text } = Typography;
 
@@ -14,8 +15,8 @@ export default ({
 }: {
   goNextCallback: (inputParams: {
     to: string,
-    amount: string ,
-    lockDay : number | undefined
+    amount: string,
+    lockDay: number | undefined
   }) => void
 }) => {
 
@@ -56,12 +57,12 @@ export default ({
   const [openSendLock, setOpenSendLock] = useState<boolean>(false);
 
   const goNext = useCallback(() => {
-    const { to, amount , lockDay } = params;
+    const { to, amount, lockDay } = params;
     if (!to || !ethers.utils.isAddress(to)) {
       inputErrors.to = t("wallet_send_entercorrectwalletaddress");
     }
     if (!amount) {
-      inputErrors.amount = t("please_enter")+t("wallet_send_amount");
+      inputErrors.amount = t("please_enter") + t("wallet_send_amount");
     }
     if (amount) {
       try {
@@ -70,21 +71,21 @@ export default ({
           inputErrors.amount = t("wallet_send_amountgeavaiable");
         }
         if (!_amount.greaterThan(ZERO)) {
-          inputErrors.amount = t("enter_correct")+t("wallet_send_amount");
+          inputErrors.amount = t("enter_correct") + t("wallet_send_amount");
         }
       } catch (error) {
-        inputErrors.amount = t("enter_correct")+t("wallet_send_amount");
+        inputErrors.amount = t("enter_correct") + t("wallet_send_amount");
       }
     }
-    if ( openSendLock && ( !lockDay || Number.isNaN(lockDay) ) ){
-      inputErrors.lockDay = t("enter_correct")+t("wallet_lock_lockday");
+    if (openSendLock && (!lockDay || Number.isNaN(lockDay))) {
+      inputErrors.lockDay = t("enter_correct") + t("wallet_lock_lockday");
     }
     if (inputErrors.to || inputErrors.amount || inputErrors.lockDay) {
       setInputErrors({ ...inputErrors })
       return;
     }
     goNextCallback(params);
-  }, [activeAccount, maxBalance, params , openSendLock]);
+  }, [activeAccount, maxBalance, params, openSendLock]);
 
   return <>
     <div style={{ minHeight: "300px" }}>
@@ -94,9 +95,7 @@ export default ({
         <Col span={24}>
           <Text strong>{t("wallet_send_from")}</Text>
           <br />
-          <Text style={{ fontSize: "18px" }}>
-            <AddressView address={activeAccount}></AddressView>
-          </Text>
+          <AddressComponent style={{ fontSize: "16px" }} address={activeAccount} copyable qrcode />
         </Col>
       </Row>
       <br />
@@ -136,7 +135,7 @@ export default ({
                 ...params,
                 amount: toInputValue
               })
-            }} placeholder={`${t("enter")+" "+t("wallet_send_amount")}`} />
+            }} placeholder={`${t("enter") + " " + t("wallet_send_amount")}`} />
             <Button size="large" onClick={() => {
               setInputErrors({
                 ...inputErrors,

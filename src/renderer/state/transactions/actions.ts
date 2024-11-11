@@ -47,7 +47,8 @@ export const loadERC20Tokens = createAction<{
   [address : string] : {
     name : string,
     symbol : string ,
-    decimals : number
+    decimals : number ,
+    chainId : number
   }
 }>("transactions/loadERC20Tokens");
 

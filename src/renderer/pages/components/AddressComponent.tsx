@@ -8,12 +8,14 @@ export default ({
   address,
   ellipsis,
   copyable,
-  qrcode
+  qrcode,
+  style
 }: {
   address: string,
   ellipsis?: boolean,
   copyable?: boolean,
   qrcode?: boolean,
+  style?: React.CSSProperties
 }) => {
   const { t } = useTranslation();
   const { isLocal, isActive, name } = isLocalWallet(address);
@@ -31,6 +33,7 @@ export default ({
 
   return <div>
     <Text style={{
+      ...style,
       fontFamily: "SFMono-Regular,Menlo,Monaco,Consolas,\"Liberation Mono\",\"Courier New\",monospace",
       color: walletColor
     }} italic={isActive} >
@@ -39,7 +42,13 @@ export default ({
         copyable && <Paragraph style={{ float: "right", height: "8px" }} copyable={{ text: address }} />
       }
       {
-        qrcode && <Link onClick={() => setOpenAddressQRCode(true)}>
+        qrcode && <Link onClick={(event) => {
+          // 阻止事件冒泡
+          event.stopPropagation();
+          // 阻止默认行为（如果有）
+          event.preventDefault();
+          setOpenAddressQRCode(true);
+        }}>
           <Tooltip title={t("wallet_address_qrcode_view")}>
             <QrcodeOutlined style={{ float: "right", marginTop: "4px", marginRight: "6px" }} />
           </Tooltip>

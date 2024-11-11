@@ -496,7 +496,7 @@ export default ({
       })
     }} dataSource={supernodes} columns={columns} size="large" pagination={pagination} />
 
-    <Modal open={openSupernodeModal} width={1000} footer={null} closable onCancel={() => {
+    <Modal open={openSupernodeModal} width={1100} footer={null} closable onCancel={() => {
       setOpenSupernodeInfo(undefined);
       setOpenSupernodeModal(false);
     }}>

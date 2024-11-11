@@ -90,14 +90,15 @@ export default ({
             <AddressComponent address={addr} qrcode copyable />
           </div>
         </>
-      }
+      },
+      width:"70%"
     },
     {
       title: t("votes"),
       dataIndex: 'num',
       key: 'num',
       render: (num) => {
-        return <Text strong>{num.toFixed(6)}</Text>
+        return <Text strong>{num.toFixed(2)}</Text>
       }
     },
   ];

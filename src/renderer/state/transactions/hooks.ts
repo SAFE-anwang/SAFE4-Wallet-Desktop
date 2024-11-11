@@ -170,6 +170,6 @@ export function useTransaction(hash: string): TransactionDetails {
   return transactions[hash];
 }
 
-export function useTokens() : { [address : string] : { name : string , symbol : string , decimals : number } } {
+export function useTokens() : { [address : string] : { name : string , symbol : string , decimals : number , chainId : number } } {
   return useSelector((state: AppState) => state.transactions.tokens);
 }

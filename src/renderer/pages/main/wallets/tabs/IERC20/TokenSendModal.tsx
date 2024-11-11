@@ -6,6 +6,7 @@ import { applicationUpdateWalletTab } from "../../../../../state/application/act
 import { Token } from "@uniswap/sdk";
 import TokenSendModalInput from "./TokenSendModal-Input";
 import TokenSendModalConfirm from "./TokenSendModal-Confirm";
+import { useTranslation } from "react-i18next";
 const { Text } = Typography;
 
 const STEP_INPUT = 0;
@@ -18,9 +19,10 @@ export default ({
 }: {
   openSendModal: boolean,
   setOpenSendModal: (open: boolean) => void,
-  token : Token
+  token: Token
 }) => {
 
+  const { t } = useTranslation();
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const [step, setStep] = useState(STEP_INPUT);
@@ -31,7 +33,7 @@ export default ({
     to: "",
     amount: "",
   });
-  const [txHash , setTxHash] = useState<string>();
+  const [txHash, setTxHash] = useState<string>();
   const cancel = useCallback(() => {
     setInputParams({
       to: "",
@@ -47,18 +49,18 @@ export default ({
   }, [txHash]);
 
   return <>
-    <Modal footer={null} destroyOnClose title="发送代币" style={{height: "300px"}} open={openSendModal} onCancel={cancel}>
+    <Modal footer={null} destroyOnClose title={t("wallet_tokens_send")} style={{ height: "300px" }} open={openSendModal} onCancel={cancel}>
       <Divider />
       {
-        step == STEP_INPUT && <TokenSendModalInput token={token} goNextCallback={({to,amount}) => {
+        step == STEP_INPUT && <TokenSendModalInput token={token} goNextCallback={({ to, amount }) => {
           setInputParams({
             to, amount
           });
           setStep(STEP_CONFIRM);
-        }}/>
+        }} />
       }
       {
-        step == STEP_CONFIRM && <TokenSendModalConfirm  token={token} close={cancel} {...inputParams} setTxHash={setTxHash} />
+        step == STEP_CONFIRM && <TokenSendModalConfirm token={token} close={cancel} {...inputParams} setTxHash={setTxHash} />
       }
     </Modal>
   </>

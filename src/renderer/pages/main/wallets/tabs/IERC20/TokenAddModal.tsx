@@ -9,6 +9,7 @@ import { useDispatch } from "react-redux";
 import { updateERC20Token } from "../../../../../state/transactions/actions";
 import { IPC_CHANNEL } from "../../../../../config";
 import { ERC20Tokens_Methods, ERC20TokensSignal } from "../../../../../../main/handlers/ERC20TokenSignalHandler";
+import { useTranslation } from "react-i18next";
 
 const { Text } = Typography;
 
@@ -20,6 +21,7 @@ export default ({
   setOpenTokenAddModal: (openTokenAddModal: boolean) => void
 }) => {
 
+  const { t } = useTranslation();
   const { provider, chainId } = useWeb3React();
   const activeAccount = useWalletsActiveAccount();
   const [address, setAddress] = useState<string>();
@@ -138,12 +140,12 @@ export default ({
   }
 
   return <>
-    <Modal title="添加代币" open={openTokenAddModal} footer={null} destroyOnClose onCancel={ cancel }>
+    <Modal title={t("wallet_tokens_add")} open={openTokenAddModal} footer={null} destroyOnClose onCancel={cancel}>
       <Spin spinning={loading}>
         <Divider />
         <Row>
           <Col span={24}>
-            <Text type="secondary">合约地址</Text>
+            <Text type="secondary">{t("wallet_tokens_contract")}</Text>
           </Col>
           <Col span={24} style={{ marginTop: "5px" }}>
             <Input onChange={(event) => {
@@ -152,7 +154,7 @@ export default ({
                 if (ethers.utils.isAddress(input)) {
                   setAddressErr(undefined);
                 } else {
-                  setAddressErr("请输入合法的合约地址");
+                  setAddressErr(t("enter_correct") + t("wallet_tokens_contract"));
                 }
               } else {
                 setAddressErr(undefined);
@@ -169,7 +171,7 @@ export default ({
           result && <>
             <Row style={{ marginTop: "20px" }}>
               <Col span={4}>
-                <Text type="secondary">代币名称</Text>
+                <Text type="secondary">{t("wallet_tokens_name")}</Text>
               </Col>
               <Col span={20}>
                 {result.token?.name && <CheckCircleTwoTone style={{ marginRight: "5px" }} twoToneColor="#2de72f" />}
@@ -179,7 +181,7 @@ export default ({
               </Col>
               <br />
               <Col span={4}>
-                <Text type="secondary">代币符号</Text>
+                <Text type="secondary">{t("wallet_tokens_symbol")}</Text>
               </Col>
               <Col span={20}>
                 {result.token?.symbol && <CheckCircleTwoTone style={{ marginRight: "5px" }} twoToneColor="#2de72f" />}
@@ -189,7 +191,7 @@ export default ({
               </Col>
               <br />
               <Col span={4}>
-                <Text type="secondary">代币精度</Text>
+                <Text type="secondary">{t("wallet_tokens_decimals")}</Text>
               </Col>
               <Col span={20}>
                 {result.token?.decimals && <CheckCircleTwoTone style={{ marginRight: "5px" }} twoToneColor="#2de72f" />}
@@ -201,7 +203,7 @@ export default ({
                 result.balance && <>
                   <br />
                   <Col span={4}>
-                    <Text type="secondary">代币余额</Text>
+                    <Text type="secondary">{t("wallet_tokens_balance")}</Text>
                   </Col>
                   <Col span={20}>
                     {result.balance && <CheckCircleTwoTone style={{ marginRight: "5px" }} twoToneColor="#2de72f" />}
@@ -214,14 +216,14 @@ export default ({
             </Row>
             {
               result.error && (result.error.name || result.error.symbol || result.error.decimals || result.error.balance) &&
-              <Alert style={{ marginTop: "20px" }} type="error" showIcon message="只能添加符合代币标准的代币,请检查合约地址是否正确"></Alert>
+              <Alert style={{ marginTop: "20px" }} type="error" showIcon message={t("wallet_tokens_add_error")}></Alert>
             }
           </>
         }
         <Divider />
         <Row>
           <Col span={24} style={{ textAlign: "right" }}>
-            <Button onClick={saveToken} type="primary" disabled={!addAble}>确定</Button>
+            <Button onClick={saveToken} type="primary" disabled={!addAble}>{t("confirm")}</Button>
           </Col>
         </Row>
       </Spin>

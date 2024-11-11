@@ -123,7 +123,7 @@ export interface AddressActivityFetch {
     start: number,
     end: number
   },
-  chainId : number,
+  chainId: number,
 }
 
 export interface TransactionState {
@@ -140,14 +140,15 @@ export const initialState: {
     [address: string]: {
       name: string,
       symbol: string,
-      decimals: number
+      decimals: number,
+      chainId: number,
     }
-  } , 
-  chainId ?: number
+  },
+  chainId?: number
 } = {
   transactions: {},
-  tokens: {} , 
-  chainId : -1
+  tokens: {},
+  chainId: -1
 }
 
 export default createReducer(initialState, (builder) => {
@@ -207,13 +208,13 @@ export default createReducer(initialState, (builder) => {
         tokens,
         addressActivityFetch: {
           ...addressActivityFetch
-        } , 
+        },
         chainId: addressActivityFetch.chainId
       }
     })
 
     .addCase(loadTransactionsAndUpdateAddressActivityFetch, (state, { payload: { chainId, addTxns, addressActivityFetch } }) => {
-      if ( state.chainId != chainId ){
+      if (state.chainId != chainId) {
         console.log("chainid changed.....")
         return;
       }
@@ -225,7 +226,8 @@ export default createReducer(initialState, (builder) => {
           [address: string]: {
             decimals: number,
             name: string,
-            symbol: string
+            symbol: string,
+            chainId: number
           }
         } = {};
         addTxns.forEach(txn => {
@@ -239,12 +241,12 @@ export default createReducer(initialState, (builder) => {
                 symbol != state.tokens[checksumedAddress].symbol
               ) {
                 tokens[checksumedAddress] = {
-                  decimals, name, symbol
+                  decimals, name, symbol, chainId
                 }
               }
             } else {
               tokens[checksumedAddress] = {
-                decimals, name, symbol
+                decimals, name, symbol, chainId
               }
             }
           }
@@ -258,7 +260,7 @@ export default createReducer(initialState, (builder) => {
               }]]
             );
             state.tokens[address] = {
-              name, symbol, decimals
+              name, symbol, decimals, chainId
             }
           }
         });
@@ -289,7 +291,7 @@ export default createReducer(initialState, (builder) => {
     .addCase(updateERC20Token, (state, { payload }) => {
       const { chainId, address, name, symbol, decimals } = payload;
       state.tokens[address] = {
-        name, symbol, decimals
+        name, symbol, decimals, chainId
       }
     })
 
