@@ -1,6 +1,6 @@
 {
-  "name": "Safe4-Wallet-Desktop-TestNet",
-  "version": "1.0.6",
+  "name": "Safe4-Wallet-Desktop",
+  "version": "2.0.0",
   "description": "A Wallet for Safe4 Blockchain Desktop Apps",
   "license": "MIT",
   "author": {

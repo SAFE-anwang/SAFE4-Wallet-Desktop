@@ -12,14 +12,14 @@ export const Safe4_Network_Config = {
     Safescan_Api: "https://safe4testnet.anwang.com/5005"
   },
   Mainnet: {
-    // chainId: 6666665,
-    // endpoint: "https://safe4.anwang.com/rpc",
-    // Safescan_URL: "https://safe4.anwang.com",
-    // Safescan_Api: "https://safe4.anwang.com/5005"
-    chainId: 6666666,
-    endpoint: "https://safe4testnet.anwang.com/rpc",
-    Safescan_URL: "https://safe4testnet.anwang.com",
-    Safescan_Api: "https://safe4testnet.anwang.com/5005"
+    chainId: 6666665,
+    endpoint: "https://safe4.anwang.com/rpc",
+    Safescan_URL: "https://safe4.anwang.com",
+    Safescan_Api: "https://safe4.anwang.com/5005"
+    // chainId: 6666666,
+    // endpoint: "https://safe4testnet.anwang.com/rpc",
+    // Safescan_URL: "https://safe4testnet.anwang.com",
+    // Safescan_Api: "https://safe4testnet.anwang.com/5005"
   }
 }
 
@@ -67,4 +67,4 @@ const Config = {
   }
 }
 
-export default Config["test"]
+export default Config["prod"]
