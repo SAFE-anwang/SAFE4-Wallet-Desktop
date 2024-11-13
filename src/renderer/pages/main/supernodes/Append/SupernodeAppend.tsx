@@ -117,7 +117,7 @@ export default () => {
               <Divider />
               <Row >
                 <Col span={10}>
-                  <Text strong>{t("amount")}</Text>
+                  <Text strong>{t("wallet_supernodes_joins_amount")}</Text>
                   <br />
                   <Text style={{ fontSize: "20px" }} strong>{params?.value} SAFE</Text>
                   {
@@ -153,7 +153,7 @@ export default () => {
               <Divider />
               <Spin spinning={activeAccountNodeInfo == undefined}>
                 <Button disabled={activeAccountNodeInfo == undefined || activeAccountNodeInfo.isNode} type='primary' onClick={nextClick}>
-                  成为合伙人
+                  {t("wallet_supernodes_joins_button")}
                 </Button>
                 {
                   activeAccountNodeInfo && activeAccountNodeInfo.isNode && <Alert type='warning' showIcon message={<>

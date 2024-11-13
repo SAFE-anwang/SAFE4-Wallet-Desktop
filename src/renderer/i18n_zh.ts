@@ -147,6 +147,9 @@ export default {
   wallet_querysecret_mnemonic_show: "显示助记词",
   wallet_password_input: "输入钱包密码",
   wallet_password_error: "钱包密码错误",
+  wallet_name:"钱包名称",
+  wallet_name_edit:"编辑钱包名称",
+  wallet_name_alreadyused:"钱包名称已使用",
 
   wallet_receive_tip0: "资产只能在相同的网络中发送",
   wallet_send_tip0: "将账户中的SAFE发送到指定钱包地址",
@@ -256,6 +259,7 @@ export default {
   wallet_supernodes_joins_title: "通过锁仓 SAFE 来成为这个超级节点的合伙人",
   wallet_supernodes_joins_left: "超级节点剩余份额",
   wallet_supernodes_joins_button: "成为合伙人",
+  wallet_supernodes_joins_amount:"锁仓",
   wallet_supernodes_sync: "同步超级节点配置",
   wallet_supernodes_sync_mode_auto: "自动模式",
   wallet_supernodes_sync_mode_auto_tip: "已有云服务器,钱包通过SSH登录辅助同步超级节点配置",

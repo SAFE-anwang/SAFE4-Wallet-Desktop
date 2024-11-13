@@ -147,6 +147,9 @@ export default {
   wallet_querysecret_mnemonic_show: "Show Mnemonic Phrase",
   wallet_password_input: "Enter Wallet Password",
   wallet_password_error: "Incorrect Wallet Password",
+  wallet_name:"Wallet Name",
+  wallet_name_edit:"Edit Wallet Name",
+  wallet_name_alreadyused:"Wallet name is already used",
 
   wallet_receive_tip0: "Assets can only be sent on the same network",
   wallet_send_tip0: "Send SAFE from the account to the specified wallet address",
@@ -256,6 +259,7 @@ export default {
   wallet_supernodes_joins_title: "Become a partner of this supernode by locking up SAFE",
   wallet_supernodes_joins_left: "Remaining shares of the supernode",
   wallet_supernodes_joins_button: "Become a Partner",
+  wallet_supernodes_joins_amount: "Lock-Up Amount",
   wallet_supernodes_sync: "Sync Supernode Configuration",
   wallet_supernodes_sync_mode_auto: "Automatic Mode",
   wallet_supernodes_sync_mode_auto_tip: "With a cloud server, the wallet assists in syncing supernode configuration via SSH login",

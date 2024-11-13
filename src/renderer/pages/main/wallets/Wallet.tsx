@@ -168,7 +168,7 @@ export default () => {
           {t("wallet")} <Divider type='vertical' style={{ marginLeft: "12px", marginRight: "12px" }} />
           {activeWalletName}
           <span style={{ marginLeft: "20px" }}>
-            <Tooltip title="编辑钱包名称">
+            <Tooltip title={t("wallet_name_edit")}>
               <Link style={{ fontSize: "18px" }} onClick={() => {
                 setOpenEditNameModal(true);
               }}>
@@ -184,7 +184,7 @@ export default () => {
         {renderConnectStatus}
         {
           isActivating && <>
-            <Text strong style={{ marginLeft: "10px" }}>正在连接</Text>
+            <Text strong style={{ marginLeft: "10px" }}>{t("wallet_network_state_connecting")}</Text>
           </>
         }
         {
@@ -200,7 +200,7 @@ export default () => {
         }
         {
           !isActivating && !isActive && <>
-            <Text strong style={{ marginLeft: "10px" }}>网络异常</Text>
+            <Text strong style={{ marginLeft: "10px" }}>{t("wallet_network_state_connecterror")}</Text>
           </>
         }
       </Col>

@@ -6,6 +6,7 @@ import { walletsUpdateWalletName } from "../../../state/wallets/action";
 import useWalletName from "../../../hooks/useWalletName";
 import { WalletNameSignal, WalletName_Methods } from "../../../../main/handlers/WalletNameHandler";
 import { IPC_CHANNEL } from "../../../config";
+import { useTranslation } from "react-i18next";
 
 const { Text } = Typography;
 
@@ -18,6 +19,7 @@ export default (
     setOpenEditNameModal: (open: boolean) => void
   }
 ) => {
+  const { t } = useTranslation();
   const dispatch = useDispatch();
   const activeWallet = useWalletsActiveWallet();
   const activeWalletName = useWalletName(activeWallet?.address);
@@ -52,7 +54,7 @@ export default (
       if (!isUnique) {
         setInputErrors({
           ...inputErrors,
-          newName: "钱包名称已使用"
+          newName: t("wallet_name_alreadyused")
         });
       } else {
         setInputErrors({
@@ -85,17 +87,17 @@ export default (
     } else {
       setInputErrors({
         ...inputErrors,
-        newName: "请输入钱包名称"
+        newName: t("please_enter") + t("wallet_name_alreadyused")
       })
     }
   }, [inputErrors, inputParams, activeWallet]);
 
   return <>
-    <Modal footer={null} destroyOnClose title="编辑钱包名称" style={{ height: "300px" }} open={openEditNameModal} onCancel={cancel}>
+    <Modal footer={null} destroyOnClose title={t("wallet_name_edit")} style={{ height: "300px" }} open={openEditNameModal} onCancel={cancel}>
       <Divider />
       <Row>
         <Col span={24}>
-          <Text type="secondary">钱包名称1</Text>
+          <Text type="secondary">{t("wallet_name")}</Text>
         </Col>
         <Col span={24}>
           <Input value={inputParams.newName} onChange={(event) => {
@@ -110,7 +112,7 @@ export default (
       <Divider />
       <Row style={{ width: "100%", textAlign: "right" }}>
         <Col span={24}>
-          <Button type="primary" onClick={updateWalletName}>保存</Button>
+          <Button type="primary" onClick={updateWalletName}>{t("save")}</Button>
         </Col>
       </Row>
     </Modal>
