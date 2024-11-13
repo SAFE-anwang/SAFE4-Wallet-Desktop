@@ -114,7 +114,7 @@ export default () => {
     if (chainId) {
       const method = DB_AddressActivity_Methods.getActivitiesFromToAction;
       window.electron.ipcRenderer.sendMessage(IPC_CHANNEL, [DBAddressActivitySignal, method, [
-        chainId == Safe4_Network_Config.Testnet.chainId ? "0x0225302942D5f37dA1d18C1d2DE169C5b007aCAb" : "0x5DB242e60517a60B65140613D29e86334F2b5739",
+        chainId == Safe4_Network_Config.Testnet.chainId ? Safe4_Network_Config.Testnet.claimFrom : Safe4_Network_Config.Mainnet.claimFrom,
         activeAccount, DB_AddressActivity_Actions.Transfer, chainId
       ]]);
       window.electron.ipcRenderer.once(IPC_CHANNEL, (arg) => {
