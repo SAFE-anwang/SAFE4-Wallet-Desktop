@@ -138,7 +138,7 @@ export default ({
         <Text type="secondary">{t("wallet_send_to")}</Text>
       </Col>
       <Col span={24} style={{ paddingLeft: "5px" }} >
-        <Text>{t("wallet_account_lock")}</Text>
+        <Text>{t("wallet_account_locked")}</Text>
       </Col>
     </Row>
     <Divider />

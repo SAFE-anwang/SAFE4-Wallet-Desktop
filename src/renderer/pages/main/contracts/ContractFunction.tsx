@@ -64,7 +64,11 @@ export default ({
     const values: any[] = [];
     inputs.forEach((input, index) => {
       const { name, type } = input;
-      values.push(inputParams[name]);
+      if (type.endsWith("[]")) {
+        values.push(JSON.parse(inputParams[name]));
+      } else {
+        values.push(inputParams[name]);
+      }
     });
     let encodeFunctionData = "";
     let value = ethers.utils.parseEther("0");

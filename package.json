@@ -226,7 +226,7 @@
     "ssh2-sftp-client": "^10.0.3"
   },
   "build": {
-    "productName": "Safe4-Wallet-Desktop",
+    "productName": "Safe4-Wallet-Desktop-Testnet",
     "appId": "org.anwang",
     "asar": true,
     "asarUnpack": "**\\*.{node,dll}",

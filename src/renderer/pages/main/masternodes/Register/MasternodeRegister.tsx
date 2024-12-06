@@ -297,7 +297,7 @@ export default () => {
               </Col>
             }
             <Input.TextArea style={{ height: "100px" }} status={inputErrors.enode ? "error" : ""}
-              value={registerParams.enode} placeholder={t("enter") + t("wallet_masternodes_ende")} onChange={(event) => {
+              value={registerParams.enode} placeholder={t("enter") + t("wallet_masternodes_enode")} onChange={(event) => {
                 const inputEnode = event.target.value;
                 setInputErrors({
                   ...inputErrors,
