@@ -107,6 +107,22 @@ export default () => {
         if (proposalContractBalance && _payAmount.greaterThan(proposalContractBalance)) {
           inputErrors.payAmount = t("wallet_proposals_payAmount_mustnotgatherpool")
         }
+
+        const ONE = CurrencyAmount.ether(ethers.utils.parseEther("1").toBigInt());
+        if ( payTimes == 1 ){
+          if ( !(_payAmount.equalTo( ONE ) || _payAmount.greaterThan(ONE)) ){
+            inputErrors.payAmount = t("wallet_proposals_payAmount_lessthan",{lessPayAmount:"1"});
+          }
+        } else {
+          if ( payTimes ){
+            const _eachPayAmount = _payAmount.divide( JSBI.BigInt( payTimes ) );
+            if ( !(_eachPayAmount.equalTo( ONE ) || _eachPayAmount.greaterThan(ONE)) ){
+              inputErrors.payAmount = t("wallet_proposals_payAmount_eachlessthan",{lessPayAmount:"1"});
+            }
+          }
+
+        }
+
       } catch (err) {
         inputErrors.payAmount = t("enter_correct") + t("wallet_proposals_payAmount")
       }
