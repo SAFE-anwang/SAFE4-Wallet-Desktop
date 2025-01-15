@@ -107,8 +107,8 @@ export default () => {
         if (proposalContractBalance && _payAmount.greaterThan(proposalContractBalance)) {
           inputErrors.payAmount = t("wallet_proposals_payAmount_mustnotgatherpool")
         }
-
         const ONE = CurrencyAmount.ether(ethers.utils.parseEther("1").toBigInt());
+        console.log("payTimes::" , payTimes)
         if ( payTimes == 1 ){
           if ( !(_payAmount.equalTo( ONE ) || _payAmount.greaterThan(ONE)) ){
             inputErrors.payAmount = t("wallet_proposals_payAmount_lessthan",{lessPayAmount:"1"});
@@ -120,9 +120,7 @@ export default () => {
               inputErrors.payAmount = t("wallet_proposals_payAmount_eachlessthan",{lessPayAmount:"1"});
             }
           }
-
         }
-
       } catch (err) {
         inputErrors.payAmount = t("enter_correct") + t("wallet_proposals_payAmount")
       }
@@ -247,6 +245,7 @@ export default () => {
                 setParams({
                   ...params,
                   payType: payType.target.value,
+                  payTimes: payType.target.value == PayType.ONETIME ? 1 : undefined ,
                   startPayTime: undefined,
                   endPayTime: undefined
                 })

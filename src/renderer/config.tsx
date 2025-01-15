@@ -18,7 +18,6 @@ export const Safe4_Network_Config = {
     // Safescan_URL: "https://safe4.anwang.com",
     // Safescan_Api: "https://safe4.anwang.com/5005",
     // claimFrom:"0x5DB242e60517a60B65140613D29e86334F2b5739"
-
     chainId: 6666666,
     endpoint: "https://safe4testnet.anwang.com/rpc",
     Safescan_URL: "https://safe4testnet.anwang.com",

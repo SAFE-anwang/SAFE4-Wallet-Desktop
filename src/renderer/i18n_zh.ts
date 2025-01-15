@@ -35,6 +35,8 @@ export default {
   node_enode: "节点 ENODE",
   add: "添加",
   use: "使用",
+  save:"保存",
+  close:"关闭",
 
   welcome: "即将进入去中心化网络",
   enterWalletPassword: "输入钱包密码",
@@ -384,7 +386,7 @@ export default {
   wallet_proposals_enterpayamount: "请输入提案所需申请的SAFE数量",
   wallet_proposals_title_lengthrule: "标题长度需要大于{{min}}且小于{{max}}",
   wallet_proposals_description_lengthrule: "描述长度需要大于{{min}}且小于{{max}}",
-  wallet_proposals_paytimes_rule: "分期次数不能超过{max}",
+  wallet_proposals_paytimes_rule: "分期次数不能超过{{max}}",
   wallet_proposals_payAmount: "申请 SAFE 数量",
   wallet_proposals_payAmount_mustnotgatherpool: "申请的SAFE数量不能大于提案资金池内的SAFE数量",
   wallet_proposals_payAmount_lessthan:"提案最低申请 {{lessPayAmount}} SAFE",

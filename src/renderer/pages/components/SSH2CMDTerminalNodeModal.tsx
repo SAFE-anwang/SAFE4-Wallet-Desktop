@@ -82,19 +82,7 @@ export default ({
   const { chainId } = useWeb3React();
 
   const DEFAULT_CONFIG = useMemo(() => {
-    if (chainId == Safe4_Network_Config.Mainnet.chainId) {
-      // 正式网络相关配置
-      return {
-        // 节点程序的下载地址
-        Safe4FileURL: "https://www.anwang.com/download/safe4_node/safe4.linux.latest.tar.gz",
-        Safe4FileMD5: "https://www.anwang.com/download/safe4_node/safe4.linux.latest.md5.json",
-        Safe4FileName: "safe4.linux.latest.tar.gz",
-        // 从这里读区 geth 运行后写入的数据,从而加载 geth 的路径,以及 data_dir
-        Safe4Info: ".safe4_info",
-        // 默认的 Safe4DataDir
-        Safe4DataDir: ".safe4",
-      }
-    } else {
+    if (chainId == Safe4_Network_Config.Testnet.chainId) {
       // 测试网络相关配置
       return {
         // 节点程序的下载地址
@@ -105,6 +93,18 @@ export default ({
         Safe4Info: ".safe4_info",
         // 默认的 Safe4DataDir
         Safe4DataDir: ".safe4/safetest",
+      }
+    } else {
+      // 正式网络相关配置
+      return {
+        // 节点程序的下载地址
+        Safe4FileURL: "https://www.anwang.com/download/safe4_node/safe4.linux.latest.tar.gz",
+        Safe4FileMD5: "https://www.anwang.com/download/safe4_node/safe4.linux.latest.md5.json",
+        Safe4FileName: "safe4.linux.latest.tar.gz",
+        // 从这里读区 geth 运行后写入的数据,从而加载 geth 的路径,以及 data_dir
+        Safe4Info: ".safe4_info",
+        // 默认的 Safe4DataDir
+        Safe4DataDir: ".safe4",
       }
     }
   }, [chainId]);

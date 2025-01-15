@@ -203,9 +203,20 @@ export class DBAddressActivitySingalHandler implements ListenSignalHandler {
         if (err) {
           console.log(`Delete ${address}.activities Error:`, err);
         } else {
-          console.log(`Delete ${address}.activities Success.`, rows)
+          console.log(`Delete ${address}.activities Success.`, rows);
         }
       });
+
+      this.db.run(
+        "DELETE FROM time_noderewards WHERE address = ? AND chain_id = ?",
+        [address, chainId],
+        (err: any, rows: any) => {
+          if (err) {
+            console.log(`Delete ${address}.time_noderewards Error:`, err);
+          } else {
+            console.log(`Delete ${address}.time_noderewards Success.`, rows);
+          }
+        });
   }
 
   private saveOrUpdateActivities(addressActivities: AddressActivityVO[], chainId: number) {

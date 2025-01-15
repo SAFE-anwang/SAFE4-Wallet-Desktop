@@ -35,6 +35,9 @@ export default {
   node_enode: "Node ENODE",
   add: "Add",
   use:"Use",
+  save:"Save",
+  close:"Close",
+  node_addresss:"Node Address",
 
   welcome: "Entering Decentralized Network",
   enterWalletPassword: "Enter Wallet Password",
@@ -384,7 +387,7 @@ export default {
   wallet_proposals_enterpayamount: "Please enter the amount of SAFE required for the proposal",
   wallet_proposals_title_lengthrule: "Title length must be greater than {{min}} and less than {{max}}",
   wallet_proposals_description_lengthrule: "Description length must be greater than {{min}} and less than {{max}}",
-  wallet_proposals_paytimes_rule: "Number of installments cannot exceed {max}",
+  wallet_proposals_paytimes_rule: "Number of installments cannot exceed {{max}}",
   wallet_proposals_payAmount: "Requested Amount",
   wallet_proposals_payAmount_mustnotgatherpool: "The requested SAFE amount cannot exceed the available SAFE in the funding pool",
   wallet_proposals_payAmount_lessthan: "The minimum application amount for a proposal is {{lessPayAmount}} SAFE",
