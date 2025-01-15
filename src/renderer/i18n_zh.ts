@@ -37,6 +37,7 @@ export default {
   use: "使用",
   save:"保存",
   close:"关闭",
+  node_addresss:"节点地址",
 
   welcome: "即将进入去中心化网络",
   enterWalletPassword: "输入钱包密码",
