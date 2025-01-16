@@ -304,6 +304,7 @@ export default {
   ssh2_connect_execute_steps_safe4noderunning: "Safe4 node program is running",
   ssh2_connect_execute_steps_uploadnodekeystore: "Uploading node address Keystore file",
   ssh2_connect_execute_steps_nodekeystoreexist: "Node address Keystore file already exists",
+  ssh2_connect_exeucte_steps_createkeystore:"Create Node Keystore File",
 
   wallet_masternodes_create: "Create Masternode",
   wallet_masternodes_tip0: "Become a masternode to participate in Safe4 network governance, enhancing network efficiency and security.",

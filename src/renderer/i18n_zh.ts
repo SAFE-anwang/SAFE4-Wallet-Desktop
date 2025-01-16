@@ -304,6 +304,7 @@ export default {
   ssh2_connect_execute_steps_safe4noderunning: "Safe4 节点程序已运行",
   ssh2_connect_execute_steps_uploadnodekeystore: "上传节点地址 Keystore 文件",
   ssh2_connect_execute_steps_nodekeystoreexist: "节点地址 Keystore 文件已存在",
+  ssh2_connect_exeucte_steps_createkeystore:"创建节点 Keystore 文件",
 
   wallet_masternodes_create: "创建主节点",
   wallet_masternodes_tip0: "成为主节点参与 Safe4 网络治理,提高网络的效率和安全性",
