@@ -133,7 +133,7 @@ export default () => {
           navigate("/main/contracts")
         }} />
         <Title level={4} style={{ lineHeight: "16px" }}>
-          {t("wallets_contracts")}
+          {t("wallet_contracts")}
         </Title>
       </Col>
     </Row>
