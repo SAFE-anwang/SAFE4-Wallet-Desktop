@@ -58,6 +58,7 @@ import SupernodeSync from './pages/main/supernodes/Sync/SupernodeSync';
 import TestSSH2CMD from './pages/main/tools/ssh2/TestSSH2CMD';
 import { useWalletsKeystores } from './state/wallets/hooks';
 import { useTranslation } from 'react-i18next';
+import Crosschain from './pages/main/wallets/crosschain/Crosschain';
 const { Text } = Typography;
 
 export default function App() {
@@ -325,6 +326,7 @@ export default function App() {
                     <Route path="/main/contracts/detail" element={<ContractDetail />} />
                     <Route path="/main/contracts/deploy" element={<ContractDeploy />} />
                     <Route path="/main/contracts/edit" element={<ContractEdit />} />
+                    <Route path="/main/crosschain" element={<Crosschain />} />
                   </Routes>
                 </Col>
               </Row>

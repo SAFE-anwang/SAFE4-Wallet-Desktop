@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { AppstoreOutlined, WalletOutlined, SettingOutlined, ClusterOutlined, ApartmentOutlined, FilePptOutlined, ApiOutlined, GiftOutlined, FileZipOutlined } from '@ant-design/icons';
+import { AppstoreOutlined, WalletOutlined, SettingOutlined, ClusterOutlined, ApartmentOutlined, FilePptOutlined, ApiOutlined, GiftOutlined, FileZipOutlined, SyncOutlined } from '@ant-design/icons';
 import { Button, Dropdown, MenuProps, MenuTheme, Space, message } from 'antd';
 import { Menu, Switch } from 'antd';
 import { useNavigate } from 'react-router-dom';
@@ -40,17 +40,18 @@ const MenuComponent: React.FC = () => {
   // ];
   const items: MenuItem[] = useMemo(() => {
     return [
-      getItem( t("wallet")  , '/main/wallet', <WalletOutlined />),
-      getItem( t("supernode") , '/main/supernodes', <ClusterOutlined />),
-      getItem( t("masternode") , '/main/masternodes', <ApartmentOutlined />),
-      getItem( t("proposal") , '/main/proposals', <FilePptOutlined />),
-      getItem( t("safe3AssetRedeem"), '/main/safe3nav', <ApiOutlined />),
-      getItem( t("contract"), '/main/contracts', <FileZipOutlined />),
-      getItem( t("getTestCoin"), '/main/gettestcoin', <GiftOutlined />),
+      getItem(t("wallet"), '/main/wallet', <WalletOutlined />),
+      getItem(t("supernode"), '/main/supernodes', <ClusterOutlined />),
+      getItem(t("masternode"), '/main/masternodes', <ApartmentOutlined />),
+      getItem(t("proposal"), '/main/proposals', <FilePptOutlined />),
+      getItem(t("safe3AssetRedeem"), '/main/safe3nav', <ApiOutlined />),
+      getItem(t("contract"), '/main/contracts', <FileZipOutlined />),
+      getItem(t("crosschain"), '/main/crosschain', <SyncOutlined />),
+      getItem(t("getTestCoin"), '/main/gettestcoin', <GiftOutlined />),
     ]
   }, [t]);
   const bottom_items: MenuItem[] = [
-    getItem( t("menu") , '/main/menu', <SettingOutlined />),
+    getItem(t("menu"), '/main/menu', <SettingOutlined />),
   ];
 
   const onClick: MenuProps['onClick'] = (e) => {

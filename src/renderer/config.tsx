@@ -1,3 +1,4 @@
+import { ChainId, Token } from "@uniswap/sdk";
 import { Channels } from "../main/preload";
 export const IPC_CHANNEL: Channels = "ipc-example";
 
@@ -10,7 +11,23 @@ export const Safe4_Network_Config = {
     endpoint: "https://safe4testnet.anwang.com/rpc",
     Safescan_URL: "https://safe4testnet.anwang.com",
     Safescan_Api: "https://safe4testnet.anwang.com/5005",
-    claimFrom:"0x0225302942D5f37dA1d18C1d2DE169C5b007aCAb",
+    claimFrom: "0x0225302942D5f37dA1d18C1d2DE169C5b007aCAb",
+
+
+    // DEFAULT ERC20 Token
+    WSAFE: new Token(
+      ChainId.MAINNET,
+      "0xFbB4864b5EF17F28Da7e1bE993121cABd71834C4",
+      18,
+      "WSAFE", "WSAFE"
+    ),
+    USDT: new Token(
+      ChainId.MAINNET,
+      "0x5d3869C23930AD86E2b88DD14245238064EA39B6",
+      18,
+      "USDT", "USDT"
+    ),
+
   },
   Mainnet: {
     // chainId: 6666665,
@@ -22,7 +39,21 @@ export const Safe4_Network_Config = {
     endpoint: "https://safe4testnet.anwang.com/rpc",
     Safescan_URL: "https://safe4testnet.anwang.com",
     Safescan_Api: "https://safe4testnet.anwang.com/5005",
-    claimFrom:"0x0225302942D5f37dA1d18C1d2DE169C5b007aCAb",
+    claimFrom: "0x0225302942D5f37dA1d18C1d2DE169C5b007aCAb",
+
+    // DEFAULT ERC20 Token
+    WSAFE: new Token(
+      ChainId.MAINNET,
+      "0xFbB4864b5EF17F28Da7e1bE993121cABd71834C4",
+      18,
+      "WSAFE", "WSAFE"
+    ),
+    USDT: new Token(
+      ChainId.MAINNET,
+      "0x5d3869C23930AD86E2b88DD14245238064EA39B6",
+      18,
+      "USDT", "USDT"
+    ),
   }
 }
 
@@ -55,7 +86,7 @@ const Config = {
     Default_Web3_ChainId: Safe4_Network_Config.Testnet.chainId,
     Safescan_URL: "http://127.0.0.1:3000",
     Safescan_Api: "http://127.0.0.1:5005",
-    claimFrom:"",
+    claimFrom: "",
   },
   "test": {
     Default_Web3_Endpoint: Safe4_Network_Config.Testnet.endpoint,

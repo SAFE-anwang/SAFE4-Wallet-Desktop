@@ -11,6 +11,8 @@ import AddressView from "../../../../components/AddressView";
 import AddressComponent from "../../../../components/AddressComponent";
 import { useWeb3React } from "@web3-react/core";
 import { useTranslation } from "react-i18next";
+import { Safe4_Network_Config } from "../../../../../config";
+import ERC20TokenLogoComponent from "../../../../components/ERC20TokenLogoComponent";
 const { Text } = Typography;
 
 export default () => {
@@ -27,9 +29,19 @@ export default () => {
 
   useEffect(() => {
     if (tokens) {
+      const defaultTokenAddresses : { [ address : string ] : Token } = {};
+      if ( chainId == Safe4_Network_Config.Testnet.chainId ){
+        defaultTokenAddresses[ Safe4_Network_Config.Testnet.WSAFE.address ] = Safe4_Network_Config.Testnet.WSAFE;
+        defaultTokenAddresses[ Safe4_Network_Config.Testnet.USDT.address ] = Safe4_Network_Config.Testnet.USDT;
+      } else {
+
+      }
+      const defaultTokens = Object.keys( defaultTokenAddresses ).map( address => defaultTokenAddresses[address]  );
       const erc20Tokens = Object.keys(tokens)
         .filter(address => {
           return tokens[address].chainId == chainId
+          && tokens[address].name != "Safeswap V2"
+          && defaultTokenAddresses[address] == undefined
         })
         .map(address => {
           const { name, symbol, decimals } = tokens[address];
@@ -40,7 +52,8 @@ export default () => {
           );
           return token;
         });
-      setERC20Tokens(erc20Tokens);
+
+      setERC20Tokens( defaultTokens.concat(erc20Tokens) );
     }
   }, [tokens, chainId]);
 
@@ -68,7 +81,7 @@ export default () => {
                 setOpenTokenSendModal(true);
               }} className='menu-item' style={{ height: "80px", lineHeight: "80px" }}>
                 <Col span={2} style={{ textAlign: "center" }}>
-                  <Avatar src={ERC20_LOGO} style={{ padding: "8px", width: "48px", height: "48px", background: "#efefef" }} />
+                  <ERC20TokenLogoComponent chainId={chainId} address={address} />
                 </Col>
                 <Col span={10}>
                   <Row>
