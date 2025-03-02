@@ -9,10 +9,14 @@ import { Safe4_Network_Config } from "../../../../config";
 import { useETHBalances, useTokenBalances, useWalletsActiveAccount } from "../../../../state/wallets/hooks";
 import TokenLogo from "../../../components/TokenLogo";
 import { getNetworkLogo, NetworkType } from "../../../../assets/logo/NetworkLogo";
+import { ZERO, ONE } from "../../../../utils/CurrentAmountUtils";
+import { CurrencyAmount, TokenAmount } from "@uniswap/sdk";
+import { ethers } from "ethers";
 
 const { Title, Text, Link } = Typography;
 
 const { Option } = Select;
+
 
 export default () => {
 
@@ -102,39 +106,76 @@ export default () => {
   }, [inputParams]);
 
   const tokenBalance = useMemo(() => {
-    if (inputParams.token == 'USDT') {
-      return tokenUSDTBalance?.toFixed(2);
-    } else {
-      return activeAccountETHBalance?.toFixed(2);
-    }
-  }, [activeAccountETHBalance, tokenUSDTBalance, inputParams.token]);
-
-  const maxBalanceClick = useMemo(() => {
-    return () => {
-      if (activeAccountETHBalance && tokenUSDTBalance) {
-        if (inputParams.token == 'USDT') {
-          setInputParams({
-            ...inputParams,
-            amount: tokenUSDTBalance.toExact()
-          })
-        } else {
-          setInputParams({
-            ...inputParams,
-            amount: activeAccountETHBalance.toExact()
-          })
-        }
+    if (activeAccountETHBalance && tokenUSDTBalance) {
+      if (inputParams.token == 'USDT') {
+        return tokenUSDTBalance;
+      } else {
+        return activeAccountETHBalance;
       }
     }
-  }, [inputParams.token, activeAccountETHBalance, tokenUSDTBalance]);
+    return ZERO;
+  }, [activeAccountETHBalance, tokenUSDTBalance, inputParams.token]);
+  const maxBalance = useMemo( () => {
+    if (inputParams.token == 'USDT') {
+      return tokenBalance;
+    } else {
+      return (activeAccountETHBalance && activeAccountETHBalance.greaterThan(ZERO) && activeAccountETHBalance.greaterThan(ONE))
+        ? activeAccountETHBalance.subtract(ONE) : ZERO;
+    }
+  } , [tokenBalance , inputParams.token]);
+  const maxBalanceClick = useMemo(() => {
+    return () => {
+      if (maxBalance) {
+        setInputParams({
+          ...inputParams,
+          amount: maxBalance.toExact()
+        })
+      }
+    }
+  }, [inputParams.token, maxBalance]);
 
-  const goNext = useCallback( () => {
-
-  } , [inputParams] )
-
-  const [inputErrors , setInputErrors] = useState<{
-    amount ?: string,
-    targetAddress ?: string
+  const [inputErrors, setInputErrors] = useState<{
+    amount?: string,
+    targetAddress?: string
   }>({});
+
+  const goNext = useCallback(() => {
+    const { token, amount } = inputParams;
+    if (!amount) {
+      inputErrors.amount = "请输入金额";
+    } else {
+      try {
+        CurrencyAmount.ether(ethers.utils.parseEther(amount).toBigInt());
+        if (chainId && activeAccountETHBalance && tokenUSDTBalance) {
+          if (token == 'SAFE') {
+            let _amount = CurrencyAmount.ether(ethers.utils.parseEther(amount).toBigInt());
+            if (_amount.greaterThan(activeAccountETHBalance)) {
+              inputErrors.amount = t("wallet_send_amountgeavaiable");
+            }
+            if (!_amount.greaterThan(ZERO)) {
+              inputErrors.amount = t("enter_correct") + t("wallet_send_amount");
+            }
+          } else if (token == 'USDT') {
+            const USDT_TOKEN = chainId == Safe4_Network_Config.Mainnet.chainId ?
+              Safe4_Network_Config.Mainnet.USDT
+              : Safe4_Network_Config.Testnet.USDT
+            let _amount = new TokenAmount(USDT_TOKEN, ethers.utils.parseUnits(amount, USDT_TOKEN.decimals).toBigInt());
+            if (!_amount.greaterThan(ZERO)) {
+              inputErrors.amount = t("enter_correct") + t("wallet_send_amount");
+            }
+          }
+        }
+      } catch (error) {
+        inputErrors.amount = t("enter_correct") + t("wallet_send_amount");
+      }
+    }
+    if (inputErrors.amount) {
+      setInputErrors({
+        ...inputErrors
+      })
+      return;
+    }
+  }, [inputParams, chainId, maxBalance, inputErrors])
 
   return <>
 
@@ -161,17 +202,24 @@ export default () => {
             <Row>
               <Col span={24}>
                 <Text type="secondary" strong>选择代币</Text>
-                <Text style={{ float: "right" }} type="secondary">可用余额:{tokenBalance}</Text>
+                {
+                  tokenBalance && <Text style={{ float: "right" }} type="secondary">可用余额:{tokenBalance.toFixed(2)}</Text>
+                }
               </Col>
               <Col span={16}>
-                <Input value={inputParams.amount} size="large" style={{ height: "80px", width: "520px", fontSize: "24px" }}
+                <Input value={inputParams.amount} size="large" style={{ height: "80px", width: "150%", fontSize: "24px" }}
                   onChange={(event) => {
                     setInputParams({
                       ...inputParams,
                       amount: event.target.value
+                    });
+                    setInputErrors({
+                      ...inputErrors,
+                      amount: undefined
                     })
                   }} />
               </Col>
+
               <Col span={8}>
                 <Row style={{ marginTop: "24px" }}>
                   <Col span={8}>
@@ -185,6 +233,14 @@ export default () => {
                   </Col>
                 </Row>
               </Col>
+              {
+                inputErrors.amount &&
+                <Col span={24}>
+                  <Alert style={{ marginTop: "5px" }} type="error" message={<>
+                    {inputErrors.amount}
+                  </>} />
+                </Col>
+              }
             </Row>
             <Row>
               <Col span={24}>
@@ -196,7 +252,7 @@ export default () => {
                 <Text type="secondary" strong>选择目标网络</Text>
               </Col>
               <Col span={16}>
-                <Input readOnly size="large" style={{ height: "80px", width: "520px", background: "#efefef" }} />
+                <Input readOnly size="large" style={{ height: "80px", width: "150%", background: "#efefef" }} />
               </Col>
               <Col span={8}>
                 <Row style={{ marginTop: "24px" }}>
@@ -211,13 +267,13 @@ export default () => {
                 <Text type="secondary" strong>跨链到账地址</Text>
               </Col>
               <Col span={16}>
-                <Input value={inputParams.targetAddress} size="large" style={{ width: "520px" }} />
+                <Input value={inputParams.targetAddress} size="large" style={{ width: "150%", }} />
               </Col>
             </Row>
             <Divider></Divider>
             <Row>
               <Col span={24}>
-                <Button type="primary" style={{ float: "right" }}>下一步</Button>
+                <Button type="primary" style={{ float: "right" }} onClick={goNext}>下一步</Button>
               </Col>
             </Row>
           </Card>
