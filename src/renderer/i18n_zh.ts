@@ -122,6 +122,7 @@ export default {
   wallet_account_normal: "普通账户",
   wallet_account_locked: "锁仓账户",
   wallet_balance_currentavailable: "账户当前可用余额",
+  balance_currentavailable:"可用余额",
 
   wallet_locked_list: "锁仓列表",
   wallet_locked_accountRecordLockId: "锁仓记录ID",
@@ -607,4 +608,11 @@ export default {
   wallet_tokens_send: "发送代币",
   wallet_tokens_add_error: "只能添加符合代币标准的代币,请检查合约地址是否正确",
   wallet_tokens_send_tip: "将账户中的代币 {{tokenName}} 发送到指定钱包地址",
+
+  wallet_crosschain:"跨链",
+  wallet_crosschain_tip:"将 Safe4 网络上的资产 SAFE, USDT 跨链到其他网络",
+  wallet_crosschain_select_token:"选择代币",
+  wallet_crosschain_select_network:"选择目标网络",
+  wallet_crosschain_target_address:"跨链到账地址",
+  wallet_crosschain_target_address_warning:"跨链到账地址并不是当前钱包地址,请仔细核实该地址是否为您期望的目标地址。",
 }

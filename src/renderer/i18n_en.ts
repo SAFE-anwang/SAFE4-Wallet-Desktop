@@ -122,6 +122,7 @@ export default {
   wallet_account_normal: "Normal Account",
   wallet_account_locked: "Locked Account",
   wallet_balance_currentavailable: "Current Available Balance",
+  balance_currentavailable:"Available Balance",
 
   wallet_locked_list: "Locked Assets",
   wallet_locked_accountRecordLockId: "Locked Record ID",
@@ -607,4 +608,11 @@ export default {
   wallet_tokens_send: "Send Token",
   wallet_tokens_add_error: "Only tokens that meet the token standard can be added. Please check if the contract address is correct.",
   wallet_tokens_send_tip: "Send the token {{tokenName}} from the account to the specified wallet address",
+
+  wallet_crosschain: "Cross-chain",
+  wallet_crosschain_tip: "Transfer assets SAFE, USDT from the Safe4 network to other networks",
+  wallet_crosschain_select_token: "Select Token",
+  wallet_crosschain_select_network: "Select Target Network",
+  wallet_crosschain_target_address: "Cross-chain Destination Address",
+  wallet_crosschain_target_address_warning: "The cross-chain destination address is not the current wallet address. Please carefully verify whether this address is your intended destination.",
 }

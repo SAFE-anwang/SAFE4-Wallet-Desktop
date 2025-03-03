@@ -115,20 +115,24 @@ export default () => {
     }
     return ZERO;
   }, [activeAccountETHBalance, tokenUSDTBalance, inputParams.token]);
-  const maxBalance = useMemo( () => {
+  const maxBalance = useMemo(() => {
     if (inputParams.token == 'USDT') {
       return tokenBalance;
     } else {
       return (activeAccountETHBalance && activeAccountETHBalance.greaterThan(ZERO) && activeAccountETHBalance.greaterThan(ONE))
         ? activeAccountETHBalance.subtract(ONE) : ZERO;
     }
-  } , [tokenBalance , inputParams.token]);
+  }, [tokenBalance, inputParams.token]);
   const maxBalanceClick = useMemo(() => {
     return () => {
       if (maxBalance) {
         setInputParams({
           ...inputParams,
           amount: maxBalance.toExact()
+        });
+        setInputErrors({
+          ...inputErrors,
+          amount: undefined
         })
       }
     }
@@ -138,43 +142,52 @@ export default () => {
     amount?: string,
     targetAddress?: string
   }>({});
+  const [inputWarning, setInputWarnings] = useState<{
+    targetAddress?: string
+  }>();
 
   const goNext = useCallback(() => {
-    const { token, amount } = inputParams;
+    const { token, amount, targetAddress } = inputParams;
     if (!amount) {
-      inputErrors.amount = "请输入金额";
+      inputErrors.amount = t("please_enter") + t("wallet_send_amount");
     } else {
       try {
         CurrencyAmount.ether(ethers.utils.parseEther(amount).toBigInt());
-        if (chainId && activeAccountETHBalance && tokenUSDTBalance) {
+        if (chainId && maxBalance) {
+          let _amount = undefined;
           if (token == 'SAFE') {
-            let _amount = CurrencyAmount.ether(ethers.utils.parseEther(amount).toBigInt());
-            if (_amount.greaterThan(activeAccountETHBalance)) {
+            _amount = CurrencyAmount.ether(ethers.utils.parseEther(amount).toBigInt());
+          } else if (token == 'USDT') {
+            const USDT_TOKEN = chainId == Safe4_Network_Config.Mainnet.chainId ?
+              Safe4_Network_Config.Mainnet.USDT
+              : Safe4_Network_Config.Testnet.USDT
+            _amount = new TokenAmount(USDT_TOKEN, ethers.utils.parseUnits(amount, USDT_TOKEN.decimals).toBigInt());
+          }
+          if (_amount) {
+            if (_amount.greaterThan(maxBalance)) {
               inputErrors.amount = t("wallet_send_amountgeavaiable");
             }
             if (!_amount.greaterThan(ZERO)) {
               inputErrors.amount = t("enter_correct") + t("wallet_send_amount");
             }
-          } else if (token == 'USDT') {
-            const USDT_TOKEN = chainId == Safe4_Network_Config.Mainnet.chainId ?
-              Safe4_Network_Config.Mainnet.USDT
-              : Safe4_Network_Config.Testnet.USDT
-            let _amount = new TokenAmount(USDT_TOKEN, ethers.utils.parseUnits(amount, USDT_TOKEN.decimals).toBigInt());
-            if (!_amount.greaterThan(ZERO)) {
-              inputErrors.amount = t("enter_correct") + t("wallet_send_amount");
-            }
+          } else {
+            inputErrors.amount = t("enter_correct") + t("wallet_send_amount");
           }
         }
       } catch (error) {
         inputErrors.amount = t("enter_correct") + t("wallet_send_amount");
       }
     }
-    if (inputErrors.amount) {
+    if (!targetAddress) {
+      inputErrors.targetAddress = t("wallet_send_entercorrectwalletaddress");
+    }
+    if (inputErrors.amount || inputErrors.targetAddress) {
       setInputErrors({
         ...inputErrors
       })
       return;
     }
+    console.log("Go Next For Crosschain.", inputParams)
   }, [inputParams, chainId, maxBalance, inputErrors])
 
   return <>
@@ -182,7 +195,7 @@ export default () => {
     <Row style={{ height: "50px" }}>
       <Col span={8}>
         <Title level={4} style={{ lineHeight: "16px", float: "left" }}>
-          跨链
+          {t("wallet_crosschain")}
         </Title>
       </Col>
     </Row>
@@ -193,7 +206,7 @@ export default () => {
           <Row style={{ marginBottom: "20px" }}>
             <div style={{ width: "50%", margin: "auto" }}>
               <Alert style={{ margin: "auto" }} type="info" message={<>
-                将 Safe4 网络上的资产 SAFE, USDT 跨链到其他网络
+                {t("wallet_crosschain_tip")}
               </>}></Alert>
             </div>
           </Row>
@@ -201,9 +214,9 @@ export default () => {
           <Card style={{ width: "50%", margin: "auto" }}>
             <Row>
               <Col span={24}>
-                <Text type="secondary" strong>选择代币</Text>
+                <Text type="secondary" strong>{t("wallet_crosschain_select_token")}</Text>
                 {
-                  tokenBalance && <Text style={{ float: "right" }} type="secondary">可用余额:{tokenBalance.toFixed(2)}</Text>
+                  tokenBalance && <Text style={{ float: "right" }} type="secondary">{t("balance_currentavailable")}:{tokenBalance.toFixed(2)}</Text>
                 }
               </Col>
               <Col span={16}>
@@ -224,7 +237,7 @@ export default () => {
                 <Row style={{ marginTop: "24px" }}>
                   <Col span={8}>
                     <div style={{ marginTop: "4px" }}>
-                      <Link onClick={maxBalanceClick}>最大</Link>
+                      <Link onClick={maxBalanceClick}>{t("wallet_send_max")}</Link>
                       <Divider type="vertical" />
                     </div>
                   </Col>
@@ -236,7 +249,7 @@ export default () => {
               {
                 inputErrors.amount &&
                 <Col span={24}>
-                  <Alert style={{ marginTop: "5px" }} type="error" message={<>
+                  <Alert showIcon style={{ marginTop: "5px" }} type="error" message={<>
                     {inputErrors.amount}
                   </>} />
                 </Col>
@@ -249,7 +262,7 @@ export default () => {
             </Row>
             <Row>
               <Col span={24}>
-                <Text type="secondary" strong>选择目标网络</Text>
+                <Text type="secondary" strong>{t("wallet_crosschain_select_network")}</Text>
               </Col>
               <Col span={16}>
                 <Input readOnly size="large" style={{ height: "80px", width: "150%", background: "#efefef" }} />
@@ -264,16 +277,61 @@ export default () => {
             </Row>
             <Row style={{ marginTop: "20px" }}>
               <Col span={24}>
-                <Text type="secondary" strong>跨链到账地址</Text>
+                <Text type="secondary" strong>{t("wallet_crosschain_target_address")}</Text>
               </Col>
               <Col span={16}>
-                <Input value={inputParams.targetAddress} size="large" style={{ width: "150%", }} />
+                <Input onChange={(event) => {
+                  const inputAddress = event.target.value;
+                  setInputParams({
+                    ...inputParams,
+                    targetAddress: inputAddress.trim()
+                  });
+                  setInputErrors({
+                    ...inputErrors,
+                    targetAddress: undefined
+                  })
+                  setInputWarnings({
+                    ...inputWarning,
+                    targetAddress: undefined
+                  })
+                  if (!ethers.utils.isAddress(inputAddress)) {
+                    setInputErrors({
+                      ...inputErrors,
+                      targetAddress: t("wallet_send_entercorrectwalletaddress")
+                    })
+                  } else {
+                    if (inputAddress != activeAccount) {
+                      setInputWarnings({
+                        ...inputWarning,
+                        targetAddress: t("wallet_crosschain_target_address_warning")
+                      })
+                    }
+                  }
+
+                }} value={inputParams.targetAddress} size="large" style={{ width: "150%", }} />
               </Col>
+
+              {
+                inputWarning?.targetAddress &&
+                <Col span={24}>
+                  <Alert showIcon style={{ marginTop: "5px" }} type="warning" message={<>
+                    {inputWarning?.targetAddress}
+                  </>} />
+                </Col>
+              }
+              {
+                inputErrors?.targetAddress &&
+                <Col span={24}>
+                  <Alert showIcon style={{ marginTop: "5px" }} type="error" message={<>
+                    {inputErrors?.targetAddress}
+                  </>} />
+                </Col>
+              }
             </Row>
             <Divider></Divider>
             <Row>
               <Col span={24}>
-                <Button type="primary" style={{ float: "right" }} onClick={goNext}>下一步</Button>
+                <Button type="primary" style={{ float: "right" }} onClick={goNext}>{t("next")}</Button>
               </Col>
             </Row>
           </Card>
