@@ -12,11 +12,11 @@ import { getNetworkLogo, NetworkType } from "../../../../assets/logo/NetworkLogo
 import { ZERO, ONE } from "../../../../utils/CurrentAmountUtils";
 import { CurrencyAmount, TokenAmount } from "@uniswap/sdk";
 import { ethers } from "ethers";
+import CrosschainConfirmModal from "./CrosschainConfirmModal";
 
 const { Title, Text, Link } = Typography;
 
 const { Option } = Select;
-
 
 export default () => {
 
@@ -25,6 +25,7 @@ export default () => {
   const { chainId } = useWeb3React();
   const activeAccount = useWalletsActiveAccount();
   const activeAccountETHBalance = useETHBalances([activeAccount])[activeAccount];
+  const [openCrosschainConfirmModal , setOpenCrosschainConfirmModal] = useState(false);
 
   const SAFE_SUPPORT_TARGET_CHAIN: NetworkType[] = [
     NetworkType.BSC, NetworkType.ETH, NetworkType.MATIC
@@ -188,6 +189,7 @@ export default () => {
       return;
     }
     console.log("Go Next For Crosschain.", inputParams)
+    setOpenCrosschainConfirmModal(true);
   }, [inputParams, chainId, maxBalance, inputErrors])
 
   return <>
@@ -339,6 +341,11 @@ export default () => {
       </div>
     </div>
 
-  </>
+    {
+      inputParams && inputParams &&
+      <CrosschainConfirmModal {...inputParams} openCrosschainConfirmModal={openCrosschainConfirmModal} />
+    }
 
+
+  </>
 }
