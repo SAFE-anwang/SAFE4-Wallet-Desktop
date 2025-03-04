@@ -340,12 +340,9 @@ export default () => {
         </Card>
       </div>
     </div>
-
     {
-      inputParams && inputParams &&
-      <CrosschainConfirmModal {...inputParams} openCrosschainConfirmModal={openCrosschainConfirmModal} />
+      inputParams && inputParams && 
+      <CrosschainConfirmModal {...inputParams} openCrosschainConfirmModal={openCrosschainConfirmModal} cancel={ ()=> setOpenCrosschainConfirmModal(false) } />
     }
-
-
   </>
 }

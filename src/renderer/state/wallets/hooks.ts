@@ -3,7 +3,7 @@ import { CurrencyAmount, JSBI, Token, TokenAmount } from '@uniswap/sdk';
 import { ethers } from 'ethers';
 import { useEffect, useMemo, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux'
-import { useAccountManagerContract, useMasternodeStorageContract, useMulticallContract, useSupernodeStorageContract } from '../../hooks/useContracts';
+import { useAccountManagerContract, useIERC20Contract, useMasternodeStorageContract, useMulticallContract, useSupernodeStorageContract } from '../../hooks/useContracts';
 import { isAddress } from '../../utils';
 import { AppState } from '../index';
 import { useMultipleContractSingleData, useSingleContractMultipleData } from '../multicall/hooks';
@@ -407,6 +407,18 @@ export function useTokenBalances(
 ): { [tokenAddress: string]: TokenAmount | undefined } {
   return useTokenBalancesWithLoadingIndicator(address, tokens)[0]
 }
+
+export function useTokenAllowance(token: Token, owner: string, spender: string) {
+  const ERC20_Contract = useIERC20Contract(token.address, false);
+  const allowance = useSingleContractMultipleData(
+    ERC20_Contract,
+    'allowance',
+    [[owner, spender]]
+  );
+  return allowance[0].result ? new TokenAmount(token, JSBI.BigInt(allowance[0].result?.toString())) : undefined;
+}
+
+
 
 // get the balance for a single token/account combo
 export function useTokenBalance(account?: string, token?: Token): TokenAmount | undefined {
