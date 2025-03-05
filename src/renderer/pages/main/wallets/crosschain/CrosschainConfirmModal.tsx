@@ -38,30 +38,31 @@ export default ({
     }
   }, [chainId]);
   const USDT_Contract = useIERC20Contract(tokenUSDT.address, true);
-  const callAllowance = useTokenAllowance(tokenUSDT, activeAccount, "0xCA5339ad234F8FaF7848BDe1CB612050d3c3f636");
+  const callAllowance = useTokenAllowance(tokenUSDT, activeAccount, "0xe708c875B107A3aDB30BBCFD9d7f6d17495F5Fcd");
 
-  const [allowance, setAllowance] = useState<{
-    value?: TokenAmount,
-    needAllowance?: boolean,
-    transactionHash?: string
-  }>({});
-
-  useEffect(() => {
-    if (callAllowance && token == 'USDT') {
-      const _amount = new TokenAmount(tokenUSDT, amount);
-      if (_amount.greaterThan(callAllowance)) {
-        setAllowance({
-          value: callAllowance,
-          needAllowance: true,
-          transactionHash: undefined
-        })
+  const allowance = useMemo( () => {
+    if (token == 'USDT') {
+      if ( callAllowance ){
+        const _amount = new TokenAmount(tokenUSDT, amount);
+        return {
+          value : callAllowance,
+          needApprove : _amount.greaterThan(callAllowance),
+        }
+      }
+      return {
+        value : undefined,
+        needApprove : true,
       }
     }
-  }, [token, amount, callAllowance]);
+    return {
+      value : undefined,
+      needApprove : false,
+    } 
+  } , [ token , amount , callAllowance] );
 
   const doApproveMAX = useCallback(() => {
     if (USDT_Contract) {
-      USDT_Contract.approve("0xCA5339ad234F8FaF7848BDe1CB612050d3c3f636", ethers.constants.MaxUint256)
+      USDT_Contract.approve("0xe708c875B107A3aDB30BBCFD9d7f6d17495F5Fcd", ethers.constants.MaxUint256)
         .then((response: any) => {
           const { hash , data } = response;
           console.log("Hash :" , hash)
@@ -74,8 +75,7 @@ export default ({
     <Divider />
     <Row>
       <Col span={24}>
-        {allowance && <>{JSON.stringify(allowance)}</>}
-        {callAllowance?.toExact()}
+        {/* {callAllowance?.toExact()} */}
         <SyncOutlined style={{ fontSize: "32px" }} />
         <Text style={{ fontSize: "32px", marginLeft: "5px" }} strong>{amount} {token}</Text>
       </Col>
@@ -124,11 +124,14 @@ export default ({
       </Col>
     </Row>
     {
-      token == "USDT" && allowance && allowance.needAllowance && <>
+      token == "USDT" && allowance && allowance.needApprove && <>
         <Divider />
         <Row>
+          { callAllowance && callAllowance.toExact() }
           <Col span={24}>
             <Alert type="info" message={<Row>
+              { allowance.value?.toExact() }
+              { JSON.stringify(allowance) }
               <Col span={24}>
                 <Text>需要先授权跨链合约访问您的USDT资产</Text>
                 <Link onClick={doApproveMAX} style={{ float: "right" }}>点击授权</Link>
@@ -141,7 +144,7 @@ export default ({
     <Divider />
     <Row>
       <Col span={24}>
-        <Button disabled={token == "USDT" && allowance && allowance.needAllowance} style={{ float: "right" }} type="primary">广播交易</Button>
+        <Button disabled={token == "USDT" && allowance && allowance.needApprove} style={{ float: "right" }} type="primary">广播交易</Button>
       </Col>
     </Row>
   </Modal>
