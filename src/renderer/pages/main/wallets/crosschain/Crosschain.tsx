@@ -341,7 +341,7 @@ export default () => {
       </div>
     </div>
     {
-      inputParams && inputParams && 
+      openCrosschainConfirmModal &&
       <CrosschainConfirmModal {...inputParams} openCrosschainConfirmModal={openCrosschainConfirmModal} cancel={ ()=> setOpenCrosschainConfirmModal(false) } />
     }
   </>

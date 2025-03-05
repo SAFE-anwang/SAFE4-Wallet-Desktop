@@ -415,7 +415,9 @@ export function useTokenAllowance(token: Token, owner: string, spender: string) 
     'allowance',
     [[owner, spender]]
   );
+  console.log("Update token allowance");
   return allowance[0].result ? new TokenAmount(token, JSBI.BigInt(allowance[0].result?.toString())) : undefined;
+  // return undefined;
 }
 
 

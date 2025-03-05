@@ -2,16 +2,15 @@ import { SyncOutlined } from "@ant-design/icons";
 import { TokenAmount } from "@uniswap/sdk";
 import { useWeb3React } from "@web3-react/core";
 import { Alert, Avatar, Button, Col, Divider, Modal, Row, Typography } from "antd"
-import { useEffect, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { getNetworkLogo, NetworkType } from "../../../../assets/logo/NetworkLogo";
 import { Safe4_Network_Config } from "../../../../config";
 import { useIERC20Contract } from "../../../../hooks/useContracts";
-import { useBlockNumber } from "../../../../state/application/hooks";
-import { useSingleContractMultipleData } from "../../../../state/multicall/hooks";
 import { useTokenAllowance, useWalletsActiveAccount } from "../../../../state/wallets/hooks";
 import ERC20TokenLogoComponent from "../../../components/ERC20TokenLogoComponent";
 import TokenLogo from "../../../components/TokenLogo";
+import { ethers } from "ethers";
 
 const { Text, Link } = Typography;
 
@@ -38,13 +37,45 @@ export default ({
       return Safe4_Network_Config.Mainnet.USDT;
     }
   }, [chainId]);
-  const USDT_Contract = useIERC20Contract( tokenUSDT.address , true );
-  const allowance = useTokenAllowance( tokenUSDT , activeAccount , "0xf8b99643fafc79d9404de68e48c4d49a3936f787"  );
+  const USDT_Contract = useIERC20Contract(tokenUSDT.address, true);
+  const callAllowance = useTokenAllowance(tokenUSDT, activeAccount, "0xCA5339ad234F8FaF7848BDe1CB612050d3c3f636");
+
+  const [allowance, setAllowance] = useState<{
+    value?: TokenAmount,
+    needAllowance?: boolean,
+    transactionHash?: string
+  }>({});
+
+  useEffect(() => {
+    if (callAllowance && token == 'USDT') {
+      const _amount = new TokenAmount(tokenUSDT, amount);
+      if (_amount.greaterThan(callAllowance)) {
+        setAllowance({
+          value: callAllowance,
+          needAllowance: true,
+          transactionHash: undefined
+        })
+      }
+    }
+  }, [token, amount, callAllowance]);
+
+  const doApproveMAX = useCallback(() => {
+    if (USDT_Contract) {
+      USDT_Contract.approve("0xCA5339ad234F8FaF7848BDe1CB612050d3c3f636", ethers.constants.MaxUint256)
+        .then((response: any) => {
+          const { hash , data } = response;
+          console.log("Hash :" , hash)
+        })
+    }
+  }, [USDT_Contract]);
+
+
   return <Modal footer={null} destroyOnClose title={t("wallet_crosschain")} open={openCrosschainConfirmModal} onCancel={cancel}>
     <Divider />
-    <Row >
+    <Row>
       <Col span={24}>
-        { allowance?.toExact() }
+        {allowance && <>{JSON.stringify(allowance)}</>}
+        {callAllowance?.toExact()}
         <SyncOutlined style={{ fontSize: "32px" }} />
         <Text style={{ fontSize: "32px", marginLeft: "5px" }} strong>{amount} {token}</Text>
       </Col>
@@ -92,21 +123,25 @@ export default ({
         </Row>
       </Col>
     </Row>
-    <Divider />
-    <Row>
-      <Col span={24}>
-        <Alert type="info" message={<Row>
+    {
+      token == "USDT" && allowance && allowance.needAllowance && <>
+        <Divider />
+        <Row>
           <Col span={24}>
-            <Text>需要先授权跨链合约访问您的USDT资产</Text>
-            <Link style={{ float: "right" }}>点击授权</Link>
+            <Alert type="info" message={<Row>
+              <Col span={24}>
+                <Text>需要先授权跨链合约访问您的USDT资产</Text>
+                <Link onClick={doApproveMAX} style={{ float: "right" }}>点击授权</Link>
+              </Col>
+            </Row>} />
           </Col>
-        </Row>} />
-      </Col>
-    </Row>
+        </Row>
+      </>
+    }
     <Divider />
     <Row>
       <Col span={24}>
-        <Button style={{ float: "right" }} type="primary">广播交易</Button>
+        <Button disabled={token == "USDT" && allowance && allowance.needAllowance} style={{ float: "right" }} type="primary">广播交易</Button>
       </Col>
     </Row>
   </Modal>
