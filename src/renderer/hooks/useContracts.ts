@@ -7,6 +7,8 @@ import { useWalletsActivePrivateKey, useWalletsActiveSigner, useWalletsActiveWal
 import { SysContractABI, SystemContract } from "../constants/SystemContracts";
 import { useWeb3React } from "@web3-react/core";
 import { IERC20_Interface } from "../abis";
+import { Application_Crosschain, Safe4NetworkChainId } from "../config";
+import ApplicationContractAbiConfig, { CrosschainABI } from "../constants/ApplicationContractAbiConfig";
 
 
 export function useContract(address: string | undefined, ABI: any, withSignerIfPossible = true): Contract | null {
@@ -65,4 +67,12 @@ export function useProposalContract( withSignerIfPossible ?: boolean ) : Contrac
 
 export function useSafe3Contract( withSignerIfPossible ?: boolean ) : Contract | null | undefined {
   return useContract( SystemContract.SAFE3 , SysContractABI[SystemContract.SAFE3], withSignerIfPossible);
+}
+
+export function useCrosschainContract( withSignerIfPossible ?: boolean ) : Contract | null | undefined {
+  const { chainId } = useWeb3React();
+  if ( chainId && chainId in Safe4NetworkChainId ){
+    return useContract(  Application_Crosschain[chainId as Safe4NetworkChainId] , ApplicationContractAbiConfig.CrosschainABI, withSignerIfPossible);
+  }
+  return undefined;
 }

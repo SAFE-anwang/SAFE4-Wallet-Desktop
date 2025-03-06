@@ -1,4 +1,4 @@
-import { SyncOutlined } from "@ant-design/icons";
+import { LoadingOutlined, SyncOutlined } from "@ant-design/icons";
 import { TokenAmount } from "@uniswap/sdk";
 import { useWeb3React } from "@web3-react/core";
 import { Alert, Avatar, Button, Col, Divider, Modal, Row, Typography } from "antd"
@@ -38,44 +38,67 @@ export default ({
     }
   }, [chainId]);
   const USDT_Contract = useIERC20Contract(tokenUSDT.address, true);
-  const callAllowance = useTokenAllowance(tokenUSDT, activeAccount, "0xe708c875B107A3aDB30BBCFD9d7f6d17495F5Fcd");
 
-  const allowance = useMemo( () => {
+  const CrossChain_Address = "0xd79ba37f30C0a22D9eb042F6B9537400A4668ff1";
+  const callAllowance = useTokenAllowance(tokenUSDT, activeAccount, CrossChain_Address);
+
+  const allowance = useMemo(() => {
     if (token == 'USDT') {
-      if ( callAllowance ){
+      if (callAllowance) {
         const _amount = new TokenAmount(tokenUSDT, amount);
         return {
-          value : callAllowance,
-          needApprove : _amount.greaterThan(callAllowance),
+          value: callAllowance,
+          needApprove: _amount.greaterThan(callAllowance),
         }
       }
       return {
-        value : undefined,
-        needApprove : true,
+        value: undefined,
+        needApprove: true,
       }
     }
     return {
-      value : undefined,
-      needApprove : false,
-    } 
-  } , [ token , amount , callAllowance] );
+      value: undefined,
+      needApprove: false,
+    }
+  }, [token, amount, callAllowance]);
+
+  const [approve, setApprove] = useState<{
+    hash?: string,
+    executing?: boolean
+  }>({
+    hash: undefined,
+    executing: false
+  });
 
   const doApproveMAX = useCallback(() => {
     if (USDT_Contract) {
-      USDT_Contract.approve("0xe708c875B107A3aDB30BBCFD9d7f6d17495F5Fcd", ethers.constants.MaxUint256)
+      setApprove({
+        hash: undefined,
+        executing: true
+      })
+      USDT_Contract.approve(CrossChain_Address, ethers.constants.MaxUint256)
         .then((response: any) => {
-          const { hash , data } = response;
-          console.log("Hash :" , hash)
+          const { hash, data } = response;
+          setApprove({
+            hash,
+            executing: true
+          })
         })
     }
   }, [USDT_Contract]);
 
+  const doCrosschain = () => {
+    if ( token == 'USDT' ){
+      console.log("Do Crosschain for USDT");
+    } else if ( token == 'SAFE' ){
+      console.log("Do Crosschain for SAFE");
+    }
+  }
 
   return <Modal footer={null} destroyOnClose title={t("wallet_crosschain")} open={openCrosschainConfirmModal} onCancel={cancel}>
     <Divider />
     <Row>
       <Col span={24}>
-        {/* {callAllowance?.toExact()} */}
         <SyncOutlined style={{ fontSize: "32px" }} />
         <Text style={{ fontSize: "32px", marginLeft: "5px" }} strong>{amount} {token}</Text>
       </Col>
@@ -127,14 +150,21 @@ export default ({
       token == "USDT" && allowance && allowance.needApprove && <>
         <Divider />
         <Row>
-          { callAllowance && callAllowance.toExact() }
+          {callAllowance && callAllowance.toExact()}
           <Col span={24}>
             <Alert type="info" message={<Row>
-              { allowance.value?.toExact() }
-              { JSON.stringify(allowance) }
               <Col span={24}>
                 <Text>需要先授权跨链合约访问您的USDT资产</Text>
-                <Link onClick={doApproveMAX} style={{ float: "right" }}>点击授权</Link>
+                <Link disabled={approve.executing} onClick={doApproveMAX} style={{ float: "right" }}>
+                  {
+                    !approve.executing && "点击授权"
+                  }
+                  {
+                    approve.executing && <>
+                      <LoadingOutlined /> 正在授权...
+                    </>
+                  }
+                </Link>
               </Col>
             </Row>} />
           </Col>
@@ -144,7 +174,7 @@ export default ({
     <Divider />
     <Row>
       <Col span={24}>
-        <Button disabled={token == "USDT" && allowance && allowance.needApprove} style={{ float: "right" }} type="primary">广播交易</Button>
+        <Button onClick={doCrosschain} disabled={token == "USDT" && allowance && allowance.needApprove} style={{ float: "right" }} type="primary">广播交易</Button>
       </Col>
     </Row>
   </Modal>

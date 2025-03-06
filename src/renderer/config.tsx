@@ -2,6 +2,16 @@ import { ChainId, Token } from "@uniswap/sdk";
 import { Channels } from "../main/preload";
 export const IPC_CHANNEL: Channels = "ipc-example";
 
+export enum Safe4NetworkChainId {
+  Testnet = 6666666,
+  Mainnet = 6666665
+}
+
+export const Application_Crosschain : { [chainId in Safe4NetworkChainId] : string } = {
+  [ Safe4NetworkChainId.Testnet ] : "0xCab64f959C4FB937Df2Aca96f457B7bc9edcBCb7",
+  [ Safe4NetworkChainId.Mainnet ] : "0xCab64f959C4FB937Df2Aca96f457B7bc9edcBCb7",
+};
+
 export const Safe4_Network_Config = {
   Testnet: {
     chainId: 6666666,
@@ -12,7 +22,6 @@ export const Safe4_Network_Config = {
     Safescan_URL: "https://safe4testnet.anwang.com",
     Safescan_Api: "https://safe4testnet.anwang.com/5005",
     claimFrom: "0x0225302942D5f37dA1d18C1d2DE169C5b007aCAb",
-
 
     // DEFAULT ERC20 Token
     WSAFE: new Token(
