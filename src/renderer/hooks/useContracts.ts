@@ -76,3 +76,4 @@ export function useCrosschainContract( withSignerIfPossible ?: boolean ) : Contr
   }
   return undefined;
 }
+

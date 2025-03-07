@@ -13,6 +13,8 @@ import { ZERO, ONE } from "../../../../utils/CurrentAmountUtils";
 import { CurrencyAmount, TokenAmount } from "@uniswap/sdk";
 import { ethers } from "ethers";
 import CrosschainConfirmModal from "./CrosschainConfirmModal";
+import { useDispatch } from "react-redux";
+import { applicationUpdateWalletTab } from "../../../../state/application/action";
 
 const { Title, Text, Link } = Typography;
 
@@ -25,7 +27,18 @@ export default () => {
   const { chainId } = useWeb3React();
   const activeAccount = useWalletsActiveAccount();
   const activeAccountETHBalance = useETHBalances([activeAccount])[activeAccount];
-  const [openCrosschainConfirmModal , setOpenCrosschainConfirmModal] = useState(false);
+  const [openCrosschainConfirmModal, setOpenCrosschainConfirmModal] = useState(false);
+  const [txHash, setTxHash] = useState<string>();
+  const dispatch = useDispatch();
+
+  const cancel = useCallback(() => {
+    setOpenCrosschainConfirmModal(false);
+    if (txHash) {
+      setTxHash(undefined);
+      dispatch(applicationUpdateWalletTab("history"));
+      navigate("/main/wallet");
+    }
+  }, [txHash]);
 
   const SAFE_SUPPORT_TARGET_CHAIN: NetworkType[] = [
     NetworkType.BSC, NetworkType.ETH, NetworkType.MATIC
@@ -342,7 +355,7 @@ export default () => {
     </div>
     {
       openCrosschainConfirmModal &&
-      <CrosschainConfirmModal {...inputParams} openCrosschainConfirmModal={openCrosschainConfirmModal} cancel={ ()=> setOpenCrosschainConfirmModal(false) } />
+      <CrosschainConfirmModal {...inputParams} openCrosschainConfirmModal={openCrosschainConfirmModal} cancel={cancel} />
     }
   </>
 }

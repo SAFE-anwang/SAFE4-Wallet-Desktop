@@ -2,14 +2,22 @@ import { ChainId, Token } from "@uniswap/sdk";
 import { Channels } from "../main/preload";
 export const IPC_CHANNEL: Channels = "ipc-example";
 
+// Safe4 测试网|主网 网络ID
 export enum Safe4NetworkChainId {
   Testnet = 6666666,
   Mainnet = 6666665
 }
 
+// Safe4 USDT 跨链合约地址
 export const Application_Crosschain : { [chainId in Safe4NetworkChainId] : string } = {
-  [ Safe4NetworkChainId.Testnet ] : "0xCab64f959C4FB937Df2Aca96f457B7bc9edcBCb7",
-  [ Safe4NetworkChainId.Mainnet ] : "0xCab64f959C4FB937Df2Aca96f457B7bc9edcBCb7",
+  [ Safe4NetworkChainId.Testnet ] : "0x268BFd7F4c5F0531294D9172f5DA84f0CC7812C5",
+  [ Safe4NetworkChainId.Mainnet ] : "0x268BFd7F4c5F0531294D9172f5DA84f0CC7812C5",
+};
+
+// Safe4 SAFE 原生币跨链资产池地址
+export const Application_Crosschain_Pool : { [chainId in Safe4NetworkChainId] : string } = {
+  [ Safe4NetworkChainId.Testnet ] : "0x4d7Fa587Ec8e50bd0E9cD837cb4DA796f47218a1",
+  [ Safe4NetworkChainId.Mainnet ] : "0x4d7Fa587Ec8e50bd0E9cD837cb4DA796f47218a1",
 };
 
 export const Safe4_Network_Config = {
@@ -32,7 +40,7 @@ export const Safe4_Network_Config = {
     ),
     USDT: new Token(
       ChainId.MAINNET,
-      "0x5d3869C23930AD86E2b88DD14245238064EA39B6",
+      "0x268BFd7F4c5F0531294D9172f5DA84f0CC7812C5",
       18,
       "USDT", "USDT"
     ),
@@ -59,7 +67,7 @@ export const Safe4_Network_Config = {
     ),
     USDT: new Token(
       ChainId.MAINNET,
-      "0x5d3869C23930AD86E2b88DD14245238064EA39B6",
+      "0x268BFd7F4c5F0531294D9172f5DA84f0CC7812C5",
       18,
       "USDT", "USDT"
     ),
@@ -95,7 +103,6 @@ const Config = {
     Default_Web3_ChainId: Safe4_Network_Config.Testnet.chainId,
     Safescan_URL: "http://127.0.0.1:3000",
     Safescan_Api: "http://127.0.0.1:5005",
-    claimFrom: "",
   },
   "test": {
     Default_Web3_Endpoint: Safe4_Network_Config.Testnet.endpoint,

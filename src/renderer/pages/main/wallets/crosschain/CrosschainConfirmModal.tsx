@@ -1,18 +1,22 @@
-import { LoadingOutlined, SyncOutlined } from "@ant-design/icons";
+import { LoadingOutlined, SendOutlined, SyncOutlined } from "@ant-design/icons";
 import { TokenAmount } from "@uniswap/sdk";
 import { useWeb3React } from "@web3-react/core";
 import { Alert, Avatar, Button, Col, Divider, Modal, Row, Typography } from "antd"
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { getNetworkLogo, NetworkType } from "../../../../assets/logo/NetworkLogo";
-import { Safe4_Network_Config } from "../../../../config";
-import { useIERC20Contract } from "../../../../hooks/useContracts";
-import { useTokenAllowance, useWalletsActiveAccount } from "../../../../state/wallets/hooks";
+import { Application_Crosschain_Pool, Safe4_Network_Config, Safe4NetworkChainId } from "../../../../config";
+import { useCrosschainContract, useIERC20Contract } from "../../../../hooks/useContracts";
+import { useTokenAllowance, useWalletsActiveAccount, useWalletsActiveSigner } from "../../../../state/wallets/hooks";
 import ERC20TokenLogoComponent from "../../../components/ERC20TokenLogoComponent";
 import TokenLogo from "../../../components/TokenLogo";
 import { ethers } from "ethers";
+import { useTransactionAdder } from "../../../../state/transactions/hooks";
+import useTransactionResponseRender from "../../../components/useTransactionResponseRender";
+import { EmptyContract } from "../../../../constants/SystemContracts";
 
 const { Text, Link } = Typography;
+
 
 export default ({
   token, amount, targetNetwork, targetAddress,
@@ -30,6 +34,17 @@ export default ({
   const { t } = useTranslation();
   const { chainId } = useWeb3React();
   const activeAccount = useWalletsActiveAccount();
+  const signer = useWalletsActiveSigner();
+  const addTransaction = useTransactionAdder();
+  const {
+    render,
+    setTransactionResponse,
+    setErr,
+    response,
+    err
+  } = useTransactionResponseRender();
+  const [sending, setSending] = useState<boolean>(false);
+
   const tokenUSDT = useMemo(() => {
     if (chainId && chainId == Safe4_Network_Config.Testnet.chainId) {
       return Safe4_Network_Config.Testnet.USDT;
@@ -37,7 +52,10 @@ export default ({
       return Safe4_Network_Config.Mainnet.USDT;
     }
   }, [chainId]);
+
+
   const USDT_Contract = useIERC20Contract(tokenUSDT.address, true);
+  const CrossChain_Contract = useCrosschainContract();
 
   const CrossChain_Address = "0xd79ba37f30C0a22D9eb042F6B9537400A4668ff1";
   const callAllowance = useTokenAllowance(tokenUSDT, activeAccount, CrossChain_Address);
@@ -87,16 +105,75 @@ export default ({
     }
   }, [USDT_Contract]);
 
-  const doCrosschain = () => {
-    if ( token == 'USDT' ){
-      console.log("Do Crosschain for USDT");
-    } else if ( token == 'SAFE' ){
-      console.log("Do Crosschain for SAFE");
+  const doCrosschain = useCallback(() => {
+    if (token == 'USDT' && USDT_Contract && CrossChain_Contract) {
+      const value = ethers.utils.parseUnits(amount, tokenUSDT.decimals).toString();
+      setSending(true);
+      CrossChain_Contract.eth2safe(value, targetAddress)
+        .then((response: any) => {
+          const { hash, data } = response;
+          setTransactionResponse(response);
+          addTransaction({ to: CrossChain_Contract.address }, response, {
+            call: {
+              from: activeAccount,
+              to: CrossChain_Contract.address,
+              input: data,
+              value: "0",
+              tokenTransfer: {
+                from: activeAccount,
+                to: EmptyContract.EMPTY,
+                value,
+                token: {
+                  address: tokenUSDT.address,
+                  name: "USDT",
+                  symbol: "USDT",
+                  decimals: tokenUSDT.decimals
+                }
+              }
+            }
+          });
+        }).catch((err: any) => {
+          setSending(false);
+          setErr(err)
+        })
+    } else if (token == 'SAFE') {
+      if (chainId && signer) {
+        const poolAddress = Application_Crosschain_Pool[chainId as Safe4NetworkChainId];
+        const prefix = "bsc:";
+        const extraData = ethers.utils.hexlify(ethers.utils.toUtf8Bytes( prefix + targetAddress ));
+        const value = ethers.utils.parseEther(amount);
+        const tx = {
+          to : poolAddress,
+          value,
+          data : extraData
+        }
+        setSending(true);
+        signer.sendTransaction(tx).then(response => {
+          setSending(false);
+          const {
+            hash
+          } = response;
+          setTransactionResponse(response);
+          addTransaction(tx, response, {
+            transfer: {
+              from: activeAccount,
+              to: tx.to,
+              value: tx.value.toString()
+            }
+          });
+        }).catch(err => {
+          setSending(false);
+          setErr(err)
+        })
+      }
     }
-  }
+  }, [USDT_Contract, CrossChain_Contract, chainId , signer])
 
   return <Modal footer={null} destroyOnClose title={t("wallet_crosschain")} open={openCrosschainConfirmModal} onCancel={cancel}>
     <Divider />
+    {
+      render
+    }
     <Row>
       <Col span={24}>
         <SyncOutlined style={{ fontSize: "32px" }} />
@@ -174,7 +251,23 @@ export default ({
     <Divider />
     <Row>
       <Col span={24}>
-        <Button onClick={doCrosschain} disabled={token == "USDT" && allowance && allowance.needApprove} style={{ float: "right" }} type="primary">广播交易</Button>
+        {
+          !sending && !render && <Button icon={<SendOutlined />} onClick={() => {
+            doCrosschain();
+          }} disabled={sending || (allowance && allowance.needApprove)} type="primary" style={{ float: "right" }}>
+            {t("wallet_send_status_broadcast")}
+          </Button>
+        }
+        {
+          sending && !render && <Button loading disabled type="primary" style={{ float: "right" }}>
+            {t("wallet_send_status_sending")}
+          </Button>
+        }
+        {
+          render && <Button type="primary" style={{ float: "right" }}>
+            {t("wallet_send_status_close")}
+          </Button>
+        }
       </Col>
     </Row>
   </Modal>
