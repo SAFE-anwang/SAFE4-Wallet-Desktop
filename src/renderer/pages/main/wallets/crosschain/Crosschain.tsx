@@ -23,22 +23,10 @@ const { Option } = Select;
 export default () => {
 
   const { t } = useTranslation();
-  const navigate = useNavigate();
   const { chainId } = useWeb3React();
   const activeAccount = useWalletsActiveAccount();
   const activeAccountETHBalance = useETHBalances([activeAccount])[activeAccount];
   const [openCrosschainConfirmModal, setOpenCrosschainConfirmModal] = useState(false);
-  const [txHash, setTxHash] = useState<string>();
-  const dispatch = useDispatch();
-
-  const cancel = useCallback(() => {
-    setOpenCrosschainConfirmModal(false);
-    if (txHash) {
-      setTxHash(undefined);
-      dispatch(applicationUpdateWalletTab("history"));
-      navigate("/main/wallet");
-    }
-  }, [txHash]);
 
   const SAFE_SUPPORT_TARGET_CHAIN: NetworkType[] = [
     NetworkType.BSC, NetworkType.ETH, NetworkType.MATIC
@@ -67,6 +55,15 @@ export default () => {
     amount: "0.0",
     targetAddress: activeAccount
   });
+
+  useEffect(() => {
+    setInputParams({
+      token: "SAFE",
+      targetNetwork: NetworkType.BSC,
+      amount: "0.0",
+      targetAddress: activeAccount
+    })
+  }, [activeAccount]);
 
   const selectTokenOptions = useMemo(() => {
     return <Select defaultValue="SAFE" bordered={false} onChange={(selectToken) => {
@@ -355,7 +352,7 @@ export default () => {
     </div>
     {
       openCrosschainConfirmModal &&
-      <CrosschainConfirmModal {...inputParams} openCrosschainConfirmModal={openCrosschainConfirmModal} cancel={cancel} />
+      <CrosschainConfirmModal {...inputParams} openCrosschainConfirmModal={openCrosschainConfirmModal} setOpenCrosschainConfirmModal={setOpenCrosschainConfirmModal} />
     }
   </>
 }

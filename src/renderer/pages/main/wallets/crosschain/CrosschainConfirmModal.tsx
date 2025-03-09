@@ -14,23 +14,26 @@ import { ethers } from "ethers";
 import { useTransactionAdder } from "../../../../state/transactions/hooks";
 import useTransactionResponseRender from "../../../components/useTransactionResponseRender";
 import { EmptyContract } from "../../../../constants/SystemContracts";
+import { useDispatch } from "react-redux";
+import { applicationUpdateWalletTab } from "../../../../state/application/action";
+import { useNavigate } from "react-router-dom";
 
 const { Text, Link } = Typography;
 
 
 export default ({
   token, amount, targetNetwork, targetAddress,
-  openCrosschainConfirmModal,
-  cancel
+  openCrosschainConfirmModal,setOpenCrosschainConfirmModal
 }: {
   token: string,
   amount: string,
   targetNetwork: NetworkType,
   targetAddress: string,
   openCrosschainConfirmModal: boolean,
-  cancel: () => void
+  setOpenCrosschainConfirmModal: (openCrosschainConfirmModal: boolean) => void,
 }) => {
-
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
   const { t } = useTranslation();
   const { chainId } = useWeb3React();
   const activeAccount = useWalletsActiveAccount();
@@ -53,12 +56,21 @@ export default ({
     }
   }, [chainId]);
 
-
   const USDT_Contract = useIERC20Contract(tokenUSDT.address, true);
   const CrossChain_Contract = useCrosschainContract();
 
   const CrossChain_Address = "0xd79ba37f30C0a22D9eb042F6B9537400A4668ff1";
   const callAllowance = useTokenAllowance(tokenUSDT, activeAccount, CrossChain_Address);
+
+  const [txHash, setTxHash] = useState<string>();
+  const cancel = useCallback( () => {
+    setOpenCrosschainConfirmModal(false);
+    if (txHash) {
+      setTxHash(undefined);
+      dispatch(applicationUpdateWalletTab("history"));
+      navigate("/main/wallet");
+    }
+  } , [txHash] )
 
   const allowance = useMemo(() => {
     if (token == 'USDT') {
@@ -161,6 +173,7 @@ export default ({
               value: tx.value.toString()
             }
           });
+          setTxHash(hash);
         }).catch(err => {
           setSending(false);
           setErr(err)
@@ -264,7 +277,7 @@ export default ({
           </Button>
         }
         {
-          render && <Button type="primary" style={{ float: "right" }}>
+          render && <Button onClick={cancel} type="primary" style={{ float: "right" }}>
             {t("wallet_send_status_close")}
           </Button>
         }
