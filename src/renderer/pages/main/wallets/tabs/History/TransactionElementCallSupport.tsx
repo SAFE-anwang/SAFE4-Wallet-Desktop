@@ -17,6 +17,7 @@ import TransactionElementCallSNChange from "./TransactionElementCallSNChange";
 import TransactionElementCallMNChange from "./TransactionElementCallMNChange";
 import TransactionElementCallAMAddLockDay from "./TransactionElementCallAMAddLockDay";
 import { useTranslation } from "react-i18next";
+import { Application_Crosschain_Pool, Safe4NetworkChainId } from "../../../../../config";
 
 export default ({ transaction, setClickTransaction, support }: {
   transaction: TransactionDetails,
@@ -44,11 +45,17 @@ export default ({ transaction, setClickTransaction, support }: {
         return CallProposalFunsRender(support.supportFuncName, transaction, setClickTransaction, support)
       case SystemContract.SAFE3:
         return CallSafe3FunsRender(support.supportFuncName, transaction, setClickTransaction, support)
+      case Application_Crosschain_Pool[Safe4NetworkChainId.Testnet] || Application_Crosschain_Pool[Safe4NetworkChainId.Mainnet]:
+        return CallCrosschainPoolFunsRender(support.supportFuncName, transaction, setClickTransaction, support);
       default:
         return <>No support Contract-Function-Render</>
     }
     return <></>
   }, [transaction, setClickTransaction, support]);
+
+  const CallCrosschainPoolFunsRender = (funcName:string,transaction: TransactionDetails, setClickTransaction: (transaction: TransactionDetails) => void, support: any) => {
+    return <>{JSON.stringify(support)}</>
+  }
 
   const CallProposalFunsRender = (funcName: string, transaction: TransactionDetails, setClickTransaction: (transaction: TransactionDetails) => void, support: any) => {
     switch (funcName) {
