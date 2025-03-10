@@ -78,7 +78,6 @@ export default ({ transaction, setClickTransaction, support }: {
         </>
       }
     </List.Item>
-
   </>
 
 }

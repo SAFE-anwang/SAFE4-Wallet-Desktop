@@ -1,7 +1,8 @@
 import { FunctionFragment, Interface } from "ethers/lib/utils";
 import { SysContractABI, SystemContract } from "./SystemContracts";
-import { Application_Crosschain_Pool, Safe4NetworkChainId } from "../config";
+import { Application_Crosschain, Application_Crosschain_Pool, Safe4NetworkChainId } from "../config";
 import { ethers } from "ethers";
+import ApplicationContractAbiConfig from "./ApplicationContractAbiConfig";
 
 
 export enum SupportAccountManagerFunctions {
@@ -42,7 +43,10 @@ export enum SupportSafe3Functions {
   BatchRedeemAvailable = "batchRedeemAvailable",
   BatchRedeemLocked = "batchRedeemLocked",
   BatchRedeemMasterNode = "batchRedeemMasterNode",// function batchRedeemMasterNode(bytes[] memory _pubkeys, bytes[] memory _sigs, string[] memory _enodes)
+}
 
+export enum SupportCrosschainFunctions {
+  Safe2Eth = "eth2safe", // eth2safe(uint256 _value, string memory _safe_dst_address)
 }
 
 function decodeProposalFunctionData(IContract: Interface, fragment: FunctionFragment, input: string): {
@@ -299,14 +303,37 @@ function decodeSafe3FunctionData(
   } : undefined;
 }
 
-function decodeCrosschainPoolFunctionData(input: string){
+function decodeCrosschainPoolFunctionData(input: string) {
   const decodeData = ethers.utils.toUtf8String(input);
-  const supportFuncName = decodeData.substring(0 , decodeData.indexOf(":"));
-  const targetAddress = decodeData.substring( decodeData.indexOf(":") + 1 );
+  const supportFuncName = decodeData.substring(0, decodeData.indexOf(":"));
+  const targetAddress = decodeData.substring(decodeData.indexOf(":") + 1);
   return {
-    supportFuncName : supportFuncName,
-    inputDecodeResult : targetAddress
+    supportFuncName: supportFuncName,
+    inputDecodeResult: targetAddress
   };
+}
+
+function decodeCrosschainFunctionData(input: string) {
+  const abi = ApplicationContractAbiConfig.CrosschainABI;
+  const IContract = new Interface(abi);
+  const methodId = input.substring(0, 10);
+  try {
+    const fragment = IContract.getFunction(methodId);
+    let formatDecodeResult = undefined;
+    if (fragment) {
+      switch (fragment.name) {
+        case SupportCrosschainFunctions.Safe2Eth:
+          formatDecodeResult = IContract.decodeFunctionData(fragment, input);
+          break;
+      }
+    }
+    return formatDecodeResult ? {
+      supportFuncName: fragment.name,
+      inputDecodeResult: formatDecodeResult
+    } : undefined;
+  } catch (err) {
+    return undefined;
+  }
 }
 
 export default (address: string | undefined, input: string | undefined): {
@@ -316,10 +343,15 @@ export default (address: string | undefined, input: string | undefined): {
   if (!input) {
     return undefined;
   }
-  if ( address == Application_Crosschain_Pool[Safe4NetworkChainId.Testnet]
-        || address == Application_Crosschain_Pool[Safe4NetworkChainId.Mainnet]
-  ){
+  if (address == Application_Crosschain_Pool[Safe4NetworkChainId.Testnet]
+    || address == Application_Crosschain_Pool[Safe4NetworkChainId.Mainnet]
+  ) {
     return decodeCrosschainPoolFunctionData(input);
+  }
+  if (address == Application_Crosschain[Safe4NetworkChainId.Testnet]
+    || address == Application_Crosschain[Safe4NetworkChainId.Mainnet]
+  ) {
+    return decodeCrosschainFunctionData(input);
   }
 
   if (!Object.values(SystemContract).some(addr => addr == address)) {

@@ -69,7 +69,7 @@ export default ({ transaction, setClickTransaction }: {
   }, [transaction, status])
 
   return <>
-    <Text>{JSON.stringify(transaction)}</Text>
+    {/* <Text>{JSON.stringify(transaction)}</Text> */}
     {
       support && <TransactionElementCallSupport transaction={transaction} setClickTransaction={setClickTransaction} support={support} />
     }

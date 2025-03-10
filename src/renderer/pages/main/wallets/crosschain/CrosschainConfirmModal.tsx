@@ -4,7 +4,7 @@ import { useWeb3React } from "@web3-react/core";
 import { Alert, Avatar, Button, Col, Divider, Modal, Row, Typography } from "antd"
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { getNetworkLogo, NetworkType } from "../../../../assets/logo/NetworkLogo";
+import { getNetworkLogo, NetworkType, outputNetworkCoin } from "../../../../assets/logo/NetworkLogo";
 import { Application_Crosschain_Pool, Safe4NetworkChainId, USDT } from "../../../../config";
 import { useCrosschainContract, useIERC20Contract } from "../../../../hooks/useContracts";
 import { useTokenAllowance, useWalletsActiveAccount, useWalletsActiveSigner } from "../../../../state/wallets/hooks";
@@ -17,6 +17,7 @@ import { EmptyContract } from "../../../../constants/SystemContracts";
 import { useDispatch } from "react-redux";
 import { applicationUpdateWalletTab } from "../../../../state/application/action";
 import { useNavigate } from "react-router-dom";
+import { getNetwork } from "@ethersproject/providers";
 
 const { Text, Link } = Typography;
 
@@ -143,7 +144,7 @@ export default ({
     } else if (token == 'SAFE') {
       if (chainId && signer) {
         const poolAddress = Application_Crosschain_Pool[chainId as Safe4NetworkChainId];
-        const prefix = "bsc:";
+        const prefix = outputNetworkCoin(targetNetwork) + ":";
         const extraData = ethers.utils.hexlify(ethers.utils.toUtf8Bytes(prefix + targetAddress));
         const value = ethers.utils.parseEther(amount);
         const tx = {
@@ -155,13 +156,14 @@ export default ({
         signer.sendTransaction(tx).then(response => {
           setSending(false);
           const {
-            hash
+            data , hash
           } = response;
           setTransactionResponse(response);
           addTransaction(tx, response, {
-            transfer: {
+            call: {
               from: activeAccount,
               to: tx.to,
+              input: data,
               value: tx.value.toString()
             }
           });

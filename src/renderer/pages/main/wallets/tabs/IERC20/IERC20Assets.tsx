@@ -6,12 +6,10 @@ import { useTokenBalances, useWalletsActiveAccount } from "../../../../../state/
 import TokenSendModal from "./TokenSendModal";
 import { useTokens } from "../../../../../state/transactions/hooks";
 import TokenAddModal from "./TokenAddModal";
-import { ERC20_LOGO, SAFE_LOGO } from "../../../../../assets/logo/AssetsLogo";
-import AddressView from "../../../../components/AddressView";
 import AddressComponent from "../../../../components/AddressComponent";
 import { useWeb3React } from "@web3-react/core";
 import { useTranslation } from "react-i18next";
-import { Safe4_Network_Config } from "../../../../../config";
+import { Safe4NetworkChainId, Safe4_Network_Config, USDT, WSAFE } from "../../../../../config";
 import ERC20TokenLogoComponent from "../../../../components/ERC20TokenLogoComponent";
 const { Text } = Typography;
 
@@ -28,20 +26,17 @@ export default () => {
   const tokenAmounts = useTokenBalances(activeAccount, erc20Tokens);
 
   useEffect(() => {
-    if (tokens) {
-      const defaultTokenAddresses : { [ address : string ] : Token } = {};
-      if ( chainId == Safe4_Network_Config.Testnet.chainId ){
-        defaultTokenAddresses[ Safe4_Network_Config.Testnet.WSAFE.address ] = Safe4_Network_Config.Testnet.WSAFE;
-        defaultTokenAddresses[ Safe4_Network_Config.Testnet.USDT.address ] = Safe4_Network_Config.Testnet.USDT;
-      } else {
+    if (tokens && chainId) {
+      const defaultTokenAddresses: { [address: string]: Token } = {};
+      defaultTokenAddresses[USDT[chainId as Safe4NetworkChainId].address] = USDT[chainId as Safe4NetworkChainId];
+      defaultTokenAddresses[WSAFE[chainId as Safe4NetworkChainId].address] = WSAFE[chainId as Safe4NetworkChainId];
 
-      }
-      const defaultTokens = Object.keys( defaultTokenAddresses ).map( address => defaultTokenAddresses[address]  );
+      const defaultTokens = Object.keys(defaultTokenAddresses).map(address => defaultTokenAddresses[address]);
       const erc20Tokens = Object.keys(tokens)
         .filter(address => {
           return tokens[address].chainId == chainId
-          && tokens[address].name != "Safeswap V2"
-          && defaultTokenAddresses[address] == undefined
+            && tokens[address].name != "Safeswap V2"
+            && defaultTokenAddresses[address] == undefined
         })
         .map(address => {
           const { name, symbol, decimals } = tokens[address];
@@ -53,7 +48,7 @@ export default () => {
           return token;
         });
 
-      setERC20Tokens( defaultTokens.concat(erc20Tokens) );
+      setERC20Tokens(defaultTokens.concat(erc20Tokens));
     }
   }, [tokens, chainId]);
 

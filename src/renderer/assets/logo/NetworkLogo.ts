@@ -21,6 +21,29 @@ export enum NetworkType {
   SOL = "Solana"
 }
 
+export enum NetworkCoinType {
+  BSC = "bsc",
+  ETH = "eth",
+  MATIC = "matic",
+  TRX = "trx",
+  SOL = "sol",
+}
+
+export function outputNetworkCoin(networkType: NetworkType) {
+  switch (networkType) {
+    case NetworkType.BSC:
+      return NetworkCoinType.BSC;
+    case NetworkType.ETH:
+      return NetworkCoinType.ETH;
+    case NetworkType.MATIC:
+      return NetworkCoinType.MATIC;
+    case NetworkType.TRX:
+      return NetworkCoinType.TRX;
+    case NetworkType.SOL:
+      return NetworkCoinType.SOL;
+  }
+}
+
 export function getNetworkLogo(networkType: NetworkType) {
   switch (networkType) {
     case NetworkType.BSC:
@@ -33,6 +56,36 @@ export function getNetworkLogo(networkType: NetworkType) {
       return TRX_NETWORK_LOGO;
     case NetworkType.SOL:
       return SOL_NETWORK_LOGO;
+  }
+}
+
+export function getNetworkLogoByCoin(networkType: NetworkCoinType) {
+  switch (networkType) {
+    case NetworkCoinType.BSC:
+      return BSC_NETWORK_LOGO;
+    case NetworkCoinType.ETH:
+      return ETH_NETWORK_LOGO;
+    case NetworkCoinType.MATIC:
+      return MATIC_NETWORK_LOGO;
+    case NetworkCoinType.TRX:
+      return TRX_NETWORK_LOGO;
+    case NetworkCoinType.SOL:
+      return SOL_NETWORK_LOGO;
+  }
+}
+
+export function getNetworkNameByCoin(networkType: NetworkCoinType) {
+  switch (networkType) {
+    case NetworkCoinType.BSC:
+      return NetworkType.BSC;
+    case NetworkCoinType.ETH:
+      return NetworkType.ETH;
+    case NetworkCoinType.MATIC:
+      return NetworkType.MATIC;
+    case NetworkCoinType.TRX:
+      return NetworkType.TRX;
+    case NetworkCoinType.SOL:
+      return NetworkType.SOL;
   }
 }
 
