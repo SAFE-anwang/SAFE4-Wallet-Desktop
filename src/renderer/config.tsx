@@ -9,15 +9,26 @@ export enum Safe4NetworkChainId {
 }
 
 // Safe4 USDT 跨链合约地址
-export const Application_Crosschain : { [chainId in Safe4NetworkChainId] : string } = {
-  [ Safe4NetworkChainId.Testnet ] : "0x268BFd7F4c5F0531294D9172f5DA84f0CC7812C5",
-  [ Safe4NetworkChainId.Mainnet ] : "0x268BFd7F4c5F0531294D9172f5DA84f0CC7812C5",
+export const Application_Crosschain: { [chainId in Safe4NetworkChainId]: string } = {
+  [Safe4NetworkChainId.Testnet]: "0x268BFd7F4c5F0531294D9172f5DA84f0CC7812C5",
+  [Safe4NetworkChainId.Mainnet]: "0x268BFd7F4c5F0531294D9172f5DA84f0CC7812C5",
 };
 
 // Safe4 SAFE 原生币跨链资产池地址
-export const Application_Crosschain_Pool : { [chainId in Safe4NetworkChainId] : string } = {
-  [ Safe4NetworkChainId.Testnet ] : "0x4d7Fa587Ec8e50bd0E9cD837cb4DA796f47218a1",
-  [ Safe4NetworkChainId.Mainnet ] : "0x4d7Fa587Ec8e50bd0E9cD837cb4DA796f47218a1",
+export const Application_Crosschain_Pool: { [chainId in Safe4NetworkChainId]: string } = {
+  [Safe4NetworkChainId.Testnet]: "0x4d7Fa587Ec8e50bd0E9cD837cb4DA796f47218a1",
+  [Safe4NetworkChainId.Mainnet]: "0x4d7Fa587Ec8e50bd0E9cD837cb4DA796f47218a1",
+};
+
+// WSAFE 合约地址
+export const WSAFE: {[chainId in Safe4NetworkChainId]:Token} = {
+  [Safe4NetworkChainId.Testnet]: new Token( ChainId.MAINNET,"0xFbB4864b5EF17F28Da7e1bE993121cABd71834C4",18,"WSAFE", "WSAFE"),
+  [Safe4NetworkChainId.Mainnet]: new Token( ChainId.MAINNET,"0xFbB4864b5EF17F28Da7e1bE993121cABd71834C4",18,"WSAFE", "WSAFE"),
+};
+// USDT 合约地址
+export const USDT: { [chainId in Safe4NetworkChainId]:Token } = {
+  [Safe4NetworkChainId.Testnet]: new Token( ChainId.MAINNET,"0x268BFd7F4c5F0531294D9172f5DA84f0CC7812C5",18,"USDT", "USDT"),
+  [Safe4NetworkChainId.Mainnet]: new Token( ChainId.MAINNET,"0x268BFd7F4c5F0531294D9172f5DA84f0CC7812C5",18,"USDT", "USDT"),
 };
 
 export const Safe4_Network_Config = {
@@ -30,21 +41,6 @@ export const Safe4_Network_Config = {
     Safescan_URL: "https://safe4testnet.anwang.com",
     Safescan_Api: "https://safe4testnet.anwang.com/5005",
     claimFrom: "0x0225302942D5f37dA1d18C1d2DE169C5b007aCAb",
-
-    // DEFAULT ERC20 Token
-    WSAFE: new Token(
-      ChainId.MAINNET,
-      "0xFbB4864b5EF17F28Da7e1bE993121cABd71834C4",
-      18,
-      "WSAFE", "WSAFE"
-    ),
-    USDT: new Token(
-      ChainId.MAINNET,
-      "0x268BFd7F4c5F0531294D9172f5DA84f0CC7812C5",
-      18,
-      "USDT", "USDT"
-    ),
-
   },
   Mainnet: {
     // chainId: 6666665,
@@ -57,20 +53,6 @@ export const Safe4_Network_Config = {
     Safescan_URL: "https://safe4testnet.anwang.com",
     Safescan_Api: "https://safe4testnet.anwang.com/5005",
     claimFrom: "0x0225302942D5f37dA1d18C1d2DE169C5b007aCAb",
-
-    // DEFAULT ERC20 Token
-    WSAFE: new Token(
-      ChainId.MAINNET,
-      "0xFbB4864b5EF17F28Da7e1bE993121cABd71834C4",
-      18,
-      "WSAFE", "WSAFE"
-    ),
-    USDT: new Token(
-      ChainId.MAINNET,
-      "0x268BFd7F4c5F0531294D9172f5DA84f0CC7812C5",
-      18,
-      "USDT", "USDT"
-    ),
   }
 }
 

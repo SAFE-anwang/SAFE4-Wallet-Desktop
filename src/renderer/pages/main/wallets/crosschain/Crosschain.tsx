@@ -1,11 +1,10 @@
 import { ArrowDownOutlined, DownOutlined, LeftOutlined, UserOutlined } from "@ant-design/icons";
 import { Alert, Avatar, Button, Card, Col, Divider, Dropdown, Input, MenuProps, message, Row, Select, Space, Typography } from "antd";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router-dom";
 import ERC20TokenLogoComponent from "../../../components/ERC20TokenLogoComponent";
 import { useWeb3React } from "@web3-react/core";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Safe4_Network_Config } from "../../../../config";
+import { Safe4NetworkChainId, USDT } from "../../../../config";
 import { useETHBalances, useTokenBalances, useWalletsActiveAccount } from "../../../../state/wallets/hooks";
 import TokenLogo from "../../../components/TokenLogo";
 import { getNetworkLogo, NetworkType } from "../../../../assets/logo/NetworkLogo";
@@ -13,8 +12,6 @@ import { ZERO, ONE } from "../../../../utils/CurrentAmountUtils";
 import { CurrencyAmount, TokenAmount } from "@uniswap/sdk";
 import { ethers } from "ethers";
 import CrosschainConfirmModal from "./CrosschainConfirmModal";
-import { useDispatch } from "react-redux";
-import { applicationUpdateWalletTab } from "../../../../state/application/action";
 
 const { Title, Text, Link } = Typography;
 
@@ -34,15 +31,12 @@ export default () => {
   const USDT_SUPPORT_TARGET_CHAIN: NetworkType[] = [
     NetworkType.BSC, NetworkType.ETH, NetworkType.SOL, NetworkType.TRX
   ];
-
-  const tokenUSDT = useMemo(() => {
-    if (chainId && chainId == Safe4_Network_Config.Testnet.chainId) {
-      return Safe4_Network_Config.Testnet.USDT;
-    } else {
-      return Safe4_Network_Config.Mainnet.USDT;
+  const Token_USDT = useMemo(() => {
+    if (chainId && chainId in Safe4NetworkChainId) {
+      return USDT[chainId as Safe4NetworkChainId];
     }
   }, [chainId]);
-  const tokenUSDTBalance = useTokenBalances(activeAccount, [tokenUSDT])[tokenUSDT.address];
+  const tokenUSDTBalance = Token_USDT && useTokenBalances(activeAccount, [Token_USDT])[Token_USDT.address];
 
   const [inputParams, setInputParams] = useState<{
     token: string,
@@ -79,14 +73,14 @@ export default () => {
         <Text style={{ marginLeft: "5px" }} strong>SAFE</Text>
       </Option>
       {
-        chainId &&
-        <Option key={tokenUSDT.address} value={tokenUSDT.name}>
-          <ERC20TokenLogoComponent style={{ width: "30px", height: "30px" }} chainId={chainId} address={tokenUSDT.address} />
-          <Text style={{ marginLeft: "5px" }} strong>{tokenUSDT.name}</Text>
+        chainId && Token_USDT &&
+        <Option key={Token_USDT.address} value={Token_USDT.name}>
+          <ERC20TokenLogoComponent style={{ width: "30px", height: "30px" }} chainId={chainId} address={Token_USDT.address} />
+          <Text style={{ marginLeft: "5px" }} strong>{Token_USDT.name}</Text>
         </Option>
       }
     </Select>
-  }, [chainId, tokenUSDT]);
+  }, [chainId, Token_USDT]);
 
   const targetNetworkSelect = useMemo(() => {
     const token = inputParams.token;
@@ -168,11 +162,8 @@ export default () => {
           let _amount = undefined;
           if (token == 'SAFE') {
             _amount = CurrencyAmount.ether(ethers.utils.parseEther(amount).toBigInt());
-          } else if (token == 'USDT') {
-            const USDT_TOKEN = chainId == Safe4_Network_Config.Mainnet.chainId ?
-              Safe4_Network_Config.Mainnet.USDT
-              : Safe4_Network_Config.Testnet.USDT
-            _amount = new TokenAmount(USDT_TOKEN, ethers.utils.parseUnits(amount, USDT_TOKEN.decimals).toBigInt());
+          } else if (token == 'USDT' && Token_USDT) {
+            _amount = new TokenAmount(Token_USDT, ethers.utils.parseUnits(amount, Token_USDT.decimals).toBigInt());
           }
           if (_amount) {
             if (_amount.greaterThan(maxBalance)) {
@@ -200,7 +191,7 @@ export default () => {
     }
     console.log("Go Next For Crosschain.", inputParams)
     setOpenCrosschainConfirmModal(true);
-  }, [inputParams, chainId, maxBalance, inputErrors])
+  }, [inputParams, chainId, maxBalance, inputErrors, Token_USDT])
 
   return <>
 
@@ -266,6 +257,7 @@ export default () => {
                   </>} />
                 </Col>
               }
+
             </Row>
             <Row>
               <Col span={24}>

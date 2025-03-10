@@ -1,5 +1,7 @@
 import { FunctionFragment, Interface } from "ethers/lib/utils";
 import { SysContractABI, SystemContract } from "./SystemContracts";
+import { Application_Crosschain_Pool, Safe4NetworkChainId } from "../config";
+import { ethers } from "ethers";
 
 
 export enum SupportAccountManagerFunctions {
@@ -297,6 +299,16 @@ function decodeSafe3FunctionData(
   } : undefined;
 }
 
+function decodeCrosschainPoolFunctionData(input: string){
+  const decodeData = ethers.utils.toUtf8String(input);
+  const supportFuncName = decodeData.substring(0 , decodeData.indexOf(":"));
+  const targetAddress = decodeData.substring( decodeData.indexOf(":") + 1 );
+  return {
+    supportFuncName : supportFuncName,
+    inputDecodeResult : targetAddress
+  };
+}
+
 export default (address: string | undefined, input: string | undefined): {
   supportFuncName: string,
   inputDecodeResult: any
@@ -304,6 +316,12 @@ export default (address: string | undefined, input: string | undefined): {
   if (!input) {
     return undefined;
   }
+  if ( address == Application_Crosschain_Pool[Safe4NetworkChainId.Testnet]
+        || address == Application_Crosschain_Pool[Safe4NetworkChainId.Mainnet]
+  ){
+    return decodeCrosschainPoolFunctionData(input);
+  }
+
   if (!Object.values(SystemContract).some(addr => addr == address)) {
     return undefined;
   }

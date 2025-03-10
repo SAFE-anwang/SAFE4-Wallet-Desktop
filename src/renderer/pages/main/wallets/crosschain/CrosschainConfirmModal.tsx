@@ -5,7 +5,7 @@ import { Alert, Avatar, Button, Col, Divider, Modal, Row, Typography } from "ant
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { getNetworkLogo, NetworkType } from "../../../../assets/logo/NetworkLogo";
-import { Application_Crosschain_Pool, Safe4_Network_Config, Safe4NetworkChainId } from "../../../../config";
+import { Application_Crosschain_Pool, Safe4NetworkChainId, USDT } from "../../../../config";
 import { useCrosschainContract, useIERC20Contract } from "../../../../hooks/useContracts";
 import { useTokenAllowance, useWalletsActiveAccount, useWalletsActiveSigner } from "../../../../state/wallets/hooks";
 import ERC20TokenLogoComponent from "../../../components/ERC20TokenLogoComponent";
@@ -23,7 +23,7 @@ const { Text, Link } = Typography;
 
 export default ({
   token, amount, targetNetwork, targetAddress,
-  openCrosschainConfirmModal,setOpenCrosschainConfirmModal
+  openCrosschainConfirmModal, setOpenCrosschainConfirmModal
 }: {
   token: string,
   amount: string,
@@ -47,35 +47,26 @@ export default ({
     err
   } = useTransactionResponseRender();
   const [sending, setSending] = useState<boolean>(false);
-
-  const tokenUSDT = useMemo(() => {
-    if (chainId && chainId == Safe4_Network_Config.Testnet.chainId) {
-      return Safe4_Network_Config.Testnet.USDT;
-    } else {
-      return Safe4_Network_Config.Mainnet.USDT;
-    }
-  }, [chainId]);
-
-  const USDT_Contract = useIERC20Contract(tokenUSDT.address, true);
+  const Token_USDT = (chainId && chainId in Safe4NetworkChainId) && USDT[chainId as Safe4NetworkChainId];
+  const Contract_USDT = Token_USDT && useIERC20Contract(Token_USDT.address, true);
   const CrossChain_Contract = useCrosschainContract();
-
-  const CrossChain_Address = "0xd79ba37f30C0a22D9eb042F6B9537400A4668ff1";
-  const callAllowance = useTokenAllowance(tokenUSDT, activeAccount, CrossChain_Address);
+  const callAllowance = Token_USDT && CrossChain_Contract ? useTokenAllowance(Token_USDT, activeAccount, CrossChain_Contract?.address) : undefined;
 
   const [txHash, setTxHash] = useState<string>();
-  const cancel = useCallback( () => {
+  const cancel = useCallback(() => {
     setOpenCrosschainConfirmModal(false);
     if (txHash) {
+
       setTxHash(undefined);
       dispatch(applicationUpdateWalletTab("history"));
       navigate("/main/wallet");
     }
-  } , [txHash] )
+  }, [txHash])
 
   const allowance = useMemo(() => {
-    if (token == 'USDT') {
+    if (Token_USDT && token == Token_USDT?.name) {
       if (callAllowance) {
-        const _amount = new TokenAmount(tokenUSDT, amount);
+        const _amount = new TokenAmount(Token_USDT, amount);
         return {
           value: callAllowance,
           needApprove: _amount.greaterThan(callAllowance),
@@ -90,7 +81,7 @@ export default ({
       value: undefined,
       needApprove: false,
     }
-  }, [token, amount, callAllowance]);
+  }, [token, amount, Token_USDT, callAllowance]);
 
   const [approve, setApprove] = useState<{
     hash?: string,
@@ -101,12 +92,12 @@ export default ({
   });
 
   const doApproveMAX = useCallback(() => {
-    if (USDT_Contract) {
+    if (Contract_USDT && CrossChain_Contract) {
       setApprove({
         hash: undefined,
         executing: true
       })
-      USDT_Contract.approve(CrossChain_Address, ethers.constants.MaxUint256)
+      Contract_USDT.approve(CrossChain_Contract.address, ethers.constants.MaxUint256)
         .then((response: any) => {
           const { hash, data } = response;
           setApprove({
@@ -115,11 +106,11 @@ export default ({
           })
         })
     }
-  }, [USDT_Contract]);
+  }, [Contract_USDT, CrossChain_Contract]);
 
   const doCrosschain = useCallback(() => {
-    if (token == 'USDT' && USDT_Contract && CrossChain_Contract) {
-      const value = ethers.utils.parseUnits(amount, tokenUSDT.decimals).toString();
+    if (CrossChain_Contract && Token_USDT && Token_USDT.name == token) {
+      const value = ethers.utils.parseUnits(amount, Token_USDT.decimals).toString();
       setSending(true);
       CrossChain_Contract.eth2safe(value, targetAddress)
         .then((response: any) => {
@@ -136,14 +127,15 @@ export default ({
                 to: EmptyContract.EMPTY,
                 value,
                 token: {
-                  address: tokenUSDT.address,
-                  name: "USDT",
-                  symbol: "USDT",
-                  decimals: tokenUSDT.decimals
+                  address: Token_USDT.address,
+                  name: Token_USDT.name ? Token_USDT.name : "",
+                  symbol: Token_USDT.symbol ? Token_USDT.symbol : "",
+                  decimals: Token_USDT.decimals
                 }
               }
             }
           });
+          setTxHash(hash);
         }).catch((err: any) => {
           setSending(false);
           setErr(err)
@@ -152,12 +144,12 @@ export default ({
       if (chainId && signer) {
         const poolAddress = Application_Crosschain_Pool[chainId as Safe4NetworkChainId];
         const prefix = "bsc:";
-        const extraData = ethers.utils.hexlify(ethers.utils.toUtf8Bytes( prefix + targetAddress ));
+        const extraData = ethers.utils.hexlify(ethers.utils.toUtf8Bytes(prefix + targetAddress));
         const value = ethers.utils.parseEther(amount);
         const tx = {
-          to : poolAddress,
+          to: poolAddress,
           value,
-          data : extraData
+          data: extraData
         }
         setSending(true);
         signer.sendTransaction(tx).then(response => {
@@ -180,7 +172,7 @@ export default ({
         })
       }
     }
-  }, [USDT_Contract, CrossChain_Contract, chainId , signer])
+  }, [Token_USDT, CrossChain_Contract, chainId, signer])
 
   return <Modal footer={null} destroyOnClose title={t("wallet_crosschain")} open={openCrosschainConfirmModal} onCancel={cancel}>
     <Divider />
@@ -202,8 +194,8 @@ export default ({
         <Row>
           <Col span={3} style={{ paddingTop: "5px" }}>
             {
-              chainId && token == "USDT" &&
-              <ERC20TokenLogoComponent style={{ width: "40px", height: "40px" }} chainId={chainId} address={tokenUSDT.address} />
+              chainId && Token_USDT && token == Token_USDT?.name && Token_USDT &&
+              <ERC20TokenLogoComponent style={{ width: "40px", height: "40px" }} chainId={chainId} address={Token_USDT.address} />
             }
             {
               chainId && token == "SAFE" &&

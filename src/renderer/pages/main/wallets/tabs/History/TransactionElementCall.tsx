@@ -39,7 +39,6 @@ export default ({ transaction, setClickTransaction }: {
     }
   }, [transaction]);
   const support = DecodeSupportFunction(call?.to, input);
-
   // 判断是否为调用 ERC20.transfer(to,uint256)
   const isTokenTransfer = useMemo(() => {
     if (call?.tokenTransfer) {
@@ -70,7 +69,7 @@ export default ({ transaction, setClickTransaction }: {
   }, [transaction, status])
 
   return <>
-    {/* <Text>{JSON.stringify(transaction)}</Text> */}
+    <Text>{JSON.stringify(transaction)}</Text>
     {
       support && <TransactionElementCallSupport transaction={transaction} setClickTransaction={setClickTransaction} support={support} />
     }
