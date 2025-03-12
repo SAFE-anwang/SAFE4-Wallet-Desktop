@@ -16,8 +16,8 @@ export const Application_Crosschain: { [chainId in Safe4NetworkChainId]: string 
 
 // Safe4 SAFE 原生币跨链资产池地址
 export const Application_Crosschain_Pool: { [chainId in Safe4NetworkChainId]: string } = {
-  [Safe4NetworkChainId.Testnet]: "0x4d7Fa587Ec8e50bd0E9cD837cb4DA796f47218a1",
-  [Safe4NetworkChainId.Mainnet]: "0x4d7Fa587Ec8e50bd0E9cD837cb4DA796f47218a1",
+  [Safe4NetworkChainId.Testnet]: "0x7756B490d4Ce394bB6FBA5559C10a8eDc7b102Fc",
+  [Safe4NetworkChainId.Mainnet]: "0x7756B490d4Ce394bB6FBA5559C10a8eDc7b102Fc",
 };
 
 // WSAFE 合约地址

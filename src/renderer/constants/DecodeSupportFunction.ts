@@ -306,10 +306,10 @@ function decodeSafe3FunctionData(
 function decodeCrosschainPoolFunctionData(input: string) {
   const decodeData = ethers.utils.toUtf8String(input);
   const supportFuncName = decodeData.substring(0, decodeData.indexOf(":"));
-  const targetAddress = decodeData.substring(decodeData.indexOf(":") + 1);
+  const data = decodeData.substring(decodeData.indexOf(":") + 1);
   return {
     supportFuncName: supportFuncName,
-    inputDecodeResult: targetAddress
+    inputDecodeResult: data
   };
 }
 
@@ -323,7 +323,11 @@ function decodeCrosschainFunctionData(input: string) {
     if (fragment) {
       switch (fragment.name) {
         case SupportCrosschainFunctions.Safe2Eth:
-          formatDecodeResult = IContract.decodeFunctionData(fragment, input);
+          const safe2eth = IContract.decodeFunctionData(fragment, input);
+          formatDecodeResult = {
+            _value: safe2eth[0],
+            _dst_address: safe2eth[1]
+          }
           break;
       }
     }
@@ -336,7 +340,7 @@ function decodeCrosschainFunctionData(input: string) {
   }
 }
 
-export default (address: string | undefined, input: string | undefined): {
+export default (address: string | undefined, input: string | undefined, from?: string): {
   supportFuncName: string,
   inputDecodeResult: any
 } | undefined => {
@@ -345,6 +349,8 @@ export default (address: string | undefined, input: string | undefined): {
   }
   if (address == Application_Crosschain_Pool[Safe4NetworkChainId.Testnet]
     || address == Application_Crosschain_Pool[Safe4NetworkChainId.Mainnet]
+    || from == Application_Crosschain_Pool[Safe4NetworkChainId.Testnet]
+    || from == Application_Crosschain_Pool[Safe4NetworkChainId.Mainnet]
   ) {
     return decodeCrosschainPoolFunctionData(input);
   }

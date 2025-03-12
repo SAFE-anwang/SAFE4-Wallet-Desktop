@@ -29,6 +29,14 @@ export enum NetworkCoinType {
   SOL = "sol",
 }
 
+export enum NetworkTxIdPrefix {
+  BID = "bid",
+  EID = "eid",
+  MID = "mid",
+  TID = "tid",
+  SID = "sid"
+}
+
 export function outputNetworkCoin(networkType: NetworkType) {
   switch (networkType) {
     case NetworkType.BSC:
@@ -70,6 +78,21 @@ export function getNetworkLogoByCoin(networkType: NetworkCoinType) {
     case NetworkCoinType.TRX:
       return TRX_NETWORK_LOGO;
     case NetworkCoinType.SOL:
+      return SOL_NETWORK_LOGO;
+  }
+}
+
+export function getNetworkLogoByTxIDPrefix(prefixTxId : NetworkTxIdPrefix){
+  switch (prefixTxId) {
+    case NetworkTxIdPrefix.BID:
+      return BSC_NETWORK_LOGO;
+    case NetworkTxIdPrefix.EID:
+      return ETH_NETWORK_LOGO;
+    case NetworkTxIdPrefix.MID:
+      return MATIC_NETWORK_LOGO;
+    case NetworkTxIdPrefix.TID:
+      return TRX_NETWORK_LOGO;
+    case NetworkTxIdPrefix.SID:
       return SOL_NETWORK_LOGO;
   }
 }

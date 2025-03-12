@@ -1,5 +1,5 @@
 
-import { Row, List, Typography} from "antd";
+import { Row, List, Typography } from "antd";
 import { FileDoneOutlined } from '@ant-design/icons';
 import { useCallback, useMemo, useState } from "react";
 import { TransactionDetails } from "../../../../../state/transactions/reducer";
@@ -13,6 +13,7 @@ import AccountManagerSafeWithdraw from "./AccountManagerSafeWithdraw";
 import TransactionElementTokenTransfer from "./TransactionElementTokenTransfer";
 import { SAFE_LOGO } from "../../../../../assets/logo/AssetsLogo";
 import { useTranslation } from "react-i18next";
+import { useWalletsActiveAccount } from "../../../../../state/wallets/hooks";
 
 const { Text } = Typography;
 
@@ -38,7 +39,7 @@ export default ({ transaction, setClickTransaction }: {
       input: call?.input,
     }
   }, [transaction]);
-  const support = DecodeSupportFunction(call?.to, input);
+  const support = DecodeSupportFunction(call?.to, input,call?.from);
   // 判断是否为调用 ERC20.transfer(to,uint256)
   const isTokenTransfer = useMemo(() => {
     if (call?.tokenTransfer) {
@@ -49,6 +50,7 @@ export default ({ transaction, setClickTransaction }: {
     }
     return false;
   }, [call, tokenTransfers]);
+  const activeAccount = useWalletsActiveAccount();
 
   const RenderTokenTransfer = useCallback(() => {
     let firstTokenTransfer = undefined;
@@ -66,7 +68,23 @@ export default ({ transaction, setClickTransaction }: {
         </span>
       </List.Item>
     </>
-  }, [transaction, status])
+  }, [transaction, status]);
+
+  const RenderNoSupportCallAssetFlow = (call_from?: string, call_to?: string, value?: string) => {
+    if (call_from == call_to) {
+      return <Text strong>
+        <>- {value && EtherAmount({ raw: "0" })} SAFE</>
+      </Text>
+    }
+    if (call_to == activeAccount) {
+      return <Text type="success">
+        <>+ {value && EtherAmount({ raw: value })} SAFE</>
+      </Text>
+    }
+    return <Text strong>
+      <>- {value && EtherAmount({ raw: value })} SAFE</>
+    </Text>
+  }
 
   return <>
     {/* <Text>{JSON.stringify(transaction)}</Text> */}
@@ -83,7 +101,9 @@ export default ({ transaction, setClickTransaction }: {
         <Row style={{ width: "100%" }}>
           <span style={{ width: "100%" }}>
             <TransactionElementTemplate status={status} icon={<FileDoneOutlined style={{ color: "black" }} />}
-              title={action == "Create" ? t("wallet_history_contract_deploy") : t("wallet_history_contract_call")} description={call?.to} assetFlow={<Text strong> <>- {value && EtherAmount({ raw: value })} SAFE</> </Text>} />
+              title={action == "Create" ? t("wallet_history_contract_deploy") : t("wallet_history_contract_call")}
+              description={call?.to} assetFlow={RenderNoSupportCallAssetFlow(call?.from, call?.to, call?.value)}
+            />
           </span>
           {
             accountManagerDatas && Object
