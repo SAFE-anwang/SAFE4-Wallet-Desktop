@@ -82,7 +82,7 @@ export function getNetworkLogoByCoin(networkType: NetworkCoinType) {
   }
 }
 
-export function getNetworkLogoByTxIDPrefix(prefixTxId : NetworkTxIdPrefix){
+export function getNetworkLogoByTxIDPrefix(prefixTxId: NetworkTxIdPrefix) {
   switch (prefixTxId) {
     case NetworkTxIdPrefix.BID:
       return BSC_NETWORK_LOGO;
@@ -108,6 +108,21 @@ export function getNetworkNameByCoin(networkType: NetworkCoinType) {
     case NetworkCoinType.TRX:
       return NetworkType.TRX;
     case NetworkCoinType.SOL:
+      return NetworkType.SOL;
+  }
+}
+
+export function getNetworkNameByTxPrefix(prefixTxId: NetworkTxIdPrefix) {
+  switch (prefixTxId) {
+    case NetworkTxIdPrefix.BID:
+      return NetworkType.BSC;
+    case NetworkTxIdPrefix.EID:
+      return NetworkType.ETH;
+    case NetworkTxIdPrefix.MID:
+      return NetworkType.MATIC;
+    case NetworkTxIdPrefix.TID:
+      return NetworkType.TRX;
+    case NetworkTxIdPrefix.SID:
       return NetworkType.SOL;
   }
 }

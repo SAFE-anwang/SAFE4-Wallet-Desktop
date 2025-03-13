@@ -1,18 +1,18 @@
 import { Row, Alert, Col, Tag, Typography, Divider, Card, Spin, Button, Tooltip } from "antd"
 import { LoadingOutlined, CheckCircleFilled, CloseCircleFilled, ExportOutlined, GlobalOutlined } from '@ant-design/icons';
-import TokenLogo from "../../../../components/TokenLogo";
-import { TransactionDetails } from "../../../../../state/transactions/reducer";
-import { useWalletsActiveAccount } from "../../../../../state/wallets/hooks";
-import EtherAmount from "../../../../../utils/EtherAmount";
-import AddressView from "../../../../components/AddressView";
-import { DateTimeFormat } from "../../../../../utils/DateUtils";
-import { useTransaction } from "../../../../../state/transactions/hooks";
 import { useMemo } from "react";
-import config from "../../../../../config";
-import Safescan from "../../../../components/Safescan";
 import { useTranslation } from "react-i18next";
+import { TransactionDetails } from "../../../../../../state/transactions/reducer";
+import { useTransaction } from "../../../../../../state/transactions/hooks";
+import { useWalletsActiveAccount } from "../../../../../../state/wallets/hooks";
+import DecodeSupportFunction from "../../../../../../constants/DecodeSupportFunction";
+import { DateTimeFormat } from "../../../../../../utils/DateUtils";
+import TokenLogo from "../../../../../components/TokenLogo";
+import Safescan from "../../../../../components/Safescan";
+import AddressView from "../../../../../components/AddressView";
+import EtherAmount from "../../../../../../utils/EtherAmount";
+import TransactionDetailsCallSupport from "./TransactionDetailsCallSupport";
 
-const { Safescan_URL } = config;
 const { Text } = Typography;
 
 export default ({
@@ -27,7 +27,8 @@ export default ({
     receipt,
     transfer,
     timestamp,
-    addedTime
+    addedTime,
+    call
   } = useMemo(() => {
     if (tx && tx.hash) {
       return tx;
@@ -38,13 +39,14 @@ export default ({
       receipt: undefined,
       transfer: undefined,
       timestamp: undefined,
-      addedTime: undefined
+      addedTime: undefined,
+      call: undefined
     }
   }, [tx])
   const activeAccount = useWalletsActiveAccount();
   const { t } = useTranslation();
+  const support = DecodeSupportFunction(call?.to, call?.input, call?.from);
   return <>
-
     <Row>
       <Col span={24}>
         {
@@ -99,7 +101,6 @@ export default ({
           <Text>{hash}</Text>
         </Col>
       </Row>
-      <Divider style={{ marginTop: "10px", marginBottom: "10px" }} />
     </Card>
     <br />
     {
@@ -128,16 +129,16 @@ export default ({
             </>
           }
           <br /><br />
-
           <Text type="secondary">{t("wallet_send_from")}</Text><br />
           <div style={{ marginLeft: "5px" }}><AddressView address={transfer.from} /></div><br />
-
           <Text type="secondary">{t("wallet_send_to")}</Text><br />
           <div style={{ marginLeft: "5px" }}><AddressView address={transfer.to} /></div><br />
         </Card>
       </>
     }
-
+    {
+      support && <TransactionDetailsCallSupport support={support} transaction={tx} />
+    }
   </>
 
 }

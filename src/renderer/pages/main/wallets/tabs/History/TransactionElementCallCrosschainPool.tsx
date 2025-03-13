@@ -2,16 +2,22 @@ import { LoadingOutlined } from "@ant-design/icons";
 import { Avatar, List, Spin, Typography } from "antd";
 import { useTranslation } from "react-i18next";
 import { SAFE_LOGO } from "../../../../../assets/logo/AssetsLogo";
-import { getNetworkLogo, getNetworkLogoByCoin, getNetworkLogoByTxIDPrefix, getNetworkNameByCoin, NetworkCoinType, NetworkTxIdPrefix } from "../../../../../assets/logo/NetworkLogo";
+import { getNetworkLogoByCoin, getNetworkLogoByTxIDPrefix, getNetworkNameByCoin, getNetworkNameByTxPrefix, NetworkCoinType, NetworkTxIdPrefix } from "../../../../../assets/logo/NetworkLogo";
 import { TransactionDetails } from "../../../../../state/transactions/reducer"
 import { useWalletsActiveAccount } from "../../../../../state/wallets/hooks";
 import EtherAmount from "../../../../../utils/EtherAmount";
+import { useMemo } from "react";
 
 const { Text } = Typography;
 
 const enum CrosschainDirectoinType {
   SEND = 1,
   RECEIVE = 2
+}
+
+const enum CrosschainDirection {
+  SAFE4_NETWORKS = "safe4_networks",
+  NETWORKS_SAFE4 = "networks_safe4"
 }
 
 export default ({ transaction, setClickTransaction, support }: {
@@ -31,22 +37,44 @@ export default ({ transaction, setClickTransaction, support }: {
     from: null, to: null, value: null
   };
   const activeAccount = useWalletsActiveAccount();
+
+  const crosschainDirection = useMemo<CrosschainDirection | undefined>(() => {
+    const supportFuncName = support.supportFuncName;
+    if (Object.values(NetworkCoinType).includes(supportFuncName as NetworkCoinType)) {
+      return CrosschainDirection.SAFE4_NETWORKS;
+    };
+    if (Object.values(NetworkTxIdPrefix).includes(supportFuncName as NetworkTxIdPrefix)) {
+      return CrosschainDirection.NETWORKS_SAFE4;
+    }
+    return undefined;
+  }, [support]);
+
   const crosschainDirectoinType = from == activeAccount ? CrosschainDirectoinType.SEND : CrosschainDirectoinType.RECEIVE;
-  const networkCoin = support.supportFuncName;
-  const networkName = "";
+
 
   const RenderLogosCrossDirectoin = () => {
-    const NETWORK_LOGO = crosschainDirectoinType == CrosschainDirectoinType.SEND ?
-      getNetworkLogoByCoin(support.supportFuncName as NetworkCoinType)
-      : getNetworkLogoByTxIDPrefix(support.supportFuncName as NetworkTxIdPrefix);
-    if (crosschainDirectoinType == CrosschainDirectoinType.SEND) {
+    if (crosschainDirection == CrosschainDirection.SAFE4_NETWORKS) {
       return <>
         <Avatar style={{ marginTop: "8px" }} src={SAFE_LOGO} />
-        <Avatar style={{ marginTop: "8px", marginLeft: "-15px" }} src={NETWORK_LOGO} />
+        <Avatar style={{ marginTop: "8px", marginLeft: "-15px" }} src={getNetworkLogoByCoin(support.supportFuncName as NetworkCoinType)} />
       </>
-    } else {
+    } else if (crosschainDirection == CrosschainDirection.NETWORKS_SAFE4) {
       return <>
-        <Avatar style={{ marginTop: "8px" }} src={NETWORK_LOGO} />
+        <Avatar style={{ marginTop: "8px" }} src={getNetworkLogoByTxIDPrefix(support.supportFuncName as NetworkTxIdPrefix)} />
+        <Avatar style={{ marginTop: "8px", marginLeft: "-15px" }} src={SAFE_LOGO} />
+      </>
+    }
+  }
+
+  const RenderTitle = () => {
+    if (crosschainDirection == CrosschainDirection.SAFE4_NETWORKS) {
+      return <>
+        <Avatar style={{ marginTop: "8px" }} src={SAFE_LOGO} />
+        <Avatar style={{ marginTop: "8px", marginLeft: "-15px" }} src={getNetworkLogoByCoin(support.supportFuncName as NetworkCoinType)} />
+      </>
+    } else if (crosschainDirection == CrosschainDirection.NETWORKS_SAFE4) {
+      return <>
+        <Avatar style={{ marginTop: "8px" }} src={getNetworkLogoByTxIDPrefix(support.supportFuncName as NetworkTxIdPrefix)} />
         <Avatar style={{ marginTop: "8px", marginLeft: "-15px" }} src={SAFE_LOGO} />
       </>
     }
@@ -73,8 +101,12 @@ export default ({ transaction, setClickTransaction, support }: {
         }
         title={<>
           <Text strong>
-            {crosschainDirectoinType == CrosschainDirectoinType.RECEIVE && t("wallet_history_received")}
-            {crosschainDirectoinType == CrosschainDirectoinType.SEND && `跨链到 ${getNetworkNameByCoin(networkCoin as NetworkCoinType)} 网络`}
+            {
+              crosschainDirection == CrosschainDirection.SAFE4_NETWORKS && `资产跨链到 ${getNetworkNameByCoin(support.supportFuncName as NetworkCoinType)} 网络`
+            }
+            {
+              crosschainDirection == CrosschainDirection.NETWORKS_SAFE4 && `从 ${getNetworkNameByTxPrefix(support.supportFuncName as NetworkTxIdPrefix)} 网络接收资产`
+            }
           </Text>
         </>}
         description={

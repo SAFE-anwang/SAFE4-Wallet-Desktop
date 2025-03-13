@@ -207,7 +207,7 @@ export default ({
           <Col span={21}>
             <Text strong>当前账户</Text>
             <br />
-            <Text strong>{targetAddress}</Text>
+            <Text strong>{activeAccount}</Text>
           </Col>
         </Row>
       </Col>

@@ -1,7 +1,6 @@
 import { List, Typography, Modal, Divider, Switch, Row, Col, Button, Tooltip } from "antd";
 import TransactionElement from "./TransactionElement";
 import { useEffect, useMemo, useState } from "react";
-import TransactionDetailsView from "./TransactionDetailsView";
 import { useDispatch, useSelector } from "react-redux";
 import { useWalletsActiveAccount } from "../../../../../state/wallets/hooks";
 import { useTransactions } from "../../../../../state/transactions/hooks";
@@ -22,6 +21,7 @@ import useSafeScan from "../../../../../hooks/useSafeScan";
 import { DeleteOutlined } from "@ant-design/icons";
 import ClearHistoryConfirmModal from "./ClearHistoryConfirmModal";
 import { useTranslation } from "react-i18next";
+import TransactionDetailsView from "./TransactionDetails/TransactionDetailsView";
 
 const { Text } = Typography;
 
