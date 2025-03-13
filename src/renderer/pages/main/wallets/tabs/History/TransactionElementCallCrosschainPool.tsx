@@ -10,14 +10,24 @@ import { useMemo } from "react";
 
 const { Text } = Typography;
 
-const enum CrosschainDirectoinType {
+export const enum CrosschainDirectoinType {
   SEND = 1,
   RECEIVE = 2
 }
 
-const enum CrosschainDirection {
+export const enum CrosschainDirection {
   SAFE4_NETWORKS = "safe4_networks",
   NETWORKS_SAFE4 = "networks_safe4"
+}
+
+export function getCrosschainDirection(supportFuncName: string) {
+  if (Object.values(NetworkCoinType).includes(supportFuncName as NetworkCoinType)) {
+    return CrosschainDirection.SAFE4_NETWORKS;
+  };
+  if (Object.values(NetworkTxIdPrefix).includes(supportFuncName as NetworkTxIdPrefix)) {
+    return CrosschainDirection.NETWORKS_SAFE4;
+  }
+  return undefined;
 }
 
 export default ({ transaction, setClickTransaction, support }: {
@@ -37,20 +47,10 @@ export default ({ transaction, setClickTransaction, support }: {
     from: null, to: null, value: null
   };
   const activeAccount = useWalletsActiveAccount();
-
   const crosschainDirection = useMemo<CrosschainDirection | undefined>(() => {
-    const supportFuncName = support.supportFuncName;
-    if (Object.values(NetworkCoinType).includes(supportFuncName as NetworkCoinType)) {
-      return CrosschainDirection.SAFE4_NETWORKS;
-    };
-    if (Object.values(NetworkTxIdPrefix).includes(supportFuncName as NetworkTxIdPrefix)) {
-      return CrosschainDirection.NETWORKS_SAFE4;
-    }
-    return undefined;
+    return getCrosschainDirection(support.supportFuncName);
   }, [support]);
-
   const crosschainDirectoinType = from == activeAccount ? CrosschainDirectoinType.SEND : CrosschainDirectoinType.RECEIVE;
-
 
   const RenderLogosCrossDirectoin = () => {
     if (crosschainDirection == CrosschainDirection.SAFE4_NETWORKS) {
