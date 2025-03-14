@@ -5,10 +5,12 @@ import { useWalletsActiveAccount } from "../../../../../../state/wallets/hooks";
 import AddressView from "../../../../../components/AddressView";
 import AddressComponent from "../../../../../components/AddressComponent";
 import { CrosschainDirection, getCrosschainDirection } from "../TransactionElementCallCrosschainPool";
-import { getNetworkLogoByCoin, getNetworkNameByCoin, NetworkCoinType } from "../../../../../../assets/logo/NetworkLogo";
+import { getNetworkLogoByCoin, getNetworkLogoByTxIDPrefix, getNetworkNameByCoin, getNetworkNameByTxPrefix, NetworkCoinType, NetworkTxIdPrefix } from "../../../../../../assets/logo/NetworkLogo";
 import { ethers } from "ethers";
 import { SyncOutlined } from "@ant-design/icons";
 import EtherAmount from "../../../../../../utils/EtherAmount";
+import { useBlockNumber } from "../../../../../../state/application/hooks";
+import { useEffect } from "react";
 
 const { Text } = Typography;
 
@@ -21,13 +23,16 @@ export default ({
   },
   transaction: TransactionDetails
 }) => {
-
   const {
     call,
     hash
   } = transaction;
   const activeAccount = useWalletsActiveAccount();
   const crosschainDirection = getCrosschainDirection(support.supportFuncName);
+  const blockNumber = useBlockNumber();
+  useEffect( () => {
+
+  } , [blockNumber] );
 
   return <>
     <Row>
@@ -64,6 +69,19 @@ export default ({
             </Col>
           </>
         }
+        {
+          crosschainDirection == CrosschainDirection.NETWORKS_SAFE4 &&
+          <>
+            <Col span={2} style={{ paddingTop: "8px" }}>
+              <Avatar src={getNetworkLogoByTxIDPrefix(support.supportFuncName as NetworkTxIdPrefix)} />
+            </Col>
+            <Col span={22}>
+              <Text strong>{getNetworkNameByTxPrefix(support.supportFuncName as NetworkTxIdPrefix)}</Text>
+              <br />
+              {/* <AddressComponent address={activeAccount} /> */}
+            </Col>
+          </>
+        }
       </Row>
       <Row style={{ marginTop: "10px" }}>
         <Col span={24}>
@@ -85,7 +103,21 @@ export default ({
             </Col>
           </>
         }
-
+        {
+          crosschainDirection == CrosschainDirection.NETWORKS_SAFE4 &&
+          <>
+            <Col span={2} style={{ paddingTop: "8px" }}>
+              <TokenLogo />
+            </Col>
+            <Col span={22}>
+              <Text strong>Safe4 网络</Text>
+              <br />
+              {
+                call?.to && <AddressComponent address={call?.to} />
+              }
+            </Col>
+          </>
+        }
       </Row>
       <Row style={{ marginTop: "10px" }}>
         <Col span={24}>
