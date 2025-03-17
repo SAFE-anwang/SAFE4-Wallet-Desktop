@@ -2,7 +2,7 @@ import { createReducer } from "@reduxjs/toolkit"
 import { addTransaction, checkedTransaction, clearAllTransactions, finalizeTransaction, loadERC20Tokens, loadTransactionsAndUpdateAddressActivityFetch, refreshAddressTimeNodeReward, reloadTransactionsAndSetAddressActivityFetch, updateERC20Token } from "./actions"
 import { IPC_CHANNEL } from "../../config"
 import { DBAddressActivitySignal, DB_AddressActivity_Actions, DB_AddressActivity_Methods } from "../../../main/handlers/DBAddressActivitySingalHandler"
-import { DateTimeNodeRewardVO, TimeNodeRewardVO } from "../../services"
+import { CrossChainVO, DateTimeNodeRewardVO, TimeNodeRewardVO } from "../../services"
 import { ethers } from "ethers"
 import { ERC20Tokens_Methods, ERC20TokensSignal } from "../../../main/handlers/ERC20TokenSignalHandler"
 
@@ -144,10 +144,14 @@ export const initialState: {
       chainId: number,
     }
   },
+  crosschains : {
+    [ srcTxHash : string ] : CrossChainVO
+  }
   chainId?: number
 } = {
   transactions: {},
   tokens: {},
+  crosschains : {},
   chainId: -1
 }
 
@@ -209,6 +213,7 @@ export default createReducer(initialState, (builder) => {
         addressActivityFetch: {
           ...addressActivityFetch
         },
+        crosschains:{},
         chainId: addressActivityFetch.chainId
       }
     })

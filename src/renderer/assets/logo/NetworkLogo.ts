@@ -37,6 +37,30 @@ export enum NetworkTxIdPrefix {
   SID = "sid"
 }
 
+export enum NetworkExplorerURL {
+  BSC = "https://bscscan.com",
+  ETH = "https://etherscan.io",
+  MATIC = "https://polygonscan.com",
+  TRX = "https://tronscan.org",
+  SOL = "https://solscan.io"
+}
+
+export function getNetworkExplorerURLByCoin(networkType: NetworkCoinType) {
+  switch (networkType) {
+    case NetworkCoinType.BSC:
+      return NetworkExplorerURL.BSC;
+    case NetworkCoinType.ETH:
+      return NetworkExplorerURL.ETH;
+    case NetworkCoinType.MATIC:
+      return NetworkExplorerURL.MATIC;
+    case NetworkCoinType.TRX:
+      return NetworkExplorerURL.TRX;
+    case NetworkCoinType.SOL:
+      return NetworkExplorerURL.SOL;
+  }
+}
+
+
 export function outputNetworkCoin(networkType: NetworkType) {
   switch (networkType) {
     case NetworkType.BSC:
@@ -126,4 +150,20 @@ export function getNetworkNameByTxPrefix(prefixTxId: NetworkTxIdPrefix) {
       return NetworkType.SOL;
   }
 }
+
+export function getNetworkExplorerURLByTxPrefix(prefixTxId: NetworkTxIdPrefix) {
+  switch (prefixTxId) {
+    case NetworkTxIdPrefix.BID:
+      return NetworkExplorerURL.BSC;
+    case NetworkTxIdPrefix.EID:
+      return NetworkExplorerURL.ETH;
+    case NetworkTxIdPrefix.MID:
+      return NetworkExplorerURL.MATIC;
+    case NetworkTxIdPrefix.TID:
+      return NetworkExplorerURL.TRX;
+    case NetworkTxIdPrefix.SID:
+      return NetworkExplorerURL.SOL;
+  }
+}
+
 

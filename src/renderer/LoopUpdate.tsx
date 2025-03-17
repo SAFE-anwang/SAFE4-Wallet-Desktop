@@ -6,6 +6,7 @@ import TransactionUpdater from "./state/transactions/updater";
 import { useWeb3React } from "@web3-react/core";
 import { useDispatch } from "react-redux";
 import { clearMulticallState } from "./state/multicall/actions";
+import CrosschainUpdater from "./state/transactions/CrosschainUpdater";
 
 export default () => {
   const dispatch = useDispatch();
@@ -19,6 +20,7 @@ export default () => {
     <ApplicationUpdater />
     <MulticallUpdater />
     <TransactionUpdater />
+    <CrosschainUpdater />
   </>)
 
 }

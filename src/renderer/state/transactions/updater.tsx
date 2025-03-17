@@ -42,7 +42,7 @@ export default () => {
   const transactions = state ? state.transactions : {};
   const activeAccount = useWalletsActiveAccount();
   const addressActivityFetch = state.addressActivityFetch;
-  const {URL,API} = useSafeScan();
+  const { URL, API } = useSafeScan();
 
   useEffect(() => {
     if (chainId && addressActivityFetch && addressActivityFetch?.address == activeAccount) {
@@ -50,12 +50,12 @@ export default () => {
         console.log(`Finish fetch Address[${addressActivityFetch.address}]`)
         return;
       }
-      console.log(`Exeucte fetch Address[${addressActivityFetch.address}] activities from ${API} - ${chainId} - 
+      console.log(`Exeucte fetch Address[${addressActivityFetch.address}] activities from ${API} - ${chainId} -
                    Block[${addressActivityFetch.blockNumberStart}] to Block[${addressActivityFetch.blockNumberEnd}] @ page = ${addressActivityFetch.current}`);
       const newFetch = {
         ...addressActivityFetch,
       }
-      fetchAddressActivity(API , addressActivityFetch)
+      fetchAddressActivity(API, addressActivityFetch)
         .then(data => {
           const { total, current, pageSize, totalPages } = data;
           const addressActivities = data.records;
@@ -74,7 +74,7 @@ export default () => {
             }
             window.electron.ipcRenderer.sendMessage(IPC_CHANNEL,
               [DBAddressActivitySignal, DB_AddressActivity_Methods.saveOrUpdateActivities,
-                [ addressActivities , chainId ]
+                [addressActivities, chainId]
               ]);
             setTimeout(() => {
               dispatch(loadTransactionsAndUpdateAddressActivityFetch({
@@ -86,7 +86,7 @@ export default () => {
           }
         })
         .catch((err: any) => {
-          console.log("fetch address activities err::>" , err)
+          console.log("fetch address activities err::>", err)
           setTimeout(() => {
             dispatch(loadTransactionsAndUpdateAddressActivityFetch({
               chainId,
@@ -96,7 +96,7 @@ export default () => {
           }, 3000);
         })
     }
-  }, [activeAccount, addressActivityFetch,chainId]);
+  }, [activeAccount, addressActivityFetch, chainId]);
 
 
   useEffect(() => {
@@ -120,7 +120,7 @@ export default () => {
                     to: receipt.to,
                     transactionHash: receipt.transactionHash,
                     transactionIndex: receipt.transactionIndex,
-                    chainId : chainId
+                    chainId: chainId
                   }
                 })
               )
@@ -132,9 +132,9 @@ export default () => {
   }, [provider, transactions, latestBlockNumber, activeAccount]);
 
   useEffect(() => {
-    if (activeAccount && latestBlockNumber > 0 && chainId ) {
+    if (activeAccount && latestBlockNumber > 0 && chainId) {
       setTimeout(() => {
-        fetchAddressActivity( API , {
+        fetchAddressActivity(API, {
           address: activeAccount,
           blockNumberStart: latestBlockNumber - 10,
           blockNumberEnd: latestBlockNumber,
@@ -150,9 +150,10 @@ export default () => {
           }
         })
       }, 3000);
-
     }
-  }, [activeAccount, latestBlockNumber,chainId]);
+  }, [activeAccount, latestBlockNumber, chainId]);
+
+
 
 
   return (<></>)

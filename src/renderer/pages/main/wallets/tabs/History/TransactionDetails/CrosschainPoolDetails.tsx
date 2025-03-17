@@ -1,16 +1,18 @@
-import { Avatar, Card, Col, Row, Typography } from "antd"
+import { Avatar, Button, Card, Col, Row, Tooltip, Typography } from "antd"
 import { TransactionDetails } from "../../../../../../state/transactions/reducer"
 import TokenLogo from "../../../../../components/TokenLogo";
 import { useWalletsActiveAccount } from "../../../../../../state/wallets/hooks";
-import AddressView from "../../../../../components/AddressView";
 import AddressComponent from "../../../../../components/AddressComponent";
 import { CrosschainDirection, getCrosschainDirection } from "../TransactionElementCallCrosschainPool";
-import { getNetworkLogoByCoin, getNetworkLogoByTxIDPrefix, getNetworkNameByCoin, getNetworkNameByTxPrefix, NetworkCoinType, NetworkTxIdPrefix } from "../../../../../../assets/logo/NetworkLogo";
+import { getNetworkExplorerURLByCoin, getNetworkExplorerURLByTxPrefix, getNetworkLogoByCoin, getNetworkLogoByTxIDPrefix, getNetworkNameByCoin, getNetworkNameByTxPrefix, NetworkCoinType, NetworkTxIdPrefix } from "../../../../../../assets/logo/NetworkLogo";
 import { ethers } from "ethers";
-import { SyncOutlined } from "@ant-design/icons";
+import { GlobalOutlined, SyncOutlined } from "@ant-design/icons";
 import EtherAmount from "../../../../../../utils/EtherAmount";
 import { useBlockNumber } from "../../../../../../state/application/hooks";
-import { useEffect } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { fetchCrossChainByTxHash } from "../../../../../../services/crosschain";
+import useSafeScan from "../../../../../../hooks/useSafeScan";
+import { CrossChainVO } from "../../../../../../services";
 
 const { Text } = Typography;
 
@@ -30,9 +32,45 @@ export default ({
   const activeAccount = useWalletsActiveAccount();
   const crosschainDirection = getCrosschainDirection(support.supportFuncName);
   const blockNumber = useBlockNumber();
-  useEffect( () => {
+  const { API_Crosschain } = useSafeScan();
+  const [crosschainData, setCrosschainData] = useState<CrossChainVO | undefined>(undefined);
+  useEffect(() => {
+    if (blockNumber && API_Crosschain) {
+      if (crosschainDirection == CrosschainDirection.SAFE4_NETWORKS) {
+        const srcTxHash = hash;
+        fetchCrossChainByTxHash(API_Crosschain, { srcTxHash })
+          .then(data => {
+            if (data) {
+              setCrosschainData(data);
+            }
+          })
+      } else if (crosschainDirection == CrosschainDirection.NETWORKS_SAFE4) {
+        const dstTxHash = hash;
+        fetchCrossChainByTxHash(API_Crosschain, { dstTxHash })
+          .then(data => {
+            if (data) {
+              setCrosschainData(data);
+            }
+          })
+      }
+    }
+  }, [blockNumber, hash, API_Crosschain]);
+  const crosschainSpin = useMemo(() => {
+    if (crosschainDirection) {
+      if (crosschainDirection == CrosschainDirection.SAFE4_NETWORKS) {
+        return !(crosschainData && crosschainData.status == 4)
+      } else if (crosschainDirection == CrosschainDirection.NETWORKS_SAFE4) {
+        return false;
+      }
+    }
+  }, [crosschainData]);
 
-  } , [blockNumber] );
+  const RenderCrosschainStatus = useCallback(() => {
+    if (crosschainData && crosschainData.status == 4) {
+      return <Text type="success" strong>已完成</Text>
+    }
+    return <Text strong type="secondary" italic>等待确认</Text>
+  }, [crosschainData])
 
   return <>
     <Row>
@@ -42,7 +80,12 @@ export default ({
       {/* <Text>{JSON.stringify(support)}</Text> */}
       <Row>
         <Col span={24}>
-          <SyncOutlined spin style={{ fontSize: "28px" }} />
+          <Text type="secondary">资产</Text>
+        </Col>
+        <Col span={24}>
+          {
+            crosschainSpin && <SyncOutlined spin={crosschainSpin} style={{ fontSize: "28px" }} />
+          }
           <Text style={{ fontSize: "28px", marginLeft: "5px" }} strong>
             {
               call?.value && <>
@@ -52,6 +95,26 @@ export default ({
           </Text>
         </Col>
       </Row>
+
+      {
+        crosschainDirection == CrosschainDirection.NETWORKS_SAFE4 && support.inputDecodeResult &&
+        <Row style={{ marginTop: "15px" }}>
+          <Col span={4}>
+            <Text type="secondary">跨链发起</Text>
+          </Col>
+          <Col span={20}>
+            <Text style={{ float: "right" }}>
+              <Tooltip title="在浏览器上查看">
+                <Button size="small" icon={<GlobalOutlined onClick={() => window.open(`${getNetworkExplorerURLByTxPrefix(support.supportFuncName as NetworkTxIdPrefix)}/tx/${support.inputDecodeResult}`)} />} />
+              </Tooltip>
+            </Text>
+          </Col>
+          <Col>
+            <Text>{support.inputDecodeResult}</Text>
+          </Col>
+        </Row>
+      }
+
       <Row>
         <Col span={24}>
           <Text type="secondary">从</Text>
@@ -78,7 +141,10 @@ export default ({
             <Col span={22}>
               <Text strong>{getNetworkNameByTxPrefix(support.supportFuncName as NetworkTxIdPrefix)}</Text>
               <br />
-              {/* <AddressComponent address={activeAccount} /> */}
+              {
+                crosschainData && crosschainData.srcAddress && ethers.utils.isAddress(crosschainData.srcAddress) &&
+                <AddressComponent address={crosschainData.srcAddress} />
+              }
             </Col>
           </>
         }
@@ -119,21 +185,54 @@ export default ({
           </>
         }
       </Row>
+
+      {
+        crosschainDirection == CrosschainDirection.SAFE4_NETWORKS && crosschainData && crosschainData.dstTxHash &&
+        <Row style={{ marginTop: "15px" }}>
+          <Col span={4}>
+            <Text type="secondary">跨链确认</Text>
+          </Col>
+          <Col span={20}>
+            <Text style={{ float: "right" }}>
+              <Tooltip title="在浏览器上查看">
+                <Button size="small" icon={<GlobalOutlined onClick={() => window.open(`${getNetworkExplorerURLByCoin(crosschainData.dstNetwork as NetworkCoinType)}/tx/${crosschainData.dstTxHash}`)} />} />
+              </Tooltip>
+            </Text>
+          </Col>
+          <Col>
+            <Text>{crosschainData.dstTxHash}</Text>
+          </Col>
+        </Row>
+      }
+
       <Row style={{ marginTop: "10px" }}>
-        <Col span={24}>
-          <Text type="secondary">跨链确认</Text>
+        <Col span={8}>
+          <Text type="secondary">跨链状态</Text><br />
+          {
+            RenderCrosschainStatus()
+          }
         </Col>
-        <Col>
-          <Text>0x362123d965941cca4456fd403b0e1d18d9dbfa56859d36c8c247d59b768391ea</Text>
-        </Col>
-      </Row>
-      <Row style={{ marginTop: "10px" }}>
-        <Col span={24}>
-          <Text type="secondary">跨链状态</Text>
-        </Col>
-        <Col>
-          <Text strong type="success">已完成</Text>
-        </Col>
+        {
+          crosschainData && crosschainData.status == 4 && <>
+            <Col span={8}>
+              <Text type="secondary">到账数量</Text><br />
+              <Text strong>
+                {
+                  crosschainData?.dstAmount
+                } SAFE
+              </Text>
+            </Col>
+            <Col span={8}>
+              <Text type="secondary">手续费</Text><br />
+              <Text strong>
+                {
+                  crosschainData?.fee
+                } SAFE
+              </Text>
+            </Col>
+          </>
+        }
+
       </Row>
     </Card>
   </>

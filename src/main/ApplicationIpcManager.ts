@@ -13,6 +13,7 @@ import { ERC20TokenSignalHandler } from "./handlers/ERC20TokenSignalHandler";
 import { LocalFileReader } from "./handlers/LocalFileReaderIpc";
 import { CryptoIpc } from "./CryptoIpc";
 import { AppPropSignalHandler } from "./handlers/AppPropSignalHandler";
+import { CrosschainSignalHandler } from "./handlers/CrosschainSignalHandler";
 
 export const Channel : Channels = "ipc-example";
 
@@ -34,6 +35,7 @@ export class ApplicationIpcManager {
       this.listenSignalHandlers.push( new WalletNameHandler(ctx ,indexSignalHandler.getSqlite3DB()));
       this.listenSignalHandlers.push( new ERC20TokenSignalHandler( ctx, indexSignalHandler.getSqlite3DB()));
       this.listenSignalHandlers.push( new AppPropSignalHandler( ctx, indexSignalHandler.getSqlite3DB()));
+      this.listenSignalHandlers.push( new CrosschainSignalHandler( ctx, indexSignalHandler.getSqlite3DB()));
     });
     this.listenSignalHandlers.push(indexSignalHandler);
   }
