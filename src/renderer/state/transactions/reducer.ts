@@ -1,5 +1,5 @@
 import { createReducer } from "@reduxjs/toolkit"
-import { addTransaction, checkedTransaction, clearAllTransactions, finalizeTransaction, loadERC20Tokens, loadTransactionsAndUpdateAddressActivityFetch, refreshAddressTimeNodeReward, reloadTransactionsAndSetAddressActivityFetch, updateERC20Token } from "./actions"
+import { addTransaction, checkedTransaction, clearAllTransactions, finalizeTransaction, loadERC20Tokens, loadTransactionsAndUpdateAddressActivityFetch, refreshAddressTimeNodeReward, reloadTransactionsAndSetAddressActivityFetch, updateCrosschains, updateERC20Token } from "./actions"
 import { IPC_CHANNEL } from "../../config"
 import { DBAddressActivitySignal, DB_AddressActivity_Actions, DB_AddressActivity_Methods } from "../../../main/handlers/DBAddressActivitySingalHandler"
 import { CrossChainVO, DateTimeNodeRewardVO, TimeNodeRewardVO } from "../../services"
@@ -144,14 +144,14 @@ export const initialState: {
       chainId: number,
     }
   },
-  crosschains : {
-    [ srcTxHash : string ] : CrossChainVO
+  crosschains: {
+    [srcTxHash: string]: CrossChainVO
   }
   chainId?: number
 } = {
   transactions: {},
   tokens: {},
-  crosschains : {},
+  crosschains: {},
   chainId: -1
 }
 
@@ -205,7 +205,7 @@ export default createReducer(initialState, (builder) => {
       );
     })
 
-    .addCase(reloadTransactionsAndSetAddressActivityFetch, ({ transactions, tokens }, { payload: { txns, addressActivityFetch } }) => {
+    .addCase(reloadTransactionsAndSetAddressActivityFetch, ({ transactions, tokens , crosschains }, { payload: { txns, addressActivityFetch } }) => {
       transactions = TransactionsCombine(undefined, txns);
       return {
         transactions: transactions,
@@ -213,7 +213,7 @@ export default createReducer(initialState, (builder) => {
         addressActivityFetch: {
           ...addressActivityFetch
         },
-        crosschains:{},
+        crosschains : {},
         chainId: addressActivityFetch.chainId
       }
     })
@@ -298,6 +298,13 @@ export default createReducer(initialState, (builder) => {
       state.tokens[address] = {
         name, symbol, decimals, chainId
       }
+    })
+
+    .addCase(updateCrosschains, (state, { payload }) => {
+      Object.values(payload).forEach(crosschain => {
+        const { srcTxHash } = crosschain;
+        state.crosschains[srcTxHash] = crosschain;
+      });
     })
 
 })
@@ -434,7 +441,6 @@ export function Activity2Transaction(row: any): TransactionDetails {
         }
       }
       return _transaction;
-
     default:
       return {
         ...transaction,

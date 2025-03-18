@@ -1,4 +1,4 @@
-import { LoadingOutlined } from "@ant-design/icons";
+import { LoadingOutlined, SyncOutlined } from "@ant-design/icons";
 import { Avatar, List, Spin, Typography } from "antd";
 import { useTranslation } from "react-i18next";
 import { SAFE_LOGO, USDT_LOGO } from "../../../../../assets/logo/AssetsLogo";

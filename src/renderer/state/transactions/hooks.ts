@@ -6,7 +6,7 @@ import { addTransaction } from "./actions";
 import { Transfer, TransactionDetails, ContractCall, TokenTransfer } from "./reducer";
 import { DateFormat } from "../../utils/DateUtils";
 import { CurrencyAmount, JSBI } from "@uniswap/sdk";
-import { DateTimeNodeRewardVO, TimeNodeRewardVO } from "../../services";
+import { CrossChainVO, DateTimeNodeRewardVO, TimeNodeRewardVO } from "../../services";
 import { useWeb3React } from "@web3-react/core";
 
 export function useTransactionAdder2(): (
@@ -172,4 +172,12 @@ export function useTransaction(hash: string): TransactionDetails {
 
 export function useTokens() : { [address : string] : { name : string , symbol : string , decimals : number , chainId : number } } {
   return useSelector((state: AppState) => state.transactions.tokens);
+}
+
+export function useCrosschain( srcTxHash : string ) : CrossChainVO | undefined {
+  return useSelector((state: AppState) => state.transactions.crosschains[srcTxHash]);
+}
+
+export function useCrosschains() : { [ srxTxHash : string ] : CrossChainVO } {
+  return useSelector((state: AppState) => state.transactions.crosschains);
 }

@@ -1,4 +1,4 @@
-import { LoadingOutlined } from "@ant-design/icons";
+import { LoadingOutlined, SyncOutlined } from "@ant-design/icons";
 import { Avatar, List, Spin, Typography } from "antd";
 import { useTranslation } from "react-i18next";
 import { SAFE_LOGO } from "../../../../../assets/logo/AssetsLogo";
@@ -7,6 +7,7 @@ import { TransactionDetails } from "../../../../../state/transactions/reducer"
 import { useWalletsActiveAccount } from "../../../../../state/wallets/hooks";
 import EtherAmount from "../../../../../utils/EtherAmount";
 import { useMemo } from "react";
+import { useCrosschain } from "../../../../../state/transactions/hooks";
 
 const { Text } = Typography;
 
@@ -40,6 +41,7 @@ export default ({ transaction, setClickTransaction, support }: {
 }) => {
   const { t } = useTranslation();
   const {
+    hash,
     status,
     call
   } = transaction;
@@ -51,6 +53,13 @@ export default ({ transaction, setClickTransaction, support }: {
     return getCrosschainDirection(support.supportFuncName);
   }, [support]);
   const crosschainDirectoinType = from == activeAccount ? CrosschainDirectoinType.SEND : CrosschainDirectoinType.RECEIVE;
+  const crosschainVO = useCrosschain(hash);
+  const crosschainSpin = useMemo(() => {
+    if (crosschainDirectoinType == CrosschainDirectoinType.SEND) {
+      return !(crosschainVO && crosschainVO.status == 4)
+    }
+    return false;
+  }, [crosschainDirectoinType, crosschainVO]);
 
   const RenderLogosCrossDirectoin = () => {
     if (crosschainDirection == CrosschainDirection.SAFE4_NETWORKS) {
@@ -122,6 +131,9 @@ export default ({ transaction, setClickTransaction, support }: {
         </>}
         {crosschainDirectoinType == CrosschainDirectoinType.SEND && <>
           <Text strong>-{value && EtherAmount({ raw: value, fix: 18 })} SAFE</Text>
+          {
+            crosschainSpin && <SyncOutlined spin={crosschainSpin} style={{ marginLeft: "10px" }} />
+          }
         </>}
       </div>
     </List.Item>

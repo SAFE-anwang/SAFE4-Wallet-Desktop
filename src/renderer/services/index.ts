@@ -174,19 +174,20 @@ export interface DateTimeNodeRewardVO {
 export interface CrossChainVO {
 
   asset : string,
-  srcTxHash : string,
-  srcAddress : string,
-  srcBlockNumber : number,
-  srcTxTimestamp : number,
-  srcAmount : string,
-  srcNetwork : string,
 
-  dstTxHash : string,
+  srcAddress : string,
+  srcNetwork : string,
+  srcAmount : string,
+  srcTxHash : string,
+  srcTxBlockNumber : number,
+  srcTxTimestamp : number,
+
   dstAddress : string,
-  dstBlockNumber : number,
-  dstTxTimestamp : number,
-  dstAmount : string,
   dstNetwork : string,
+  dstAmount : string,
+  dstTxHash : string,
+  dstTxBlockNumber : number,
+  dstTxTimestamp : number,
 
   fee : string,
   status : number

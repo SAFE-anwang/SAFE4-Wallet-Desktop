@@ -1,6 +1,6 @@
 import { createAction } from "@reduxjs/toolkit";
 import { AddressActivityFetch, ContractCall, SerializableTransactionReceipt, TokenTransfer, TransactionDetails, Transfer } from "./reducer";
-import { DateTimeNodeRewardVO, TimeNodeRewardVO } from "../../services";
+import { CrossChainVO, DateTimeNodeRewardVO, TimeNodeRewardVO } from "../../services";
 
 export const addTransaction = createAction<{
   hash: string
@@ -57,3 +57,5 @@ export const updateERC20Token = createAction<{
   name : string , symbol : string,
   decimals : number
 }>("transactions/updateERC20Token")
+
+export const updateCrosschains = createAction<CrossChainVO[]>("transactions/updateCrosschains")
