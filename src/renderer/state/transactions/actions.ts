@@ -59,3 +59,5 @@ export const updateERC20Token = createAction<{
 }>("transactions/updateERC20Token")
 
 export const updateCrosschains = createAction<CrossChainVO[]>("transactions/updateCrosschains")
+
+export const initCrosschains = createAction<CrossChainVO[]>("transactions/initCrosschains")

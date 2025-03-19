@@ -38,7 +38,8 @@ export class CrosschainSignalHandler implements ListenSignalHandler {
       + "\"dst_tx_block_number\" INTEGER,"
       + "\"dst_tx_timestamp\" integer,"
       + "\"fee\" TEXT,"
-      + "\"status\" integer"
+      + "\"status\" integer,"
+      + "\"chain_id\" integer"
       + ");",
       [],
       (err: any) => {
@@ -56,10 +57,11 @@ export class CrosschainSignalHandler implements ListenSignalHandler {
     const params: any[] = args[0][2];
     let data = undefined;
     if (Crosschain_Methods.saveOrUpdate == method) {
-      const crosschainDataVOs = params[0];
-      data = this.saveOrUpdate(crosschainDataVOs);
+      const [crosschainDataVOs,chainId] = params;
+      data = this.saveOrUpdate(crosschainDataVOs,chainId);
     } else if (Crosschain_Methods.getByAddress == method) {
-      this.getByAddress(params[0], (rows: any) => {
+      const [address,chainId] = params;
+      this.getByAddress(address,chainId , (rows: any) => {
         event.reply(Channel, [this.getSingal(), method, [rows]])
       })
     }
@@ -81,7 +83,7 @@ export class CrosschainSignalHandler implements ListenSignalHandler {
     dstTxTimestamp: number,
     fee: string,
     status: number
-  }[]) {
+  }[] , chainId : number ) {
     crosschainDataVOs.forEach(crosschainVO => {
       const { asset,
         srcNetwork, srcAddress, srcAmount, srcTxBlockNumber, srcTxHash, srcTxTimestamp,
@@ -89,14 +91,14 @@ export class CrosschainSignalHandler implements ListenSignalHandler {
         fee, status
       } = crosschainVO;
       this.db.all(
-        "SELECT * FROM crosschains where src_tx_hash = ?",
-        [srcTxHash],
+        "SELECT * FROM crosschains where src_tx_hash = ? and chain_id = ?",
+        [srcTxHash,chainId],
         (err: any, rows: any) => {
           if (!err) {
             if (rows.length == 0) {
               this.db.run(
-                "INSERT INTO crosschains(asset,src_network,src_address,src_amount,src_tx_block_number,src_tx_hash,src_tx_timestamp,dst_network,dst_address,dst_amount,dst_tx_block_number,dst_tx_hash,dst_tx_timestamp,fee,status) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
-                [asset, srcNetwork, srcAddress, srcAmount, srcTxBlockNumber, srcTxHash, srcTxTimestamp, dstNetwork, dstAddress, dstAmount, dstTxBlockNumber, dstTxHash, dstTxTimestamp, fee, status],
+                "INSERT INTO crosschains(asset,src_network,src_address,src_amount,src_tx_block_number,src_tx_hash,src_tx_timestamp,dst_network,dst_address,dst_amount,dst_tx_block_number,dst_tx_hash,dst_tx_timestamp,fee,status,chain_id) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                [asset, srcNetwork, srcAddress, srcAmount, srcTxBlockNumber, srcTxHash, srcTxTimestamp, dstNetwork, dstAddress, dstAmount, dstTxBlockNumber, dstTxHash, dstTxTimestamp, fee, status,chainId],
                 (err: any, rows: any) => {
                   if (err) {
                     console.log("Insert INTO crosschains ERROR!", err)
@@ -104,8 +106,8 @@ export class CrosschainSignalHandler implements ListenSignalHandler {
                 })
             } else {
               this.db.run(
-                "UPDATE crosschains SET asset = ?,src_network = ?,src_address= ?,src_amount= ?,src_tx_block_number= ?,src_tx_timestamp= ?,dst_network= ?,dst_address= ?,dst_amount= ?,dst_tx_block_number= ?,dst_tx_hash= ?,dst_tx_timestamp= ?,fee= ?,status= ? where src_tx_hash = ?",
-                [asset, srcNetwork, srcAddress, srcAmount, srcTxBlockNumber, srcTxTimestamp, dstNetwork, dstAddress, dstAmount, dstTxBlockNumber, dstTxHash, dstTxTimestamp, fee, status, srcTxHash],
+                "UPDATE crosschains SET asset = ?,src_network = ?,src_address= ?,src_amount= ?,src_tx_block_number= ?,src_tx_timestamp= ?,dst_network= ?,dst_address= ?,dst_amount= ?,dst_tx_block_number= ?,dst_tx_hash= ?,dst_tx_timestamp= ?,fee= ?,status= ?,chain_id = ? where src_tx_hash = ?",
+                [asset, srcNetwork, srcAddress, srcAmount, srcTxBlockNumber, srcTxTimestamp, dstNetwork, dstAddress, dstAmount, dstTxBlockNumber, dstTxHash, dstTxTimestamp, fee, status,chainId, srcTxHash],
                 (err: any, rows: any) => {
                   if (err) {
                     console.log("Update crosschains ERROR!", err)
@@ -121,10 +123,10 @@ export class CrosschainSignalHandler implements ListenSignalHandler {
 
   }
 
-  private getByAddress(address: string, callback: (rows: any) => void) {
+  private getByAddress(address: string, chainId : number , callback: (rows: any) => void) {
     this.db.all(
-      "SELECT * FROM crosschains where src_address = ? or dst_address = ?",
-      [address.toLowerCase()],
+      "SELECT * FROM crosschains where (src_address = ? or dst_address = ?) and chain_id = ?",
+      [address.toLowerCase() , address.toLowerCase() , chainId],
       (err: any, rows: any) => {
         callback(rows);
       }

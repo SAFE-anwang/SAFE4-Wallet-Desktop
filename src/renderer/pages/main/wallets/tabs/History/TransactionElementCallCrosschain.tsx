@@ -1,21 +1,26 @@
 import { LoadingOutlined, SyncOutlined } from "@ant-design/icons";
 import { Avatar, List, Spin, Typography } from "antd";
 import { useTranslation } from "react-i18next";
-import { SAFE_LOGO, USDT_LOGO } from "../../../../../assets/logo/AssetsLogo";
+import { USDT_LOGO } from "../../../../../assets/logo/AssetsLogo";
 import { getNetworkLogoByCoin, getNetworkNameByCoin, NetworkCoinType } from "../../../../../assets/logo/NetworkLogo";
 import { TransactionDetails } from "../../../../../state/transactions/reducer"
 import { useWalletsActiveAccount } from "../../../../../state/wallets/hooks";
-import EtherAmount from "../../../../../utils/EtherAmount";
 import { useWeb3React } from "@web3-react/core";
 import { Safe4NetworkChainId, USDT } from "../../../../../config";
-import { useMemo } from "react";
 import { TokenAmount } from "@uniswap/sdk";
+import { useCrosschain } from "../../../../../state/transactions/hooks";
+import { useMemo } from "react";
 
 const { Text } = Typography;
 
 const enum CrosschainDirectoinType {
   SEND = 1,
   RECEIVE = 2
+}
+
+export function getCrosschainDirection(supportFuncName: string) {
+
+  return undefined;
 }
 
 export default ({ transaction, setClickTransaction, support }: {
@@ -29,15 +34,16 @@ export default ({ transaction, setClickTransaction, support }: {
   const { t } = useTranslation();
   const { chainId } = useWeb3React();
   const Token_USDT = USDT[chainId as Safe4NetworkChainId];
-  const { supportFuncName , inputDecodeResult } = support;
+  const { supportFuncName, inputDecodeResult } = support;
   const {
     status,
     call,
+    hash,
   } = transaction;
 
   const { from, to, value } = {
-    from : call?.from,
-    to   : inputDecodeResult._dst_address,
+    from: call?.from,
+    to: inputDecodeResult._dst_address,
     value: inputDecodeResult._value
   }
   const activeAccount = useWalletsActiveAccount();
@@ -59,6 +65,14 @@ export default ({ transaction, setClickTransaction, support }: {
       </>
     }
   }
+
+  const crosschainVO = useCrosschain(hash);
+  const crosschainSpin = useMemo(() => {
+    if (crosschainDirectoinType == CrosschainDirectoinType.SEND) {
+      return !(crosschainVO && crosschainVO.status == 4)
+    }
+    return false;
+  }, [crosschainDirectoinType, crosschainVO]);
 
   return <>
     {
@@ -97,10 +111,13 @@ export default ({ transaction, setClickTransaction, support }: {
       />
       <div>
         {crosschainDirectoinType == CrosschainDirectoinType.RECEIVE && <>
-          <Text strong type="success">+{value && new TokenAmount(Token_USDT,value).toFixed(2)}  {Token_USDT.name}</Text>
+          <Text strong type="success">+{value && new TokenAmount(Token_USDT, value).toFixed(2)}  {Token_USDT.name}</Text>
         </>}
         {crosschainDirectoinType == CrosschainDirectoinType.SEND && <>
-          <Text strong>-{value && new TokenAmount(Token_USDT,value).toExact()} {Token_USDT.name}</Text>
+          <Text strong>-{value && new TokenAmount(Token_USDT, value).toExact()} {Token_USDT.name}</Text>
+          {
+            crosschainSpin && <SyncOutlined spin={crosschainSpin} style={{ marginLeft: "10px" }} />
+          }
         </>}
       </div>
     </List.Item>

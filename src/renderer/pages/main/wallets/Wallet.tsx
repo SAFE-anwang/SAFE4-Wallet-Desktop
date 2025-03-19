@@ -136,7 +136,7 @@ export default () => {
       // 初始化加载 ERC20_Tokens 信息;
       const method = ERC20Tokens_Methods.getAll;
       window.electron.ipcRenderer.sendMessage(IPC_CHANNEL, [ERC20TokensSignal, method, [chainId]]);
-      window.electron.ipcRenderer.once(IPC_CHANNEL, (arg) => {
+      window.electron.ipcRenderer.on(IPC_CHANNEL, (arg) => {
         if (arg instanceof Array && arg[0] == ERC20TokensSignal && arg[1] == method) {
           const data = arg[2][0];
           const tokens: {

@@ -1,15 +1,16 @@
 import { useWeb3React } from "@web3-react/core";
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 import { useBlockNumber } from "../application/hooks";
 import { AppDispatch } from "..";
 import { useDispatch } from "react-redux";
 import { useWalletsActiveAccount } from "../wallets/hooks";
 import useSafeScan from "../../hooks/useSafeScan";
-import { updateCrosschains } from "./actions";
+import { initCrosschains, updateCrosschains } from "./actions";
 import { useCrosschains } from "./hooks";
 import { Typography } from "antd";
 import { IPC_CHANNEL } from "../../config";
 import { Crosschain_Methods, CrosschainSignal, CrosschainSignalHandler } from "../../../main/handlers/CrosschainSignalHandler";
+import { fetchCrossChainByAddress } from "../../services/crosschain";
 
 const { Text } = Typography;
 
@@ -20,13 +21,14 @@ export default () => {
   const activeAccount = useWalletsActiveAccount();
   const { API_Crosschain } = useSafeScan();
   const stateCrosschains = useCrosschains();
+  const [safe4BlockNumber, setSafe4BlockNumber] = useState<number | undefined>();
 
   useEffect(() => {
-    if (activeAccount) {
+    if (activeAccount && chainId) {
       window.electron.ipcRenderer.sendMessage(
-        IPC_CHANNEL, [CrosschainSignal, Crosschain_Methods.getByAddress, [activeAccount]]
+        IPC_CHANNEL, [CrosschainSignal, Crosschain_Methods.getByAddress, [activeAccount, chainId]]
       );
-      window.electron.ipcRenderer.once(
+      window.electron.ipcRenderer.on(
         IPC_CHANNEL, (arg) => {
           if (arg instanceof Array && arg[0] == CrosschainSignal && arg[1] == Crosschain_Methods.getByAddress) {
             if (arg[2] && arg[2][0] instanceof Array) {
@@ -55,46 +57,59 @@ export default () => {
                   status
                 }
               });
-              setTimeout(
-                () => dispatch(updateCrosschains(crosschainVOs)),
-                500
-              )
+              dispatch(initCrosschains(crosschainVOs));
             }
           }
         }
       )
     }
-  }, [activeAccount]);
+  }, [activeAccount, chainId]);
+
+  useEffect(() => {
+    if (stateCrosschains) {
+      const unconfirmSafe4BlockNumbers = Object.keys(stateCrosschains).map(srcTxHash => {
+        const { srcNetwork, srcTxBlockNumber, dstNetwork, dstTxBlockNumber, status } = stateCrosschains[srcTxHash];
+        if (srcNetwork == 'safe4') {
+          return status == 4 ? 0 : srcTxBlockNumber;
+        }
+        return 0
+      })
+        .filter(blockNumber => blockNumber > 0)
+        .sort((a, b) => a - b);
+      const confirmSafe4BlockNumbers = Object.keys(stateCrosschains).map(srcTxHash => {
+        const { srcNetwork, srcTxBlockNumber, dstNetwork, dstTxBlockNumber, status } = stateCrosschains[srcTxHash];
+        if (srcNetwork == 'safe4') {
+          return status == 4 ? srcTxBlockNumber : 0;
+        } else if (dstNetwork == 'safe4') {
+          return dstTxBlockNumber;
+        }
+        return 0;
+      })
+        .filter(blockNumber => blockNumber > 0)
+        .sort((a, b) => b - a);
+      const crosschainSafe4BlockNumber = unconfirmSafe4BlockNumbers.length > 0 ? unconfirmSafe4BlockNumbers[0] :
+        confirmSafe4BlockNumbers.length > 0 ? confirmSafe4BlockNumbers[0]
+          : 1;
+      setSafe4BlockNumber(crosschainSafe4BlockNumber);
+    }
+  }, [stateCrosschains]);
 
   // Sync Crosschain Transaction Data
   useEffect(() => {
-    if (activeAccount && latestBlockNumber > 0 && chainId) {
-      console.log(">> ", stateCrosschains);
-      // const unconfirmSafe4BlockNumbers =
-      const numbers = Object.keys(stateCrosschains).map(srcTxHash => {
-        const { srcNetwork, srcTxBlockNumber, dstNetwork, dstTxBlockNumber , status } = stateCrosschains[srcTxHash];
-        if (srcNetwork == 'safe4') {
-          return srcTxBlockNumber;
-        }
-        if (dstNetwork == 'safe4') {
-          return dstTxBlockNumber;
-        }
-        return 0
-      }).sort( (a , b) => b - a );
-      const maxSafe4BlockNumber = numbers ? numbers[0] : 1;
-      console.log("Max Safe4BlockNumber =" , maxSafe4BlockNumber)
-      // fetchCrossChainByAddress(API_Crosschain, {address: activeAccount})
-      //   .then(data => {
-      //     dispatch(updateCrosschains(data));
-      //     window.electron.ipcRenderer.sendMessage(
-      //       IPC_CHANNEL, [CrosschainSignal, Crosschain_Methods.saveOrUpdate, [data]]
-      //     )
-      //   });
+    if (activeAccount && latestBlockNumber > 0 && chainId && safe4BlockNumber) {
+      console.log(`Fetch CrosschainDatas for ${activeAccount} by BlockNumber[${safe4BlockNumber}]`)
+      fetchCrossChainByAddress(API_Crosschain, { address: activeAccount })
+        .then(data => {
+          dispatch(updateCrosschains(data));
+          window.electron.ipcRenderer.sendMessage(
+            IPC_CHANNEL, [CrosschainSignal, Crosschain_Methods.saveOrUpdate, [data]]
+          )
+        });
     }
-  }, [activeAccount, latestBlockNumber, chainId, stateCrosschains])
+  }, [activeAccount, latestBlockNumber, chainId]);
   return <>
-    <Text>
+    {/* <Text>
       {JSON.stringify(stateCrosschains)}
-    </Text>
+    </Text> */}
   </>
 }

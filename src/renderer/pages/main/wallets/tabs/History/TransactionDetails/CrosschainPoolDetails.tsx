@@ -8,11 +8,8 @@ import { getNetworkExplorerURLByCoin, getNetworkExplorerURLByTxPrefix, getNetwor
 import { ethers } from "ethers";
 import { GlobalOutlined, SyncOutlined } from "@ant-design/icons";
 import EtherAmount from "../../../../../../utils/EtherAmount";
-import { useBlockNumber } from "../../../../../../state/application/hooks";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { fetchCrossChainByTxHash } from "../../../../../../services/crosschain";
-import useSafeScan from "../../../../../../hooks/useSafeScan";
-import { CrossChainVO } from "../../../../../../services";
+import { useCrosschain } from "../../../../../../state/transactions/hooks";
 
 const { Text } = Typography;
 
@@ -31,30 +28,7 @@ export default ({
   } = transaction;
   const activeAccount = useWalletsActiveAccount();
   const crosschainDirection = getCrosschainDirection(support.supportFuncName);
-  const blockNumber = useBlockNumber();
-  const { API_Crosschain } = useSafeScan();
-  const [crosschainData, setCrosschainData] = useState<CrossChainVO | undefined>(undefined);
-  useEffect(() => {
-    if (blockNumber && API_Crosschain) {
-      if (crosschainDirection == CrosschainDirection.SAFE4_NETWORKS) {
-        const srcTxHash = hash;
-        fetchCrossChainByTxHash(API_Crosschain, { srcTxHash })
-          .then(data => {
-            if (data) {
-              setCrosschainData(data);
-            }
-          })
-      } else if (crosschainDirection == CrosschainDirection.NETWORKS_SAFE4) {
-        const dstTxHash = hash;
-        fetchCrossChainByTxHash(API_Crosschain, { dstTxHash })
-          .then(data => {
-            if (data) {
-              setCrosschainData(data);
-            }
-          })
-      }
-    }
-  }, [blockNumber, hash, API_Crosschain]);
+  const crosschainData = useCrosschain(hash);
   const crosschainSpin = useMemo(() => {
     if (crosschainDirection) {
       if (crosschainDirection == CrosschainDirection.SAFE4_NETWORKS) {
@@ -232,7 +206,6 @@ export default ({
             </Col>
           </>
         }
-
       </Row>
     </Card>
   </>

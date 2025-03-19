@@ -1,5 +1,5 @@
 import { createReducer } from "@reduxjs/toolkit"
-import { addTransaction, checkedTransaction, clearAllTransactions, finalizeTransaction, loadERC20Tokens, loadTransactionsAndUpdateAddressActivityFetch, refreshAddressTimeNodeReward, reloadTransactionsAndSetAddressActivityFetch, updateCrosschains, updateERC20Token } from "./actions"
+import { addTransaction, checkedTransaction, clearAllTransactions, finalizeTransaction, initCrosschains, loadERC20Tokens, loadTransactionsAndUpdateAddressActivityFetch, refreshAddressTimeNodeReward, reloadTransactionsAndSetAddressActivityFetch, updateCrosschains, updateERC20Token } from "./actions"
 import { IPC_CHANNEL } from "../../config"
 import { DBAddressActivitySignal, DB_AddressActivity_Actions, DB_AddressActivity_Methods } from "../../../main/handlers/DBAddressActivitySingalHandler"
 import { CrossChainVO, DateTimeNodeRewardVO, TimeNodeRewardVO } from "../../services"
@@ -205,7 +205,7 @@ export default createReducer(initialState, (builder) => {
       );
     })
 
-    .addCase(reloadTransactionsAndSetAddressActivityFetch, ({ transactions, tokens , crosschains }, { payload: { txns, addressActivityFetch } }) => {
+    .addCase(reloadTransactionsAndSetAddressActivityFetch, ({ transactions, tokens, crosschains }, { payload: { txns, addressActivityFetch } }) => {
       transactions = TransactionsCombine(undefined, txns);
       return {
         transactions: transactions,
@@ -213,14 +213,13 @@ export default createReducer(initialState, (builder) => {
         addressActivityFetch: {
           ...addressActivityFetch
         },
-        crosschains : {},
+        crosschains : {...crosschains},
         chainId: addressActivityFetch.chainId
       }
     })
 
     .addCase(loadTransactionsAndUpdateAddressActivityFetch, (state, { payload: { chainId, addTxns, addressActivityFetch } }) => {
       if (state.chainId != chainId) {
-        console.log("chainid changed.....")
         return;
       }
       if (addTxns && addTxns.length > 0) {
@@ -301,6 +300,13 @@ export default createReducer(initialState, (builder) => {
     })
 
     .addCase(updateCrosschains, (state, { payload }) => {
+      Object.values(payload).forEach(crosschain => {
+        const { srcTxHash } = crosschain;
+        state.crosschains[srcTxHash] = crosschain;
+      });
+    })
+    .addCase(initCrosschains, (state, { payload }) => {
+      state.crosschains = {};
       Object.values(payload).forEach(crosschain => {
         const { srcTxHash } = crosschain;
         state.crosschains[srcTxHash] = crosschain;

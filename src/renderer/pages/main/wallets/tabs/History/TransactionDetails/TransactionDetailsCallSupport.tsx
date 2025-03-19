@@ -2,8 +2,9 @@ import { Card, Typography } from "antd"
 import { TransactionDetails } from "../../../../../../state/transactions/reducer"
 import { SystemContract } from "../../../../../../constants/SystemContracts";
 import { useCallback } from "react";
-import { Application_Crosschain_Pool, Safe4NetworkChainId } from "../../../../../../config";
+import { Application_Crosschain, Application_Crosschain_Pool, Safe4NetworkChainId } from "../../../../../../config";
 import CrosschainPoolDetails from "./CrosschainPoolDetails";
+import CrosschainDetails from "./CrosschainDetails";
 
 
 export default ({
@@ -25,6 +26,8 @@ export default ({
         return <></>
       case Application_Crosschain_Pool[Safe4NetworkChainId.Testnet] || Application_Crosschain_Pool[Safe4NetworkChainId.Mainnet]:
         return <CrosschainPoolDetails support={support} transaction={transaction} />;
+      case Application_Crosschain[Safe4NetworkChainId.Testnet] || Application_Crosschain_Pool[Safe4NetworkChainId.Mainnet]:
+        return <CrosschainDetails support={support} transaction={transaction} />;
       default:
         if (from == Application_Crosschain_Pool[Safe4NetworkChainId.Testnet]
           || from == Application_Crosschain_Pool[Safe4NetworkChainId.Mainnet]

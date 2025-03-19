@@ -52,14 +52,12 @@ export default () => {
     }
   }, [tokens, chainId]);
 
-
   return <>
     <Row>
       <Col span={24}>
         <Button onClick={() => { setOpenTokenAddModal(true) }} type="primary" icon={<AppstoreAddOutlined />}>{t("add")}</Button>
       </Col>
     </Row>
-
     {
       erc20Tokens && <Card className="menu-item-container" style={{ marginBottom: "20px", marginTop: "20px" }}>
         {
