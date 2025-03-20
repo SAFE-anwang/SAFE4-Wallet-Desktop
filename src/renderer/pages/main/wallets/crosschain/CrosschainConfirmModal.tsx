@@ -205,7 +205,7 @@ export default ({
             }
           </Col>
           <Col span={21}>
-            <Text strong>当前账户</Text>
+            <Text strong>Safe4</Text>
             <br />
             <Text strong>{activeAccount}</Text>
           </Col>
