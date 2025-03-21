@@ -9,7 +9,8 @@ import { ethers } from "ethers";
 import { GlobalOutlined, SyncOutlined } from "@ant-design/icons";
 import EtherAmount from "../../../../../../utils/EtherAmount";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useCrosschain } from "../../../../../../state/transactions/hooks";
+import { useCrosschain, useTransaction } from "../../../../../../state/transactions/hooks";
+import { useTranslation } from "react-i18next";
 
 const { Text } = Typography;
 
@@ -22,6 +23,7 @@ export default ({
   },
   transaction: TransactionDetails
 }) => {
+  const { t } = useTranslation();
   const {
     call,
     hash
@@ -41,20 +43,20 @@ export default ({
 
   const RenderCrosschainStatus = useCallback(() => {
     if (crosschainData && crosschainData.status == 4) {
-      return <Text type="success" strong>已完成</Text>
+      return <Text type="success" strong>{t("wallet_crosschain_status_finished")}</Text>
     }
-    return <Text strong type="secondary" italic>等待确认</Text>
+    return <Text strong type="secondary" italic>{t("wallet_crosschain_status_unconfirm")}</Text>
   }, [crosschainData])
 
   return <>
     <Row>
-      <Text type="secondary">跨链</Text>
+      <Text type="secondary">{t("wallet_crosschain")}</Text>
     </Row>
     <Card>
       {/* <Text>{JSON.stringify(support)}</Text> */}
       <Row>
         <Col span={24}>
-          <Text type="secondary">资产</Text>
+          <Text type="secondary">{t("wallet_crosschain_asset")}</Text>
         </Col>
         <Col span={24}>
           {
@@ -74,7 +76,7 @@ export default ({
         crosschainDirection == CrosschainDirection.NETWORKS_SAFE4 && support.inputDecodeResult &&
         <Row style={{ marginTop: "15px" }}>
           <Col span={4}>
-            <Text type="secondary">跨链发起</Text>
+            <Text type="secondary">{t("wallet_crosschain_fromtxhash")}</Text>
           </Col>
           <Col span={20}>
             <Text style={{ float: "right" }}>
@@ -91,7 +93,7 @@ export default ({
 
       <Row>
         <Col span={24}>
-          <Text type="secondary">从</Text>
+          <Text type="secondary">{t("wallet_crosschain_from")}</Text>
         </Col>
         {
           crosschainDirection == CrosschainDirection.SAFE4_NETWORKS &&
@@ -100,7 +102,7 @@ export default ({
               <TokenLogo width="30px" height="30px" />
             </Col>
             <Col span={22}>
-              <Text strong>Safe4 网络</Text>
+              <Text strong>Safe4 {t("network")}</Text>
               <br />
               <AddressComponent address={activeAccount} />
             </Col>
@@ -125,7 +127,7 @@ export default ({
       </Row>
       <Row style={{ marginTop: "10px" }}>
         <Col span={24}>
-          <Text type="secondary">跨链到</Text>
+          <Text type="secondary">{t("wallet_crosschain_crossto")}</Text>
         </Col>
         {
           crosschainDirection == CrosschainDirection.SAFE4_NETWORKS &&
@@ -134,7 +136,7 @@ export default ({
               <Avatar src={getNetworkLogoByCoin(support.supportFuncName as NetworkCoinType)} />
             </Col>
             <Col span={22}>
-              <Text strong>{getNetworkNameByCoin(support.supportFuncName as NetworkCoinType)} 网络</Text>
+              <Text strong>{getNetworkNameByCoin(support.supportFuncName as NetworkCoinType)} {t("network")}</Text>
               <br />
               {
                 support.inputDecodeResult && ethers.utils.isAddress(support.inputDecodeResult)
@@ -150,7 +152,7 @@ export default ({
               <TokenLogo />
             </Col>
             <Col span={22}>
-              <Text strong>Safe4 网络</Text>
+              <Text strong>Safe4 {t("network")}</Text>
               <br />
               {
                 call?.to && <AddressComponent address={call?.to} />
@@ -181,7 +183,7 @@ export default ({
 
       <Row style={{ marginTop: "10px" }}>
         <Col span={8}>
-          <Text type="secondary">跨链状态</Text><br />
+          <Text type="secondary">{t("wallet_crosschain_status")}</Text><br />
           {
             RenderCrosschainStatus()
           }
@@ -189,7 +191,7 @@ export default ({
         {
           crosschainData && crosschainData.status == 4 && <>
             <Col span={8}>
-              <Text type="secondary">到账数量</Text><br />
+              <Text type="secondary">{t("wallet_crosschain_receive_amount")}</Text><br />
               <Text strong>
                 {
                   crosschainData?.dstAmount
@@ -197,7 +199,7 @@ export default ({
               </Text>
             </Col>
             <Col span={8}>
-              <Text type="secondary">手续费</Text><br />
+              <Text type="secondary">{t("wallet_crosschain_fee")}</Text><br />
               <Text strong>
                 {
                   crosschainData?.fee

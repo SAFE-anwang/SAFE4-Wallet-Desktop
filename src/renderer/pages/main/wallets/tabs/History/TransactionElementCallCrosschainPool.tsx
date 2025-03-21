@@ -111,10 +111,10 @@ export default ({ transaction, setClickTransaction, support }: {
         title={<>
           <Text strong>
             {
-              crosschainDirection == CrosschainDirection.SAFE4_NETWORKS && `资产跨链到 ${getNetworkNameByCoin(support.supportFuncName as NetworkCoinType)} 网络`
+              crosschainDirection == CrosschainDirection.SAFE4_NETWORKS && `${t("wallet_history_crosschain_crosstonetwork", { network: getNetworkNameByCoin(support.supportFuncName as NetworkCoinType) })}`
             }
             {
-              crosschainDirection == CrosschainDirection.NETWORKS_SAFE4 && `从 ${getNetworkNameByTxPrefix(support.supportFuncName as NetworkTxIdPrefix)} 网络接收资产`
+              crosschainDirection == CrosschainDirection.NETWORKS_SAFE4 && `${t("wallet_history_crosschain_receivefromnetwork", { network: getNetworkNameByTxPrefix(support.supportFuncName as NetworkTxIdPrefix) })}`
             }
           </Text>
         </>}

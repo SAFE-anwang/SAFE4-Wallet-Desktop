@@ -579,6 +579,8 @@ export default {
   wallet_history_redeem_available: "迁移 SAFE",
   wallet_history_redeem_locked: "迁移 锁仓资产",
   wallet_history_redeem_masternode: "迁移 主节点",
+  wallet_history_crosschain_crosstonetwork:"跨链到 {{network}} 网络",
+  wallet_history_crosschain_receivefromnetwork:"从 {{network}} 网络接收",
   wallet_history_clear_tip0: "确认要清空当前地址的历史记录吗?",
   wallet_history_clear_tip1: "该地址关联的历史记录清除后,会从浏览器接口重新同步.",
 
@@ -615,4 +617,16 @@ export default {
   wallet_crosschain_select_network:"选择目标网络",
   wallet_crosschain_target_address:"跨链到账地址",
   wallet_crosschain_target_address_warning:"跨链到账地址并不是当前钱包地址,请仔细核实该地址是否为您期望的目标地址。",
+  wallet_crosschain_crossto:"跨链到",
+  wallet_crosschain_approvetip0:"需要先授权跨链合约访问您的USDT资产",
+  wallet_crosschain_clicktoapprove:"点击授权",
+  wallet_crosschain_approving:"正在授权",
+  wallet_crosschain_asset: "资产",
+  wallet_crosschain_status:"跨链状态",
+  wallet_crosschain_status_unconfirm:"等待确认",
+  wallet_crosschain_status_finished:"已完成",
+  wallet_crosschain_receive_amount:"到账数量",
+  wallet_crosschain_fee:"手续费",
+  wallet_crosschain_from:"从",
+  wallet_crosschain_fromtxhash:"跨链发起"
 }

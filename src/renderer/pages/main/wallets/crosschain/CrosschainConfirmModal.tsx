@@ -17,7 +17,6 @@ import { EmptyContract } from "../../../../constants/SystemContracts";
 import { useDispatch } from "react-redux";
 import { applicationUpdateWalletTab } from "../../../../state/application/action";
 import { useNavigate } from "react-router-dom";
-import { getNetwork } from "@ethersproject/providers";
 
 const { Text, Link } = Typography;
 
@@ -215,7 +214,7 @@ export default ({
     <br />
     <Row>
       <Col span={24}>
-        <Text type="secondary">{"跨链到"}</Text>
+        <Text type="secondary">{t("wallet_crosschain_crossto")}</Text>
       </Col>
       <Col span={24} style={{ paddingLeft: "5px" }} >
         <Row>
@@ -238,14 +237,14 @@ export default ({
           <Col span={24}>
             <Alert type="info" message={<Row>
               <Col span={24}>
-                <Text>需要先授权跨链合约访问您的USDT资产</Text>
+                <Text>{t("wallet_crosschain_approvetip0")}</Text>
                 <Link disabled={approve.executing} onClick={doApproveMAX} style={{ float: "right" }}>
                   {
-                    !approve.executing && "点击授权"
+                    !approve.executing && t("wallet_crosschain_clicktoapprove")
                   }
                   {
                     approve.executing && <>
-                      <LoadingOutlined /> 正在授权...
+                      <LoadingOutlined /> {t("wallet_crosschain_approving")}...
                     </>
                   }
                 </Link>
