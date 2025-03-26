@@ -8,16 +8,26 @@ export enum Safe4NetworkChainId {
   Mainnet = 6666665
 }
 
+// Safe4 SAFE 原生币跨链到 BSC 网络资产池地址
+export const Application_Crosschain_Pool_BSC: { [chainId in Safe4NetworkChainId]: string } = {
+  [Safe4NetworkChainId.Testnet]: "0x7756B490d4Ce394bB6FBA5559C10a8eDc7b102Fc",
+  [Safe4NetworkChainId.Mainnet]: "0x7756B490d4Ce394bB6FBA5559C10a8eDc7b102Fc",
+};
+// Safe4 SAFE 原生币跨链到 ETH 网络资产池地址
+export const Application_Crosschain_Pool_ETH: { [chainId in Safe4NetworkChainId]: string } = {
+  [Safe4NetworkChainId.Testnet]: "0xaD016d35FE9148F2a8D8A8d37325ada3B7070386",
+  [Safe4NetworkChainId.Mainnet]: "0xaD016d35FE9148F2a8D8A8d37325ada3B7070386",
+};
+// Safe4 SAFE 原生币跨链到 MATIC 网络资产池地址
+export const Application_Crosschain_Pool_MATIC: { [chainId in Safe4NetworkChainId]: string } = {
+  [Safe4NetworkChainId.Testnet]: "0x8b151740b4a5B2bF7dA631AAD83Be627f97F5790",
+  [Safe4NetworkChainId.Mainnet]: "0x8b151740b4a5B2bF7dA631AAD83Be627f97F5790",
+};
+
 // Safe4 USDT 跨链合约地址
 export const Application_Crosschain: { [chainId in Safe4NetworkChainId]: string } = {
   [Safe4NetworkChainId.Testnet]: "0x268BFd7F4c5F0531294D9172f5DA84f0CC7812C5",
   [Safe4NetworkChainId.Mainnet]: "0x268BFd7F4c5F0531294D9172f5DA84f0CC7812C5",
-};
-
-// Safe4 SAFE 原生币跨链资产池地址
-export const Application_Crosschain_Pool: { [chainId in Safe4NetworkChainId]: string } = {
-  [Safe4NetworkChainId.Testnet]: "0x7756B490d4Ce394bB6FBA5559C10a8eDc7b102Fc",
-  [Safe4NetworkChainId.Mainnet]: "0x7756B490d4Ce394bB6FBA5559C10a8eDc7b102Fc",
 };
 
 // WSAFE 合约地址

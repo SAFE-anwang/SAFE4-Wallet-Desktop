@@ -4,8 +4,8 @@ import { useWeb3React } from "@web3-react/core";
 import { Alert, Avatar, Button, Col, Divider, Modal, Row, Typography } from "antd"
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { getNetworkLogo, NetworkType, outputNetworkCoin } from "../../../../assets/logo/NetworkLogo";
-import { Application_Crosschain_Pool, Safe4NetworkChainId, USDT } from "../../../../config";
+import { getNetworkLogo, NetworkCoinType, NetworkType, outputNetworkCoin } from "../../../../assets/logo/NetworkLogo";
+import { Application_Crosschain_Pool_BSC, Application_Crosschain_Pool_ETH, Application_Crosschain_Pool_MATIC, Safe4NetworkChainId, USDT } from "../../../../config";
 import { useCrosschainContract, useIERC20Contract } from "../../../../hooks/useContracts";
 import { useTokenAllowance, useWalletsActiveAccount, useWalletsActiveSigner } from "../../../../state/wallets/hooks";
 import ERC20TokenLogoComponent from "../../../components/ERC20TokenLogoComponent";
@@ -56,7 +56,6 @@ export default ({
   const cancel = useCallback(() => {
     setOpenCrosschainConfirmModal(false);
     if (txHash) {
-
       setTxHash(undefined);
       dispatch(applicationUpdateWalletTab("history"));
       navigate("/main/wallet");
@@ -142,35 +141,48 @@ export default ({
         })
     } else if (token == 'SAFE') {
       if (chainId && signer) {
-        const poolAddress = Application_Crosschain_Pool[chainId as Safe4NetworkChainId];
-        const prefix = outputNetworkCoin(targetNetwork) + ":";
-        const extraData = ethers.utils.hexlify(ethers.utils.toUtf8Bytes(prefix + targetAddress));
-        const value = ethers.utils.parseEther(amount);
-        const tx = {
-          to: poolAddress,
-          value,
-          data: extraData
+        let poolAddress = undefined;
+        switch (targetNetwork) {
+          case NetworkType.BSC:
+            poolAddress = Application_Crosschain_Pool_BSC[chainId as Safe4NetworkChainId];
+            break;
+          case NetworkType.ETH:
+            poolAddress = Application_Crosschain_Pool_ETH[chainId as Safe4NetworkChainId];
+            break;
+          case NetworkType.MATIC:
+            poolAddress = Application_Crosschain_Pool_MATIC[chainId as Safe4NetworkChainId];
+            break;
         }
-        setSending(true);
-        signer.sendTransaction(tx).then(response => {
-          setSending(false);
-          const {
-            data , hash
-          } = response;
-          setTransactionResponse(response);
-          addTransaction(tx, response, {
-            call: {
-              from: activeAccount,
-              to: tx.to,
-              input: data,
-              value: tx.value.toString()
-            }
-          });
-          setTxHash(hash);
-        }).catch(err => {
-          setSending(false);
-          setErr(err)
-        })
+        if (poolAddress) {
+          const prefix = outputNetworkCoin(targetNetwork) + ":";
+          const extraData = ethers.utils.hexlify(ethers.utils.toUtf8Bytes(prefix + targetAddress));
+          const value = ethers.utils.parseEther(amount);
+          const tx = {
+            to: poolAddress,
+            value,
+            data: extraData
+          }
+          setSending(true);
+          signer.sendTransaction(tx).then(response => {
+            setSending(false);
+            const {
+              data, hash
+            } = response;
+            setTransactionResponse(response);
+            addTransaction(tx, response, {
+              call: {
+                from: activeAccount,
+                to: tx.to,
+                input: data,
+                value: tx.value.toString()
+              }
+            });
+            setTxHash(hash);
+          }).catch(err => {
+            setSending(false);
+            setErr(err)
+          })
+        }
       }
     }
   }, [Token_USDT, CrossChain_Contract, chainId, signer])

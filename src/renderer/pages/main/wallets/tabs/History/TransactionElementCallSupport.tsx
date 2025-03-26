@@ -1,5 +1,5 @@
 import React, { useCallback, useMemo } from "react";
-import { SupportSafe3Functions, SupportAccountManagerFunctions, SupportMasternodeLogicFunctions, SupportProposalFunctions, SupportSupernodeLogicFunctions, SupportSupernodeVoteFunctions } from "../../../../../constants/DecodeSupportFunction";
+import { SupportSafe3Functions, SupportAccountManagerFunctions, SupportMasternodeLogicFunctions, SupportProposalFunctions, SupportSupernodeLogicFunctions, SupportSupernodeVoteFunctions, isCrosschainPoolTransaction } from "../../../../../constants/DecodeSupportFunction";
 import { SystemContract } from "../../../../../constants/SystemContracts";
 import { TransactionDetails } from "../../../../../state/transactions/reducer";
 import TransactionElementCallAMDeposit from "./TransactionElementCallAMDeposit";
@@ -17,7 +17,7 @@ import TransactionElementCallSNChange from "./TransactionElementCallSNChange";
 import TransactionElementCallMNChange from "./TransactionElementCallMNChange";
 import TransactionElementCallAMAddLockDay from "./TransactionElementCallAMAddLockDay";
 import { useTranslation } from "react-i18next";
-import { Application_Crosschain, Application_Crosschain_Pool, Safe4NetworkChainId } from "../../../../../config";
+import { Application_Crosschain, Application_Crosschain_Pool_BSC, Safe4NetworkChainId } from "../../../../../config";
 import TransactionElementCallCrosschainPool from "./TransactionElementCallCrosschainPool";
 import TransactionElementCallCrosschain from "./TransactionElementCallCrosschain";
 
@@ -48,18 +48,12 @@ export default ({ transaction, setClickTransaction, support }: {
         return CallProposalFunsRender(support.supportFuncName, transaction, setClickTransaction, support)
       case SystemContract.SAFE3:
         return CallSafe3FunsRender(support.supportFuncName, transaction, setClickTransaction, support)
-      case Application_Crosschain_Pool[Safe4NetworkChainId.Testnet] || Application_Crosschain_Pool[Safe4NetworkChainId.Mainnet]:
-        return CallCrosschainPoolFunsRender(support.supportFuncName, transaction, setClickTransaction, support);
       case Application_Crosschain[Safe4NetworkChainId.Testnet] || Application_Crosschain[Safe4NetworkChainId.Mainnet]:
         return CallCrosschainFunsRender(support.supportFuncName, transaction, setClickTransaction, support);
       default:
-
-        if (from == Application_Crosschain_Pool[Safe4NetworkChainId.Testnet]
-          || from == Application_Crosschain_Pool[Safe4NetworkChainId.Mainnet]
-        ) {
+        if ( isCrosschainPoolTransaction(to , from) ){
           return CallCrosschainPoolFunsRender(support.supportFuncName, transaction, setClickTransaction, support);
         }
-
         return <>No support Contract-Function-Render</>
     }
     return <></>

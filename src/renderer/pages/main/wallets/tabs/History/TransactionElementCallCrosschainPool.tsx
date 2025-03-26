@@ -8,6 +8,7 @@ import { useWalletsActiveAccount } from "../../../../../state/wallets/hooks";
 import EtherAmount from "../../../../../utils/EtherAmount";
 import { useMemo } from "react";
 import { useCrosschain } from "../../../../../state/transactions/hooks";
+import { getCrosschainPoolInfo, isCrosschainPoolTransaction } from "../../../../../constants/DecodeSupportFunction";
 
 const { Text } = Typography;
 
@@ -43,7 +44,7 @@ export default ({ transaction, setClickTransaction, support }: {
   const {
     hash,
     status,
-    call
+    call,
   } = transaction;
   const { from, to, value } = call ? call : {
     from: null, to: null, value: null
@@ -60,16 +61,35 @@ export default ({ transaction, setClickTransaction, support }: {
     }
     return false;
   }, [crosschainDirectoinType, crosschainVO]);
+  const { isCrosschainPoolBSC, isCrosschainPoolETH, isCrosschainPoolMATIC } = useMemo(() => {
+    if (from && to) {
+      return getCrosschainPoolInfo(to, from);
+    }
+    return {
+      isCrosschainPoolBSC: false, isCrosschainPoolETH: false, isCrosschainPoolMATIC: false
+    }
+
+  }, [crosschainDirection, from, to])
 
   const RenderLogosCrossDirectoin = () => {
     if (crosschainDirection == CrosschainDirection.SAFE4_NETWORKS) {
+      let coinType = isCrosschainPoolBSC ? NetworkCoinType.BSC :
+        isCrosschainPoolETH ? NetworkCoinType.ETH :
+          isCrosschainPoolMATIC ? NetworkCoinType.MATIC : undefined;
       return <>
-        <Avatar style={{ marginTop: "8px" }} src={SAFE_LOGO} />
-        <Avatar style={{ marginTop: "8px", marginLeft: "-15px" }} src={getNetworkLogoByCoin(support.supportFuncName as NetworkCoinType)} />
+        <Avatar style={{ marginTop: "8px", }} src={SAFE_LOGO} />
+        {
+          coinType && <Avatar style={{ marginTop: "8px", marginLeft: "-12px" }} src={getNetworkLogoByCoin(coinType)} />
+        }
       </>
     } else if (crosschainDirection == CrosschainDirection.NETWORKS_SAFE4) {
+      let txIdPrefix = isCrosschainPoolBSC ? NetworkTxIdPrefix.BID :
+        isCrosschainPoolETH ? NetworkTxIdPrefix.EID :
+          isCrosschainPoolMATIC ? NetworkTxIdPrefix.MID : undefined;
       return <>
-        <Avatar style={{ marginTop: "8px" }} src={getNetworkLogoByTxIDPrefix(support.supportFuncName as NetworkTxIdPrefix)} />
+        {
+          txIdPrefix && <Avatar style={{ marginTop: "8px" }} src={getNetworkLogoByTxIDPrefix(txIdPrefix)} />
+        }
         <Avatar style={{ marginTop: "8px", marginLeft: "-15px" }} src={SAFE_LOGO} />
       </>
     }
@@ -77,14 +97,30 @@ export default ({ transaction, setClickTransaction, support }: {
 
   const RenderTitle = () => {
     if (crosschainDirection == CrosschainDirection.SAFE4_NETWORKS) {
+      let coinType = isCrosschainPoolBSC ? NetworkCoinType.BSC :
+        isCrosschainPoolETH ? NetworkCoinType.ETH :
+          isCrosschainPoolMATIC ? NetworkCoinType.MATIC : undefined;
       return <>
-        <Avatar style={{ marginTop: "8px" }} src={SAFE_LOGO} />
-        <Avatar style={{ marginTop: "8px", marginLeft: "-15px" }} src={getNetworkLogoByCoin(support.supportFuncName as NetworkCoinType)} />
+        {
+          coinType && <Text strong>
+            {`${t("wallet_history_crosschain_crosstonetwork",
+              { network: getNetworkNameByCoin(coinType) }
+            )}`}
+          </Text>
+        }
       </>
     } else if (crosschainDirection == CrosschainDirection.NETWORKS_SAFE4) {
+      let txIdPrefix = isCrosschainPoolBSC ? NetworkTxIdPrefix.BID :
+        isCrosschainPoolETH ? NetworkTxIdPrefix.EID :
+          isCrosschainPoolMATIC ? NetworkTxIdPrefix.MID : undefined;
       return <>
-        <Avatar style={{ marginTop: "8px" }} src={getNetworkLogoByTxIDPrefix(support.supportFuncName as NetworkTxIdPrefix)} />
-        <Avatar style={{ marginTop: "8px", marginLeft: "-15px" }} src={SAFE_LOGO} />
+        {
+          txIdPrefix && <Text strong>
+            {`${t("wallet_history_crosschain_receivefromnetwork",
+              { network: getNetworkNameByTxPrefix((txIdPrefix)) }
+            )}`}
+          </Text>
+        }
       </>
     }
   }
@@ -108,16 +144,7 @@ export default ({ transaction, setClickTransaction, support }: {
             </span>
           </>
         }
-        title={<>
-          <Text strong>
-            {
-              crosschainDirection == CrosschainDirection.SAFE4_NETWORKS && `${t("wallet_history_crosschain_crosstonetwork", { network: getNetworkNameByCoin(support.supportFuncName as NetworkCoinType) })}`
-            }
-            {
-              crosschainDirection == CrosschainDirection.NETWORKS_SAFE4 && `${t("wallet_history_crosschain_receivefromnetwork", { network: getNetworkNameByTxPrefix(support.supportFuncName as NetworkTxIdPrefix) })}`
-            }
-          </Text>
-        </>}
+        title={RenderTitle()}
         description={
           <>
             {crosschainDirectoinType == CrosschainDirectoinType.RECEIVE && from}

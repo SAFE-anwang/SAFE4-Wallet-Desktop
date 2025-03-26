@@ -1,6 +1,6 @@
 import { FunctionFragment, Interface } from "ethers/lib/utils";
 import { SysContractABI, SystemContract } from "./SystemContracts";
-import { Application_Crosschain, Application_Crosschain_Pool, Safe4NetworkChainId } from "../config";
+import { Application_Crosschain, Application_Crosschain_Pool_BSC, Application_Crosschain_Pool_ETH, Application_Crosschain_Pool_MATIC, Safe4NetworkChainId } from "../config";
 import { ethers } from "ethers";
 import ApplicationContractAbiConfig from "./ApplicationContractAbiConfig";
 
@@ -305,12 +305,16 @@ function decodeSafe3FunctionData(
 
 function decodeCrosschainPoolFunctionData(input: string) {
   const decodeData = ethers.utils.toUtf8String(input);
-  const supportFuncName = decodeData.substring(0, decodeData.indexOf(":"));
-  const data = decodeData.substring(decodeData.indexOf(":") + 1);
-  return {
-    supportFuncName: supportFuncName,
-    inputDecodeResult: data
-  };
+  try {
+    const supportFuncName = decodeData.substring(0, decodeData.indexOf(":"));
+    const data = decodeData.substring(decodeData.indexOf(":") + 1);
+    return {
+      supportFuncName: supportFuncName,
+      inputDecodeResult: data
+    };
+  } catch (err) {
+    return undefined
+  }
 }
 
 function decodeCrosschainFunctionData(input: string) {
@@ -340,6 +344,32 @@ function decodeCrosschainFunctionData(input: string) {
   }
 }
 
+export function getCrosschainPoolInfo(address: string | undefined, from?: string): {
+  isCrosschainPoolBSC: boolean, isCrosschainPoolETH: boolean, isCrosschainPoolMATIC: boolean
+} {
+  if (address && from) {
+    const isCrosschainPoolBSC = Object.values(Application_Crosschain_Pool_BSC).includes(address)
+      || Object.values(Application_Crosschain_Pool_BSC).includes(from);
+    const isCrosschainPoolETH = Object.values(Application_Crosschain_Pool_ETH).includes(address)
+      || Object.values(Application_Crosschain_Pool_ETH).includes(from);
+    const isCrosschainPoolMATIC = Object.values(Application_Crosschain_Pool_MATIC).includes(address)
+      || Object.values(Application_Crosschain_Pool_MATIC).includes(from);
+    return {
+      isCrosschainPoolBSC, isCrosschainPoolETH, isCrosschainPoolMATIC
+    }
+  }
+  return {
+    isCrosschainPoolBSC: false, isCrosschainPoolETH: false, isCrosschainPoolMATIC: false
+  };
+}
+
+export function isCrosschainPoolTransaction(address: string | undefined, from?: string) {
+  const {
+    isCrosschainPoolBSC, isCrosschainPoolETH, isCrosschainPoolMATIC
+  } = getCrosschainPoolInfo(address, from);
+  return isCrosschainPoolBSC || isCrosschainPoolETH || isCrosschainPoolMATIC;
+}
+
 export default (address: string | undefined, input: string | undefined, from?: string): {
   supportFuncName: string,
   inputDecodeResult: any
@@ -347,11 +377,7 @@ export default (address: string | undefined, input: string | undefined, from?: s
   if (!input) {
     return undefined;
   }
-  if (address == Application_Crosschain_Pool[Safe4NetworkChainId.Testnet]
-    || address == Application_Crosschain_Pool[Safe4NetworkChainId.Mainnet]
-    || from == Application_Crosschain_Pool[Safe4NetworkChainId.Testnet]
-    || from == Application_Crosschain_Pool[Safe4NetworkChainId.Mainnet]
-  ) {
+  if (isCrosschainPoolTransaction(address, from)) {
     return decodeCrosschainPoolFunctionData(input);
   }
   if (address == Application_Crosschain[Safe4NetworkChainId.Testnet]
