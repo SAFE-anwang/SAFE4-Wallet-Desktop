@@ -3,12 +3,15 @@ import { Alert, Avatar, Button, Card, Col, Divider, Dropdown, Input, MenuProps, 
 import { useTranslation } from "react-i18next";
 import { useWeb3React } from "@web3-react/core";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { CurrencyAmount, Token, TokenAmount } from "@uniswap/sdk";
+import { ChainId, CurrencyAmount, Token, TokenAmount } from "@uniswap/sdk";
 import { ethers } from "ethers";
 import { useETHBalances, useTokenBalances, useWalletsActiveAccount } from "../../../state/wallets/hooks";
 import { Safe4NetworkChainId, USDT } from "../../../config";
 import TokenLogo from "../../components/TokenLogo";
 import TokenSelectModal from "./TokenSelectModal";
+import { calculatePaireAddress } from "./Calculate";
+import { useContract } from "../../../hooks/useContracts";
+import { PairABI } from "../../../constants/SafeswapAbiConfig";
 
 const { Title, Text, Link } = Typography;
 
@@ -20,10 +23,23 @@ export default () => {
   const { chainId } = useWeb3React();
   const activeAccount = useWalletsActiveAccount();
 
-  const [tokenA , setTokenA] = useState<Token | undefined>();
-  const [tokenB , setTokenB] = useState<Token | undefined>();
+  const [tokenA, setTokenA] = useState<Token | undefined>();
+  const [tokenB, setTokenB] = useState<Token | undefined>();
 
+  const _tokenA = new Token(ChainId.MAINNET, "0xC5a68f24aD442801c454417e9F5aE073DD9D92F6", 18, "TKA", "Token A");
+  const _tokenB = new Token(ChainId.MAINNET, "0xb9FE8cBC71B818035AcCfd621d204BAa57377FFA", 18, "TKB", "Token B");
 
+  const pairAddress = chainId && calculatePaireAddress(_tokenA, _tokenB, chainId);
+  const pairContract = pairAddress && useContract(pairAddress, PairABI, false);
+
+  useEffect(() => {
+    console.log("Pair Contract =>", pairContract)
+    if (pairContract) {
+      pairContract.getReserves().then( (data : any)  => {
+        console.log( data )
+      })
+    }
+  }, [pairContract])
 
   return <>
     <Row style={{ height: "50px" }}>

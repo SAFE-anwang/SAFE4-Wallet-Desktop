@@ -41,6 +41,10 @@ export const USDT: { [chainId in Safe4NetworkChainId]:Token } = {
   [Safe4NetworkChainId.Mainnet]: new Token( ChainId.MAINNET,"0x268BFd7F4c5F0531294D9172f5DA84f0CC7812C5",18,"USDT", "USDT"),
 };
 
+export const SafeswapV2RouterAddress = "0x6476008C612dF9F8Db166844fFE39D24aEa12271";
+export const SafeswapV2FactoryAddreess = "0xB3c827077312163c53E3822defE32cAffE574B42";
+export const SafeswapV2InitCodeHash = "0xad0e51aa7a058efb9eb40fd6385473f0175ee7419e8d4f91a4e0294ec12b2d13";
+
 export const Safe4_Network_Config = {
   Testnet: {
     chainId: 6666666,
