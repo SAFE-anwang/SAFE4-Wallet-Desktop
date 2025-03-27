@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { AppstoreOutlined, WalletOutlined, SettingOutlined, ClusterOutlined, ApartmentOutlined, FilePptOutlined, ApiOutlined, GiftOutlined, FileZipOutlined, SyncOutlined } from '@ant-design/icons';
+import { AppstoreOutlined, WalletOutlined, SettingOutlined, ClusterOutlined, ApartmentOutlined, FilePptOutlined, ApiOutlined, GiftOutlined, FileZipOutlined, SyncOutlined, SwapOutlined } from '@ant-design/icons';
 import { Button, Dropdown, MenuProps, MenuTheme, Space, message } from 'antd';
 import { Menu, Switch } from 'antd';
 import { useNavigate } from 'react-router-dom';
@@ -47,6 +47,7 @@ const MenuComponent: React.FC = () => {
       getItem(t("safe3AssetRedeem"), '/main/safe3nav', <ApiOutlined />),
       getItem(t("contract"), '/main/contracts', <FileZipOutlined />),
       getItem(t("wallet_crosschain"), '/main/crosschain', <SyncOutlined />),
+      getItem(t("wallet_swap"), '/main/swap', <SwapOutlined />),
       getItem(t("getTestCoin"), '/main/gettestcoin', <GiftOutlined />),
     ]
   }, [t]);

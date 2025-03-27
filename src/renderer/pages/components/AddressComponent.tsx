@@ -3,6 +3,7 @@ import useWalletName, { isLocalWallet } from "../../hooks/useWalletName";
 import { WalletTwoTone, QrcodeOutlined } from "@ant-design/icons";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { ethers } from "ethers";
 const { Text, Paragraph, Link } = Typography;
 export default ({
   address,
@@ -18,8 +19,9 @@ export default ({
   style?: React.CSSProperties
 }) => {
   const { t } = useTranslation();
-  const { isLocal, isActive, name } = isLocalWallet(address);
-  const addressLabel = ellipsis ? address.substring(0, 10) + "..." + address.substring(address.length - 8) : address;
+  const _address = ethers.utils.getAddress(address);
+  const { isLocal, isActive, name } = isLocalWallet(_address);
+  const addressLabel = ellipsis ? _address.substring(0, 10) + "..." + _address.substring(address.length - 8) : _address;
   const [openAddressQRCode, setOpenAddressQRCode] = useState(false);
   const [openAddress, setOpenAddress] = useState<string>();
   const walletColor = useMemo(() => {
@@ -40,7 +42,7 @@ export default ({
     }} italic={isActive} >
       {addressLabel}
       {
-        copyable && <Paragraph style={{ float: "right", height: "8px" }} copyable={{ text: address }} />
+        copyable && <Paragraph style={{ float: "right", height: "8px" }} copyable={{ text: _address }} />
       }
       {
         qrcode && <Link onClick={(event) => {
@@ -48,7 +50,7 @@ export default ({
           event.stopPropagation();
           // 阻止默认行为（如果有）
           event.preventDefault();
-          setOpenAddress(address);
+          setOpenAddress(_address);
           setOpenAddressQRCode(true);
         }}>
           <Tooltip title={t("wallet_address_qrcode_view")}>
@@ -90,8 +92,6 @@ export default ({
         </Row>
       </Modal>
     }
-
-
   </div>
 
 }

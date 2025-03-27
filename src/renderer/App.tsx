@@ -59,6 +59,7 @@ import TestSSH2CMD from './pages/main/tools/ssh2/TestSSH2CMD';
 import { useWalletsKeystores } from './state/wallets/hooks';
 import { useTranslation } from 'react-i18next';
 import Crosschain from './pages/main/wallets/crosschain/Crosschain';
+import SafeswapV2 from './pages/main/safeswap/SafeswapV2';
 const { Text } = Typography;
 
 export default function App() {
@@ -327,6 +328,7 @@ export default function App() {
                     <Route path="/main/contracts/deploy" element={<ContractDeploy />} />
                     <Route path="/main/contracts/edit" element={<ContractEdit />} />
                     <Route path="/main/crosschain" element={<Crosschain />} />
+                    <Route path="/main/swap" element={<SafeswapV2 />} />
                   </Routes>
                 </Col>
               </Row>

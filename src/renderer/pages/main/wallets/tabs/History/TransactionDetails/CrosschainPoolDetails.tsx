@@ -11,6 +11,7 @@ import EtherAmount from "../../../../../../utils/EtherAmount";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useCrosschain, useTransaction } from "../../../../../../state/transactions/hooks";
 import { useTranslation } from "react-i18next";
+import { getCrosschainPoolInfo } from "../../../../../../constants/DecodeSupportFunction";
 
 const { Text } = Typography;
 
@@ -25,9 +26,13 @@ export default ({
 }) => {
   const { t } = useTranslation();
   const {
+    hash,
+    status,
     call,
-    hash
   } = transaction;
+  const { from, to, value } = call ? call : {
+    from: null, to: null, value: null
+  };
   const activeAccount = useWalletsActiveAccount();
   const crosschainDirection = getCrosschainDirection(support.supportFuncName);
   const crosschainData = useCrosschain(hash);
@@ -41,12 +46,94 @@ export default ({
     }
   }, [crosschainData]);
 
+  const { isCrosschainPoolBSC, isCrosschainPoolETH, isCrosschainPoolMATIC } = useMemo(() => {
+    if (from && to) {
+      return getCrosschainPoolInfo(to, from);
+    }
+    return {
+      isCrosschainPoolBSC: false, isCrosschainPoolETH: false, isCrosschainPoolMATIC: false
+    }
+
+  }, [crosschainDirection, from, to])
+
   const RenderCrosschainStatus = useCallback(() => {
     if (crosschainData && crosschainData.status == 4) {
       return <Text type="success" strong>{t("wallet_crosschain_status_finished")}</Text>
     }
     return <Text strong type="secondary" italic>{t("wallet_crosschain_status_unconfirm")}</Text>
-  }, [crosschainData])
+  }, [crosschainData]);
+
+  const RenderCrosschainFrom = () => {
+    if (crosschainDirection == CrosschainDirection.SAFE4_NETWORKS) {
+      return <>
+        <Col span={2} style={{ paddingTop: "8px" }}>
+          <TokenLogo width="30px" height="30px" />
+        </Col>
+        <Col span={22}>
+          <Text strong>Safe4 {t("network")}</Text>
+          <br />
+          <AddressComponent address={activeAccount} />
+        </Col>
+      </>
+    } else if (crosschainDirection == CrosschainDirection.NETWORKS_SAFE4) {
+      let txIdPrefix = isCrosschainPoolBSC ? NetworkTxIdPrefix.BID :
+        isCrosschainPoolETH ? NetworkTxIdPrefix.EID :
+          isCrosschainPoolMATIC ? NetworkTxIdPrefix.MID : undefined;
+      return <>
+        <Col span={2} style={{ paddingTop: "8px" }}>
+          {txIdPrefix && <Avatar src={getNetworkLogoByTxIDPrefix(txIdPrefix)} />}
+        </Col>
+        <Col span={22}>
+          {
+            txIdPrefix && <Text strong>{getNetworkNameByTxPrefix(txIdPrefix)}</Text>
+          }
+          <br />
+          {
+            crosschainData && crosschainData.srcAddress && ethers.utils.isAddress(crosschainData.srcAddress) &&
+            <AddressComponent address={crosschainData.srcAddress} />
+          }
+        </Col>
+      </>
+    }
+  }
+
+  const RenderCrosschainTo = () => {
+    let coinType = isCrosschainPoolBSC ? NetworkCoinType.BSC :
+      isCrosschainPoolETH ? NetworkCoinType.ETH :
+        isCrosschainPoolMATIC ? NetworkCoinType.MATIC : undefined;
+    if (crosschainDirection == CrosschainDirection.SAFE4_NETWORKS) {
+      return <>
+        <Col span={2} style={{ paddingTop: "8px" }}>
+          {
+            coinType && <Avatar src={getNetworkLogoByCoin(coinType)} />
+          }
+        </Col>
+        <Col span={22}>
+          {
+            coinType && <Text strong>{getNetworkNameByCoin(coinType)} {t("network")}</Text>
+          }
+          <br />
+          {
+            support.inputDecodeResult && ethers.utils.isAddress(support.inputDecodeResult)
+            && <AddressComponent address={support.inputDecodeResult} />
+          }
+        </Col>
+      </>
+    } else if (crosschainDirection == CrosschainDirection.NETWORKS_SAFE4) {
+      return <>
+        <Col span={2} style={{ paddingTop: "8px" }}>
+          <TokenLogo />
+        </Col>
+        <Col span={22}>
+          <Text strong>Safe4 {t("network")}</Text>
+          <br />
+          {
+            call?.to && <AddressComponent address={call?.to} />
+          }
+        </Col>
+      </>
+    }
+  }
 
   return <>
     <Row>
@@ -95,71 +182,13 @@ export default ({
         <Col span={24}>
           <Text type="secondary">{t("wallet_crosschain_from")}</Text>
         </Col>
-        {
-          crosschainDirection == CrosschainDirection.SAFE4_NETWORKS &&
-          <>
-            <Col span={2} style={{ paddingTop: "8px" }}>
-              <TokenLogo width="30px" height="30px" />
-            </Col>
-            <Col span={22}>
-              <Text strong>Safe4 {t("network")}</Text>
-              <br />
-              <AddressComponent address={activeAccount} />
-            </Col>
-          </>
-        }
-        {
-          crosschainDirection == CrosschainDirection.NETWORKS_SAFE4 &&
-          <>
-            <Col span={2} style={{ paddingTop: "8px" }}>
-              <Avatar src={getNetworkLogoByTxIDPrefix(support.supportFuncName as NetworkTxIdPrefix)} />
-            </Col>
-            <Col span={22}>
-              <Text strong>{getNetworkNameByTxPrefix(support.supportFuncName as NetworkTxIdPrefix)}</Text>
-              <br />
-              {
-                crosschainData && crosschainData.srcAddress && ethers.utils.isAddress(crosschainData.srcAddress) &&
-                <AddressComponent address={crosschainData.srcAddress} />
-              }
-            </Col>
-          </>
-        }
+        {RenderCrosschainFrom()}
       </Row>
       <Row style={{ marginTop: "10px" }}>
         <Col span={24}>
           <Text type="secondary">{t("wallet_crosschain_crossto")}</Text>
         </Col>
-        {
-          crosschainDirection == CrosschainDirection.SAFE4_NETWORKS &&
-          <>
-            <Col span={2} style={{ paddingTop: "8px" }}>
-              <Avatar src={getNetworkLogoByCoin(support.supportFuncName as NetworkCoinType)} />
-            </Col>
-            <Col span={22}>
-              <Text strong>{getNetworkNameByCoin(support.supportFuncName as NetworkCoinType)} {t("network")}</Text>
-              <br />
-              {
-                support.inputDecodeResult && ethers.utils.isAddress(support.inputDecodeResult)
-                && <AddressComponent address={support.inputDecodeResult} />
-              }
-            </Col>
-          </>
-        }
-        {
-          crosschainDirection == CrosschainDirection.NETWORKS_SAFE4 &&
-          <>
-            <Col span={2} style={{ paddingTop: "8px" }}>
-              <TokenLogo />
-            </Col>
-            <Col span={22}>
-              <Text strong>Safe4 {t("network")}</Text>
-              <br />
-              {
-                call?.to && <AddressComponent address={call?.to} />
-              }
-            </Col>
-          </>
-        }
+        {RenderCrosschainTo()}
       </Row>
 
       {
