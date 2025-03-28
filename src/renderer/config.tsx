@@ -32,8 +32,8 @@ export const Application_Crosschain: { [chainId in Safe4NetworkChainId]: string 
 
 // WSAFE 合约地址
 export const WSAFE: {[chainId in Safe4NetworkChainId]:Token} = {
-  [Safe4NetworkChainId.Testnet]: new Token( ChainId.MAINNET,"0xFbB4864b5EF17F28Da7e1bE993121cABd71834C4",18,"WSAFE", "WSAFE"),
-  [Safe4NetworkChainId.Mainnet]: new Token( ChainId.MAINNET,"0xFbB4864b5EF17F28Da7e1bE993121cABd71834C4",18,"WSAFE", "WSAFE"),
+  [Safe4NetworkChainId.Testnet]: new Token( ChainId.MAINNET,"0x64c5ab0dfecce653751b463afb05352085c5f2f9",18,"WSAFE", "WSAFE"),
+  [Safe4NetworkChainId.Mainnet]: new Token( ChainId.MAINNET,"0x64c5ab0dfecce653751b463afb05352085c5f2f9",18,"WSAFE", "WSAFE"),
 };
 // USDT 合约地址
 export const USDT: { [chainId in Safe4NetworkChainId]:Token } = {
