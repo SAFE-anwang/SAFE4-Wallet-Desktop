@@ -402,12 +402,52 @@ export function useTokenBalancesWithLoadingIndicator(
   ]
 }
 
+export function useTokenAllowanceWithLoadingIndicator(
+  address?: string,
+  spender?: string,
+  tokens?: (Token | undefined)[]
+): [{ [tokenAddress: string]: TokenAmount | undefined }, boolean] {
+  const validatedTokens: Token[] = useMemo(
+    () => tokens?.filter((t?: Token): t is Token => isAddress(t?.address) !== false) ?? [],
+    [tokens]
+  )
+  const validatedTokenAddresses = useMemo(() => validatedTokens.map(vt => vt.address), [validatedTokens])
+  const balances = useMultipleContractSingleData(validatedTokenAddresses, IERC20_Interface, 'allowance', [address, spender]);
+  const anyLoading: boolean = useMemo(() => balances.some(callState => callState.loading), [balances])
+  return [
+    useMemo(
+      () =>
+        address && validatedTokens.length > 0
+          ? validatedTokens.reduce<{ [tokenAddress: string]: TokenAmount | undefined }>((memo, token, i) => {
+            const value = balances?.[i]?.result?.[0]
+            const amount = value ? JSBI.BigInt(value.toString()) : undefined
+            if (amount) {
+              memo[token.address] = new TokenAmount(token, amount)
+            }
+            return memo
+          }, {})
+          : {},
+      [address, validatedTokens, balances]
+    ),
+    anyLoading
+  ]
+}
+
 export function useTokenBalances(
   address?: string,
   tokens?: (Token | undefined)[]
 ): { [tokenAddress: string]: TokenAmount | undefined } {
   return useTokenBalancesWithLoadingIndicator(address, tokens)[0]
 }
+
+export function useTokenAllowanceAmounts(
+  address?: string,
+  spender?: string,
+  tokens?: (Token | undefined)[]
+): { [tokenAddress: string]: TokenAmount | undefined } {
+  return useTokenAllowanceWithLoadingIndicator(address, spender, tokens)[0]
+}
+
 
 export function useTokenAllowance(token: Token, owner: string, spender: string) {
   const ERC20_Contract = useIERC20Contract(token.address, false);

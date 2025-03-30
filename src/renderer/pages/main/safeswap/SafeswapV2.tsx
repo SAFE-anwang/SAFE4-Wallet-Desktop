@@ -1,21 +1,18 @@
-import { ArrowDownOutlined, DownOutlined, LeftOutlined, UserOutlined } from "@ant-design/icons";
+import { ArrowDownOutlined, DownOutlined, LeftOutlined, SwapOutlined, UserOutlined } from "@ant-design/icons";
 import { Alert, Avatar, Button, Card, Col, Divider, Dropdown, Input, MenuProps, message, Row, Select, Space, Typography } from "antd";
 import { useTranslation } from "react-i18next";
 import { useWeb3React } from "@web3-react/core";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ChainId, CurrencyAmount, Token, TokenAmount } from "@uniswap/sdk";
 import { ethers } from "ethers";
-import { useETHBalances, useTokenBalances, useWalletsActiveAccount } from "../../../state/wallets/hooks";
-import { Safe4NetworkChainId, USDT, WSAFE } from "../../../config";
-import TokenLogo from "../../components/TokenLogo";
-import TokenSelectModal from "./TokenSelectModal";
+import { useETHBalances, useTokenAllowanceAmounts, useTokenBalances, useWalletsActiveAccount } from "../../../state/wallets/hooks";
 import { calculateAmountIn, calculateAmountOut, calculatePaireAddress, getReserve, sort } from "./Calculate";
 import { useContract } from "../../../hooks/useContracts";
 import { PairABI } from "../../../constants/SafeswapAbiConfig";
 import { useBlockNumber } from "../../../state/application/hooks";
-import { SAFE_LOGO } from "../../../assets/logo/AssetsLogo";
-import ERC20TokenLogoComponent from "../../components/ERC20TokenLogoComponent";
-import EtherAmount from "../../../utils/EtherAmount";
+import { useTokens } from "../../../state/transactions/hooks";
+import TokenButtonSelect from "./TokenButtonSelect";
+import { SafeswapV2RouterAddress } from "../../../config";
 const { Title, Text, Link } = Typography;
 
 
@@ -26,36 +23,54 @@ const enum SwapFocus {
   SellOut = "SellOut",
 }
 
+const enum PriceType {
+  A2B = "A2B",
+  B2A = "B2A"
+}
+
 export default () => {
 
   const { t } = useTranslation();
   const { chainId } = useWeb3React();
   const activeAccount = useWalletsActiveAccount();
   const blockNumber = useBlockNumber();
-
   const Default_Swap_Token = chainId && [
     // USDT[chainId as Safe4NetworkChainId],
     new Token(ChainId.MAINNET, "0xC5a68f24aD442801c454417e9F5aE073DD9D92F6", 18, "TKA", "Token-A"),
-    // new Token(ChainId.MAINNET,"0xb9FE8cBC71B818035AcCfd621d204BAa57377FFA",18,"TKB","Token-B")
+    // new Token(ChainId.MAINNET, "0xb9FE8cBC71B818035AcCfd621d204BAa57377FFA", 18, "TKB", "Token-B")
     undefined,
   ];
 
-  const swapParams: {
-    tokenA : Token | undefined,
-    tokenB : Token | undefined,
-    tokenInAmount : string | undefined,
-    tokenOutAmount : string | undefined,
-    swapFocus : SwapFocus | undefined
-  } | undefined = undefined;
+  const tokens = useTokens();
+  const [erc20Tokens, setERC20Tokens] = useState<Token[]>(
+    Object.keys(tokens).map((address) => {
+      const { name, decimals, symbol } = tokens[address];
+      return new Token(ChainId.MAINNET, address, decimals, symbol, name);
+    })
+  );
+  const tokenAmounts = useTokenBalances(activeAccount, erc20Tokens);
+  const tokenAllowanceAmounts = useTokenAllowanceAmounts( activeAccount , SafeswapV2RouterAddress , erc20Tokens );
 
+  const balance = useETHBalances([activeAccount])[activeAccount];
   const [tokenA, setTokenA] = useState<Token | undefined>(Default_Swap_Token ? Default_Swap_Token[0] : undefined);
   const [tokenB, setTokenB] = useState<Token | undefined>(Default_Swap_Token ? Default_Swap_Token[1] : undefined);
+  const [swapFocus, setSwapFocus] = useState<SwapFocus | undefined>(undefined);
+  const [priceType, setPriceType] = useState<PriceType | undefined>(PriceType.B2A);
+  const balanceOfTokenA = tokenA ? tokenAmounts[tokenA.address] : balance;
+  const balanceOfTokenB = tokenB ? tokenAmounts[tokenB.address] : balance;
+  const [reservers, setReservers] = useState<{ [address: string]: any }>();
+  const [tokenInAmount, setTokenInAmount] = useState<string>();
+  const [tokenOutAmount, setTokenOutAmount] = useState<string>();
   const pairAddress = chainId && calculatePaireAddress(tokenA, tokenB, chainId);
   const pairContract = pairAddress && useContract(pairAddress, PairABI, false);
-  const [reservers, setReservers] = useState<{ [address: string]: any }>();
+  const [err, setErr] = useState<{
+    liquidity?: string | undefined
+  }>();
 
   useEffect(() => {
     if (pairContract) {
+      setReservers(undefined);
+      setErr(undefined);
       pairContract.getReserves().then((data: any) => {
         const [r0, r1] = data;
         const sortTokens = sort(tokenA, tokenB, chainId);
@@ -64,63 +79,26 @@ export default () => {
           reservers[sortTokens[0].address] = r0;
           reservers[sortTokens[1].address] = r1;
           setReservers(reservers);
+          if (swapFocus && swapFocus == SwapFocus.SellOut && tokenInAmount) {
+            calculate(tokenInAmount, undefined);
+          } else if (swapFocus && swapFocus == SwapFocus.BuyIn && tokenOutAmount) {
+            calculate(undefined, tokenOutAmount);
+          }
         }
       }).catch((err: any) => {
         // 未创建流动性
+        console.log("No liquidility");
+        setErr({
+          ...err,
+          liquidity: "未在 Safeswap 中找到该代币组合的交易池"
+        })
       })
     }
   }, [pairContract, blockNumber]);
 
-  const [tokenInAmount, setTokenInAmount] = useState<string>();
-  const [tokenOutAmount, setTokenOutAmount] = useState<string>();
-  const [swapFocus, setSwapFocus] = useState<SwapFocus | undefined>();
-
-  const handleTokenInAmountInput = (_tokenInAmount: string) => {
-    setTokenInAmount(_tokenInAmount)
-    setSwapFocus(SwapFocus.SellOut);
-  }
-
-  const handleTokenOutAmountInput = (_tokenOutAmount: string) => {
-    setTokenOutAmount(_tokenOutAmount)
-    setSwapFocus(SwapFocus.BuyIn);
-  }
-
-  // const handleTokenAmountCalculate = useCallback((tokenInAmount: string | undefined, tokenOutAmount: string | undefined) => {
-  //   if (chainId) {
-  //     if (tokenInAmount) {
-  //       const amountIn = ethers.utils.parseUnits(tokenInAmount, tokenA?.decimals);
-  //       const reserveIn = getReserve(tokenA, reservers, chainId);
-  //       const reserveOut = getReserve(tokenB, reservers, chainId);
-  //       const amountOut = calculateAmountOut(
-  //         amountIn,
-  //         reserveIn,
-  //         reserveOut,
-  //         SafeswapV2_Fee_Rate,
-  //       );
-  //       const tokenOutAmount = tokenB ? new TokenAmount(tokenB, amountOut.toBigInt())
-  //         : CurrencyAmount.ether(amountOut.toBigInt());
-  //       setTokenOutAmount(tokenOutAmount.toFixed(4));
-  //       return;
-  //     } else if (tokenOutAmount) {
-  //       const amountOut = ethers.utils.parseUnits(tokenOutAmount, tokenB?.decimals);
-  //       const reserveIn = getReserve(tokenA, reservers, chainId);
-  //       const reserveOut = getReserve(tokenB, reservers, chainId);
-  //       const amountIn = calculateAmountIn(
-  //         amountOut,
-  //         reserveOut,
-  //         reserveIn,
-  //         SafeswapV2_Fee_Rate,
-  //       );
-  //       const tokenInAmount = tokenA ? new TokenAmount(tokenA, amountIn.toBigInt())
-  //         : CurrencyAmount.ether(amountOut.toBigInt());
-  //       setTokenInAmount(tokenInAmount.toFixed(4));
-  //     }
-  //   }
-  // }, [reservers, tokenA, tokenB]);
-
-  useEffect(() => {
-    if (chainId) {
-      if (swapFocus == SwapFocus.SellOut && tokenInAmount) {
+  const calculate = useCallback((tokenInAmount: string | undefined, tokenOutAmount: string | undefined): CurrencyAmount | undefined => {
+    if (chainId && reservers) {
+      if (tokenInAmount) {
         const amountIn = ethers.utils.parseUnits(tokenInAmount, tokenA?.decimals);
         const reserveIn = getReserve(tokenA, reservers, chainId);
         const reserveOut = getReserve(tokenB, reservers, chainId);
@@ -130,10 +108,9 @@ export default () => {
           reserveOut,
           SafeswapV2_Fee_Rate,
         );
-        const tokenOutAmount = tokenB ? new TokenAmount(tokenB, amountOut.toBigInt())
+        return tokenB ? new TokenAmount(tokenB, amountOut.toBigInt())
           : CurrencyAmount.ether(amountOut.toBigInt());
-        setTokenOutAmount(tokenOutAmount.toFixed(4));
-      } else if (swapFocus == SwapFocus.BuyIn && tokenOutAmount) {
+      } else if (tokenOutAmount) {
         const amountOut = ethers.utils.parseUnits(tokenOutAmount, tokenB?.decimals);
         const reserveIn = getReserve(tokenA, reservers, chainId);
         const reserveOut = getReserve(tokenB, reservers, chainId);
@@ -143,49 +120,25 @@ export default () => {
           reserveIn,
           SafeswapV2_Fee_Rate,
         );
-        const tokenInAmount = tokenA ? new TokenAmount(tokenA, amountIn.toBigInt())
-          : CurrencyAmount.ether(amountOut.toBigInt());
-        setTokenInAmount(tokenInAmount.toFixed(4));
+        return tokenA ? new TokenAmount(tokenA, amountIn.toBigInt())
+          : CurrencyAmount.ether(amountIn.toBigInt());
       }
     }
-  }, [reservers, tokenA, tokenB, tokenInAmount, tokenOutAmount, swapFocus, chainId]);
+    return undefined;
+  }, [chainId, reservers, tokenA, tokenB, priceType]);
 
-  const RenderTokenA_Button = () => {
-    if (chainId) {
-      if (tokenA) {
-        return <Button style={{ height: "32px", width: "100%" }} size="small" type="text"
-          icon={<ERC20TokenLogoComponent style={{
-            padding: "4px", width: "32px", height: "32px", background: "#efefef"
-          }} address={tokenA.address} chainId={chainId} />}>
-          {tokenA.symbol}
-          <DownOutlined />
-        </Button>
-      } else {
-        return <Button style={{ height: "32px", width: "100%" }} size="small" type="text" icon={<TokenLogo />}>
-          SAFE
-          <DownOutlined />
-        </Button>
-      }
-    }
+  const handleTokenInAmountInput = (_tokenInAmount: string) => {
+    setTokenInAmount(_tokenInAmount);
+    setSwapFocus(SwapFocus.SellOut);
+    const tokenOutAmount = calculate(_tokenInAmount, undefined);
+    setTokenOutAmount(tokenOutAmount?.toFixed(4));
   }
 
-  const RenderTokenB_Button = () => {
-    if (chainId) {
-      if (tokenB) {
-        return <Button style={{ height: "32px", width: "100%" }} size="small" type="text"
-          icon={<ERC20TokenLogoComponent style={{
-            padding: "4px", width: "32px", height: "32px", background: "#efefef"
-          }} address={tokenB.address} chainId={chainId} />}>
-          {tokenB.symbol}
-          <DownOutlined />
-        </Button>
-      } else {
-        return <Button style={{ height: "32px", width: "100%" }} size="small" type="text" icon={<TokenLogo />}>
-          SAFE
-          <DownOutlined />
-        </Button>
-      }
-    }
+  const handleTokenOutAmountInput = (_tokenOutAmount: string) => {
+    setTokenOutAmount(_tokenOutAmount);
+    setSwapFocus(SwapFocus.BuyIn);
+    const tokenInAmount = calculate(undefined, _tokenOutAmount);
+    setTokenInAmount(tokenInAmount?.toFixed(4));
   }
 
   const reverseSwapFocus = () => {
@@ -193,15 +146,28 @@ export default () => {
     const _tokenB = tokenA;
     setTokenA(_tokenA);
     setTokenB(_tokenB);
-    if (swapFocus) {
-      if (swapFocus == SwapFocus.SellOut) {
-        setTokenOutAmount(tokenInAmount);
-      } else if (swapFocus == SwapFocus.BuyIn) {
-        setTokenInAmount(tokenOutAmount);
-      }
-      setSwapFocus(swapFocus == SwapFocus.BuyIn ? SwapFocus.SellOut : SwapFocus.BuyIn);
+    setSwapFocus(undefined);
+    setTokenInAmount(undefined);
+    setTokenOutAmount(undefined);
+  }
+  const reversePriceType = () => {
+    if (priceType && priceType == PriceType.A2B) {
+      setPriceType(PriceType.B2A);
+    } else {
+      setPriceType(PriceType.A2B);
     }
   }
+
+  const price = useMemo(() => {
+    if (tokenInAmount && tokenOutAmount) {
+      if (priceType == PriceType.B2A) {
+        return (Number(tokenInAmount) / Number(tokenOutAmount)).toFixed(4);
+      } else {
+        return (Number(tokenOutAmount) / Number(tokenInAmount)).toFixed(4);
+      }
+    }
+    return undefined;
+  }, [tokenA, tokenB, tokenInAmount, tokenOutAmount, priceType]);
 
   return <>
     <Row style={{ height: "50px" }}>
@@ -226,6 +192,9 @@ export default () => {
             <Row>
               <Col span={24}>
                 <Text type="secondary" strong>{t("wallet_crosschain_select_token")}</Text>
+                <Text type="secondary" style={{ float: "right" }}>可用余额:
+                  {tokenA ? balanceOfTokenA?.toFixed(tokenA.decimals > 4 ? 4 : tokenA.decimals) : balanceOfTokenA?.toFixed(4)}
+                </Text>
               </Col>
               <Col span={16}>
                 <Input placeholder="0.0" size="large" style={{ height: "80px", width: "150%", fontSize: "24px" }} value={tokenInAmount}
@@ -242,7 +211,15 @@ export default () => {
                     </div>
                   </Col>
                   <Col span={16} style={{ paddingRight: "5px" }}>
-                    {RenderTokenA_Button()}
+                    <TokenButtonSelect token={tokenA} tokenSelectCallback={(token: Token | undefined) => {
+                      if (tokenB?.address == token?.address) {
+                        reverseSwapFocus();
+                      } else {
+                        setTokenInAmount(undefined);
+                        setTokenOutAmount(undefined);
+                        setTokenA(token);
+                      }
+                    }} />
                   </Col>
                 </Row>
               </Col>
@@ -255,6 +232,9 @@ export default () => {
             <Row>
               <Col span={24}>
                 <Text type="secondary" strong>选择代币</Text>
+                <Text type="secondary" style={{ float: "right" }}>可用余额:
+                  {tokenB ? balanceOfTokenB?.toFixed(tokenB.decimals > 4 ? 4 : tokenB.decimals) : balanceOfTokenB?.toFixed(4)}
+                </Text>
               </Col>
               <Col span={16}>
                 <Input placeholder="0.0" size="large" style={{ height: "80px", width: "150%", fontSize: "24px" }} value={tokenOutAmount}
@@ -268,11 +248,48 @@ export default () => {
 
                   </Col>
                   <Col span={16} style={{ paddingRight: "5px" }}>
-                    {RenderTokenB_Button()}
+                    <TokenButtonSelect token={tokenB} tokenSelectCallback={(token: Token | undefined) => {
+                      if (tokenA?.address == token?.address) {
+                        reverseSwapFocus();
+                      } else {
+                        setTokenInAmount(undefined);
+                        setTokenOutAmount(undefined);
+                        setTokenB(token);
+                      }
+                    }} />
                   </Col>
                 </Row>
               </Col>
             </Row>
+            {
+              price && <Row style={{ marginTop: "5px" }}>
+                <Col span={12}>
+                  <SwapOutlined onClick={reversePriceType} style={{ fontSize: "14px", marginRight: "5px" }} />
+                  <Text type="secondary">价格</Text>
+                </Col>
+                <Col span={12}>
+                  <Text style={{ float: "right" }}>
+                    {priceType == PriceType.A2B && <>
+                      1 {tokenA ? tokenA.symbol : "SAFE"} = <Text strong>{price}</Text> {tokenB ? tokenB.symbol : "SAFE"}
+                    </>}
+                    {priceType == PriceType.B2A && <>
+                      1 {tokenB ? tokenB.symbol : "SAFE"} = <Text strong>{price}</Text> {tokenA ? tokenA.symbol : "SAFE"}
+                    </>}
+                  </Text>
+                </Col>
+              </Row>
+            }
+
+            {
+              err && <Row style={{marginTop:"5px"}}>
+                {
+                  err?.liquidity && <>
+                    <Alert style={{width:"100%"}} type="warning" message={err?.liquidity} />
+                  </>
+                }
+              </Row>
+            }
+
             <Divider />
             <Row>
               <Col span={24}>
@@ -283,8 +300,5 @@ export default () => {
         </Card>
       </div>
     </div>
-
-    <TokenSelectModal />
-
   </>
 }

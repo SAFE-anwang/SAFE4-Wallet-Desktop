@@ -1,4 +1,4 @@
-import { Button, Card, Col, Row, Typography, Flex, Avatar, Divider } from "antd"
+import { Button, Card, Col, Row, Typography, Flex, Avatar, Divider, Modal } from "antd"
 import { ERC20_LOGO, SAFE_LOGO, USDT_LOGO } from "../../../assets/logo/AssetsLogo";
 import TokenLogo from "../../components/TokenLogo";
 import { useTokens } from "../../../state/transactions/hooks";
@@ -13,7 +13,17 @@ import ERC20TokenLogoComponent from "../../components/ERC20TokenLogoComponent";
 const { Text } = Typography;
 
 
-export default () => {
+export default ({
+  openTokenSelectModal,
+  setOpenTokenSelectModal,
+  tokenSelectCallback,
+  selectedToken,
+}: {
+  openTokenSelectModal: boolean,
+  setOpenTokenSelectModal: (openTokenSelectModal: boolean) => void,
+  tokenSelectCallback?: (token: Token | undefined) => void,
+  selectedToken?: Token | undefined
+}) => {
 
   const { t } = useTranslation();
   const { chainId } = useWeb3React();
@@ -21,6 +31,11 @@ export default () => {
   const tokens = useTokens();
   const [erc20Tokens, setERC20Tokens] = useState<Token[]>([]);
   const tokenAmounts = useTokenBalances(activeAccount, erc20Tokens);
+
+  const onTokenClick = (token: Token | undefined) => {
+    setOpenTokenSelectModal(false);
+    tokenSelectCallback && tokenSelectCallback(token);
+  }
 
   useEffect(() => {
     if (tokens && chainId) {
@@ -48,24 +63,29 @@ export default () => {
   }, [tokens, chainId]);
 
   return <>
-    <Card style={{ width: "50%", margin: "auto" }}>
+    <Modal style={{}} open={openTokenSelectModal} footer={null} destroyOnClose onCancel={() => setOpenTokenSelectModal(false)}>
       <Row>
         <Col span={24}>
           <Text>基础通证</Text>
         </Col>
         <Col span={24} style={{ marginTop: "5px" }}>
           <Flex gap="small">
-            <Button style={{ height: "40px" }} type="default" icon={<TokenLogo />} >
+            <Button disabled={selectedToken == undefined} onClick={() => onTokenClick(undefined)} style={{ height: "40px" }} type="default" icon={<TokenLogo />} >
               SAFE
             </Button>
-            <Button style={{ height: "40px" }} type="default" icon={
-              <Avatar src={USDT_LOGO} />
-            }>
-              USDT
-            </Button>
+            {
+              chainId && <Button disabled={selectedToken == USDT[chainId as Safe4NetworkChainId]}
+                onClick={() => onTokenClick(USDT[chainId as Safe4NetworkChainId])} style={{ height: "40px" }} type="default" icon={
+                  <Avatar src={USDT_LOGO} />
+                }>
+                USDT
+              </Button>
+            }
+
           </Flex>
         </Col>
-        <Col span={24} style={{ marginTop: "25px" }}>
+        <Divider />
+        <Col span={24}>
           <Text>通证名称</Text>
         </Col>
         {
@@ -80,7 +100,11 @@ export default () => {
                     </>
                   }
                   <Row onClick={() => {
-                  }} className='menu-item' style={{ height: "60px", lineHeight: "60px" }}>
+                    if (erc20Token != selectedToken) {
+                      setOpenTokenSelectModal(false);
+                      tokenSelectCallback && tokenSelectCallback(erc20Token);
+                    }
+                  }} className='menu-item' style={{ height: "60px", lineHeight: "60px", background: selectedToken && selectedToken.address == erc20Token.address ? "#efefef" : "" }}>
                     <Col span={4} style={{ textAlign: "center" }}>
                       <ERC20TokenLogoComponent chainId={chainId} address={address} />
                     </Col>
@@ -89,8 +113,8 @@ export default () => {
                         <Col span={6} style={{ lineHeight: "60px" }}>
                           <Text strong>{name}</Text>
                         </Col>
-                        <Col span={18} style={{ lineHeight: "60px" , textAlign:"right"}}>
-                          <Text strong style={{ marginRight:"20px" }}>{tokenAmounts && tokenAmounts[address]?.toExact()} </Text>
+                        <Col span={18} style={{ lineHeight: "60px", textAlign: "right" }}>
+                          <Text strong style={{ marginRight: "20px" }}>{tokenAmounts && tokenAmounts[address]?.toExact()} </Text>
                         </Col>
                       </Row>
                     </Col>
@@ -101,8 +125,7 @@ export default () => {
           </Card>
         }
       </Row>
-    </Card>
-
+    </Modal>
   </>
 
 }
