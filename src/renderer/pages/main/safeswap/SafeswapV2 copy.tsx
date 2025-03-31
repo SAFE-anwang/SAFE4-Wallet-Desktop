@@ -4,8 +4,8 @@ import { useTranslation } from "react-i18next";
 import { useWeb3React } from "@web3-react/core";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ChainId, CurrencyAmount, Token, TokenAmount } from "@uniswap/sdk";
-import { Contract, ethers } from "ethers";
-import { useETHBalances, useTokenAllowanceAmounts, useTokenBalances, useWalletsActiveAccount, useWalletsActiveSigner } from "../../../state/wallets/hooks";
+import { ethers } from "ethers";
+import { useETHBalances, useTokenAllowanceAmounts, useTokenBalances, useWalletsActiveAccount } from "../../../state/wallets/hooks";
 import { calculateAmountIn, calculateAmountOut, calculatePaireAddress, getReserve, sort } from "./Calculate";
 import { useContract, useIERC20Contract } from "../../../hooks/useContracts";
 import { PairABI } from "../../../constants/SafeswapAbiConfig";
@@ -13,8 +13,6 @@ import { useBlockNumber } from "../../../state/application/hooks";
 import { useTokens } from "../../../state/transactions/hooks";
 import TokenButtonSelect from "./TokenButtonSelect";
 import { SafeswapV2RouterAddress } from "../../../config";
-import { IERC20_Interface } from "../../../abis";
-import SwapConfirm from "./SwapConfirm";
 const { Title, Text, Link } = Typography;
 
 
@@ -34,14 +32,13 @@ export default () => {
 
   const { t } = useTranslation();
   const { chainId } = useWeb3React();
-  const signer = useWalletsActiveSigner()
   const activeAccount = useWalletsActiveAccount();
   const blockNumber = useBlockNumber();
   const Default_Swap_Token = chainId && [
     // USDT[chainId as Safe4NetworkChainId],
-    undefined,
     new Token(ChainId.MAINNET, "0xC5a68f24aD442801c454417e9F5aE073DD9D92F6", 18, "TKA", "Token-A"),
     // new Token(ChainId.MAINNET, "0xb9FE8cBC71B818035AcCfd621d204BAa57377FFA", 18, "TKB", "Token-B")
+    undefined,
   ];
 
   const tokens = useTokens();
@@ -66,28 +63,28 @@ export default () => {
   const [tokenOutAmount, setTokenOutAmount] = useState<string>();
   const pairAddress = chainId && calculatePaireAddress(tokenA, tokenB, chainId);
   const pairContract = pairAddress && useContract(pairAddress, PairABI, false);
-  const tokenAContract = tokenA ? new Contract(tokenA.address, IERC20_Interface, signer) : undefined;
-  const [openSwapConfirmModal, setOpenSwapConfirmModal] = useState<boolean>(false);
-
+  const tokenAContract = tokenA && useIERC20Contract(tokenA.address, true);
   const [err, setErr] = useState<{
     liquidity?: string | undefined
   }>();
   const [approveTokenHash, setApproveTokenHash] = useState<{
     [address: string]: {
-      execute: boolean,
-      hash?: string
+      execute : boolean,
+      hash ?: string
     }
   }>({});
-  const allowanceForRouterOfTokenA = useMemo(() => {
-    return tokenA ? tokenAllowanceAmounts[tokenA.address] : undefined;
-  }, [tokenA, tokenAllowanceAmounts]);
-  const needApproveTokenA = useMemo(() => {
-    if (tokenA && tokenInAmount && allowanceForRouterOfTokenA) {
-      const inAmount = new TokenAmount(tokenA, tokenInAmount);
-      return inAmount.greaterThan(allowanceForRouterOfTokenA)
-    }
-    return false;
-  }, [allowanceForRouterOfTokenA, tokenInAmount])
+
+  // const allowanceForRouterOfTokenA = useMemo(() => {
+  //   return tokenA ? tokenAllowanceAmounts[tokenA.address] : undefined;
+  // }, [tokenA, tokenAllowanceAmounts]);
+
+  // const needApproveTokenA = useMemo(() => {
+  //   // if (tokenA && tokenInAmount && allowanceForRouterOfTokenA) {
+  //   //   const inAmount = new TokenAmount(tokenA, tokenInAmount);
+  //   //   return inAmount.greaterThan(allowanceForRouterOfTokenA)
+  //   // }
+  //   return true;
+  // }, [allowanceForRouterOfTokenA, tokenInAmount])
 
   useEffect(() => {
     if (pairContract) {
@@ -117,28 +114,6 @@ export default () => {
       })
     }
   }, [pairContract, blockNumber]);
-
-  const approveRouter = useCallback(() => {
-    if (tokenA && activeAccount && tokenAContract) {
-      setApproveTokenHash({
-        ...approveTokenHash,
-        [tokenA.address]: {
-          execute: true
-        }
-      })
-      tokenAContract.approve(SafeswapV2RouterAddress, ethers.constants.MaxUint256)
-        .then((response: any) => {
-          const { hash, data } = response;
-          setApproveTokenHash({
-            ...approveTokenHash,
-            [tokenA.address]: {
-              hash,
-              execute: true
-            }
-          })
-        })
-    }
-  }, [activeAccount, tokenA, tokenAContract])
 
   const calculate = useCallback((tokenInAmount: string | undefined, tokenOutAmount: string | undefined): CurrencyAmount | undefined => {
     if (chainId && reservers) {
@@ -194,6 +169,7 @@ export default () => {
     setTokenInAmount(undefined);
     setTokenOutAmount(undefined);
   }
+
   const reversePriceType = () => {
     if (priceType && priceType == PriceType.A2B) {
       setPriceType(PriceType.B2A);
@@ -212,6 +188,28 @@ export default () => {
     }
     return undefined;
   }, [tokenA, tokenB, tokenInAmount, tokenOutAmount, priceType]);
+
+  const approveRouter = useCallback(() => {
+    if (tokenA && activeAccount && tokenAContract) {
+      setApproveTokenHash({
+        ... approveTokenHash,
+        [tokenA.address] : {
+          execute:true
+        }
+      })
+      tokenAContract.approve(SafeswapV2RouterAddress, ethers.constants.MaxUint256)
+        .then((response: any) => {
+          const { hash, data } = response;
+          setApproveTokenHash({
+            ... approveTokenHash,
+            [tokenA.address] : {
+              hash,
+              execute:true
+            }
+          })
+        })
+    }
+  }, [activeAccount, tokenA, tokenAContract])
 
   return <>
     <Row style={{ height: "50px" }}>
@@ -267,13 +265,7 @@ export default () => {
                   </Col>
                 </Row>
               </Col>
-
-              {/** Show TokenA Allowance */}
-              <Col span={24}>
-                <Text>{tokenA && tokenAllowanceAmounts[tokenA?.address]?.toExact()}</Text>
-              </Col>
             </Row>
-
             <Row>
               <Col span={24}>
                 <ArrowDownOutlined onClick={reverseSwapFocus} style={{ fontSize: "24px", color: "green", marginTop: "10px", marginBottom: "10px" }} />
@@ -338,36 +330,29 @@ export default () => {
                 }
               </Row>
             }
-            {
-              needApproveTokenA && tokenA && <Col span={24}>
-                <Alert style={{ marginBottom: "10px" }} type="warning" message={<>
-                  <Text>需要先授权 Safeswap 访问 {tokenA?.symbol}</Text>
-                  <Link disabled={approveTokenHash[tokenA?.address]?.execute} onClick={approveRouter} style={{ float: "right" }}>
-                    {
-                      approveTokenHash[tokenA?.address]?.execute && <SyncOutlined spin />
-                    }
-                    {
-                      approveTokenHash[tokenA?.address] ? "正在授权..." : "点击授权"
-                    }
-                  </Link>
-                </>} />
-              </Col>
-            }
             <Divider />
             <Row>
+              {/* {
+                needApproveTokenA && tokenA && <Col span={24}>
+                  <Alert style={{ marginBottom: "10px" }} type="warning" message={<>
+                    <Text>需要先授权 Safeswap 访问 {tokenA?.symbol}</Text>
+                    <Link disabled={approveTokenHash[tokenA?.address]?.execute} onClick={approveRouter} style={{ float: "right" }}>
+                      {
+                        approveTokenHash[tokenA?.address]?.execute && <SyncOutlined spin/>
+                      }
+                      {
+                        approveTokenHash[tokenA?.address] ?  "正在授权1..." : "点击授权"
+                      }
+                    </Link>
+                  </>} />
+                </Col>
+              } */}
               <Col span={24}>
-                <Button onClick={() => setOpenSwapConfirmModal(true)} type="primary" style={{ float: "right" }}>{t("next")}</Button>
+                <Button disabled type="primary" style={{ width: "100%", height: "40px" }}>兑换</Button>
               </Col>
             </Row>
           </Card>
         </Card>
-
-        {
-          tokenInAmount && tokenOutAmount && <>
-            <SwapConfirm openSwapConfirmModal={openSwapConfirmModal} setOpenSwapConfirmModal={setOpenSwapConfirmModal} tokenA={tokenA} tokenB={tokenB} tokenInAmount={tokenInAmount} tokenOutAmount={tokenOutAmount} />
-          </>
-        }
-
       </div>
     </div>
   </>

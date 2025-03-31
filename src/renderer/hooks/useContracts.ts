@@ -7,8 +7,9 @@ import { useWalletsActivePrivateKey, useWalletsActiveSigner, useWalletsActiveWal
 import { SysContractABI, SystemContract } from "../constants/SystemContracts";
 import { useWeb3React } from "@web3-react/core";
 import { IERC20_Interface } from "../abis";
-import { Application_Crosschain, Safe4NetworkChainId } from "../config";
+import { Application_Crosschain, Safe4NetworkChainId, SafeswapV2RouterAddress } from "../config";
 import ApplicationContractAbiConfig, { CrosschainABI } from "../constants/ApplicationContractAbiConfig";
+import { SwapV2RouterABI } from "../constants/SafeswapAbiConfig";
 
 
 export function useContract(address: string | undefined, ABI: any, withSignerIfPossible = true): Contract | null {
@@ -69,6 +70,10 @@ export function useSafe3Contract( withSignerIfPossible ?: boolean ) : Contract |
   return useContract( SystemContract.SAFE3 , SysContractABI[SystemContract.SAFE3], withSignerIfPossible);
 }
 
+export function useSafeswapV2Router(withSignerIfPossible ?: boolean) : Contract | null | undefined {
+  return useContract( SafeswapV2RouterAddress , SwapV2RouterABI, withSignerIfPossible);
+}
+
 export function useCrosschainContract( withSignerIfPossible ?: boolean ) : Contract | null | undefined {
   const { chainId } = useWeb3React();
   if ( chainId && chainId in Safe4NetworkChainId ){
@@ -76,4 +81,7 @@ export function useCrosschainContract( withSignerIfPossible ?: boolean ) : Contr
   }
   return undefined;
 }
+
+
+
 
