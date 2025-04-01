@@ -69,30 +69,46 @@ export default () => {
   const tokenAContract = tokenA ? new Contract(tokenA.address, IERC20_Interface, signer) : undefined;
   const [openSwapConfirmModal, setOpenSwapConfirmModal] = useState<boolean>(false);
 
-  const [err, setErr] = useState<{
-    liquidity?: string | undefined
-  }>();
+
+  const [liquidityNotFound, setLiquidityNotFound] = useState<boolean>(false);
+  const balanceOfTokenANotEnough = useMemo(() => {
+    if (tokenInAmount && balanceOfTokenA) {
+      return tokenA ? new TokenAmount(tokenA, ethers.utils.parseUnits(tokenInAmount, tokenA.decimals).toBigInt()).greaterThan(balanceOfTokenA)
+        : CurrencyAmount.ether(ethers.utils.parseUnits(tokenInAmount).toBigInt()).greaterThan(balanceOfTokenA)
+    }
+    return false;
+  }, [tokenA, balanceOfTokenA, tokenInAmount]);
+  const reserverOfTokenBNotEnough = useMemo(() => {
+    if (tokenOutAmount && chainId && reservers) {
+      const reserveB = getReserve(tokenB, reservers, chainId);
+      const tokenOut = ethers.utils.parseUnits(tokenOutAmount, tokenB?.decimals);
+      return tokenOut.gt(reserveB);
+    }
+  }, [tokenB, reservers, tokenOutAmount, chainId])
+
   const [approveTokenHash, setApproveTokenHash] = useState<{
     [address: string]: {
       execute: boolean,
       hash?: string
     }
   }>({});
+
   const allowanceForRouterOfTokenA = useMemo(() => {
     return tokenA ? tokenAllowanceAmounts[tokenA.address] : undefined;
   }, [tokenA, tokenAllowanceAmounts]);
+
   const needApproveTokenA = useMemo(() => {
     if (tokenA && tokenInAmount && allowanceForRouterOfTokenA) {
-      const inAmount = new TokenAmount(tokenA, tokenInAmount);
+      const inAmount = new TokenAmount(tokenA, ethers.utils.parseUnits(tokenInAmount, tokenA.decimals).toBigInt());
       return inAmount.greaterThan(allowanceForRouterOfTokenA)
     }
     return false;
-  }, [allowanceForRouterOfTokenA, tokenInAmount])
+  }, [allowanceForRouterOfTokenA, tokenInAmount]);
 
   useEffect(() => {
     if (pairContract) {
       setReservers(undefined);
-      setErr(undefined);
+      setLiquidityNotFound(false);
       pairContract.getReserves().then((data: any) => {
         const [r0, r1] = data;
         const sortTokens = sort(tokenA, tokenB, chainId);
@@ -109,11 +125,7 @@ export default () => {
         }
       }).catch((err: any) => {
         // 未创建流动性
-        console.log("No liquidility");
-        setErr({
-          ...err,
-          liquidity: "未在 Safeswap 中找到该代币组合的交易池"
-        })
+        setLiquidityNotFound(true);
       })
     }
   }, [pairContract, blockNumber]);
@@ -172,17 +184,27 @@ export default () => {
   }, [chainId, reservers, tokenA, tokenB, priceType]);
 
   const handleTokenInAmountInput = (_tokenInAmount: string) => {
-    setTokenInAmount(_tokenInAmount);
-    setSwapFocus(SwapFocus.SellOut);
-    const tokenOutAmount = calculate(_tokenInAmount, undefined);
-    setTokenOutAmount(tokenOutAmount?.toFixed(4));
+    const isValidInput = (_tokenInAmount == '') || Number(_tokenInAmount);
+    if (isValidInput) {
+      setTokenInAmount(_tokenInAmount);
+      setSwapFocus(SwapFocus.SellOut);
+      const tokenOutAmount = calculate(_tokenInAmount, undefined);
+      setTokenOutAmount(tokenB ? tokenOutAmount?.toFixed(tokenB.decimals > 4 ? 4 : tokenB.decimals) : tokenOutAmount?.toFixed(4));
+    }
   }
 
   const handleTokenOutAmountInput = (_tokenOutAmount: string) => {
-    setTokenOutAmount(_tokenOutAmount);
-    setSwapFocus(SwapFocus.BuyIn);
-    const tokenInAmount = calculate(undefined, _tokenOutAmount);
-    setTokenInAmount(tokenInAmount?.toFixed(4));
+    const isValidInput = (_tokenOutAmount == '') || Number(_tokenOutAmount);
+    if (isValidInput) {
+      setTokenOutAmount(_tokenOutAmount);
+      setSwapFocus(SwapFocus.BuyIn);
+      try {
+        const tokenInAmount = calculate(undefined, _tokenOutAmount);
+        setTokenInAmount(tokenA ? tokenInAmount?.toFixed(tokenA.decimals > 4 ? 4 : tokenA.decimals) : tokenInAmount?.toFixed(4));
+      } catch (error) {
+
+      }
+    }
   }
 
   const reverseSwapFocus = () => {
@@ -267,11 +289,17 @@ export default () => {
                   </Col>
                 </Row>
               </Col>
-
+              {
+                balanceOfTokenANotEnough && <Col span={24}>
+                  <Alert style={{ marginTop: "5px" }} showIcon type="error" message={<>
+                    账户可用余额不足
+                  </>} />
+                </Col>
+              }
               {/** Show TokenA Allowance */}
-              <Col span={24}>
+              {/* <Col span={24}>
                 <Text>{tokenA && tokenAllowanceAmounts[tokenA?.address]?.toExact()}</Text>
-              </Col>
+              </Col> */}
             </Row>
 
             <Row>
@@ -310,6 +338,13 @@ export default () => {
                   </Col>
                 </Row>
               </Col>
+              {
+                reserverOfTokenBNotEnough && <Col span={24}>
+                  <Alert style={{ marginTop: "5px" }} showIcon type="error" message={<>
+                    超过该交易池库存
+                  </>} />
+                </Col>
+              }
             </Row>
             {
               price && <Row style={{ marginTop: "5px" }}>
@@ -330,16 +365,14 @@ export default () => {
               </Row>
             }
             {
-              err && <Row style={{ marginTop: "5px" }}>
-                {
-                  err?.liquidity && <>
-                    <Alert style={{ width: "100%" }} type="warning" message={err?.liquidity} />
-                  </>
-                }
+              liquidityNotFound && <Row style={{ marginTop: "5px" }}>
+                <Col span={24}>
+                  <Alert style={{ width: "100%" }} type="warning" message={"未在 Safeswap 中找到该交易池"} />
+                </Col>
               </Row>
             }
             {
-              needApproveTokenA && tokenA && <Col span={24}>
+              needApproveTokenA && tokenA && reservers && <Col span={24}>
                 <Alert style={{ marginBottom: "10px" }} type="warning" message={<>
                   <Text>需要先授权 Safeswap 访问 {tokenA?.symbol}</Text>
                   <Link disabled={approveTokenHash[tokenA?.address]?.execute} onClick={approveRouter} style={{ float: "right" }}>
@@ -356,18 +389,18 @@ export default () => {
             <Divider />
             <Row>
               <Col span={24}>
-                <Button onClick={() => setOpenSwapConfirmModal(true)} type="primary" style={{ float: "right" }}>{t("next")}</Button>
+                <Button disabled={
+                  (liquidityNotFound || balanceOfTokenANotEnough || reserverOfTokenBNotEnough || needApproveTokenA)
+                } onClick={() => setOpenSwapConfirmModal(true)} type="primary" style={{ float: "right" }}>{t("next")}</Button>
               </Col>
             </Row>
           </Card>
         </Card>
-
         {
           tokenInAmount && tokenOutAmount && <>
             <SwapConfirm openSwapConfirmModal={openSwapConfirmModal} setOpenSwapConfirmModal={setOpenSwapConfirmModal} tokenA={tokenA} tokenB={tokenB} tokenInAmount={tokenInAmount} tokenOutAmount={tokenOutAmount} />
           </>
         }
-
       </div>
     </div>
   </>
