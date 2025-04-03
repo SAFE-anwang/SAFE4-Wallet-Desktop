@@ -20,9 +20,11 @@ import {
   applicationControlUpdateEditMasternodeId,
   applicationControlUpdateEditSupernodeId,
   applicationUpdateLanguage,
+  applicationUpdateSafeswapTokens,
 } from './action';
 
 import { ContractVO } from '../../services';
+import { Token } from '@uniswap/sdk';
 
 export const enum AfterSetPasswordTODO {
   CREATE = "create",
@@ -72,8 +74,8 @@ export interface IApplicationState {
       }
     }
     directDeploy?: boolean,
-    editMasternodeId ?: number,
-    editSupernodeId ?: number
+    editMasternodeId?: number,
+    editSupernodeId?: number
   }
   supernodeAddresses: string[],
   blockchain: {
@@ -100,7 +102,12 @@ export interface IApplicationState {
     ciphertext?: string
   },
 
-  language : string
+  language: string,
+
+  safeswap: {
+    tokenA: { chainId: number, address: string, decimals: number, name?: string, symbol?: string } | undefined,
+    tokenB: { chainId: number, address: string, decimals: number, name?: string, symbol?: string } | undefined
+  } | undefined,
 
 }
 
@@ -121,13 +128,14 @@ const initialState: IApplicationState = {
   },
   data: {
 
-  } ,
-  language : "zh"
+  },
+  language: "zh",
+  safeswap: undefined
 }
 
 export default createReducer(initialState, (builder) => {
 
-  builder.addCase(applicationDataLoaded, (state, { payload: { path, rpcConfigs , appProps } }) => {
+  builder.addCase(applicationDataLoaded, (state, { payload: { path, rpcConfigs, appProps } }) => {
     const { resource, data, database, kys } = path;
     state.data["resource"] = resource;
     state.data["data"] = data;
@@ -275,16 +283,24 @@ export default createReducer(initialState, (builder) => {
       state.rpcConfigs?.push(payload);
     })
 
-    .addCase( applicationControlUpdateEditMasternodeId , ( state , {payload} ) => {
+    .addCase(applicationControlUpdateEditMasternodeId, (state, { payload }) => {
       state.control.editMasternodeId = payload;
-    } )
+    })
 
-    .addCase( applicationControlUpdateEditSupernodeId , ( state , {payload} ) => {
+    .addCase(applicationControlUpdateEditSupernodeId, (state, { payload }) => {
       state.control.editSupernodeId = payload;
-    } )
+    })
 
-    .addCase( applicationUpdateLanguage , ( state , {payload} ) => {
+    .addCase(applicationUpdateLanguage, (state, { payload }) => {
       state.language = payload;
+    })
+
+    .addCase(applicationUpdateSafeswapTokens, (state, { payload }) => {
+      const { tokenA, tokenB } = payload;
+      state.safeswap = {
+        tokenA : tokenA ? { ...tokenA } : undefined,
+        tokenB : tokenB ? { ...tokenB } : undefined,
+      }
     })
 
 })

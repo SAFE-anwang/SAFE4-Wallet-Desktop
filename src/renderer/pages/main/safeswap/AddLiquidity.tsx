@@ -9,12 +9,13 @@ import { useETHBalances, useTokenAllowanceAmounts, useTokenBalances, useWalletsA
 import { calculateAmountAdd, calculateAmountIn, calculateAmountOut, calculatePaireAddress, getReserve, sort } from "./Calculate";
 import { useContract, useIERC20Contract } from "../../../hooks/useContracts";
 import { PairABI } from "../../../constants/SafeswapAbiConfig";
-import { useBlockNumber } from "../../../state/application/hooks";
+import { useBlockNumber, useSafeswapTokens } from "../../../state/application/hooks";
 import { useTokens } from "../../../state/transactions/hooks";
 import TokenButtonSelect from "./TokenButtonSelect";
 import { SafeswapV2RouterAddress } from "../../../config";
 import { IERC20_Interface } from "../../../abis";
 import AddLiquidityConfirm from "./AddLiquidityConfirm";
+import { Default_Safeswap_Tokens } from "./Swap";
 const { Title, Text, Link } = Typography;
 
 const SafeswapV2_Fee_Rate = "0.003";
@@ -36,13 +37,9 @@ export default () => {
   const signer = useWalletsActiveSigner()
   const activeAccount = useWalletsActiveAccount();
   const blockNumber = useBlockNumber();
+  const safeswapTokens = useSafeswapTokens();
+  const Default_Swap_Token = chainId && Default_Safeswap_Tokens(chainId);
 
-  const Default_Swap_Token = chainId && [
-    // USDT[chainId as Safe4NetworkChainId],
-    // undefined,
-    new Token(ChainId.MAINNET, "0xC5a68f24aD442801c454417e9F5aE073DD9D92F6", 18, "TKA", "Token-A"),
-    new Token(ChainId.MAINNET, "0x6AE363f8497E4272f19b9d2923DaF5Bb7812ca61", 18, "Hello", "Hello")
-  ];
 
   const tokens = useTokens();
   const erc20Tokens = Object.keys(tokens).map((address) => {
@@ -53,8 +50,14 @@ export default () => {
   const tokenAllowanceAmounts = useTokenAllowanceAmounts(activeAccount, SafeswapV2RouterAddress, erc20Tokens);
 
   const balance = useETHBalances([activeAccount])[activeAccount];
-  const [tokenA, setTokenA] = useState<Token | undefined>(Default_Swap_Token ? Default_Swap_Token[0] : undefined);
-  const [tokenB, setTokenB] = useState<Token | undefined>(Default_Swap_Token ? Default_Swap_Token[1] : undefined);
+
+  const [tokenA, setTokenA] = useState<Token | undefined>(
+    safeswapTokens ? safeswapTokens.tokenA : Default_Swap_Token ? Default_Swap_Token[0] : undefined
+  );
+  const [tokenB, setTokenB] = useState<Token | undefined>(
+    safeswapTokens ? safeswapTokens.tokenB : Default_Swap_Token ? Default_Swap_Token[1] : undefined
+  );
+
   const [swapFocus, setSwapFocus] = useState<SwapFocus | undefined>(undefined);
   const [priceType, setPriceType] = useState<PriceType | undefined>(PriceType.B2A);
   const balanceOfTokenA = tokenA ? tokenAmounts[tokenA.address] : balance;
@@ -386,7 +389,7 @@ export default () => {
     }
     {
       needApproveTokenA && tokenA && <Col span={24}>
-        <Alert style={{ marginTop : "10px" , marginBottom: "10px" }} type="warning" message={<>
+        <Alert style={{ marginTop: "10px", marginBottom: "10px" }} type="warning" message={<>
           <Text>需要先授权 Safeswap 访问 {tokenA?.symbol}</Text>
           <Link disabled={approveTokenHash[tokenA?.address]?.execute} onClick={approveRouter} style={{ float: "right" }}>
             {
@@ -401,7 +404,7 @@ export default () => {
     }
     {
       needApproveTokenB && tokenB && <Col span={24}>
-        <Alert style={{ marginTop : "10px" , marginBottom: "10px" }} type="warning" message={<>
+        <Alert style={{ marginTop: "10px", marginBottom: "10px" }} type="warning" message={<>
           <Text>需要先授权 Safeswap 访问 {tokenB?.symbol}</Text>
           <Link disabled={approveTokenHash[tokenB?.address]?.execute} onClick={approveRouterForTokenB} style={{ float: "right" }}>
             {

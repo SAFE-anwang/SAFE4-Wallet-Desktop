@@ -7,9 +7,9 @@ import { useWalletsActivePrivateKey, useWalletsActiveSigner, useWalletsActiveWal
 import { SysContractABI, SystemContract } from "../constants/SystemContracts";
 import { useWeb3React } from "@web3-react/core";
 import { IERC20_Interface } from "../abis";
-import { Application_Crosschain, Safe4NetworkChainId, SafeswapV2RouterAddress } from "../config";
+import { Application_Crosschain, Safe4NetworkChainId, SafeswapV2FactoryAddreess, SafeswapV2RouterAddress } from "../config";
 import ApplicationContractAbiConfig, { CrosschainABI } from "../constants/ApplicationContractAbiConfig";
-import { SwapV2RouterABI } from "../constants/SafeswapAbiConfig";
+import { SwapV2FactoryABI, SwapV2RouterABI } from "../constants/SafeswapAbiConfig";
 
 
 export function useContract(address: string | undefined, ABI: any, withSignerIfPossible = true): Contract | null {
@@ -72,6 +72,10 @@ export function useSafe3Contract( withSignerIfPossible ?: boolean ) : Contract |
 
 export function useSafeswapV2Router(withSignerIfPossible ?: boolean) : Contract | null | undefined {
   return useContract( SafeswapV2RouterAddress , SwapV2RouterABI, withSignerIfPossible);
+}
+
+export function useSafeswapV2Factory(withSignerIfPossible ?: boolean) : Contract | null | undefined {
+  return useContract( SafeswapV2FactoryAddreess , SwapV2FactoryABI, withSignerIfPossible);
 }
 
 export function useCrosschainContract( withSignerIfPossible ?: boolean ) : Contract | null | undefined {

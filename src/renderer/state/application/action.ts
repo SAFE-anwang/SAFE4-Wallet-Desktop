@@ -1,6 +1,7 @@
 import { createAction } from '@reduxjs/toolkit';
 import { AfterSetPasswordTODO } from './reducer';
 import { ContractVO } from '../../services';
+import { Token } from '@uniswap/sdk';
 
 export const applicationBlockchainUpdateBlockNumber = createAction<{ blockNumber: number, timestamp: number }>
   ("application/blockchainUpdateBlockNumber")
@@ -15,8 +16,8 @@ export const applicationDataLoaded = createAction<{
   rpcConfigs: {
     chainId: number,
     endpoint: string
-  }[] ,
-  appProps : any
+  }[],
+  appProps: any
 }>("application/dataLoaded")
 
 export const applicationActionConfirmedMnemonic = createAction<{
@@ -107,4 +108,11 @@ export const applicationControlUpdateEditSupernodeId = createAction<number>(
 
 export const applicationUpdateLanguage = createAction<string>(
   "application/updateLanguage"
+)
+
+export const applicationUpdateSafeswapTokens = createAction<{
+  tokenA: { chainId: number, address: string, decimals: number, name?: string, symbol?: string } | undefined,
+  tokenB: { chainId: number, address: string, decimals: number, name?: string, symbol?: string } | undefined
+}>(
+  "application/updateSafeswapTokens"
 )

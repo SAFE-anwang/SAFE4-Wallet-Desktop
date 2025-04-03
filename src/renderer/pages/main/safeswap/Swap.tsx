@@ -9,12 +9,14 @@ import { useETHBalances, useTokenAllowanceAmounts, useTokenBalances, useWalletsA
 import { calculateAmountIn, calculateAmountOut, calculatePaireAddress, getReserve, sort } from "./Calculate";
 import { useContract, useIERC20Contract } from "../../../hooks/useContracts";
 import { PairABI } from "../../../constants/SafeswapAbiConfig";
-import { useBlockNumber } from "../../../state/application/hooks";
+import { useBlockNumber, useSafeswapTokens } from "../../../state/application/hooks";
 import { useTokens } from "../../../state/transactions/hooks";
 import TokenButtonSelect from "./TokenButtonSelect";
-import { SafeswapV2RouterAddress } from "../../../config";
+import { Safe4NetworkChainId, SafeswapV2RouterAddress, USDT } from "../../../config";
 import { IERC20_Interface } from "../../../abis";
 import SwapConfirm from "./SwapConfirm";
+import { useDispatch } from "react-redux";
+import { applicationUpdateSafeswapTokens } from "../../../state/application/action";
 const { Title, Text, Link } = Typography;
 
 
@@ -30,6 +32,29 @@ const enum PriceType {
   B2A = "B2A"
 }
 
+export const Default_Safeswap_Tokens = (chainId: Safe4NetworkChainId) => {
+  return [
+    USDT[chainId],
+    undefined,
+    // new Token(ChainId.MAINNET, "0xC5a68f24aD442801c454417e9F5aE073DD9D92F6", 18, "TKA", "Token-A"),
+    // new Token(ChainId.MAINNET, "0xb9FE8cBC71B818035AcCfd621d204BAa57377FFA", 18, "TKB", "Token-B")
+  ]
+}
+
+export function parseTokenData(token: any): Token | undefined {
+  if (token) {
+    return new Token(token.chainId, token.address, token.decimals, token.symbol, token.name);
+  }
+  return undefined
+}
+export function SerializeToken(token: Token | undefined): {
+  chainId: number, address: string, decimals: number, name?: string, symbol?: string
+} | undefined {
+  return token ? { ...token } : undefined;
+}
+
+
+
 export default () => {
 
   const { t } = useTranslation();
@@ -37,12 +62,9 @@ export default () => {
   const signer = useWalletsActiveSigner()
   const activeAccount = useWalletsActiveAccount();
   const blockNumber = useBlockNumber();
-  const Default_Swap_Token = chainId && [
-    // USDT[chainId as Safe4NetworkChainId],
-    undefined,
-    new Token(ChainId.MAINNET, "0xC5a68f24aD442801c454417e9F5aE073DD9D92F6", 18, "TKA", "Token-A"),
-    // new Token(ChainId.MAINNET, "0xb9FE8cBC71B818035AcCfd621d204BAa57377FFA", 18, "TKB", "Token-B")
-  ];
+  const dispatch = useDispatch();
+  const safeswapTokens = useSafeswapTokens();
+  const Default_Swap_Token = chainId && Default_Safeswap_Tokens(chainId);
 
   const tokens = useTokens();
   const erc20Tokens = Object.keys(tokens).map((address) => {
@@ -53,8 +75,16 @@ export default () => {
   const tokenAllowanceAmounts = useTokenAllowanceAmounts(activeAccount, SafeswapV2RouterAddress, erc20Tokens);
 
   const balance = useETHBalances([activeAccount])[activeAccount];
-  const [tokenA, setTokenA] = useState<Token | undefined>(Default_Swap_Token ? Default_Swap_Token[0] : undefined);
-  const [tokenB, setTokenB] = useState<Token | undefined>(Default_Swap_Token ? Default_Swap_Token[1] : undefined);
+
+  const [tokenA, setTokenA] = useState<Token | undefined>(
+    safeswapTokens ? parseTokenData(safeswapTokens.tokenA) : Default_Swap_Token ? Default_Swap_Token[0] : undefined
+  );
+  const [tokenB, setTokenB] = useState<Token | undefined>(
+    safeswapTokens ? parseTokenData(safeswapTokens.tokenB) : Default_Swap_Token ? Default_Swap_Token[1] : undefined
+  );
+
+  // const [tokenA, setTokenA] = useState<Token | undefined>(Default_Swap_Token ? Default_Swap_Token[0] : undefined);
+  // const [tokenB, setTokenB] = useState<Token | undefined>(Default_Swap_Token ? Default_Swap_Token[1] : undefined);
   const [swapFocus, setSwapFocus] = useState<SwapFocus | undefined>(undefined);
   const [priceType, setPriceType] = useState<PriceType | undefined>(PriceType.B2A);
   const balanceOfTokenA = tokenA ? tokenAmounts[tokenA.address] : balance;
@@ -214,13 +244,6 @@ export default () => {
     setTokenInAmount(undefined);
     setTokenOutAmount(undefined);
   }
-  const reversePriceType = () => {
-    if (priceType && priceType == PriceType.A2B) {
-      setPriceType(PriceType.B2A);
-    } else {
-      setPriceType(PriceType.A2B);
-    }
-  }
 
   const price = useMemo(() => {
     if (tokenInAmount && tokenOutAmount) {
@@ -231,6 +254,13 @@ export default () => {
     }
     return undefined;
   }, [tokenA, tokenB, tokenInAmount, tokenOutAmount, priceType]);
+
+  useEffect(() => {
+    dispatch(applicationUpdateSafeswapTokens({
+      tokenA: SerializeToken(tokenA),
+      tokenB: SerializeToken(tokenB),
+    }));
+  }, [tokenA, tokenB])
 
   return <>
     <Row>
