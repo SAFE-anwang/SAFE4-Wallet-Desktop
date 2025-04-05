@@ -5,9 +5,10 @@ import { useCallback, useMemo } from "react";
 import { addTransaction } from "./actions";
 import { Transfer, TransactionDetails, ContractCall, TokenTransfer } from "./reducer";
 import { DateFormat } from "../../utils/DateUtils";
-import { CurrencyAmount, JSBI } from "@uniswap/sdk";
+import { ChainId, CurrencyAmount, JSBI, Token } from "@uniswap/sdk";
 import { CrossChainVO, DateTimeNodeRewardVO, TimeNodeRewardVO } from "../../services";
 import { useWeb3React } from "@web3-react/core";
+import { Safe4NetworkChainId, USDT, WSAFE } from "../../config";
 
 export function useTransactionAdder2(): (
   response: {
@@ -73,8 +74,8 @@ export function useTransactionAdder(): (
       response: TransactionResponse,
       { transfer, call, withdrawAmount }:
         {
-          transfer ?: Transfer,
-          call ?: ContractCall,
+          transfer?: Transfer,
+          call?: ContractCall,
           withdrawAmount?: string
         } = {}
     ) => {
@@ -84,8 +85,8 @@ export function useTransactionAdder(): (
       // 如果是合约调用,则显示为合约地址
       const { to } =
         transfer ? { ...transfer } :
-            call ? { ...call }
-              : { to: undefined }
+          call ? { ...call }
+            : { to: undefined }
       const transaction = {
         hash,
         refFrom: from,
@@ -118,7 +119,7 @@ export function useTransactions(account?: string) {
       .sort((t0, t1) => {
         return t1.addedTime - t0.addedTime
       })
-  }, [account, transactions , chainId]);
+  }, [account, transactions, chainId]);
   const dateTransactions: {
     [date: string]: {
       transactions: TransactionDetails[],
@@ -170,14 +171,38 @@ export function useTransaction(hash: string): TransactionDetails {
   return transactions[hash];
 }
 
-export function useTokens() : { [address : string] : { name : string , symbol : string , decimals : number , chainId : number } } {
+export function useTokens(): { [address: string]: { name: string, symbol: string, decimals: number, chainId: number } } {
   return useSelector((state: AppState) => state.transactions.tokens);
 }
 
-export function useCrosschain( srcTxHash : string ) : CrossChainVO | undefined {
+export function useCrosschain(srcTxHash: string): CrossChainVO | undefined {
   return useSelector((state: AppState) => state.transactions.crosschains[srcTxHash]);
 }
 
-export function useCrosschains() : { [ srxTxHash : string ] : CrossChainVO } {
+export function useCrosschains(): { [srxTxHash: string]: CrossChainVO } {
   return useSelector((state: AppState) => state.transactions.crosschains);
+}
+
+export function useERC20Tokens(chainId: Safe4NetworkChainId): Token[] {
+  return useSelector((state: AppState) => {
+    const defaultTokenAddresses: { [address: string]: Token } = {};
+    defaultTokenAddresses[USDT[chainId as Safe4NetworkChainId].address] = USDT[chainId as Safe4NetworkChainId];
+    defaultTokenAddresses[WSAFE[chainId as Safe4NetworkChainId].address] = WSAFE[chainId as Safe4NetworkChainId];
+    const defaultTokens = Object.keys(defaultTokenAddresses).map(address => defaultTokenAddresses[address]);
+    const walletTokens = Object.keys(state.transactions.tokens)
+      .filter(address => {
+        return state.transactions.tokens[address].chainId == chainId
+          && defaultTokenAddresses[address] == undefined
+      })
+      .map(address => {
+        const { name, symbol, decimals } = state.transactions.tokens[address];
+        const token = new Token(
+          ChainId.MAINNET,
+          address, decimals,
+          symbol, name
+        );
+        return token;
+      });
+    return defaultTokens.concat(walletTokens);
+  });
 }

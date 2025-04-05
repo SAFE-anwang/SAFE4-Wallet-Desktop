@@ -3,7 +3,7 @@ import AddLiquidity from "./AddLiquidity";
 import PoolList from "./PoolList";
 
 
-const enum AssetPoolModule {
+export enum AssetPoolModule {
   List = "List" ,
   Add  = "Add"  ,
   Remove = "Remove",
@@ -16,7 +16,7 @@ export default () => {
       assetPoolModule == AssetPoolModule.Add && <AddLiquidity />
     }
     {
-      assetPoolModule == AssetPoolModule.List && <PoolList />
+      assetPoolModule == AssetPoolModule.List && <PoolList setAssetPoolModule={setAssetPoolModule} />
     }
   </>
 

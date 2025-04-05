@@ -57,7 +57,7 @@ export default (
       const { contract, functionName } = contractCalls[index];
       const fragment = contract.interface.getFunction(functionName);
       const result = contract.interface.decodeFunctionResult(fragment, raw);
-      contractCall.result = result[0];
+      contractCall.result = result.length == 1 ? result[0] : result;
     });
     callback();
   }).catch(( err : any ) => {

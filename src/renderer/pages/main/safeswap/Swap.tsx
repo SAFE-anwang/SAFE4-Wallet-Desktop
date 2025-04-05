@@ -12,7 +12,7 @@ import { PairABI } from "../../../constants/SafeswapAbiConfig";
 import { useBlockNumber, useSafeswapTokens } from "../../../state/application/hooks";
 import { useTokens } from "../../../state/transactions/hooks";
 import TokenButtonSelect from "./TokenButtonSelect";
-import { Safe4NetworkChainId, SafeswapV2RouterAddress, USDT } from "../../../config";
+import { Safe4NetworkChainId, SafeswapV2RouterAddress, USDT, WSAFE } from "../../../config";
 import { IERC20_Interface } from "../../../abis";
 import SwapConfirm from "./SwapConfirm";
 import { useDispatch } from "react-redux";
@@ -27,7 +27,7 @@ const enum SwapFocus {
   SellOut = "SellOut",
 }
 
-const enum PriceType {
+export enum PriceType {
   A2B = "A2B",
   B2A = "B2A"
 }
@@ -53,8 +53,6 @@ export function SerializeToken(token: Token | undefined): {
   return token ? { ...token } : undefined;
 }
 
-
-
 export default () => {
 
   const { t } = useTranslation();
@@ -65,14 +63,22 @@ export default () => {
   const dispatch = useDispatch();
   const safeswapTokens = useSafeswapTokens();
   const Default_Swap_Token = chainId && Default_Safeswap_Tokens(chainId);
-
   const tokens = useTokens();
-  const erc20Tokens = Object.keys(tokens).map((address) => {
-    const { name, decimals, symbol } = tokens[address];
-    return new Token(ChainId.MAINNET, address, decimals, symbol, name);
-  })
-  const tokenAmounts = useTokenBalances(activeAccount, erc20Tokens);
-  const tokenAllowanceAmounts = useTokenAllowanceAmounts(activeAccount, SafeswapV2RouterAddress, erc20Tokens);
+  const erc20Tokens = useMemo(() => {
+    if (chainId) {
+      const defaultTokens = [
+        USDT[chainId as Safe4NetworkChainId],
+        WSAFE[chainId as Safe4NetworkChainId],
+      ]
+      return defaultTokens.concat(Object.keys(tokens).map((address) => {
+        const { name, decimals, symbol } = tokens[address];
+        return new Token(ChainId.MAINNET, address, decimals, symbol, name);
+      }));
+    }
+  }, [chainId]);
+
+  const tokenAmounts = erc20Tokens && useTokenBalances(activeAccount, erc20Tokens);
+  const tokenAllowanceAmounts = erc20Tokens && useTokenAllowanceAmounts(activeAccount, SafeswapV2RouterAddress, erc20Tokens);
 
   const balance = useETHBalances([activeAccount])[activeAccount];
 
@@ -82,13 +88,10 @@ export default () => {
   const [tokenB, setTokenB] = useState<Token | undefined>(
     safeswapTokens ? parseTokenData(safeswapTokens.tokenB) : Default_Swap_Token ? Default_Swap_Token[1] : undefined
   );
-
-  // const [tokenA, setTokenA] = useState<Token | undefined>(Default_Swap_Token ? Default_Swap_Token[0] : undefined);
-  // const [tokenB, setTokenB] = useState<Token | undefined>(Default_Swap_Token ? Default_Swap_Token[1] : undefined);
   const [swapFocus, setSwapFocus] = useState<SwapFocus | undefined>(undefined);
   const [priceType, setPriceType] = useState<PriceType | undefined>(PriceType.B2A);
-  const balanceOfTokenA = tokenA ? tokenAmounts[tokenA.address] : balance;
-  const balanceOfTokenB = tokenB ? tokenAmounts[tokenB.address] : balance;
+  const balanceOfTokenA = tokenAmounts && tokenA ? tokenAmounts[tokenA.address] : balance;
+  const balanceOfTokenB = tokenAmounts && tokenB ? tokenAmounts[tokenB.address] : balance;
   const [reservers, setReservers] = useState<{ [address: string]: any }>();
   const [tokenInAmount, setTokenInAmount] = useState<string>();
   const [tokenOutAmount, setTokenOutAmount] = useState<string>();
@@ -122,7 +125,7 @@ export default () => {
   }>({});
 
   const allowanceForRouterOfTokenA = useMemo(() => {
-    return tokenA ? tokenAllowanceAmounts[tokenA.address] : undefined;
+    return tokenAllowanceAmounts && tokenA ? tokenAllowanceAmounts[tokenA.address] : undefined;
   }, [tokenA, tokenAllowanceAmounts]);
 
   const needApproveTokenA = useMemo(() => {
@@ -213,7 +216,7 @@ export default () => {
 
   const handleTokenInAmountInput = (_tokenInAmount: string) => {
     const isValidInput = (_tokenInAmount == '') || Number(_tokenInAmount);
-    if (isValidInput) {
+    if (isValidInput || isValidInput == 0) {
       setTokenInAmount(_tokenInAmount);
       setSwapFocus(SwapFocus.SellOut);
       const tokenOutAmount = calculate(_tokenInAmount, undefined);
@@ -223,7 +226,7 @@ export default () => {
 
   const handleTokenOutAmountInput = (_tokenOutAmount: string) => {
     const isValidInput = (_tokenOutAmount == '') || Number(_tokenOutAmount);
-    if (isValidInput) {
+    if (isValidInput || isValidInput == 0) {
       setTokenOutAmount(_tokenOutAmount);
       setSwapFocus(SwapFocus.BuyIn);
       try {
