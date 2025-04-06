@@ -11,11 +11,12 @@ import { ethers } from "ethers";
 import { useWalletsActiveAccount } from "../../../state/wallets/hooks";
 import { useTransactionAdder } from "../../../state/transactions/hooks";
 import useTransactionResponseRender from "../../components/useTransactionResponseRender";
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { applicationUpdateWalletTab } from "../../../state/application/action";
+import { Default_SlippageTolerance, PriceType } from "./Swap";
 
 
 const { Text } = Typography;
@@ -30,7 +31,8 @@ export default ({
   tokenA: undefined | Token,
   tokenB: undefined | Token,
   tokenInAmount: string,
-  tokenOutAmount: string
+  tokenOutAmount: string,
+  reservers: { [address: string]: any }
 }) => {
 
   const dispatch = useDispatch();
@@ -57,13 +59,25 @@ export default ({
       dispatch(applicationUpdateWalletTab("history"));
       navigate("/main/wallet");
     }
-  }, [txHash])
+  }, [txHash]);
+  const SlippageTolerance = (100 - Number(Default_SlippageTolerance) * 100);
+
+  const price = useMemo(() => {
+    if (tokenInAmount && tokenOutAmount) {
+      return {
+        [PriceType.B2A]: (Number(tokenInAmount) / Number(tokenOutAmount)) ? (Number(tokenInAmount) / Number(tokenOutAmount)).toFixed(4) : undefined,
+        [PriceType.A2B]: (Number(tokenOutAmount) / Number(tokenInAmount)) ? (Number(tokenOutAmount) / Number(tokenInAmount)).toFixed(4) : undefined
+      }
+    }
+    return undefined;
+  }, [tokenInAmount, tokenOutAmount]);
 
   const swap = () => {
     if (SwapV2RouterContract) {
       setSending(true);
       if (tokenA == undefined && tokenB) {
-        const amountOutMin = ethers.utils.parseUnits(tokenOutAmount, tokenB.decimals);
+        const amountOut = ethers.utils.parseUnits(tokenOutAmount, tokenB.decimals);
+        const amountOutMin = amountOut.mul(SlippageTolerance).div(100);
         const value = ethers.utils.parseEther(tokenInAmount);
         SwapV2RouterContract.swapExactETHForTokens(
           amountOutMin,
@@ -84,11 +98,13 @@ export default ({
           });
           setTxHash(hash);
         }).catch((err: any) => {
-          console.log("Swap Error =", err)
+          console.log("Swap Error =", err);
+          setErr(err);
         })
       } else if (tokenA && tokenB == undefined) {
         const amountIn = ethers.utils.parseUnits(tokenInAmount, tokenA.decimals);
-        const amountOutMin = ethers.utils.parseUnits(tokenOutAmount);
+        const amountOut = ethers.utils.parseUnits(tokenOutAmount);
+        const amountOutMin = amountOut.mul(SlippageTolerance).div(100);
         SwapV2RouterContract.swapExactTokensForETH(
           amountIn,
           amountOutMin,
@@ -109,10 +125,12 @@ export default ({
           setTxHash(hash);
         }).catch((err: any) => {
           console.log("Swap Error =", err)
+          setErr(err)
         })
       } else if (tokenA && tokenB) {
         const amountIn = ethers.utils.parseUnits(tokenInAmount, tokenA.decimals);
-        const amountOutMin = ethers.utils.parseUnits(tokenOutAmount, tokenB.decimals);
+        const amountOut = ethers.utils.parseUnits(tokenOutAmount, tokenB.decimals);
+        const amountOutMin = amountOut.mul(SlippageTolerance).div(100);
         SwapV2RouterContract.swapExactTokensForTokens(
           amountIn,
           amountOutMin,
@@ -133,6 +151,7 @@ export default ({
           setTxHash(hash);
         }).catch((err: any) => {
           console.log("Swap Error =", err)
+          setErr(err)
         })
       }
     }
@@ -181,6 +200,29 @@ export default ({
           </Text>
         </Col>
       </Row>
+      {
+        price && <Row style={{ marginTop: "20px" }}>
+          <Col span={24}>
+            <Text type="secondary">价格</Text>
+          </Col>
+          <Col span={12}>
+            <Col span={24} style={{ textAlign: "center" }}>
+              <Text strong>{price[PriceType.A2B]}</Text> {tokenB ? tokenB.symbol : "SAFE"}
+            </Col>
+            <Col span={24} style={{ textAlign: "center" }}>
+              <Text>1 {tokenA ? tokenA.symbol : "SAFE"}</Text>
+            </Col>
+          </Col>
+          <Col span={12}>
+            <Col span={24} style={{ textAlign: "center" }}>
+              <Text strong>{price[PriceType.B2A]}</Text> {tokenA ? tokenA.symbol : "SAFE"}
+            </Col>
+            <Col span={24} style={{ textAlign: "center" }}>
+              <Text>1 {tokenB ? tokenB.symbol : "SAFE"}</Text>
+            </Col>
+          </Col>
+        </Row>
+      }
       <Divider />
 
       <Row>

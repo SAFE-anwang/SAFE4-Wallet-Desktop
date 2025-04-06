@@ -17,10 +17,11 @@ import { IERC20_Interface } from "../../../abis";
 import SwapConfirm from "./SwapConfirm";
 import { useDispatch } from "react-redux";
 import { applicationUpdateSafeswapTokens } from "../../../state/application/action";
-const { Title, Text, Link } = Typography;
+import ViewFiexdAmount from "../../../utils/ViewFiexdAmount";
+const { Text, Link } = Typography;
 
 
-const SafeswapV2_Fee_Rate = "0.003";
+export const SafeswapV2_Fee_Rate = "0.003";
 
 const enum SwapFocus {
   BuyIn = "BuyIn",
@@ -41,6 +42,8 @@ export const Default_Safeswap_Tokens = (chainId: Safe4NetworkChainId) => {
   ]
 }
 
+export const Default_SlippageTolerance = "0.01"; // 1%
+
 export function parseTokenData(token: any): Token | undefined {
   if (token) {
     return new Token(token.chainId, token.address, token.decimals, token.symbol, token.name);
@@ -51,6 +54,19 @@ export function SerializeToken(token: Token | undefined): {
   chainId: number, address: string, decimals: number, name?: string, symbol?: string
 } | undefined {
   return token ? { ...token } : undefined;
+}
+
+export function isDecimalPrecisionExceeded(amount: string, token: Token | undefined): boolean {
+  // 将输入的金额字符串转为小数
+  const decimalIndex = amount.indexOf(".");
+  // 如果没有小数部分，说明小数位数为0
+  if (decimalIndex === -1) {
+    return false;
+  }
+  // 获取小数部分
+  const decimalPlaces = amount.length - decimalIndex - 1;
+  // 判断小数位是否超过代币精度
+  return decimalPlaces > (token ? token.decimals : 18);
 }
 
 export default () => {
@@ -100,7 +116,6 @@ export default () => {
   const tokenAContract = tokenA ? new Contract(tokenA.address, IERC20_Interface, signer) : undefined;
   const [openSwapConfirmModal, setOpenSwapConfirmModal] = useState<boolean>(false);
 
-
   const [liquidityNotFound, setLiquidityNotFound] = useState<boolean>(false);
   const balanceOfTokenANotEnough = useMemo(() => {
     if (tokenInAmount && balanceOfTokenA) {
@@ -137,7 +152,7 @@ export default () => {
   }, [allowanceForRouterOfTokenA, tokenInAmount]);
 
   useEffect(() => {
-    if (pairContract) {
+    if (pairContract && !openSwapConfirmModal) {
       setReservers(undefined);
       setLiquidityNotFound(false);
       pairContract.getReserves().then((data: any) => {
@@ -159,7 +174,7 @@ export default () => {
         setLiquidityNotFound(true);
       })
     }
-  }, [pairContract, blockNumber]);
+  }, [pairContract, blockNumber , openSwapConfirmModal]);
 
   const approveRouter = useCallback(() => {
     if (tokenA && activeAccount && tokenAContract) {
@@ -215,25 +230,35 @@ export default () => {
   }, [chainId, reservers, tokenA, tokenB, priceType]);
 
   const handleTokenInAmountInput = (_tokenInAmount: string) => {
+    const decimalExceeded = isDecimalPrecisionExceeded(_tokenInAmount, tokenA);
     const isValidInput = (_tokenInAmount == '') || Number(_tokenInAmount);
-    if (isValidInput || isValidInput == 0) {
+    if (!decimalExceeded && (isValidInput || isValidInput == 0)) {
       setTokenInAmount(_tokenInAmount);
       setSwapFocus(SwapFocus.SellOut);
-      const tokenOutAmount = calculate(_tokenInAmount, undefined);
-      setTokenOutAmount(tokenB ? tokenOutAmount?.toFixed(tokenB.decimals > 4 ? 4 : tokenB.decimals) : tokenOutAmount?.toFixed(4));
+      if (_tokenInAmount && isValidInput != 0) {
+        const tokenOutAmount = calculate(_tokenInAmount, undefined);
+        setTokenOutAmount(tokenOutAmount && ViewFiexdAmount(tokenOutAmount, tokenB, 6));
+      } else {
+        setTokenOutAmount(undefined);
+      }
     }
   }
 
   const handleTokenOutAmountInput = (_tokenOutAmount: string) => {
+    const decimalExceeded = isDecimalPrecisionExceeded(_tokenOutAmount, tokenB);
     const isValidInput = (_tokenOutAmount == '') || Number(_tokenOutAmount);
-    if (isValidInput || isValidInput == 0) {
+    if (!decimalExceeded && (isValidInput || isValidInput == 0)) {
       setTokenOutAmount(_tokenOutAmount);
       setSwapFocus(SwapFocus.BuyIn);
-      try {
-        const tokenInAmount = calculate(undefined, _tokenOutAmount);
-        setTokenInAmount(tokenA ? tokenInAmount?.toFixed(tokenA.decimals > 4 ? 4 : tokenA.decimals) : tokenInAmount?.toFixed(4));
-      } catch (error) {
+      if (_tokenOutAmount && isValidInput != 0) {
+        try {
+          const tokenInAmount = calculate(undefined, _tokenOutAmount);
+          setTokenInAmount(tokenInAmount && ViewFiexdAmount(tokenInAmount, tokenA, 6));
+        } catch (err) {
 
+        }
+      } else {
+        setTokenInAmount(undefined);
       }
     }
   }
@@ -251,8 +276,8 @@ export default () => {
   const price = useMemo(() => {
     if (tokenInAmount && tokenOutAmount) {
       return {
-        [PriceType.B2A]: (Number(tokenInAmount) / Number(tokenOutAmount)).toFixed(4),
-        [PriceType.A2B]: (Number(tokenOutAmount) / Number(tokenInAmount)).toFixed(4)
+        [PriceType.B2A]: (Number(tokenInAmount) / Number(tokenOutAmount)) ? (Number(tokenInAmount) / Number(tokenOutAmount)).toFixed(4) : undefined,
+        [PriceType.A2B]: (Number(tokenOutAmount) / Number(tokenInAmount)) ? (Number(tokenOutAmount) / Number(tokenInAmount)).toFixed(4) : undefined
       }
     }
     return undefined;
@@ -270,7 +295,7 @@ export default () => {
       <Col span={24}>
         <Text type="secondary" strong>{t("wallet_crosschain_select_token")}</Text>
         <Text type="secondary" style={{ float: "right" }}>可用余额:
-          {tokenA ? balanceOfTokenA?.toFixed(tokenA.decimals > 4 ? 4 : tokenA.decimals) : balanceOfTokenA?.toFixed(4)}
+          {balanceOfTokenA && ViewFiexdAmount(balanceOfTokenA, tokenA, 4)}
         </Text>
       </Col>
       <Col span={16}>
@@ -282,10 +307,10 @@ export default () => {
       <Col span={8}>
         <Row style={{ marginTop: "24px" }}>
           <Col span={8}>
-            <div style={{ marginTop: "4px" }}>
+            {/* <div style={{ marginTop: "4px" }}>
               <Link>{t("wallet_send_max")}</Link>
               <Divider type="vertical" />
-            </div>
+            </div> */}
           </Col>
           <Col span={16} style={{ paddingRight: "5px" }}>
             <TokenButtonSelect token={tokenA} tokenSelectCallback={(token: Token | undefined) => {
@@ -317,7 +342,7 @@ export default () => {
       <Col span={24}>
         <Text type="secondary" strong>选择代币</Text>
         <Text type="secondary" style={{ float: "right" }}>可用余额:
-          {tokenB ? balanceOfTokenB?.toFixed(tokenB.decimals > 4 ? 4 : tokenB.decimals) : balanceOfTokenB?.toFixed(4)}
+          {balanceOfTokenB && ViewFiexdAmount(balanceOfTokenB, tokenB, 4)}
         </Text>
       </Col>
       <Col span={16}>
@@ -353,7 +378,7 @@ export default () => {
       }
     </Row>
     {
-      price && <Row style={{ marginTop: "20px" }}>
+      price && price[PriceType.A2B] && price[PriceType.B2A] && <Row style={{ marginTop: "20px" }}>
         <Col span={24}>
           <Text type="secondary">价格</Text>
         </Col>
@@ -398,16 +423,23 @@ export default () => {
       </Col>
     }
     <Divider />
+
     <Row>
       <Col span={24}>
         <Button disabled={
           (liquidityNotFound || balanceOfTokenANotEnough || reserverOfTokenBNotEnough || needApproveTokenA)
+          || (!(tokenInAmount && tokenOutAmount))
         } onClick={() => setOpenSwapConfirmModal(true)} type="primary" style={{ float: "right" }}>{t("next")}</Button>
       </Col>
     </Row>
+
     {
-      tokenInAmount && tokenOutAmount && <>
-        <SwapConfirm openSwapConfirmModal={openSwapConfirmModal} setOpenSwapConfirmModal={setOpenSwapConfirmModal} tokenA={tokenA} tokenB={tokenB} tokenInAmount={tokenInAmount} tokenOutAmount={tokenOutAmount} />
+      tokenInAmount && tokenOutAmount && reservers && <>
+        <SwapConfirm openSwapConfirmModal={openSwapConfirmModal}
+          setOpenSwapConfirmModal={setOpenSwapConfirmModal}
+          tokenA={tokenA} tokenB={tokenB}
+          tokenInAmount={tokenInAmount} tokenOutAmount={tokenOutAmount}
+          reservers={reservers} />
       </>
     }
   </>
