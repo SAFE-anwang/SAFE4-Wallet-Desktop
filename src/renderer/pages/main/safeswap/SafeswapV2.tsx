@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 
 import Swap from "./Swap";
 import AssetPool from "./AssetPool";
+import { useSafeswapTokens } from "../../../state/application/hooks";
 const { Title, Text, Link } = Typography;
 
 
@@ -25,7 +26,7 @@ const enum ActiveModule {
 
 export default () => {
 
-  const [activeModule, setActiveModule] = useState<ActiveModule>(ActiveModule.Swap);
+  const [activeModule, setActiveModule] = useState<ActiveModule>(ActiveModule.AssetsPool);
 
   return <>
     <Row style={{ height: "50px" }}>

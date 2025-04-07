@@ -95,7 +95,6 @@ export default () => {
 
   const tokenAmounts = erc20Tokens && useTokenBalances(activeAccount, erc20Tokens);
   const tokenAllowanceAmounts = erc20Tokens && useTokenAllowanceAmounts(activeAccount, SafeswapV2RouterAddress, erc20Tokens);
-
   const balance = useETHBalances([activeAccount])[activeAccount];
 
   const [tokenA, setTokenA] = useState<Token | undefined>(
@@ -174,7 +173,7 @@ export default () => {
         setLiquidityNotFound(true);
       })
     }
-  }, [pairContract, blockNumber , openSwapConfirmModal]);
+  }, [pairContract, blockNumber, openSwapConfirmModal]);
 
   const approveRouter = useCallback(() => {
     if (tokenA && activeAccount && tokenAContract) {
@@ -285,8 +284,8 @@ export default () => {
 
   useEffect(() => {
     dispatch(applicationUpdateSafeswapTokens({
-      tokenA: SerializeToken(tokenA),
-      tokenB: SerializeToken(tokenB),
+      tokenA: tokenA ? SerializeToken(tokenA) : undefined,
+      tokenB: tokenB ? SerializeToken(tokenB) : undefined,
     }));
   }, [tokenA, tokenB])
 
@@ -306,22 +305,24 @@ export default () => {
       </Col>
       <Col span={8}>
         <Row style={{ marginTop: "24px" }}>
-          <Col span={8}>
+          <Col span={4}>
             {/* <div style={{ marginTop: "4px" }}>
               <Link>{t("wallet_send_max")}</Link>
               <Divider type="vertical" />
             </div> */}
           </Col>
-          <Col span={16} style={{ paddingRight: "5px" }}>
-            <TokenButtonSelect token={tokenA} tokenSelectCallback={(token: Token | undefined) => {
-              if (tokenB?.address == token?.address) {
-                reverseSwapFocus();
-              } else {
-                setTokenInAmount(undefined);
-                setTokenOutAmount(undefined);
-                setTokenA(token);
-              }
-            }} />
+          <Col span={20}>
+            <div style={{ float: "right", paddingRight: "5px" }}>
+              <TokenButtonSelect token={tokenA} tokenSelectCallback={(token: Token | undefined) => {
+                if (tokenB?.address == token?.address) {
+                  reverseSwapFocus();
+                } else {
+                  setTokenInAmount(undefined);
+                  setTokenOutAmount(undefined);
+                  setTokenA(token);
+                }
+              }} />
+            </div>
           </Col>
         </Row>
       </Col>
@@ -353,19 +354,21 @@ export default () => {
       </Col>
       <Col span={8}>
         <Row style={{ marginTop: "24px" }}>
-          <Col span={8}>
+          <Col span={4}>
 
           </Col>
-          <Col span={16} style={{ paddingRight: "5px" }}>
-            <TokenButtonSelect token={tokenB} tokenSelectCallback={(token: Token | undefined) => {
-              if (tokenA?.address == token?.address) {
-                reverseSwapFocus();
-              } else {
-                setTokenInAmount(undefined);
-                setTokenOutAmount(undefined);
-                setTokenB(token);
-              }
-            }} />
+          <Col span={20}>
+            <div style={{ float: "right", paddingRight: "5px" }}>
+              <TokenButtonSelect token={tokenB} tokenSelectCallback={(token: Token | undefined) => {
+                if (tokenA?.address == token?.address) {
+                  reverseSwapFocus();
+                } else {
+                  setTokenInAmount(undefined);
+                  setTokenOutAmount(undefined);
+                  setTokenB(token);
+                }
+              }} />
+            </div>
           </Col>
         </Row>
       </Col>

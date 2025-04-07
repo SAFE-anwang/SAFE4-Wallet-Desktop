@@ -78,8 +78,8 @@ export default ({
           );
           _all[address] = token;
         });
-        _all[ USDT[chainId as Safe4NetworkChainId].address ] = USDT[chainId as Safe4NetworkChainId];
-        _all[ WSAFE[chainId as Safe4NetworkChainId].address ] = WSAFE[chainId as Safe4NetworkChainId];
+      _all[USDT[chainId as Safe4NetworkChainId].address] = USDT[chainId as Safe4NetworkChainId];
+      _all[WSAFE[chainId as Safe4NetworkChainId].address] = WSAFE[chainId as Safe4NetworkChainId];
       return _all;
     }
   }, [tokens, chainId]);
@@ -184,23 +184,29 @@ export default ({
             pairPools[address] = { token0, token1, totalSupply, balanceOf, reservers, pairToken };
           }
         });
-        setPairPools(pairPools)
+        setPairPools(pairPools);
       });
     }
   }, [activeAccountPairs, multicallContract, provider, activeAccount, allTokens]);
 
   const addLiquidity = (token0: Token | undefined, token1: Token | undefined) => {
-    if (token0 && token1) {
+    if (token0 || token1) {
       dispatch(applicationUpdateSafeswapTokens({
-        tokenA: SerializeToken(token0),
-        tokenB: SerializeToken(token1)
+        tokenA: token0 ? SerializeToken(token0) : undefined,
+        tokenB: token1 ? SerializeToken(token1) : undefined
       }));
     }
     setAssetPoolModule(AssetPoolModule.Add);
   }
 
-  const removeLiquidity = () => {
-
+  const removeLiquidity = (token0: Token | undefined, token1: Token | undefined) => {
+    if (token0 || token1) {
+      dispatch(applicationUpdateSafeswapTokens({
+        tokenA: token0 ? SerializeToken(token0) : undefined,
+        tokenB: token1 ? SerializeToken(token1) : undefined
+      }));
+    }
+    setAssetPoolModule(AssetPoolModule.Remove);
   }
 
   return <>
@@ -224,19 +230,18 @@ export default ({
               const { token0, token1, reservers, balanceOf, totalSupply, pairToken } = pairPools[address];
               const token0Reserver = new TokenAmount(token0, reservers[0]);
               const token1Reserver = new TokenAmount(token1, reservers[1]);
-
               // 持有的 LP token 数量是 balanceOf
               const LPTokenAmount = new TokenAmount(pairToken, balanceOf);
               const TotalLPTokenAmount = new TokenAmount(pairToken, totalSupply);
               const lpTokenRatio = LPTokenAmount.divide(TotalLPTokenAmount);
               const token0Amount = token0Reserver.multiply(lpTokenRatio);
               const token1Amount = token1Reserver.multiply(lpTokenRatio);
-
               const price = {
                 [PriceType.B2A]: token0Reserver.divide(token1Reserver).toFixed(4),
                 [PriceType.A2B]: token1Reserver.divide(token0Reserver).toFixed(4),
               }
-
+              const _token0 = token0.address == WSAFE[chainId as Safe4NetworkChainId].address ? undefined : token0;
+              const _token1 = token1.address == WSAFE[chainId as Safe4NetworkChainId].address ? undefined : token1;
               return {
                 key: address, label: <>
                   <Row>
@@ -250,19 +255,19 @@ export default ({
                 children: <Row>
                   <Col span={24}>
                     <Text>库存 {token0.symbol}</Text>
-                    <Text type="secondary" style={{ float: "right" }}>{ViewFiexdAmount(token0Reserver , token0)}</Text>
+                    <Text type="secondary" style={{ float: "right" }}>{ViewFiexdAmount(token0Reserver, token0)}</Text>
                   </Col>
                   <Col span={24}>
                     <Text>库存 {token1.symbol}</Text>
-                    <Text type="secondary" style={{ float: "right" }}>{ViewFiexdAmount(token1Reserver , token1)}</Text>
+                    <Text type="secondary" style={{ float: "right" }}>{ViewFiexdAmount(token1Reserver, token1)}</Text>
                   </Col>
                   <Col span={24}>
                     <Text strong>存入 {token0.symbol}</Text>
-                    <Text strong style={{ float: "right" }}>{ViewFiexdAmount(token0Amount , token0)}</Text>
+                    <Text strong style={{ float: "right" }}>{ViewFiexdAmount(token0Amount, token0)}</Text>
                   </Col>
                   <Col span={24}>
                     <Text strong>存入 {token1.symbol}</Text>
-                    <Text strong style={{ float: "right" }}>{ViewFiexdAmount(token1Amount , token1)}</Text>
+                    <Text strong style={{ float: "right" }}>{ViewFiexdAmount(token1Amount, token1)}</Text>
                   </Col>
                   <Col span={24}>
                     <Text>价格</Text>
@@ -285,10 +290,10 @@ export default ({
                   </Col>
                   <Divider />
                   <Col span={12} style={{ textAlign: "center" }}>
-                    <Button onClick={() => addLiquidity(token0, token1)}>添加</Button>
+                    <Button onClick={() => addLiquidity(_token0, _token1)}>添加</Button>
                   </Col>
                   <Col span={12} style={{ textAlign: "center" }}>
-                    <Button>移除</Button>
+                    <Button onClick={() => removeLiquidity(_token0, _token1)}>移除</Button>
                   </Col>
                 </Row>
               }

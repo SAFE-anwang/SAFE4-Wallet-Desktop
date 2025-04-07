@@ -15,7 +15,11 @@ import TokenButtonSelect from "./TokenButtonSelect";
 import { SafeswapV2RouterAddress } from "../../../config";
 import { IERC20_Interface } from "../../../abis";
 import AddLiquidityConfirm from "./AddLiquidityConfirm";
-import { Default_Safeswap_Tokens } from "./Swap";
+import { Default_Safeswap_Tokens, isDecimalPrecisionExceeded, parseTokenData, SerializeToken } from "./Swap";
+import { useDispatch } from "react-redux";
+import ViewFiexdAmount from "../../../utils/ViewFiexdAmount";
+import { applicationUpdateSafeswapTokens } from "../../../state/application/action";
+import { AssetPoolModule } from "./AssetPool";
 const { Title, Text, Link } = Typography;
 
 const SafeswapV2_Fee_Rate = "0.003";
@@ -30,17 +34,20 @@ const enum PriceType {
   B2A = "B2A"
 }
 
-export default () => {
+export default ({
+  setAssetPoolModule
+}: {
+  setAssetPoolModule: (assetPoolModule: AssetPoolModule) => void
+}) => {
 
   const { t } = useTranslation();
   const { chainId } = useWeb3React();
   const signer = useWalletsActiveSigner()
   const activeAccount = useWalletsActiveAccount();
+  const dispatch = useDispatch();
   const blockNumber = useBlockNumber();
   const safeswapTokens = useSafeswapTokens();
   const Default_Swap_Token = chainId && Default_Safeswap_Tokens(chainId);
-
-
   const tokens = useTokens();
   const erc20Tokens = Object.keys(tokens).map((address) => {
     const { name, decimals, symbol } = tokens[address];
@@ -48,14 +55,13 @@ export default () => {
   })
   const tokenAmounts = useTokenBalances(activeAccount, erc20Tokens);
   const tokenAllowanceAmounts = useTokenAllowanceAmounts(activeAccount, SafeswapV2RouterAddress, erc20Tokens);
-
   const balance = useETHBalances([activeAccount])[activeAccount];
 
   const [tokenA, setTokenA] = useState<Token | undefined>(
-    safeswapTokens ? safeswapTokens.tokenA : Default_Swap_Token ? Default_Swap_Token[0] : undefined
+    safeswapTokens ? parseTokenData(safeswapTokens.tokenA) : Default_Swap_Token ? Default_Swap_Token[0] : undefined
   );
   const [tokenB, setTokenB] = useState<Token | undefined>(
-    safeswapTokens ? safeswapTokens.tokenB : Default_Swap_Token ? Default_Swap_Token[1] : undefined
+    safeswapTokens ? parseTokenData(safeswapTokens.tokenB) : Default_Swap_Token ? Default_Swap_Token[1] : undefined
   );
 
   const [swapFocus, setSwapFocus] = useState<SwapFocus | undefined>(undefined);
@@ -216,25 +222,27 @@ export default () => {
   }, [chainId, reservers, tokenA, tokenB, priceType]);
 
   const handletokenAAmountInput = (_tokenAAmount: string) => {
+    const decimalExceeded = isDecimalPrecisionExceeded(_tokenAAmount, tokenA);
     const isValidInput = (_tokenAAmount == '') || Number(_tokenAAmount);
-    if (isValidInput) {
+    if (!decimalExceeded && (isValidInput || isValidInput == 0)) {
       settokenAAmount(_tokenAAmount);
       setSwapFocus(SwapFocus.SellOut);
-      if (reservers) {
+      if (_tokenAAmount && isValidInput != 0 && reservers) {
         const tokenBAmount = calculate(_tokenAAmount, undefined);
-        settokenBAmount(tokenB ? tokenBAmount?.toFixed(tokenB.decimals > 4 ? 4 : tokenB.decimals) : tokenBAmount?.toFixed(4));
+        settokenBAmount(tokenBAmount && ViewFiexdAmount(tokenBAmount, tokenB, 6));
       }
     }
   }
 
   const handletokenBAmountInput = (_tokenBAmount: string) => {
+    const decimalExceeded = isDecimalPrecisionExceeded(_tokenBAmount, tokenB);
     const isValidInput = (_tokenBAmount == '') || Number(_tokenBAmount);
-    if (isValidInput) {
+    if (!decimalExceeded && (isValidInput || isValidInput == 0)) {
       settokenBAmount(_tokenBAmount);
       setSwapFocus(SwapFocus.BuyIn);
-      if (reservers) {
+      if (_tokenBAmount && isValidInput != 0 && reservers) {
         const tokenAAmount = calculate(undefined, _tokenBAmount);
-        settokenAAmount(tokenA ? tokenAAmount?.toFixed(tokenA.decimals > 4 ? 4 : tokenA.decimals) : tokenAAmount?.toFixed(4));
+        settokenAAmount(tokenAAmount && ViewFiexdAmount(tokenAAmount, tokenB, 6));
       }
     }
   }
@@ -266,7 +274,28 @@ export default () => {
     return undefined;
   }, [tokenAAmount, tokenBAmount]);
 
+  useEffect(() => {
+    dispatch(applicationUpdateSafeswapTokens({
+      tokenA: tokenA ? SerializeToken(tokenA) : undefined,
+      tokenB: tokenB ? SerializeToken(tokenB) : undefined,
+    }));
+  }, [tokenA, tokenB])
+
   return <>
+
+    <Row>
+      <Divider style={{ marginTop: "0px", marginBottom: "20px" }} />
+      <Col span={24} style={{ textAlign: "center" }}>
+        <LeftOutlined onClick={() => {
+          setAssetPoolModule( AssetPoolModule.List );
+        }} style={{ float: "left", fontSize: "20px" }} />
+        <Text style={{ width: "100%", fontSize: "20px", lineHeight: "20px" }}>
+          添加流动性
+        </Text>
+      </Col>
+      <Divider style={{ marginTop: "20px", marginBottom: "20px" }} />
+    </Row>
+
     {
       liquidityNotFound && <Row>
         <Col span={24}>
@@ -293,22 +322,24 @@ export default () => {
       </Col>
       <Col span={8}>
         <Row style={{ marginTop: "24px" }}>
-          <Col span={8}>
-            <div style={{ marginTop: "4px" }}>
+          <Col span={4}>
+            {/* <div style={{ marginTop: "4px" }}>
               <Link>{t("wallet_send_max")}</Link>
               <Divider type="vertical" />
-            </div>
+            </div> */}
           </Col>
-          <Col span={16} style={{ paddingRight: "5px" }}>
-            <TokenButtonSelect token={tokenA} tokenSelectCallback={(token: Token | undefined) => {
-              if (tokenB?.address == token?.address) {
-                reverseSwapFocus();
-              } else {
-                settokenAAmount(undefined);
-                settokenBAmount(undefined);
-                setTokenA(token);
-              }
-            }} />
+          <Col span={20}>
+            <div style={{ float: "right", paddingRight: "5px" }}>
+              <TokenButtonSelect token={tokenA} tokenSelectCallback={(token: Token | undefined) => {
+                if (tokenB?.address == token?.address) {
+                  reverseSwapFocus();
+                } else {
+                  settokenAAmount(undefined);
+                  settokenBAmount(undefined);
+                  setTokenA(token);
+                }
+              }} />
+            </div>
           </Col>
         </Row>
       </Col>
@@ -322,7 +353,7 @@ export default () => {
     </Row>
     <Row>
       <Col span={24} style={{ textAlign: "center" }}>
-        <PlusOutlined onClick={reverseSwapFocus} style={{ fontSize: "24px", color: "green", marginTop: "15px", marginBottom: "10px" }} />
+        <PlusOutlined style={{ fontSize: "24px", color: "green", marginTop: "15px", marginBottom: "10px" }} />
       </Col>
     </Row>
     <Row>
@@ -340,19 +371,21 @@ export default () => {
       </Col>
       <Col span={8}>
         <Row style={{ marginTop: "24px" }}>
-          <Col span={8}>
+          <Col span={4}>
 
           </Col>
-          <Col span={16} style={{ paddingRight: "5px" }}>
-            <TokenButtonSelect token={tokenB} tokenSelectCallback={(token: Token | undefined) => {
-              if (tokenA?.address == token?.address) {
-                reverseSwapFocus();
-              } else {
-                settokenAAmount(undefined);
-                settokenBAmount(undefined);
-                setTokenB(token);
-              }
-            }} />
+          <Col span={20} style={{ paddingRight: "5px" }}>
+            <div style={{ float: "right", paddingRight: "5px" }}>
+              <TokenButtonSelect token={tokenB} tokenSelectCallback={(token: Token | undefined) => {
+                if (tokenA?.address == token?.address) {
+                  reverseSwapFocus();
+                } else {
+                  settokenAAmount(undefined);
+                  settokenBAmount(undefined);
+                  setTokenB(token);
+                }
+              }} />
+            </div>
           </Col>
         </Row>
       </Col>
