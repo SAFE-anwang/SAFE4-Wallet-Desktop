@@ -82,7 +82,8 @@ export default ({
   const [reservers, setReservers] = useState<{ [address: string]: any }>();
   const [token0Amount, setToken0Amount] = useState<string>();
   const [token1Amount, setToken1Amount] = useState<string>();
-  const [pairNonce , setPairNonce] = useState<any>(undefined);
+  const [pairNonce, setPairNonce] = useState<any>(undefined);
+  const [lpTokenAmount, setLpTokenAmount] = useState<CurrencyAmount>();
 
   const [openRemoveConfirmModal, setOpenRemoveConfirmModal] = useState<boolean>(false);
 
@@ -141,7 +142,8 @@ export default ({
           });
           setToken0Amount(token0Amount.toFixed(token0.decimals));
           setToken1Amount(token1Amount.toFixed(token1.decimals));
-          setPairNonce( nonce_call.result.toNumber() )
+          setPairNonce(nonce_call.result.toNumber());
+          setLpTokenAmount(LPTokenAmount);
         }
       });
 
@@ -267,9 +269,9 @@ export default ({
       </Col>
     </Row>
     {
-      openRemoveConfirmModal && token0Amount && token1Amount && pairNonce != undefined && <>
+      openRemoveConfirmModal && token0Amount && token1Amount && pairNonce != undefined && lpTokenAmount && <>
         <RemoveLiquidityConfirm openRemoveConfirmModal={openRemoveConfirmModal} setOpenRemoveConfirmModal={setOpenRemoveConfirmModal}
-          token0={token0} token1={token1} token0Amount={token0Amount} token1Amount={token1Amount} nonce={pairNonce} />
+          token0={token0} token1={token1} token0Amount={token0Amount} token1Amount={token1Amount} nonce={pairNonce} lpTopenAmount={lpTokenAmount} />
       </>
     }
   </>
