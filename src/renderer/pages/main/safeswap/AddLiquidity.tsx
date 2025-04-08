@@ -6,7 +6,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { ChainId, CurrencyAmount, Token, TokenAmount } from "@uniswap/sdk";
 import { Contract, ethers } from "ethers";
 import { useETHBalances, useTokenAllowanceAmounts, useTokenBalances, useWalletsActiveAccount, useWalletsActiveSigner } from "../../../state/wallets/hooks";
-import { calculateAmountAdd, calculateAmountIn, calculateAmountOut, calculatePaireAddress, getReserve, sort } from "./Calculate";
+import { calculateAmountAdd, calculateAmountIn, calculateAmountOut, calculatePairAddress, getReserve, sort } from "./Calculate";
 import { useContract, useIERC20Contract } from "../../../hooks/useContracts";
 import { PairABI } from "../../../constants/SafeswapAbiConfig";
 import { useBlockNumber, useSafeswapTokens } from "../../../state/application/hooks";
@@ -71,7 +71,7 @@ export default ({
   const [reservers, setReservers] = useState<{ [address: string]: any }>();
   const [tokenAAmount, settokenAAmount] = useState<string>();
   const [tokenBAmount, settokenBAmount] = useState<string>();
-  const pairAddress = chainId && calculatePaireAddress(tokenA, tokenB, chainId);
+  const pairAddress = chainId && calculatePairAddress(tokenA, tokenB, chainId);
   const pairContract = pairAddress && useContract(pairAddress, PairABI, false);
   const tokenAContract = tokenA ? new Contract(tokenA.address, IERC20_Interface, signer) : undefined;
   const tokenBContract = tokenB ? new Contract(tokenB.address, IERC20_Interface, signer) : undefined;

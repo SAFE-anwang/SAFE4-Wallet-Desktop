@@ -54,7 +54,7 @@ export function calculateAmountAdd( _amount : ethers.BigNumber, _reserve : ether
   return _amount.mul(reserve).div(_reserve);
 }
 
-export function calculatePaireAddress(_tokenA: Token | undefined, _tokenB: Token | undefined, chainId: number): string | undefined {
+export function calculatePairAddress(_tokenA: Token | undefined, _tokenB: Token | undefined, chainId: number): string | undefined {
   if (_tokenA == undefined && _tokenB == undefined) {
     return undefined;
   }
