@@ -26,7 +26,7 @@ const enum ActiveModule {
 
 export default () => {
 
-  const [activeModule, setActiveModule] = useState<ActiveModule>(ActiveModule.AssetsPool);
+  const [activeModule, setActiveModule] = useState<ActiveModule>(ActiveModule.Swap);
 
   return <>
     <Row style={{ height: "50px" }}>

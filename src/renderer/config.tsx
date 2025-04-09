@@ -31,14 +31,14 @@ export const Application_Crosschain: { [chainId in Safe4NetworkChainId]: string 
 };
 
 // WSAFE 合约地址
-export const WSAFE: {[chainId in Safe4NetworkChainId]:Token} = {
-  [Safe4NetworkChainId.Testnet]: new Token( ChainId.MAINNET,"0x64c5ab0dfecce653751b463afb05352085c5f2f9",18,"WSAFE", "WSAFE"),
-  [Safe4NetworkChainId.Mainnet]: new Token( ChainId.MAINNET,"0x64c5ab0dfecce653751b463afb05352085c5f2f9",18,"WSAFE", "WSAFE"),
+export const WSAFE: { [chainId in Safe4NetworkChainId]: Token } = {
+  [Safe4NetworkChainId.Testnet]: new Token(Safe4NetworkChainId.Testnet as number, "0x64c5ab0dfecce653751b463afb05352085c5f2f9", 18, "WSAFE", "Wrapped SAFE"),
+  [Safe4NetworkChainId.Mainnet]: new Token(Safe4NetworkChainId.Mainnet as number, "0x64c5ab0dfecce653751b463afb05352085c5f2f9", 18, "WSAFE", "Wrapped SAFE"),
 };
 // USDT 合约地址
-export const USDT: { [chainId in Safe4NetworkChainId]:Token } = {
-  [Safe4NetworkChainId.Testnet]: new Token( ChainId.MAINNET,"0x268BFd7F4c5F0531294D9172f5DA84f0CC7812C5",18,"USDT", "USDT"),
-  [Safe4NetworkChainId.Mainnet]: new Token( ChainId.MAINNET,"0x268BFd7F4c5F0531294D9172f5DA84f0CC7812C5",18,"USDT", "USDT"),
+export const USDT: { [chainId in Safe4NetworkChainId]: Token } = {
+  [Safe4NetworkChainId.Testnet]: new Token(Safe4NetworkChainId.Testnet as number, "0x268BFd7F4c5F0531294D9172f5DA84f0CC7812C5", 18, "USDT", "USDT"),
+  [Safe4NetworkChainId.Mainnet]: new Token(Safe4NetworkChainId.Mainnet as number, "0x268BFd7F4c5F0531294D9172f5DA84f0CC7812C5", 18, "USDT", "USDT"),
 };
 
 export const SafeswapV2RouterAddress = "0x6476008C612dF9F8Db166844fFE39D24aEa12271";

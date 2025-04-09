@@ -3,7 +3,7 @@ import { Alert, Avatar, Button, Card, Col, Divider, Dropdown, Input, MenuProps, 
 import { useTranslation } from "react-i18next";
 import { useWeb3React } from "@web3-react/core";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ChainId, CurrencyAmount, Pair, Token, TokenAmount, Trade } from "@uniswap/sdk";
+import { ChainId, CurrencyAmount, Token, TokenAmount } from "@uniswap/sdk";
 import { Contract, ethers } from "ethers";
 import { useETHBalances, useTokenAllowanceAmounts, useTokenBalances, useWalletsActiveAccount, useWalletsActiveSigner } from "../../../state/wallets/hooks";
 import { calculateAmountIn, calculateAmountOut, calculatePairAddress, getReserve, sort } from "./Calculate";
@@ -18,7 +18,6 @@ import SwapConfirm from "./SwapConfirm";
 import { useDispatch } from "react-redux";
 import { applicationUpdateSafeswapTokens } from "../../../state/application/action";
 import ViewFiexdAmount from "../../../utils/ViewFiexdAmount";
-import { useSafeswapV2Pairs } from "./hooks";
 const { Text, Link } = Typography;
 
 export const SafeswapV2_Fee_Rate = "0.003";
@@ -41,6 +40,7 @@ export const Default_Safeswap_Tokens = (chainId: Safe4NetworkChainId) => {
     // new Token(ChainId.MAINNET, "0xb9FE8cBC71B818035AcCfd621d204BAa57377FFA", 18, "TKB", "Token-B")
   ]
 }
+
 export const Default_SlippageTolerance = "0.01"; // 1%
 
 export function parseTokenData(token: any): Token | undefined {
@@ -69,7 +69,7 @@ export function isDecimalPrecisionExceeded(amount: string, token: Token | undefi
 }
 
 export default () => {
-  const { loading, pairsMap } = useSafeswapV2Pairs();
+
   const { t } = useTranslation();
   const { chainId } = useWeb3React();
   const signer = useWalletsActiveSigner()
@@ -91,6 +91,7 @@ export default () => {
       }));
     }
   }, [chainId]);
+
   const tokenAmounts = erc20Tokens && useTokenBalances(activeAccount, erc20Tokens);
   const tokenAllowanceAmounts = erc20Tokens && useTokenAllowanceAmounts(activeAccount, SafeswapV2RouterAddress, erc20Tokens);
   const balance = useETHBalances([activeAccount])[activeAccount];
@@ -112,6 +113,7 @@ export default () => {
   const pairContract = pairAddress && useContract(pairAddress, PairABI, false);
   const tokenAContract = tokenA ? new Contract(tokenA.address, IERC20_Interface, signer) : undefined;
   const [openSwapConfirmModal, setOpenSwapConfirmModal] = useState<boolean>(false);
+
   const [liquidityNotFound, setLiquidityNotFound] = useState<boolean>(false);
   const balanceOfTokenANotEnough = useMemo(() => {
     if (tokenInAmount && balanceOfTokenA) {
@@ -146,9 +148,6 @@ export default () => {
     }
     return false;
   }, [allowanceForRouterOfTokenA, tokenInAmount]);
-
-  const pair = (pairsMap && pairAddress) && pairsMap[pairAddress];
-
 
   useEffect(() => {
     if (pairContract && !openSwapConfirmModal) {
@@ -198,18 +197,8 @@ export default () => {
   }, [activeAccount, tokenA, tokenAContract])
 
   const calculate = useCallback((tokenInAmount: string | undefined, tokenOutAmount: string | undefined): CurrencyAmount | undefined => {
-    if (chainId && reservers && pair) {
+    if (chainId && reservers) {
       if (tokenInAmount) {
-        const _tokenA = tokenA ? tokenA : WSAFE[chainId as Safe4NetworkChainId];
-        const _tokenB = tokenB ? tokenB : WSAFE[chainId as Safe4NetworkChainId];
-        const _tokenInAmount = new TokenAmount(
-          _tokenA, ethers.utils.parseUnits(tokenInAmount, _tokenA.decimals).toBigInt()
-        );
-        const pairs = Object.values(pairsMap);
-        const trades = Trade.bestTradeExactIn(pairs, _tokenInAmount, _tokenB, { maxHops: 3, maxNumResults: 1 });
-        console.log( trades[0].outputAmount.toExact() )
-        console.log( trades[0].route )
-
         const amountIn = ethers.utils.parseUnits(tokenInAmount, tokenA?.decimals);
         const reserveIn = getReserve(tokenA, reservers, chainId);
         const reserveOut = getReserve(tokenB, reservers, chainId);
@@ -236,7 +225,7 @@ export default () => {
       }
     }
     return undefined;
-  }, [chainId, reservers, tokenA, tokenB, priceType, pair]);
+  }, [chainId, reservers, tokenA, tokenB, priceType]);
 
   const handleTokenInAmountInput = (_tokenInAmount: string) => {
     const decimalExceeded = isDecimalPrecisionExceeded(_tokenInAmount, tokenA);

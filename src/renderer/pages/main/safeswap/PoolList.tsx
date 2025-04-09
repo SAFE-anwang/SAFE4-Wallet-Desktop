@@ -16,6 +16,7 @@ import { applicationUpdateSafeswapTokens } from "../../../state/application/acti
 import { useBlockNumber } from "../../../state/application/hooks";
 import { Safe4NetworkChainId, USDT, WSAFE } from "../../../config";
 import ViewFiexdAmount from "../../../utils/ViewFiexdAmount";
+import { ZERO } from "../../../utils/CurrentAmountUtils";
 
 const { Text } = Typography;
 
@@ -180,7 +181,9 @@ export default ({
           const token0 = allTokens && allTokens[token0Address];
           const token1 = allTokens && allTokens[token1Address];
           const pairToken = allTokens && allTokens[address];
-          if (token0 && token1 && pairToken) {
+
+          const balanceOfGeZERO = pairToken && new TokenAmount(pairToken, balanceOf).greaterThan(ZERO);
+          if (token0 && token1 && pairToken && balanceOfGeZERO) {
             pairPools[address] = { token0, token1, totalSupply, balanceOf, reservers, pairToken };
           }
         });
@@ -210,21 +213,21 @@ export default ({
   }
 
   return <>
-
     <Button onClick={() => addLiquidity(undefined, undefined)} type="primary" style={{ width: "100%", height: "60px" }} size="large">
       添加流动性
     </Button>
-
     <Divider />
     <Text type="secondary">已添加仓位</Text>
     <Spin spinning={loading}>
       {
-        !pairPools && <>
-          <div style={{ height: "60px", background: "#efefef" }}></div>
+        pairPools && Object.keys(pairPools).length == 0 && <>
+          <Row style={{ height: "60px", background: "#efefef", width: "100%" }}>
+            <Text strong type="secondary" style={{ margin: "auto" }}>未加入流动性</Text>
+          </Row>
         </>
       }
       {
-        pairPools && <Collapse size="large"
+        pairPools && Object.keys(pairPools).length > 0 && <Collapse size="large"
           items={
             pairPools && Object.keys(pairPools).map(address => {
               const { token0, token1, reservers, balanceOf, totalSupply, pairToken } = pairPools[address];

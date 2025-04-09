@@ -1,12 +1,12 @@
 import { Button, Col, Divider, Modal, Row, Typography } from "antd"
 import { Safe4NetworkChainId, SafeswapV2RouterAddress, USDT, WSAFE } from "../../../config";
 import TokenLogo from "../../components/TokenLogo";
-import { ArrowDownOutlined, SendOutlined, SwapLeftOutlined } from "@ant-design/icons";
+import { ArrowDownOutlined, PlusOutlined, SendOutlined, SwapLeftOutlined } from "@ant-design/icons";
 import { CurrencyAmount, Fraction, Token, TokenAmount } from "@uniswap/sdk";
 import ERC20TokenLogoComponent from "../../components/ERC20TokenLogoComponent";
 import { useWeb3React } from "@web3-react/core";
 import { useContract, useSafeswapV2Router } from "../../../hooks/useContracts";
-import { useTimestamp } from "../../../state/application/hooks";
+import { useSlippageTolerance, useTimestamp } from "../../../state/application/hooks";
 import { ethers, TypedDataDomain } from "ethers";
 import { useWalletsActiveAccount, useWalletsActiveSigner } from "../../../state/wallets/hooks";
 import { useTransactionAdder } from "../../../state/transactions/hooks";
@@ -68,8 +68,7 @@ export default ({
 
   const pairAddress = chainId && calculatePairAddress(token0, token1, chainId);
   const safeswapV2Router = useSafeswapV2Router();
-  const SlippageTolerance = (100 - Number(Default_SlippageTolerance) * 100);
-
+  const SlippageTolerance = useSlippageTolerance();
   const remove = async () => {
     if (pairAddress && chainId && signer && safeswapV2Router) {
       const domain: TypedDataDomain = {
@@ -87,22 +86,22 @@ export default ({
           { name: "deadline", type: "uint256" }
         ]
       };
+      const removeLpAmount = ethers.utils.parseUnits(removeLpTokenAmount.toFixed(lpToken.decimals)).toBigInt();
       const message = {
         owner: activeAccount,
         spender: SafeswapV2RouterAddress,
-        value: ethers.constants.MaxUint256.toString(),
+        value: removeLpAmount.toString(),
         nonce,
         deadline: timestamp + 300
       };
       const signature = await signer._signTypedData(domain, types, message);
       const { v, r, s } = splitSignature(signature);
-
+      const slippage = (100 - Number(SlippageTolerance) * 100)
       if (token0 && token1) {
         const amount0Desire = ethers.utils.parseUnits(token0Amount, token0?.decimals);
         const amount1Desire = ethers.utils.parseUnits(token1Amount, token1?.decimals);
-        const amount0Min = amount0Desire.mul(SlippageTolerance).div(100);
-        const amount1Min = amount1Desire.mul(SlippageTolerance).div(100);
-        const removeLpAmount = ethers.utils.parseUnits(removeLpTokenAmount.toFixed(lpToken.decimals)).toBigInt();
+        const amount0Min = amount0Desire.mul(slippage).div(100);
+        const amount1Min = amount1Desire.mul(slippage).div(100);
         setSending(true);
         safeswapV2Router.removeLiquidityWithPermit(
           token0?.address,
@@ -112,7 +111,7 @@ export default ({
           amount1Min,
           message.owner,
           message.deadline,
-          true,
+          false,
           v,
           r,
           s
@@ -130,25 +129,57 @@ export default ({
           setTxHash(hash);
           setSending(false);
         }).catch((err: any) => {
-          console.log("Error =", err);
           setErr(err);
           setSending(false);
         })
-      } else if (token0 == undefined && token1 != undefined) {
-
-      } else if (token0 != undefined && token1 == undefined) {
-
+      } else if (token0 == undefined || token1 == undefined) {
+        const token = token0 ? token0.address : token1?.address;
+        const liquidity = removeLpAmount;
+        const amount0Desire = ethers.utils.parseUnits(token0Amount, token0?.decimals);
+        const amount1Desire = ethers.utils.parseUnits(token1Amount, token1?.decimals);
+        const amount0Min = amount0Desire.mul(slippage).div(100);
+        const amount1Min = amount1Desire.mul(slippage).div(100);
+        const amountTokenMin = token0 ? amount0Min : amount1Min;
+        const amountETHMin = token0 ? amount1Min : amount0Min;
+        setSending(true);
+        safeswapV2Router.removeLiquidityETHWithPermit(
+          token, liquidity, amountTokenMin, amountETHMin,
+          message.owner,
+          message.deadline,
+          false,
+          v,
+          r,
+          s
+        ).then((response: any) => {
+          const { hash, data } = response;
+          setTransactionResponse(response);
+          addTransaction({ to: safeswapV2Router.address }, response, {
+            call: {
+              from: activeAccount,
+              to: safeswapV2Router.address,
+              input: data,
+              value: "0",
+            }
+          });
+          setTxHash(hash);
+          setSending(false);
+        }).catch((err: any) => {
+          setErr(err);
+          setSending(false);
+        })
       }
     }
   }
 
-  return <Modal title="移除流动性" footer={null} open={openRemoveConfirmModal} destroyOnClose onCancel={() => setOpenRemoveConfirmModal(false)}>
-
+  return <Modal title="移除流动性" footer={null} open={openRemoveConfirmModal} destroyOnClose onCancel={cancel}>
     <Divider />
     {
       render
     }
     <Row>
+      <Col span={24} style={{ marginBottom: "10px" }}>
+        <Text strong>将收到</Text>
+      </Col>
       <Col span={3}>
         {
           token0 ? <>
@@ -159,14 +190,14 @@ export default ({
         }
       </Col>
       <Col span={21}>
-        <Text style={{ fontSize: "24px", lineHeight: "40px" }}>
-          - {token0Amount} {token0 ? token0.symbol : "SAFE"}
+        <Text type="success" style={{ fontSize: "24px", lineHeight: "40px" }}>
+          + {token0Amount} {token0 ? token0.symbol : "SAFE"}
         </Text>
       </Col>
     </Row>
     <Row>
       <Col span={24}>
-        <ArrowDownOutlined style={{ fontSize: "24px", marginLeft: "7px", marginTop: "12px" }} />
+        <PlusOutlined style={{ fontSize: "24px", marginLeft: "7px", marginTop: "12px" }} />
       </Col>
     </Row>
     <Row style={{ marginTop: "10px" }}>
@@ -183,6 +214,11 @@ export default ({
         <Text type="success" style={{ fontSize: "24px", lineHeight: "40px" }}>
           + {token1Amount} {token1 ? token1.symbol : "SAFE"}
         </Text>
+      </Col>
+    </Row>
+    <Row style={{ marginTop: "20px" }}>
+      <Col span={24}>
+        <Text italic>兑换结果是预估的. 如果价格波动超过 {Number(SlippageTolerance) * 100}% 您的交易将会被撤回.</Text>
       </Col>
     </Row>
     <Divider />

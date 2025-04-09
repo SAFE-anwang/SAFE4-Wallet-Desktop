@@ -108,6 +108,7 @@ export interface IApplicationState {
     tokenA: { chainId: number, address: string, decimals: number, name?: string, symbol?: string } | undefined,
     tokenB: { chainId: number, address: string, decimals: number, name?: string, symbol?: string } | undefined
   } | undefined,
+  SlippageTolerance: number,
 
 }
 
@@ -130,7 +131,8 @@ const initialState: IApplicationState = {
 
   },
   language: "zh",
-  safeswap: undefined
+  safeswap: undefined,
+  SlippageTolerance: 0.01
 }
 
 export default createReducer(initialState, (builder) => {
@@ -298,8 +300,8 @@ export default createReducer(initialState, (builder) => {
     .addCase(applicationUpdateSafeswapTokens, (state, { payload }) => {
       const { tokenA, tokenB } = payload;
       state.safeswap = {
-        tokenA : tokenA ? { ...tokenA } : undefined,
-        tokenB : tokenB ? { ...tokenB } : undefined,
+        tokenA: tokenA ? { ...tokenA } : undefined,
+        tokenB: tokenB ? { ...tokenB } : undefined,
       }
     })
 
