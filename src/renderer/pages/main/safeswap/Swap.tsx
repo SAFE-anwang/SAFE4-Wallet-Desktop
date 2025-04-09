@@ -3,7 +3,7 @@ import { Alert, Avatar, Button, Card, Col, Divider, Dropdown, Input, MenuProps, 
 import { useTranslation } from "react-i18next";
 import { useWeb3React } from "@web3-react/core";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ChainId, CurrencyAmount, Pair, Token, TokenAmount, Trade } from "@uniswap/sdk";
+import { ChainId, CurrencyAmount, Pair, Price, Token, TokenAmount, Trade } from "@uniswap/sdk";
 import { Contract, ethers } from "ethers";
 import { useETHBalances, useTokenAllowanceAmounts, useTokenBalances, useWalletsActiveAccount, useWalletsActiveSigner } from "../../../state/wallets/hooks";
 import { calculateAmountIn, calculateAmountOut, calculatePairAddress, getReserve, sort } from "./Calculate";
@@ -101,18 +101,22 @@ export default () => {
   const [tokenB, setTokenB] = useState<Token | undefined>(
     safeswapTokens ? parseTokenData(safeswapTokens.tokenB) : Default_Swap_Token ? Default_Swap_Token[1] : undefined
   );
+  const pairAddress = chainId && calculatePairAddress(tokenA, tokenB, chainId);
+  const pairContract = pairAddress && useContract(pairAddress, PairABI, false);
+  const pair = (pairsMap && pairAddress) && pairsMap[pairAddress];
+
   const [swapFocus, setSwapFocus] = useState<SwapFocus | undefined>(undefined);
-  const [priceType, setPriceType] = useState<PriceType | undefined>(PriceType.B2A);
+
   const balanceOfTokenA = tokenAmounts && tokenA ? tokenAmounts[tokenA.address] : balance;
   const balanceOfTokenB = tokenAmounts && tokenB ? tokenAmounts[tokenB.address] : balance;
+
   const [reservers, setReservers] = useState<{ [address: string]: any }>();
   const [tokenInAmount, setTokenInAmount] = useState<string>();
   const [tokenOutAmount, setTokenOutAmount] = useState<string>();
-  const pairAddress = chainId && calculatePairAddress(tokenA, tokenB, chainId);
-  const pairContract = pairAddress && useContract(pairAddress, PairABI, false);
   const tokenAContract = tokenA ? new Contract(tokenA.address, IERC20_Interface, signer) : undefined;
   const [openSwapConfirmModal, setOpenSwapConfirmModal] = useState<boolean>(false);
   const [liquidityNotFound, setLiquidityNotFound] = useState<boolean>(false);
+
   const balanceOfTokenANotEnough = useMemo(() => {
     if (tokenInAmount && balanceOfTokenA) {
       return tokenA ? new TokenAmount(tokenA, ethers.utils.parseUnits(tokenInAmount, tokenA.decimals).toBigInt()).greaterThan(balanceOfTokenA)
@@ -121,12 +125,13 @@ export default () => {
     return false;
   }, [tokenA, balanceOfTokenA, tokenInAmount]);
   const reserverOfTokenBNotEnough = useMemo(() => {
-    if (tokenOutAmount && chainId && reservers) {
-      const reserveB = getReserve(tokenB, reservers, chainId);
-      const tokenOut = ethers.utils.parseUnits(tokenOutAmount, tokenB?.decimals);
-      return tokenOut.gt(reserveB);
+    if (tokenOutAmount && pair && chainId) {
+      const _tokenB = tokenB ? tokenB : WSAFE[chainId as Safe4NetworkChainId];
+      const _tokenOutAmount = new TokenAmount(_tokenB, ethers.utils.parseUnits(tokenOutAmount, tokenB?.decimals).toBigInt());
+      const _tokenBReserve = pair.token0.equals(_tokenB) ? pair.reserve0 : pair.reserve1;
+      return _tokenOutAmount.greaterThan(_tokenBReserve);
     }
-  }, [tokenB, reservers, tokenOutAmount, chainId])
+  }, [pair, tokenB, tokenOutAmount, chainId]);
 
   const [approveTokenHash, setApproveTokenHash] = useState<{
     [address: string]: {
@@ -138,7 +143,6 @@ export default () => {
   const allowanceForRouterOfTokenA = useMemo(() => {
     return tokenAllowanceAmounts && tokenA ? tokenAllowanceAmounts[tokenA.address] : undefined;
   }, [tokenA, tokenAllowanceAmounts]);
-
   const needApproveTokenA = useMemo(() => {
     if (tokenA && tokenInAmount && allowanceForRouterOfTokenA) {
       const inAmount = new TokenAmount(tokenA, ethers.utils.parseUnits(tokenInAmount, tokenA.decimals).toBigInt());
@@ -147,33 +151,8 @@ export default () => {
     return false;
   }, [allowanceForRouterOfTokenA, tokenInAmount]);
 
-  const pair = (pairsMap && pairAddress) && pairsMap[pairAddress];
-
-
-  useEffect(() => {
-    if (pairContract && !openSwapConfirmModal) {
-      setReservers(undefined);
-      setLiquidityNotFound(false);
-      pairContract.getReserves().then((data: any) => {
-        const [r0, r1] = data;
-        const sortTokens = sort(tokenA, tokenB, chainId);
-        if (sortTokens) {
-          const reservers: { [address: string]: any } = {};
-          reservers[sortTokens[0].address] = r0;
-          reservers[sortTokens[1].address] = r1;
-          setReservers(reservers);
-          if (swapFocus && swapFocus == SwapFocus.SellOut && tokenInAmount) {
-            calculate(tokenInAmount, undefined);
-          } else if (swapFocus && swapFocus == SwapFocus.BuyIn && tokenOutAmount) {
-            calculate(undefined, tokenOutAmount);
-          }
-        }
-      }).catch((err: any) => {
-        // 未创建流动性
-        setLiquidityNotFound(true);
-      })
-    }
-  }, [pairContract, blockNumber, openSwapConfirmModal]);
+  const [trade, setTrade] = useState<Trade>();
+  const routePath = trade?.route.path;
 
   const approveRouter = useCallback(() => {
     if (tokenA && activeAccount && tokenAContract) {
@@ -198,45 +177,38 @@ export default () => {
   }, [activeAccount, tokenA, tokenAContract])
 
   const calculate = useCallback((tokenInAmount: string | undefined, tokenOutAmount: string | undefined): CurrencyAmount | undefined => {
-    if (chainId && reservers && pair) {
+    if (chainId && pair) {
+      const _tokenA = tokenA ? tokenA : WSAFE[chainId as Safe4NetworkChainId];
+      const _tokenB = tokenB ? tokenB : WSAFE[chainId as Safe4NetworkChainId];
+      const pairs = Object.values(pairsMap);
       if (tokenInAmount) {
-        const _tokenA = tokenA ? tokenA : WSAFE[chainId as Safe4NetworkChainId];
-        const _tokenB = tokenB ? tokenB : WSAFE[chainId as Safe4NetworkChainId];
         const _tokenInAmount = new TokenAmount(
           _tokenA, ethers.utils.parseUnits(tokenInAmount, _tokenA.decimals).toBigInt()
         );
-        const pairs = Object.values(pairsMap);
-        const trades = Trade.bestTradeExactIn(pairs, _tokenInAmount, _tokenB, { maxHops: 3, maxNumResults: 1 });
-        console.log( trades[0].outputAmount.toExact() )
-        console.log( trades[0].route )
-
-        const amountIn = ethers.utils.parseUnits(tokenInAmount, tokenA?.decimals);
-        const reserveIn = getReserve(tokenA, reservers, chainId);
-        const reserveOut = getReserve(tokenB, reservers, chainId);
-        const amountOut = calculateAmountOut(
-          amountIn,
-          reserveIn,
-          reserveOut,
-          SafeswapV2_Fee_Rate,
-        );
-        return tokenB ? new TokenAmount(tokenB, amountOut.toBigInt())
-          : CurrencyAmount.ether(amountOut.toBigInt());
+        const [trade] = Trade.bestTradeExactIn(pairs, _tokenInAmount, _tokenB, {
+          maxHops: 3, maxNumResults: 1
+        });
+        if (trade) {
+          const { outputAmount, route } = trade;
+          setTrade(trade)
+          return outputAmount;
+        }
       } else if (tokenOutAmount) {
-        const amountOut = ethers.utils.parseUnits(tokenOutAmount, tokenB?.decimals);
-        const reserveIn = getReserve(tokenA, reservers, chainId);
-        const reserveOut = getReserve(tokenB, reservers, chainId);
-        const amountIn = calculateAmountIn(
-          amountOut,
-          reserveOut,
-          reserveIn,
-          SafeswapV2_Fee_Rate,
-        );
-        return tokenA ? new TokenAmount(tokenA, amountIn.toBigInt())
-          : CurrencyAmount.ether(amountIn.toBigInt());
+        const _tokenOutAmount = new TokenAmount(
+          _tokenB, ethers.utils.parseUnits(tokenOutAmount, _tokenB.decimals).toBigInt()
+        )
+        const [trade] = Trade.bestTradeExactOut(pairs, _tokenA, _tokenOutAmount, {
+          maxHops: 3, maxNumResults: 1
+        });
+        if (trade) {
+          const { inputAmount, route } = trade;
+          setTrade(trade)
+          return inputAmount;
+        }
       }
     }
     return undefined;
-  }, [chainId, reservers, tokenA, tokenB, priceType, pair]);
+  }, [chainId, tokenA, tokenB, pair]);
 
   const handleTokenInAmountInput = (_tokenInAmount: string) => {
     const decimalExceeded = isDecimalPrecisionExceeded(_tokenInAmount, tokenA);
@@ -245,6 +217,7 @@ export default () => {
       setTokenInAmount(_tokenInAmount);
       setSwapFocus(SwapFocus.SellOut);
       if (_tokenInAmount && isValidInput != 0) {
+        console.log("Calcualte Out..")
         const tokenOutAmount = calculate(_tokenInAmount, undefined);
         setTokenOutAmount(tokenOutAmount && ViewFiexdAmount(tokenOutAmount, tokenB, 6));
       } else {
@@ -290,7 +263,7 @@ export default () => {
       }
     }
     return undefined;
-  }, [tokenA, tokenB, tokenInAmount, tokenOutAmount, priceType]);
+  }, [tokenA, tokenB, tokenInAmount, tokenOutAmount]);
 
   useEffect(() => {
     dispatch(applicationUpdateSafeswapTokens({
@@ -413,6 +386,15 @@ export default () => {
         </Col>
       </Row>
     }
+    {
+      routePath && <Row>
+        <Col span={24}>
+          {JSON.stringify(routePath.map(token => token.name))}
+        </Col>
+      </Row>
+    }
+
+
     {
       liquidityNotFound && <Row style={{ marginTop: "5px" }}>
         <Col span={24}>

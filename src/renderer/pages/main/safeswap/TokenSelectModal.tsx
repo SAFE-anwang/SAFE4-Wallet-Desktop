@@ -50,9 +50,9 @@ export default ({
             && defaultTokenAddresses[address] == undefined
         })
         .map(address => {
-          const { name, symbol, decimals } = tokens[address];
+          const { name, symbol, decimals, chainId } = tokens[address];
           const token = new Token(
-            ChainId.MAINNET,
+            chainId,
             address, decimals,
             symbol, name
           );
