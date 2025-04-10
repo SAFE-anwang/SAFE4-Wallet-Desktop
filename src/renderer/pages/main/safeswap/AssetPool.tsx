@@ -10,8 +10,12 @@ export enum AssetPoolModule {
   Remove = "Remove",
 }
 
-export default () => {
-  const [assetPoolModule, setAssetPoolModule] = useState<AssetPoolModule>(AssetPoolModule.List);
+export default ({
+  _assetPoolModule
+}: {
+  _assetPoolModule?: AssetPoolModule
+}) => {
+  const [assetPoolModule, setAssetPoolModule] = useState<AssetPoolModule>(_assetPoolModule ? _assetPoolModule : AssetPoolModule.List);
   return <>
     {
       assetPoolModule == AssetPoolModule.Add && <AddLiquidity setAssetPoolModule={setAssetPoolModule} />
@@ -23,4 +27,5 @@ export default () => {
       assetPoolModule == AssetPoolModule.Remove && <RemoveLiquidity setAssetPoolModule={setAssetPoolModule} />
     }
   </>
+
 }

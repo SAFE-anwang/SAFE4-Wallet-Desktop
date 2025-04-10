@@ -2,22 +2,8 @@ import { Alert, Avatar, Button, Card, Col, Divider, Dropdown, Input, MenuProps, 
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import Swap from "./Swap";
-import AssetPool from "./AssetPool";
-import { useSafeswapTokens } from "../../../state/application/hooks";
+import AssetPool, { AssetPoolModule } from "./AssetPool";
 const { Title, Text, Link } = Typography;
-
-
-const SafeswapV2_Fee_Rate = "0.003";
-
-const enum SwapFocus {
-  BuyIn = "BuyIn",
-  SellOut = "SellOut",
-}
-
-const enum PriceType {
-  A2B = "A2B",
-  B2A = "B2A"
-}
 
 const enum ActiveModule {
   Swap = "Swap",
@@ -25,8 +11,12 @@ const enum ActiveModule {
 }
 
 export default () => {
-
   const [activeModule, setActiveModule] = useState<ActiveModule>(ActiveModule.Swap);
+  const [_assetPoolModule, set_AssetPoolModule] = useState<AssetPoolModule>();
+  const goToAddLiquidity = () => {
+    set_AssetPoolModule(AssetPoolModule.Add);
+    setActiveModule(ActiveModule.AssetsPool);
+  }
 
   return <>
     <Row style={{ height: "50px" }}>
@@ -48,7 +38,6 @@ export default () => {
           </Row>
           <Divider />
           <Card style={{ width: "50%", margin: "auto" }}>
-
             <Row style={{ marginBottom: "20px" }}>
               <Col span={12} style={{ textAlign: "center" }}>
                 <Button onClick={() => setActiveModule(ActiveModule.Swap)}
@@ -64,10 +53,10 @@ export default () => {
               </Col>
             </Row>
             {
-              activeModule == ActiveModule.Swap && <Swap />
+              activeModule == ActiveModule.Swap && <Swap goToAddLiquidity={goToAddLiquidity} />
             }
             {
-              activeModule == ActiveModule.AssetsPool && <AssetPool />
+              activeModule == ActiveModule.AssetsPool && <AssetPool _assetPoolModule={_assetPoolModule} />
             }
           </Card>
         </Card>

@@ -2,7 +2,7 @@ import { Button, Col, Divider, Modal, Row, Typography } from "antd"
 import { Safe4NetworkChainId, SafeswapV2RouterAddress, USDT, WSAFE } from "../../../config";
 import TokenLogo from "../../components/TokenLogo";
 import { ArrowDownOutlined, SendOutlined, SwapLeftOutlined } from "@ant-design/icons";
-import { Token, TokenAmount } from "@uniswap/sdk";
+import { Pair, Percent, Token, TokenAmount, Trade, TradeType } from "@uniswap/sdk";
 import ERC20TokenLogoComponent from "../../components/ERC20TokenLogoComponent";
 import { useWeb3React } from "@web3-react/core";
 import { useContract, useSafeswapV2Router } from "../../../hooks/useContracts";
@@ -24,7 +24,8 @@ const { Text } = Typography;
 export default ({
   openSwapConfirmModal, setOpenSwapConfirmModal,
   tokenA, tokenB,
-  tokenInAmount, tokenOutAmount
+  tokenInAmount, tokenOutAmount,
+  trade
 }: {
   openSwapConfirmModal: boolean,
   setOpenSwapConfirmModal: (openSwapConfirmModal: boolean) => void,
@@ -32,7 +33,7 @@ export default ({
   tokenB: undefined | Token,
   tokenInAmount: string,
   tokenOutAmount: string,
-  reservers: { [address: string]: any }
+  trade: Trade
 }) => {
 
   const dispatch = useDispatch();
@@ -40,7 +41,6 @@ export default ({
   const { t } = useTranslation();
   const SwapV2RouterContract = useSafeswapV2Router(true);
   const timestamp = useTimestamp();
-  const { chainId } = useWeb3React();
   const activeAccount = useWalletsActiveAccount();
   const addTransaction = useTransactionAdder();
   const {
@@ -60,105 +60,226 @@ export default ({
       navigate("/main/wallet");
     }
   }, [txHash]);
-  const SlippageTolerance = (100 - Number(Default_SlippageTolerance) * 100);
 
-  const price = useMemo(() => {
-    if (tokenInAmount && tokenOutAmount) {
-      return {
-        [PriceType.B2A]: (Number(tokenInAmount) / Number(tokenOutAmount)) ? (Number(tokenInAmount) / Number(tokenOutAmount)).toFixed(4) : undefined,
-        [PriceType.A2B]: (Number(tokenOutAmount) / Number(tokenInAmount)) ? (Number(tokenOutAmount) / Number(tokenInAmount)).toFixed(4) : undefined
-      }
-    }
-    return undefined;
-  }, [tokenInAmount, tokenOutAmount]);
+  const SafeswapV2SlippageTolerance = "1";
+  const slippageTolerance = new Percent(SafeswapV2SlippageTolerance, "1000");
 
   const swap = () => {
     if (SwapV2RouterContract) {
       setSending(true);
-      if (tokenA == undefined && tokenB) {
-        const amountOut = ethers.utils.parseUnits(tokenOutAmount, tokenB.decimals);
-        const amountOutMin = amountOut.mul(SlippageTolerance).div(100);
-        const value = ethers.utils.parseEther(tokenInAmount);
-        SwapV2RouterContract.swapExactETHForTokens(
-          amountOutMin,
-          [WSAFE[chainId as Safe4NetworkChainId].address, tokenB.address],
-          activeAccount,
-          timestamp + 100,
-          { value }
-        ).then((response: any) => {
-          const { hash, data } = response;
-          setTransactionResponse(response);
-          addTransaction({ to: SwapV2RouterContract.address }, response, {
-            call: {
-              from: activeAccount,
-              to: SwapV2RouterContract.address,
-              input: data,
-              value: value.toString(),
+
+      const path = trade.route.path.map(token => token.address);
+      const tradeType: TradeType = trade.tradeType;
+      const deadline = timestamp + 60 * 10;
+      const to = activeAccount;
+
+      if (tradeType == TradeType.EXACT_INPUT) {
+        const amountIn = ethers.BigNumber.from(trade.inputAmount.raw.toString());
+        const amountOutMin = ethers.BigNumber.from(trade.minimumAmountOut(slippageTolerance).raw.toString());
+        if (tokenA && tokenB) {
+          SwapV2RouterContract.swapExactTokensForTokens(
+            amountIn,
+            amountOutMin,
+            path,
+            to,
+            deadline
+          ).then((response: any) => {
+            const { hash, data } = response;
+            setTransactionResponse(response);
+            addTransaction({ to: SwapV2RouterContract.address }, response, {
+              call: {
+                from: activeAccount,
+                to: SwapV2RouterContract.address,
+                input: data,
+                value: "0",
+              }
+            });
+            setTxHash(hash);
+          }).catch((err: any) => {
+            console.log("Swap Error =", err)
+            setErr(err)
+          })
+        } else if (tokenA == undefined && tokenB) {
+          SwapV2RouterContract.swapExactETHForTokens(
+            amountOutMin,
+            path,
+            to,
+            deadline,
+            { value: amountIn }
+          ).then((response: any) => {
+            const { hash, data } = response;
+            setTransactionResponse(response);
+            addTransaction({ to: SwapV2RouterContract.address }, response, {
+              call: {
+                from: activeAccount,
+                to: SwapV2RouterContract.address,
+                input: data,
+                value: amountIn.toString(),
+              }
+            });
+            setTxHash(hash);
+          }).catch((err: any) => {
+            console.log("Swap Error =", err);
+            setErr(err);
+          })
+        } else if (tokenB == undefined && tokenA) {
+          SwapV2RouterContract.swapExactTokensForETH(
+            amountIn,
+            amountOutMin,
+            path,
+            to,
+            deadline
+          ).then((response: any) => {
+            const { hash, data } = response;
+            setTransactionResponse(response);
+            addTransaction({ to: SwapV2RouterContract.address }, response, {
+              call: {
+                from: activeAccount,
+                to: SwapV2RouterContract.address,
+                input: data,
+                value: "0",
+              }
+            });
+            setTxHash(hash);
+          }).catch((err: any) => {
+            console.log("Swap Error =", err)
+            setErr(err)
+          })
+        }
+      } else if (tradeType == TradeType.EXACT_OUTPUT) {
+        const amountOut = ethers.BigNumber.from(trade.outputAmount.raw.toString());
+        const amountInMax = ethers.BigNumber.from(trade.maximumAmountIn(slippageTolerance).raw.toString());
+        if (tokenA && tokenB) {
+          SwapV2RouterContract.swapTokensForExactTokens(
+            amountOut,
+            amountInMax,
+            path,
+            to,
+            deadline
+          ).then((response: any) => {
+            const { hash, data } = response;
+            setTransactionResponse(response);
+            addTransaction({ to: SwapV2RouterContract.address }, response, {
+              call: {
+                from: activeAccount,
+                to: SwapV2RouterContract.address,
+                input: data,
+                value: "0",
+              }
+            });
+            setTxHash(hash);
+          }).catch((err: any) => {
+            console.log("Swap Error =", err)
+            setErr(err)
+          })
+        } else if (tokenA == undefined && tokenB) {
+          SwapV2RouterContract.swapETHForExactTokens(
+            amountOut,
+            path,
+            activeAccount,
+            deadline,
+            {
+              value: amountInMax // 发送的 ETH
             }
-          });
-          setTxHash(hash);
-        }).catch((err: any) => {
-          console.log("Swap Error =", err);
-          setErr(err);
-        })
-      } else if (tokenA && tokenB == undefined) {
-        const amountIn = ethers.utils.parseUnits(tokenInAmount, tokenA.decimals);
-        const amountOut = ethers.utils.parseUnits(tokenOutAmount);
-        const amountOutMin = amountOut.mul(SlippageTolerance).div(100);
-        SwapV2RouterContract.swapExactTokensForETH(
-          amountIn,
-          amountOutMin,
-          [tokenA.address, WSAFE[chainId as Safe4NetworkChainId].address],
-          activeAccount,
-          timestamp + 100,
-        ).then((response: any) => {
-          const { hash, data } = response;
-          setTransactionResponse(response);
-          addTransaction({ to: SwapV2RouterContract.address }, response, {
-            call: {
-              from: activeAccount,
-              to: SwapV2RouterContract.address,
-              input: data,
-              value: "0",
-            }
-          });
-          setTxHash(hash);
-        }).catch((err: any) => {
-          console.log("Swap Error =", err)
-          setErr(err)
-        })
-      } else if (tokenA && tokenB) {
-        const amountIn = ethers.utils.parseUnits(tokenInAmount, tokenA.decimals);
-        const amountOut = ethers.utils.parseUnits(tokenOutAmount, tokenB.decimals);
-        const amountOutMin = amountOut.mul(SlippageTolerance).div(100);
-        SwapV2RouterContract.swapExactTokensForTokens(
-          amountIn,
-          amountOutMin,
-          [tokenA.address, tokenB.address],
-          activeAccount,
-          timestamp + 100,
-        ).then((response: any) => {
-          const { hash, data } = response;
-          setTransactionResponse(response);
-          addTransaction({ to: SwapV2RouterContract.address }, response, {
-            call: {
-              from: activeAccount,
-              to: SwapV2RouterContract.address,
-              input: data,
-              value: "0",
-            }
-          });
-          setTxHash(hash);
-        }).catch((err: any) => {
-          console.log("Swap Error =", err)
-          setErr(err)
-        })
+          ).then((response: any) => {
+            const { hash, data } = response;
+            setTransactionResponse(response);
+            addTransaction({ to: SwapV2RouterContract.address }, response, {
+              call: {
+                from: activeAccount,
+                to: SwapV2RouterContract.address,
+                input: data,
+                value: amountInMax.toString(),
+              }
+            });
+            setTxHash(hash);
+          }).catch((err: any) => {
+            console.log("Swap Error =", err)
+            setErr(err)
+          })
+        } else if (tokenB == undefined && tokenA) {
+          SwapV2RouterContract.swapTokensForExactETH(
+            amountOut,
+            amountInMax,
+            path,
+            activeAccount,
+            deadline
+          ).then((response: any) => {
+            const { hash, data } = response;
+            setTransactionResponse(response);
+            addTransaction({ to: SwapV2RouterContract.address }, response, {
+              call: {
+                from: activeAccount,
+                to: SwapV2RouterContract.address,
+                input: data,
+                value: "0",
+              }
+            });
+            setTxHash(hash);
+          }).catch((err: any) => {
+            console.log("Swap Error =", err)
+            setErr(err)
+          })
+        }
       }
     }
   }
 
+  const RenderPrice = () => {
+    const price = trade?.executionPrice;
+    return <>
+      {
+        price && <Row style={{ marginTop: "20px" }}>
+          <Col span={24}>
+            <Text type="secondary">价格</Text>
+          </Col>
+          <Col span={12}>
+            <Col span={24} style={{ textAlign: "center" }}>
+              <Text strong>{price.toSignificant(4)}</Text> {tokenB ? tokenB.symbol : "SAFE"}
+            </Col>
+            <Col span={24} style={{ textAlign: "center" }}>
+              <Text>1 {tokenA ? tokenA.symbol : "SAFE"}</Text>
+            </Col>
+          </Col>
+          <Col span={12}>
+            <Col span={24} style={{ textAlign: "center" }}>
+              <Text strong>{price.invert().toSignificant(4)}</Text> {tokenA ? tokenA.symbol : "SAFE"}
+            </Col>
+            <Col span={24} style={{ textAlign: "center" }}>
+              <Text>1 {tokenB ? tokenB.symbol : "SAFE"}</Text>
+            </Col>
+          </Col>
+        </Row>
+      }
+    </>
+  }
+
+  const RenderSwapSplippageTip = () => {
+    const tradeType = trade.tradeType;
+    if (tradeType == TradeType.EXACT_INPUT) {
+      const amountOutMin = trade.minimumAmountOut(slippageTolerance);
+      return <Row style={{ marginTop: "20px" }}>
+        <Col span={24}>
+          <Text italic>
+            兑换结果是预估的,您将最少得到 <Text strong>{amountOutMin.toSignificant()} {tokenB ? tokenB.symbol : "SAFE"}</Text>或者这笔交易将会被撤回
+          </Text>
+        </Col>
+      </Row>
+    } else if (tradeType == TradeType.EXACT_OUTPUT) {
+      const amountInMax = trade.maximumAmountIn(slippageTolerance);
+      return <Row style={{ marginTop: "20px" }}>
+        <Col span={24}>
+          <Text italic>
+            兑换结果是预估的,您将最多支付 <Text strong>{amountInMax.toSignificant()} {tokenA ? tokenA.symbol : "SAFE"}</Text>或者这笔交易将会被撤回
+          </Text>
+        </Col>
+      </Row>
+    }
+    return <></>
+  }
+
   return <>
-    <Modal title="互兑交易" footer={null} open={openSwapConfirmModal} destroyOnClose onCancel={() => setOpenSwapConfirmModal(false)} >
+    <Modal title="确认交易" footer={null} open={openSwapConfirmModal} destroyOnClose onCancel={cancel} >
       <Divider />
       {
         render
@@ -175,7 +296,7 @@ export default ({
         </Col>
         <Col span={21}>
           <Text style={{ fontSize: "24px", lineHeight: "40px" }}>
-            - {tokenInAmount} {tokenA ? tokenA.symbol : "SAFE"}
+            -  {trade.inputAmount.toSignificant()} {tokenA ? tokenA.symbol : "SAFE"}
           </Text>
         </Col>
       </Row>
@@ -196,32 +317,15 @@ export default ({
         </Col>
         <Col span={21}>
           <Text type="success" style={{ fontSize: "24px", lineHeight: "40px" }}>
-            + {tokenOutAmount} {tokenB ? tokenB.symbol : "SAFE"}
+            + {trade.outputAmount.toSignificant()} {tokenB ? tokenB.symbol : "SAFE"}
           </Text>
         </Col>
       </Row>
       {
-        price && <Row style={{ marginTop: "20px" }}>
-          <Col span={24}>
-            <Text type="secondary">价格</Text>
-          </Col>
-          <Col span={12}>
-            <Col span={24} style={{ textAlign: "center" }}>
-              <Text strong>{price[PriceType.A2B]}</Text> {tokenB ? tokenB.symbol : "SAFE"}
-            </Col>
-            <Col span={24} style={{ textAlign: "center" }}>
-              <Text>1 {tokenA ? tokenA.symbol : "SAFE"}</Text>
-            </Col>
-          </Col>
-          <Col span={12}>
-            <Col span={24} style={{ textAlign: "center" }}>
-              <Text strong>{price[PriceType.B2A]}</Text> {tokenA ? tokenA.symbol : "SAFE"}
-            </Col>
-            <Col span={24} style={{ textAlign: "center" }}>
-              <Text>1 {tokenB ? tokenB.symbol : "SAFE"}</Text>
-            </Col>
-          </Col>
-        </Row>
+        RenderSwapSplippageTip()
+      }
+      {
+        RenderPrice()
       }
       <Divider />
 

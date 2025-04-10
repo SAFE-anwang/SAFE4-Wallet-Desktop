@@ -6,7 +6,7 @@ import { useTokenBalances, useWalletsActiveAccount } from "../../../state/wallet
 import { useTranslation } from "react-i18next";
 import { useWeb3React } from "@web3-react/core";
 import { useEffect, useState } from "react";
-import { ChainId, Token } from "@uniswap/sdk";
+import { Token } from "@uniswap/sdk";
 import { Safe4NetworkChainId, USDT, WSAFE } from "../../../config";
 import ERC20TokenLogoComponent from "../../components/ERC20TokenLogoComponent";
 
@@ -110,10 +110,10 @@ export default ({
                     </Col>
                     <Col span={20}>
                       <Row>
-                        <Col span={6} style={{ lineHeight: "60px" }}>
-                          <Text strong>{name}</Text>
+                        <Col span={10} style={{ lineHeight: "60px" }}>
+                          <Text strong>{symbol}</Text>
                         </Col>
-                        <Col span={18} style={{ lineHeight: "60px", textAlign: "right" }}>
+                        <Col span={14} style={{ lineHeight: "60px", textAlign: "right" }}>
                           <Text strong style={{ marginRight: "20px" }}>{tokenAmounts && tokenAmounts[address]?.toExact()} </Text>
                         </Col>
                       </Row>

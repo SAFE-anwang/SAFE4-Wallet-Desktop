@@ -56,7 +56,7 @@ export default ({
         .map(address => {
           const { name, symbol, decimals } = tokens[address];
           const token = new Token(
-            ChainId.MAINNET,
+            chainId,
             address, decimals,
             symbol, name
           );
@@ -73,7 +73,7 @@ export default ({
         .forEach(address => {
           const { name, symbol, decimals } = tokens[address];
           const token = new Token(
-            ChainId.MAINNET,
+            chainId,
             address, decimals,
             symbol, name
           );
