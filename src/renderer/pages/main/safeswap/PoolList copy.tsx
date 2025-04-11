@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { useTokens } from "../../../state/transactions/hooks";
-import { ChainId, Pair, Token, TokenAmount } from "@uniswap/sdk";
+import { ChainId, Token, TokenAmount } from "@uniswap/sdk";
 import { useWeb3React } from "@web3-react/core";
 import { useMulticallContract, useSafeswapV2Factory } from "../../../hooks/useContracts";
 import CallMulticallAggregate, { CallMulticallAggregateContractCall } from "../../../state/multicall/CallMulticallAggregate";
-import { Contract, ethers } from "ethers";
+import { Contract } from "ethers";
 import { PairABI } from "../../../constants/SafeswapAbiConfig";
 import { useWalletsActiveAccount } from "../../../state/wallets/hooks";
 import { Button, Col, Collapse, Divider, Row, Spin, Typography } from "antd";
@@ -17,8 +17,6 @@ import { useBlockNumber } from "../../../state/application/hooks";
 import { Safe4NetworkChainId, USDT, WSAFE } from "../../../config";
 import ViewFiexdAmount from "../../../utils/ViewFiexdAmount";
 import { ZERO } from "../../../utils/CurrentAmountUtils";
-import { useSafeswapV2Pairs } from "./hooks";
-import { calculatePairAddress } from "./Calculate";
 
 const { Text } = Typography;
 
@@ -44,29 +42,9 @@ export default ({
   const activeAccount = useWalletsActiveAccount();
   const safeswapV2Factory = useSafeswapV2Factory(false);
   const multicallContract = useMulticallContract();
-  const { result } = useSafeswapV2Pairs();
-  const pairsMap = result?.pairsMap;
-  const pairBalancesMap = result?.pairBalancesMap;
-  const pairTotalSuppliesMap = result?.pairTotalSuppliesMap;
-
-  const allTokens = useMemo(() => {
-    if (tokens && chainId) {
-      const _all: { [address: string]: Token } = {};
-      Object.keys(tokens)
-        .forEach(address => {
-          const { name, symbol, decimals } = tokens[address];
-          const token = new Token(
-            chainId,
-            address, decimals,
-            symbol, name
-          );
-          _all[address] = token;
-        });
-      _all[USDT[chainId as Safe4NetworkChainId].address] = USDT[chainId as Safe4NetworkChainId];
-      _all[WSAFE[chainId as Safe4NetworkChainId].address] = WSAFE[chainId as Safe4NetworkChainId];
-      return _all;
-    }
-  }, [tokens, chainId]);
+  const [allPairs, setAllPairs] = useState<string[]>();
+  const [pairPools, setPairPools] = useState<{ [address: string]: PairPool }>();
+  const [loading, setLoading] = useState<boolean>(false);
 
   const nameEqSafeswapV2Tokens = useMemo(() => {
     if (tokens && chainId) {
@@ -88,18 +66,24 @@ export default ({
     return undefined
   }, [tokens, chainId]);
 
-  const activePairs = useMemo<Pair[] | undefined>(() => {
-    if (pairsMap && pairBalancesMap) {
-      return Object.keys(pairBalancesMap).filter(pairAddress => {
-        return pairBalancesMap[pairAddress].gt(0);
-      }).map(pairAddress => pairsMap[pairAddress])
+  const allTokens = useMemo(() => {
+    if (tokens && chainId) {
+      const _all: { [address: string]: Token } = {};
+      Object.keys(tokens)
+        .forEach(address => {
+          const { name, symbol, decimals } = tokens[address];
+          const token = new Token(
+            chainId,
+            address, decimals,
+            symbol, name
+          );
+          _all[address] = token;
+        });
+      _all[USDT[chainId as Safe4NetworkChainId].address] = USDT[chainId as Safe4NetworkChainId];
+      _all[WSAFE[chainId as Safe4NetworkChainId].address] = WSAFE[chainId as Safe4NetworkChainId];
+      return _all;
     }
-    return undefined;
-  }, [pairsMap, pairBalancesMap]);
-
-  const [allPairs, setAllPairs] = useState<string[]>();
-  const [pairPools, setPairPools] = useState<{ [address: string]: PairPool }>();
-  const [loading, setLoading] = useState<boolean>(false);
+  }, [tokens, chainId]);
 
   useEffect(() => {
     if (safeswapV2Factory && multicallContract && blockNumber > 0) {
@@ -180,6 +164,7 @@ export default ({
           token0_call, token1_call, totalSupply_call, balanceOf_call, reservers_call
         )
       });
+
       setLoading(true);
       CallMulticallAggregate(multicallContract, calls, () => {
         setLoading(false);
@@ -196,6 +181,7 @@ export default ({
           const token0 = allTokens && allTokens[token0Address];
           const token1 = allTokens && allTokens[token1Address];
           const pairToken = allTokens && allTokens[address];
+
           const balanceOfGeZERO = pairToken && new TokenAmount(pairToken, balanceOf).greaterThan(ZERO);
           if (token0 && token1 && pairToken && balanceOfGeZERO) {
             pairPools[address] = { token0, token1, totalSupply, balanceOf, reservers, pairToken };
@@ -226,120 +212,12 @@ export default ({
     setAssetPoolModule(AssetPoolModule.Remove);
   }
 
-
-
-
-
   return <>
     <Button onClick={() => addLiquidity(undefined, undefined)} type="primary" style={{ width: "100%", height: "60px" }} size="large">
       添加流动性
     </Button>
     <Divider />
-    <Text type="secondary">已添加仓位 - {activePairs?.length}</Text>
-
-    {
-      activePairs && activePairs.length > 0 && pairBalancesMap && pairTotalSuppliesMap && chainId && <Collapse size="large"
-        items={
-          activePairs.map(pair => {
-            // const { token0, token1, reservers, balanceOf, totalSupply, pairToken } = pairPools[address];
-            const { token0, token1, reserve0, reserve1, liquidityToken } = pair;
-            const liquidityAddress = calculatePairAddress(token0, token1, chainId);
-            if (liquidityAddress) {
-              const balanceOf = pairBalancesMap[liquidityAddress];
-              const totalSupply = pairTotalSuppliesMap[liquidityAddress];
-              const LPTokenAmount = new TokenAmount(liquidityToken, balanceOf.toBigInt());
-              const TotalLPTokenAmount = new TokenAmount(liquidityToken, totalSupply.toString());
-              const lpTokenRatio = LPTokenAmount.divide(TotalLPTokenAmount);
-              const token0Amount = reserve0.multiply(lpTokenRatio);
-              const token1Amount = reserve1.multiply(lpTokenRatio);
-              const price = {
-                [PriceType.B2A]: reserve0.divide(reserve1).toFixed(4),
-                [PriceType.A2B]: reserve1.divide(reserve0).toFixed(4),
-              }
-              const _token0 = token0.address == WSAFE[chainId as Safe4NetworkChainId].address ? undefined : token0;
-              const _token1 = token1.address == WSAFE[chainId as Safe4NetworkChainId].address ? undefined : token1;
-              return {
-                key: liquidityToken.address,
-                label: <>
-                  <Row>
-                    <Col span={24} style={{ paddingTop: "-2px" }}>
-                      <ERC20TokenLogoComponent style={{ width: "36px", height: "36px", padding: "4px" }} address={token0.address} chainId={token0.chainId} />
-                      <ERC20TokenLogoComponent style={{ width: "36px", height: "36px", padding: "4px" }} address={token1.address} chainId={token1.chainId} />
-                      <Text strong style={{ marginLeft: "20px" }}>{token0.symbol} / {token1.symbol}</Text>
-                    </Col>
-                    {liquidityToken.address}
-                    {liquidityAddress}
-                  </Row>
-                </>,
-                children: <Row>
-                  <Col span={24}>
-                    <Text>库存 {token0.symbol}</Text>
-                    <Text type="secondary" style={{ float: "right" }}>{reserve0.toSignificant()}</Text>
-                  </Col>
-                  <Col span={24}>
-                    <Text>库存 {token1.symbol}</Text>
-                    <Text type="secondary" style={{ float: "right" }}>{reserve1.toSignificant()}</Text>
-                  </Col>
-                  <Col span={24}>
-                    <Text strong>存入 {token0.symbol}</Text>
-                    <Text strong style={{ float: "right" }}>{token0Amount.toSignificant(4)}</Text>
-                  </Col>
-                  <Col span={24}>
-                    <Text strong>存入 {token1.symbol}</Text>
-                    <Text strong style={{ float: "right" }}>{token1Amount.toSignificant(4)}</Text>
-                  </Col>
-                  <Col span={24}>
-                    <Text>价格</Text>
-                  </Col>
-                  <Col span={12}>
-                    <Col span={24} style={{ textAlign: "center" }}>
-                      <Text strong>{price[PriceType.A2B]}</Text> {token0 ? token0.symbol : "SAFE"}
-                    </Col>
-                    <Col span={24} style={{ textAlign: "center" }}>
-                      <Text>1 {token1 ? token1.symbol : "SAFE"}</Text>
-                    </Col>
-                  </Col>
-                  <Col span={12}>
-                    <Col span={24} style={{ textAlign: "center" }}>
-                      <Text strong>{price[PriceType.B2A]}</Text> {token1 ? token1.symbol : "SAFE"}
-                    </Col>
-                    <Col span={24} style={{ textAlign: "center" }}>
-                      <Text>1 {token0 ? token0.symbol : "SAFE"}</Text>
-                    </Col>
-                  </Col>
-                  <Divider />
-                  <Col span={12} style={{ textAlign: "center" }}>
-                    <Button onClick={() => addLiquidity(_token0, _token1)}>添加</Button>
-                  </Col>
-                  <Col span={12} style={{ textAlign: "center" }}>
-                    <Button onClick={() => removeLiquidity(_token0, _token1)}>移除</Button>
-                  </Col>
-                </Row>
-              }
-            }
-
-
-
-            // 持有的 LP token 数量是 balanceOf
-
-            return {
-              key: liquidityToken.address,
-              label: <>
-                <Row>
-                  <Col span={24} style={{ paddingTop: "-2px" }}>
-                    <ERC20TokenLogoComponent style={{ width: "36px", height: "36px", padding: "4px" }} address={token0.address} chainId={token0.chainId} />
-                    <ERC20TokenLogoComponent style={{ width: "36px", height: "36px", padding: "4px" }} address={token1.address} chainId={token1.chainId} />
-                    <Text strong style={{ marginLeft: "20px" }}>{token0.symbol} / {token1.symbol}</Text>
-                  </Col>
-                </Row>
-              </>,
-
-            }
-          })
-        }
-      />
-    }
-
+    <Text type="secondary">已添加仓位</Text>
     <Spin spinning={loading}>
       {
         pairPools && Object.keys(pairPools).length == 0 && <>
@@ -368,8 +246,7 @@ export default ({
               const _token0 = token0.address == WSAFE[chainId as Safe4NetworkChainId].address ? undefined : token0;
               const _token1 = token1.address == WSAFE[chainId as Safe4NetworkChainId].address ? undefined : token1;
               return {
-                key: address,
-                label: <>
+                key: address, label: <>
                   <Row>
                     <Col span={24} style={{ paddingTop: "-2px" }}>
                       <ERC20TokenLogoComponent style={{ width: "36px", height: "36px", padding: "4px" }} address={token0.address} chainId={token0.chainId} />

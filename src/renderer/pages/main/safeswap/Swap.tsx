@@ -3,11 +3,11 @@ import { Alert, Avatar, Button, Card, Col, Divider, Dropdown, Input, MenuProps, 
 import { useTranslation } from "react-i18next";
 import { useWeb3React } from "@web3-react/core";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ChainId, CurrencyAmount, Pair, Price, Token, TokenAmount, Trade } from "@uniswap/sdk";
+import { ChainId, CurrencyAmount, Pair, Percent, Price, Token, TokenAmount, Trade, TradeType } from "@uniswap/sdk";
 import { Contract, ethers } from "ethers";
 import { useETHBalances, useTokenAllowanceAmounts, useTokenBalances, useWalletsActiveAccount, useWalletsActiveSigner } from "../../../state/wallets/hooks";
 import { calculatePairAddress } from "./Calculate";
-import { useSafeswapTokens } from "../../../state/application/hooks";
+import { useSafeswapSlippageTolerance, useSafeswapTokens } from "../../../state/application/hooks";
 import { useTokens } from "../../../state/transactions/hooks";
 import TokenButtonSelect from "./TokenButtonSelect";
 import { Safe4NetworkChainId, SafeswapV2RouterAddress, USDT, WSAFE } from "../../../config";
@@ -18,10 +18,10 @@ import { applicationUpdateSafeswapTokens } from "../../../state/application/acti
 import ViewFiexdAmount from "../../../utils/ViewFiexdAmount";
 import { useSafeswapV2Pairs } from "./hooks";
 import ERC20TokenLogoComponent from "../../components/ERC20TokenLogoComponent";
-import { AssetPoolModule } from "./AssetPool";
 const { Text, Link } = Typography;
 
 export const SafeswapV2_Fee_Rate = "0.003";
+export const SafeswapV2_Default_SlippageTolerance = 0.005;
 
 export enum PriceType {
   A2B = "A2B",
@@ -68,7 +68,8 @@ export default ({
 }: {
   goToAddLiquidity: () => void
 }) => {
-  const { loading, pairsMap } = useSafeswapV2Pairs();
+  const { loading, result } = useSafeswapV2Pairs();
+  const pairsMap  = result?.pairsMap;
   const { t } = useTranslation();
   const { chainId } = useWeb3React();
   const signer = useWalletsActiveSigner()
@@ -260,13 +261,15 @@ export default ({
     setTrade(undefined);
   }, [tokenA, tokenB]);
 
+  const slippageTolerance = useSafeswapSlippageTolerance();
+
   const RenderRoutePath = () => {
     return <>
       {
         trade?.route.path && trade.route.path.length > 2 &&
-        <Row style={{ marginTop: "5px" }}>
+        <Row>
           <Col span={24}>
-            <Text type="secondary">路由</Text>
+            <Text type="secondary">交易路由</Text>
           </Col>
           <Col span={24}>
             <Card style={{ marginTop: "10px" }}>
@@ -320,6 +323,59 @@ export default ({
       }
     </>
   }
+
+  const RenderSlippageTolerance = () => {
+    if (slippageTolerance != SafeswapV2_Default_SlippageTolerance) {
+      return <>
+        <Row style={{ marginTop: "15px" }}>
+          <Col span={12}>
+            <Text type="secondary" strong>滑点容差</Text>
+          </Col>
+          <Col span={12} style={{ textAlign: "right" }}>
+            <Text>{slippageTolerance * 100}%</Text>
+          </Col>
+        </Row>
+      </>
+    }
+    return <></>
+  }
+
+  const RenderTradeResult = () => {
+    if (trade) {
+      const tradeType = trade.tradeType;
+      const slippage = new Percent(slippageTolerance * 1000 + "", "1000");
+      if (tradeType == TradeType.EXACT_INPUT) {
+        return <Row>
+          <Col span={6}>
+            <Text type="secondary">最少获得</Text>
+          </Col>
+          <Col span={18} style={{ textAlign: "right" }}>
+            <Text strong style={{ marginRight: "5px" }}>
+              {trade.minimumAmountOut(slippage).toSignificant()}
+            </Text>
+            <Text strong>
+              {tokenB ? tokenB.symbol : "SAFE"}
+            </Text>
+          </Col>
+        </Row>
+      } else if (tradeType == TradeType.EXACT_OUTPUT) {
+        return <Row>
+          <Col span={6}>
+            <Text type="secondary">最多支付</Text>
+          </Col>
+          <Col span={18} style={{ textAlign: "right" }}>
+            <Text strong style={{ marginRight: "5px" }}>
+              {trade.maximumAmountIn(slippage).toSignificant()}
+            </Text>
+            <Text strong>
+              {tokenA ? tokenA.symbol : "SAFE"}
+            </Text>
+          </Col>
+        </Row>
+      }
+    }
+  }
+
 
   return <>
     <Spin spinning={loading}>
@@ -416,8 +472,14 @@ export default ({
       {
         RenderPrice()
       }
+      <Divider />
       {
-
+        RenderSlippageTolerance()
+      }
+      {
+        RenderTradeResult()
+      }
+      {
         RenderRoutePath()
       }
       {
@@ -436,7 +498,7 @@ export default ({
       }
       {
         needApproveTokenA && tokenA && <Col span={24}>
-          <Alert style={{ marginBottom: "10px" }} type="warning" message={<>
+          <Alert style={{ marginTop: "5px", marginBottom: "10px" }} type="warning" message={<>
             <Text>需要先授权 Safeswap 访问 {tokenA?.symbol}</Text>
             <Link disabled={approveTokenHash[tokenA?.address]?.execute} onClick={approveRouter} style={{ float: "right" }}>
               {

@@ -1,8 +1,10 @@
-import { Alert, Avatar, Button, Card, Col, Divider, Dropdown, Input, MenuProps, message, Row, Select, Space, Typography } from "antd";
+import { Alert, Avatar, Button, Card, Col, Divider, Dropdown, Flex, Input, InputNumber, MenuProps, message, Popover, Row, Select, Space, Typography } from "antd";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import Swap from "./Swap";
 import AssetPool, { AssetPoolModule } from "./AssetPool";
+import { SettingFilled, SettingOutlined } from "@ant-design/icons";
+import SlippageSetting from "./SlippageSetting";
 const { Title, Text, Link } = Typography;
 
 const enum ActiveModule {
@@ -11,7 +13,7 @@ const enum ActiveModule {
 }
 
 export default () => {
-  const [activeModule, setActiveModule] = useState<ActiveModule>(ActiveModule.Swap);
+  const [activeModule, setActiveModule] = useState<ActiveModule>(ActiveModule.AssetsPool);
   const [_assetPoolModule, set_AssetPoolModule] = useState<AssetPoolModule>();
   const goToAddLiquidity = () => {
     set_AssetPoolModule(AssetPoolModule.Add);
@@ -50,6 +52,13 @@ export default () => {
                   style={{ fontSize: "28px", height: "60px", color: activeModule == ActiveModule.AssetsPool ? "black" : "#b9a4a4" }} type="text">
                   资金池
                 </Button>
+                <Popover placement="rightTop" content={<>
+                  <div style={{ width: "300px" }}>
+                    <SlippageSetting />
+                  </div>
+                </>} title="设置" trigger="click">
+                  <SettingOutlined style={{ float: "right" }} />
+                </Popover>
               </Col>
             </Row>
             {

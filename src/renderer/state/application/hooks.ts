@@ -87,7 +87,7 @@ export function useSafeswapTokens(): {
   })
 }
 
-export function useSlippageTolerance() : number  {
+export function useSafeswapSlippageTolerance() : number  {
   return useSelector((state: AppState) => {
     return state.application.SlippageTolerance;
   })

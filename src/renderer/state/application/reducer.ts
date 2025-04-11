@@ -21,6 +21,7 @@ import {
   applicationControlUpdateEditSupernodeId,
   applicationUpdateLanguage,
   applicationUpdateSafeswapTokens,
+  applicationUpdateSafeswapSlippageTolerance,
 } from './action';
 
 import { ContractVO } from '../../services';
@@ -132,7 +133,7 @@ const initialState: IApplicationState = {
   },
   language: "zh",
   safeswap: undefined,
-  SlippageTolerance: 0.01
+  SlippageTolerance: 0.005
 }
 
 export default createReducer(initialState, (builder) => {
@@ -303,6 +304,10 @@ export default createReducer(initialState, (builder) => {
         tokenA: tokenA ? { ...tokenA } : undefined,
         tokenB: tokenB ? { ...tokenB } : undefined,
       }
+    })
+
+    .addCase(applicationUpdateSafeswapSlippageTolerance, ( state, {payload} ) => {
+      state.SlippageTolerance = payload;
     })
 
 })

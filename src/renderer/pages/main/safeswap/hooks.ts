@@ -123,7 +123,11 @@ export function useSafeswapV2Pairs() {
   }, [chainId, walletTokens]);
 
   const [loading, setLoading] = useState<boolean>(false);
-  const [pairsMap, setPairsMap] = useState<{ [address: string]: Pair }>();
+  const [result, setResult] = useState<{
+    pairsMap: { [address: string]: Pair },
+    pairBalancesMap: { [address: string]: ethers.BigNumber },
+    pairTotalSuppliesMap: { [address: string]: ethers.BigNumber }
+  }>();
 
   useEffect(() => {
     const loadSafeswapV2 = async () => {
@@ -162,11 +166,24 @@ export function useSafeswapV2Pairs() {
         return map;
       }, {} as { [address: string]: Pair });
 
-      setPairsMap(pairsMap);
+      const pairBalancesMap = Object.keys(pairsMap).reduce((map, pairAddress) => {
+        map[pairAddress] = pairResults[pairAddress].balanceOf;
+        return map;
+      }, {} as { [address: string]: ethers.BigNumber });
+
+      const pairTotalSuppliesMap = Object.keys(pairsMap).reduce((map, pairAddress) => {
+        map[pairAddress] = pairResults[pairAddress].totalSupply;
+        return map;
+      }, {} as { [address: string]: ethers.BigNumber });
+
+      setResult({
+        pairsMap, pairBalancesMap, pairTotalSuppliesMap
+      })
       setLoading(false);
+
     }
   }, [pairResults, erc20Tokens]);
   return {
-    pairsMap, loading
+    result , loading
   }
 }

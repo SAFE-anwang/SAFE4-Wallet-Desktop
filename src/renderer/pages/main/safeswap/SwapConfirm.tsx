@@ -6,7 +6,7 @@ import { Pair, Percent, Token, TokenAmount, Trade, TradeType } from "@uniswap/sd
 import ERC20TokenLogoComponent from "../../components/ERC20TokenLogoComponent";
 import { useWeb3React } from "@web3-react/core";
 import { useContract, useSafeswapV2Router } from "../../../hooks/useContracts";
-import { useTimestamp } from "../../../state/application/hooks";
+import { useSafeswapSlippageTolerance, useTimestamp } from "../../../state/application/hooks";
 import { ethers } from "ethers";
 import { useWalletsActiveAccount } from "../../../state/wallets/hooks";
 import { useTransactionAdder } from "../../../state/transactions/hooks";
@@ -16,8 +16,6 @@ import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { applicationUpdateWalletTab } from "../../../state/application/action";
-import { Default_SlippageTolerance, PriceType } from "./Swap";
-
 
 const { Text } = Typography;
 
@@ -60,9 +58,8 @@ export default ({
       navigate("/main/wallet");
     }
   }, [txHash]);
-
-  const SafeswapV2SlippageTolerance = "1";
-  const slippageTolerance = new Percent(SafeswapV2SlippageTolerance, "1000");
+  const slippageTolerance = useSafeswapSlippageTolerance();
+  const slippage = new Percent(slippageTolerance * 1000 + "", "1000");
 
   const swap = () => {
     if (SwapV2RouterContract) {
@@ -75,7 +72,7 @@ export default ({
 
       if (tradeType == TradeType.EXACT_INPUT) {
         const amountIn = ethers.BigNumber.from(trade.inputAmount.raw.toString());
-        const amountOutMin = ethers.BigNumber.from(trade.minimumAmountOut(slippageTolerance).raw.toString());
+        const amountOutMin = ethers.BigNumber.from(trade.minimumAmountOut(slippage).raw.toString());
         if (tokenA && tokenB) {
           SwapV2RouterContract.swapExactTokensForTokens(
             amountIn,
@@ -148,7 +145,7 @@ export default ({
         }
       } else if (tradeType == TradeType.EXACT_OUTPUT) {
         const amountOut = ethers.BigNumber.from(trade.outputAmount.raw.toString());
-        const amountInMax = ethers.BigNumber.from(trade.maximumAmountIn(slippageTolerance).raw.toString());
+        const amountInMax = ethers.BigNumber.from(trade.maximumAmountIn(slippage).raw.toString());
         if (tokenA && tokenB) {
           SwapV2RouterContract.swapTokensForExactTokens(
             amountOut,
@@ -257,7 +254,7 @@ export default ({
   const RenderSwapSplippageTip = () => {
     const tradeType = trade.tradeType;
     if (tradeType == TradeType.EXACT_INPUT) {
-      const amountOutMin = trade.minimumAmountOut(slippageTolerance);
+      const amountOutMin = trade.minimumAmountOut(slippage);
       return <Row style={{ marginTop: "20px" }}>
         <Col span={24}>
           <Text italic>
@@ -266,7 +263,7 @@ export default ({
         </Col>
       </Row>
     } else if (tradeType == TradeType.EXACT_OUTPUT) {
-      const amountInMax = trade.maximumAmountIn(slippageTolerance);
+      const amountInMax = trade.maximumAmountIn(slippage);
       return <Row style={{ marginTop: "20px" }}>
         <Col span={24}>
           <Text italic>

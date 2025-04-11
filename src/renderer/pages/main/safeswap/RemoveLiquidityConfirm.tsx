@@ -6,7 +6,7 @@ import { CurrencyAmount, Fraction, Token, TokenAmount } from "@uniswap/sdk";
 import ERC20TokenLogoComponent from "../../components/ERC20TokenLogoComponent";
 import { useWeb3React } from "@web3-react/core";
 import { useContract, useSafeswapV2Router } from "../../../hooks/useContracts";
-import { useSlippageTolerance, useTimestamp } from "../../../state/application/hooks";
+import { useSafeswapSlippageTolerance, useTimestamp } from "../../../state/application/hooks";
 import { ethers, TypedDataDomain } from "ethers";
 import { useWalletsActiveAccount, useWalletsActiveSigner } from "../../../state/wallets/hooks";
 import { useTransactionAdder } from "../../../state/transactions/hooks";
@@ -68,7 +68,7 @@ export default ({
 
   const pairAddress = chainId && calculatePairAddress(token0, token1, chainId);
   const safeswapV2Router = useSafeswapV2Router();
-  const SlippageTolerance = useSlippageTolerance();
+  const SlippageTolerance = useSafeswapSlippageTolerance();
   const remove = async () => {
     if (pairAddress && chainId && signer && safeswapV2Router) {
       const domain: TypedDataDomain = {
