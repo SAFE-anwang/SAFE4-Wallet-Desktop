@@ -109,7 +109,7 @@ export interface IApplicationState {
     tokenA: { chainId: number, address: string, decimals: number, name?: string, symbol?: string } | undefined,
     tokenB: { chainId: number, address: string, decimals: number, name?: string, symbol?: string } | undefined
   } | undefined,
-  SlippageTolerance: number,
+  SlippageTolerance: string,
 
 }
 
@@ -133,7 +133,7 @@ const initialState: IApplicationState = {
   },
   language: "zh",
   safeswap: undefined,
-  SlippageTolerance: 0.005
+  SlippageTolerance: "0.005"
 }
 
 export default createReducer(initialState, (builder) => {

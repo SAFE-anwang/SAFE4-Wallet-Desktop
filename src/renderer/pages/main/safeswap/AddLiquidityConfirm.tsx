@@ -1,14 +1,12 @@
 
 
 import { Button, Col, Divider, Modal, Row, Typography } from "antd"
-import { Safe4NetworkChainId, SafeswapV2RouterAddress, USDT, WSAFE } from "../../../config";
 import TokenLogo from "../../components/TokenLogo";
-import { ArrowDownOutlined, SendOutlined, SwapLeftOutlined } from "@ant-design/icons";
-import { Token, TokenAmount } from "@uniswap/sdk";
+import { PlusOutlined, SendOutlined } from "@ant-design/icons";
+import { Token } from "@uniswap/sdk";
 import ERC20TokenLogoComponent from "../../components/ERC20TokenLogoComponent";
-import { useWeb3React } from "@web3-react/core";
-import { useContract, useSafeswapV2Router } from "../../../hooks/useContracts";
-import { useTimestamp } from "../../../state/application/hooks";
+import { useSafeswapV2Router } from "../../../hooks/useContracts";
+import { useSafeswapSlippageTolerance, useTimestamp } from "../../../state/application/hooks";
 import { ethers } from "ethers";
 import { useWalletsActiveAccount } from "../../../state/wallets/hooks";
 import { useTransactionAdder } from "../../../state/transactions/hooks";
@@ -18,8 +16,16 @@ import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { applicationUpdateWalletTab } from "../../../state/application/action";
+import { getSlippageTolerancePercent } from "./Swap";
 
 const { Text } = Typography;
+
+export function getSlippageToleranceBigInteger(slippageTolerance: string) {
+  // 0.0051 
+  const a = ethers.utils.parseUnits(slippageTolerance, 4);
+  const b = ethers.utils.parseUnits("1", 4);
+  return b.sub(a);
+}
 
 export default ({
   openAddConfirmModal, setOpenAddConfirmModal,
@@ -39,7 +45,6 @@ export default ({
   const { t } = useTranslation();
   const SwapV2RouterContract = useSafeswapV2Router(true);
   const timestamp = useTimestamp();
-  const { chainId } = useWeb3React();
   const activeAccount = useWalletsActiveAccount();
   const addTransaction = useTransactionAdder();
   const {
@@ -58,22 +63,29 @@ export default ({
       dispatch(applicationUpdateWalletTab("history"));
       navigate("/main/wallet");
     }
-  }, [txHash])
+  }, [txHash]);
+
+  const slippageTolerance = useSafeswapSlippageTolerance();
 
   const swap = () => {
     if (SwapV2RouterContract) {
       setSending(true);
+      const deadline = timestamp + 60 * 10;
+      const to = activeAccount;
       if (tokenA == undefined && tokenB) {
         const amountTokenDesired = ethers.utils.parseUnits(tokenBAmount, tokenB.decimals);
-        const amountTokenMin = amountTokenDesired;
+        const amountTokenMin = amountTokenDesired.mul(
+          getSlippageToleranceBigInteger(slippageTolerance)
+        ).div(10000);
         const value = ethers.utils.parseEther(tokenAAmount);
+        const valueMin = value.mul(Number(slippageTolerance) * 1000).div(1000);
         SwapV2RouterContract.addLiquidityETH(
           tokenB.address,
           amountTokenDesired,
           amountTokenMin,
-          value.mul(995).div(1000),
-          activeAccount,
-          timestamp + 100,
+          valueMin,
+          to,
+          deadline,
           { value }
         ).then((response: any) => {
           const { hash, data } = response;
@@ -88,19 +100,25 @@ export default ({
           });
           setTxHash(hash);
         }).catch((err: any) => {
+          setErr(err);
           console.log("Swap Error =", err)
         })
       } else if (tokenA && tokenB == undefined) {
         const amountTokenDesired = ethers.utils.parseUnits(tokenAAmount, tokenA.decimals);
-        const amountTokenMin = amountTokenDesired;
+        const amountTokenMin = amountTokenDesired.mul(
+          getSlippageToleranceBigInteger(slippageTolerance)
+        ).div(10000);
         const value = ethers.utils.parseEther(tokenBAmount);
+        const valueMin = value.mul(
+          getSlippageToleranceBigInteger(slippageTolerance)
+        ).div(10000);
         SwapV2RouterContract.addLiquidityETH(
           tokenA.address,
           amountTokenDesired,
-          amountTokenMin.mul(995).div(1000),
-          value,
-          activeAccount,
-          timestamp + 100,
+          amountTokenMin,
+          valueMin,
+          to,
+          deadline,
           { value }
         ).then((response: any) => {
           const { hash, data } = response;
@@ -115,13 +133,18 @@ export default ({
           });
           setTxHash(hash);
         }).catch((err: any) => {
+          setErr(err);
           console.log("Swap Error =", err)
         })
       } else if (tokenA && tokenB) {
         const amountADesired = ethers.utils.parseUnits(tokenAAmount, tokenA.decimals);
         const amountBDesired = ethers.utils.parseUnits(tokenBAmount, tokenB.decimals);
-        const amountAMin = amountADesired.mul(995).div(1000);
-        const amountBMin = amountBDesired.mul(995).div(1000);
+        const amountAMin = amountADesired.mul(
+          getSlippageToleranceBigInteger(slippageTolerance)
+        ).div(10000);
+        const amountBMin = amountBDesired.mul(
+          getSlippageToleranceBigInteger(slippageTolerance)
+        ).div(10000);
         SwapV2RouterContract.addLiquidity(
           tokenA.address,
           tokenB.address,
@@ -129,8 +152,8 @@ export default ({
           amountBDesired,
           amountAMin,
           amountBMin,
-          activeAccount,
-          timestamp + 100,
+          to,
+          deadline,
         ).then((response: any) => {
           const { hash, data } = response;
           setTransactionResponse(response);
@@ -144,6 +167,7 @@ export default ({
           });
           setTxHash(hash);
         }).catch((err: any) => {
+          setErr(err);
           console.log("Swap Error =", err)
         })
       }
@@ -151,7 +175,7 @@ export default ({
   }
 
   return <>
-    <Modal title="添加流动性" footer={null} open={openAddConfirmModal} destroyOnClose onCancel={() => setOpenAddConfirmModal(false)} >
+    <Modal title="添加流动性" footer={null} open={openAddConfirmModal} destroyOnClose onCancel={cancel} >
       <Divider />
       {
         render
@@ -174,7 +198,7 @@ export default ({
       </Row>
       <Row>
         <Col span={24}>
-          <ArrowDownOutlined style={{ fontSize: "24px", marginLeft: "7px", marginTop: "12px" }} />
+          <PlusOutlined style={{ fontSize: "24px", marginLeft: "7px", marginTop: "12px" }} />
         </Col>
       </Row>
       <Row style={{ marginTop: "10px" }}>
@@ -188,8 +212,15 @@ export default ({
           }
         </Col>
         <Col span={21}>
-          <Text type="success" style={{ fontSize: "24px", lineHeight: "40px" }}>
-            + {tokenBAmount} {tokenB ? tokenB.symbol : "SAFE"}
+          <Text style={{ fontSize: "24px", lineHeight: "40px" }}>
+            - {tokenBAmount} {tokenB ? tokenB.symbol : "SAFE"}
+          </Text>
+        </Col>
+      </Row>
+      <Row style={{ marginTop: "20px" }}>
+        <Col span={24}>
+          <Text italic>
+            兑换结果是预估的. 如果价格波动超过 <Text strong>{getSlippageTolerancePercent(slippageTolerance).toSignificant()}% </Text>,您的交易将会被撤回
           </Text>
         </Col>
       </Row>

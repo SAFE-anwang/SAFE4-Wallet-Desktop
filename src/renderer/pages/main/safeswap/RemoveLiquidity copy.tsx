@@ -29,11 +29,11 @@ import { SafeswapV2Pairs } from "./hooks";
 const { Title, Text, Link } = Typography;
 
 export default ({
-  setAssetPoolModule,
+  setAssetPoolModule , 
   safeswapV2Pairs
 }: {
-  setAssetPoolModule: (assetPoolModule: AssetPoolModule) => void,
-  safeswapV2Pairs: SafeswapV2Pairs,
+  setAssetPoolModule: (assetPoolModule: AssetPoolModule) => void , 
+  safeswapV2Pairs : SafeswapV2Pairs,
 }) => {
 
   const { t } = useTranslation();
@@ -63,10 +63,8 @@ export default ({
   }, [tokens, chainId]);
   const token0 = safeswapTokens ? parseTokenData(safeswapTokens.tokenA) : Default_Swap_Token ? Default_Swap_Token[0] : undefined;
   const token1 = safeswapTokens ? parseTokenData(safeswapTokens.tokenB) : Default_Swap_Token ? Default_Swap_Token[1] : undefined;
-
   const pairAddress = chainId && calculatePairAddress(token0, token1, chainId);
   const pairContract = pairAddress && useContract(pairAddress, PairABI, false);
-
   const [token0Amount, setToken0Amount] = useState<string>();
   const [token1Amount, setToken1Amount] = useState<string>();
   const [lpTokenAmount, setLpTokenAmount] = useState<CurrencyAmount>();
@@ -299,7 +297,7 @@ export default ({
             </Col>
             <Col span={12} style={{ textAlign: "right" }}>
               <Text strong style={{ fontSize: "18px", lineHeight: "36px" }}>
-                {lpTokenAmount && lpTokenAmount.toSignificant()}
+                {lpTokenAmount && ViewFiexdAmount(lpTokenAmount, undefined)}
               </Text>
             </Col>
           </Row>
@@ -311,7 +309,7 @@ export default ({
             </Col>
             <Col span={12} style={{ textAlign: "right" }}>
               <Text type="secondary">
-                {activeAccountToken0Reserve && JSON.stringify(typeof activeAccountToken0Reserve)}
+                {activeAccountToken0Reserve && ViewFiexdAmount(activeAccountToken0Reserve, token0)}
               </Text>
             </Col>
           </Row>

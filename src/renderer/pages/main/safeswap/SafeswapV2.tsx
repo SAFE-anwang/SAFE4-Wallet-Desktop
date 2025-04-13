@@ -5,6 +5,7 @@ import Swap from "./Swap";
 import AssetPool, { AssetPoolModule } from "./AssetPool";
 import { SettingFilled, SettingOutlined } from "@ant-design/icons";
 import SlippageSetting from "./SlippageSetting";
+import { useSafeswapV2Pairs } from "./hooks";
 const { Title, Text, Link } = Typography;
 
 const enum ActiveModule {
@@ -13,12 +14,14 @@ const enum ActiveModule {
 }
 
 export default () => {
-  const [activeModule, setActiveModule] = useState<ActiveModule>(ActiveModule.AssetsPool);
+  const [activeModule, setActiveModule] = useState<ActiveModule>(ActiveModule.Swap);
   const [_assetPoolModule, set_AssetPoolModule] = useState<AssetPoolModule>();
   const goToAddLiquidity = () => {
     set_AssetPoolModule(AssetPoolModule.Add);
     setActiveModule(ActiveModule.AssetsPool);
   }
+
+  const safeswapV2Pairs = useSafeswapV2Pairs();
 
   return <>
     <Row style={{ height: "50px" }}>
@@ -62,10 +65,12 @@ export default () => {
               </Col>
             </Row>
             {
-              activeModule == ActiveModule.Swap && <Swap goToAddLiquidity={goToAddLiquidity} />
+              activeModule == ActiveModule.Swap && <Swap safeswapV2Pairs={safeswapV2Pairs} goToAddLiquidity={goToAddLiquidity} />
             }
             {
-              activeModule == ActiveModule.AssetsPool && <AssetPool _assetPoolModule={_assetPoolModule} />
+              activeModule == ActiveModule.AssetsPool && <AssetPool
+                safeswapV2Pairs={safeswapV2Pairs}
+                _assetPoolModule={_assetPoolModule} />
             }
           </Card>
         </Card>

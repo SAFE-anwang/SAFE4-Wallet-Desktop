@@ -117,4 +117,4 @@ export const applicationUpdateSafeswapTokens = createAction<{
   "application/updateSafeswapTokens"
 )
 
-export const applicationUpdateSafeswapSlippageTolerance = createAction<number>("application/updateSafeswapSlippageTolerance");
+export const applicationUpdateSafeswapSlippageTolerance = createAction<string>("application/updateSafeswapSlippageTolerance");

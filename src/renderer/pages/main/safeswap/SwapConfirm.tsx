@@ -16,6 +16,7 @@ import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { applicationUpdateWalletTab } from "../../../state/application/action";
+import { getSlippageTolerancePercent } from "./Swap";
 
 const { Text } = Typography;
 
@@ -59,7 +60,7 @@ export default ({
     }
   }, [txHash]);
   const slippageTolerance = useSafeswapSlippageTolerance();
-  const slippage = new Percent(slippageTolerance * 1000 + "", "1000");
+  const slippage = getSlippageTolerancePercent(slippageTolerance);
 
   const swap = () => {
     if (SwapV2RouterContract) {

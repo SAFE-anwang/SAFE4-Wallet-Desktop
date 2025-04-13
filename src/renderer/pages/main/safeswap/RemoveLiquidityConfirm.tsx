@@ -5,7 +5,7 @@ import { ArrowDownOutlined, PlusOutlined, SendOutlined, SwapLeftOutlined } from 
 import { CurrencyAmount, Fraction, Token, TokenAmount } from "@uniswap/sdk";
 import ERC20TokenLogoComponent from "../../components/ERC20TokenLogoComponent";
 import { useWeb3React } from "@web3-react/core";
-import { useContract, useSafeswapV2Router } from "../../../hooks/useContracts";
+import { useSafeswapV2Router } from "../../../hooks/useContracts";
 import { useSafeswapSlippageTolerance, useTimestamp } from "../../../state/application/hooks";
 import { ethers, TypedDataDomain } from "ethers";
 import { useWalletsActiveAccount, useWalletsActiveSigner } from "../../../state/wallets/hooks";
@@ -17,9 +17,9 @@ import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { applicationUpdateWalletTab } from "../../../state/application/action";
 import { calculatePairAddress } from "./Calculate";
-import { PairABI } from "../../../constants/SafeswapAbiConfig";
 import { splitSignature } from "ethers/lib/utils";
-import { Default_SlippageTolerance } from "./Swap";
+import { getSlippageToleranceBigInteger } from "./AddLiquidityConfirm";
+import { getSlippageTolerancePercent } from "./Swap";
 
 
 const { Text } = Typography;
@@ -68,7 +68,7 @@ export default ({
 
   const pairAddress = chainId && calculatePairAddress(token0, token1, chainId);
   const safeswapV2Router = useSafeswapV2Router();
-  const SlippageTolerance = useSafeswapSlippageTolerance();
+  const slippageTolerance = useSafeswapSlippageTolerance();
   const remove = async () => {
     if (pairAddress && chainId && signer && safeswapV2Router) {
       const domain: TypedDataDomain = {
@@ -96,12 +96,15 @@ export default ({
       };
       const signature = await signer._signTypedData(domain, types, message);
       const { v, r, s } = splitSignature(signature);
-      const slippage = (100 - Number(SlippageTolerance) * 100)
       if (token0 && token1) {
         const amount0Desire = ethers.utils.parseUnits(token0Amount, token0?.decimals);
         const amount1Desire = ethers.utils.parseUnits(token1Amount, token1?.decimals);
-        const amount0Min = amount0Desire.mul(slippage).div(100);
-        const amount1Min = amount1Desire.mul(slippage).div(100);
+        const amount0Min = amount0Desire.mul(
+          getSlippageToleranceBigInteger(slippageTolerance)
+        ).div(10000);
+        const amount1Min = amount1Desire.mul(
+          getSlippageToleranceBigInteger(slippageTolerance)
+        ).div(10000);
         setSending(true);
         safeswapV2Router.removeLiquidityWithPermit(
           token0?.address,
@@ -137,8 +140,12 @@ export default ({
         const liquidity = removeLpAmount;
         const amount0Desire = ethers.utils.parseUnits(token0Amount, token0?.decimals);
         const amount1Desire = ethers.utils.parseUnits(token1Amount, token1?.decimals);
-        const amount0Min = amount0Desire.mul(slippage).div(100);
-        const amount1Min = amount1Desire.mul(slippage).div(100);
+        const amount0Min = amount0Desire.mul(
+          getSlippageToleranceBigInteger(slippageTolerance)
+        ).div(10000);
+        const amount1Min = amount1Desire.mul(
+          getSlippageToleranceBigInteger(slippageTolerance)
+        ).div(10000);
         const amountTokenMin = token0 ? amount0Min : amount1Min;
         const amountETHMin = token0 ? amount1Min : amount0Min;
         setSending(true);
@@ -218,7 +225,7 @@ export default ({
     </Row>
     <Row style={{ marginTop: "20px" }}>
       <Col span={24}>
-        <Text italic>兑换结果是预估的. 如果价格波动超过 {Number(SlippageTolerance) * 100}% 您的交易将会被撤回.</Text>
+        <Text italic>兑换结果是预估的. 如果价格波动超过 {getSlippageTolerancePercent(slippageTolerance).toSignificant()}% 您的交易将会被撤回.</Text>
       </Col>
     </Row>
     <Divider />

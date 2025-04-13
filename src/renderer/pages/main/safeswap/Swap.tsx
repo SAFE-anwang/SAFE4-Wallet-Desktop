@@ -3,7 +3,7 @@ import { Alert, Avatar, Button, Card, Col, Divider, Dropdown, Input, MenuProps, 
 import { useTranslation } from "react-i18next";
 import { useWeb3React } from "@web3-react/core";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ChainId, CurrencyAmount, Pair, Percent, Price, Token, TokenAmount, Trade, TradeType } from "@uniswap/sdk";
+import { ChainId, CurrencyAmount, JSBI, Pair, Percent, Price, Token, TokenAmount, Trade, TradeType } from "@uniswap/sdk";
 import { Contract, ethers } from "ethers";
 import { useETHBalances, useTokenAllowanceAmounts, useTokenBalances, useWalletsActiveAccount, useWalletsActiveSigner } from "../../../state/wallets/hooks";
 import { calculatePairAddress } from "./Calculate";
@@ -16,18 +16,17 @@ import SwapConfirm from "./SwapConfirm";
 import { useDispatch } from "react-redux";
 import { applicationUpdateSafeswapTokens } from "../../../state/application/action";
 import ViewFiexdAmount from "../../../utils/ViewFiexdAmount";
-import { useSafeswapV2Pairs } from "./hooks";
+import { SafeswapV2Pairs, useSafeswapV2Pairs } from "./hooks";
 import ERC20TokenLogoComponent from "../../components/ERC20TokenLogoComponent";
 const { Text, Link } = Typography;
 
 export const SafeswapV2_Fee_Rate = "0.003";
-export const SafeswapV2_Default_SlippageTolerance = 0.005;
+export const SafeswapV2_Default_SlippageTolerance = "0.005"; // "0.5%"
 
 export enum PriceType {
   A2B = "A2B",
   B2A = "B2A"
 }
-
 export const Default_Safeswap_Tokens = (chainId: Safe4NetworkChainId) => {
   return [
     USDT[chainId],
@@ -36,7 +35,6 @@ export const Default_Safeswap_Tokens = (chainId: Safe4NetworkChainId) => {
     // new Token(ChainId.MAINNET, "0xb9FE8cBC71B818035AcCfd621d204BAa57377FFA", 18, "TKB", "Token-B")
   ]
 }
-export const Default_SlippageTolerance = "0.01"; // 1%
 
 export function parseTokenData(token: any): Token | undefined {
   if (token) {
@@ -48,6 +46,12 @@ export function SerializeToken(token: Token | undefined): {
   chainId: number, address: string, decimals: number, name?: string, symbol?: string
 } | undefined {
   return token ? { ...token } : undefined;
+}
+
+export function getSlippageTolerancePercent(slippageTolerance: string): Percent {
+  const a = ethers.utils.parseUnits(slippageTolerance);
+  const b = ethers.utils.parseUnits("1");
+  return new Percent(a.toString(), b.toString());
 }
 
 export function isDecimalPrecisionExceeded(amount: string, token: Token | undefined): boolean {
@@ -64,12 +68,14 @@ export function isDecimalPrecisionExceeded(amount: string, token: Token | undefi
 }
 
 export default ({
-  goToAddLiquidity
+  goToAddLiquidity,
+  safeswapV2Pairs
 }: {
-  goToAddLiquidity: () => void
+  goToAddLiquidity: () => void,
+  safeswapV2Pairs: SafeswapV2Pairs
 }) => {
-  const { loading, result } = useSafeswapV2Pairs();
-  const pairsMap  = result?.pairsMap;
+  const { loading, result } = safeswapV2Pairs;
+  const pairsMap = result && result.pairsMap;
   const { t } = useTranslation();
   const { chainId } = useWeb3React();
   const signer = useWalletsActiveSigner()
@@ -332,7 +338,7 @@ export default ({
             <Text type="secondary" strong>滑点容差</Text>
           </Col>
           <Col span={12} style={{ textAlign: "right" }}>
-            <Text>{slippageTolerance * 100}%</Text>
+            <Text>{getSlippageTolerancePercent(slippageTolerance).toSignificant()}%</Text>
           </Col>
         </Row>
       </>
@@ -343,15 +349,16 @@ export default ({
   const RenderTradeResult = () => {
     if (trade) {
       const tradeType = trade.tradeType;
-      const slippage = new Percent(slippageTolerance * 1000 + "", "1000");
+      const slippagePercent = getSlippageTolerancePercent(slippageTolerance);
       if (tradeType == TradeType.EXACT_INPUT) {
         return <Row>
           <Col span={6}>
+
             <Text type="secondary">最少获得</Text>
           </Col>
           <Col span={18} style={{ textAlign: "right" }}>
             <Text strong style={{ marginRight: "5px" }}>
-              {trade.minimumAmountOut(slippage).toSignificant()}
+              {trade.minimumAmountOut(slippagePercent).toSignificant()}
             </Text>
             <Text strong>
               {tokenB ? tokenB.symbol : "SAFE"}
@@ -365,7 +372,7 @@ export default ({
           </Col>
           <Col span={18} style={{ textAlign: "right" }}>
             <Text strong style={{ marginRight: "5px" }}>
-              {trade.maximumAmountIn(slippage).toSignificant()}
+              {trade.maximumAmountIn(slippagePercent).toSignificant()}
             </Text>
             <Text strong>
               {tokenA ? tokenA.symbol : "SAFE"}
@@ -376,14 +383,13 @@ export default ({
     }
   }
 
-
   return <>
     <Spin spinning={loading}>
       <Row>
         <Col span={24}>
           <Text type="secondary" strong>{t("wallet_crosschain_select_token")}</Text>
           <Text type="secondary" style={{ float: "right" }}>可用余额:
-            {balanceOfTokenA && ViewFiexdAmount(balanceOfTokenA, tokenA, 4)}
+            {balanceOfTokenA && balanceOfTokenA.toSignificant()}
           </Text>
         </Col>
         <Col span={16}>
@@ -522,7 +528,7 @@ export default ({
       </Row>
     </Spin>
     {
-      tokenInAmount && tokenOutAmount && trade && <>
+      tokenInAmount && tokenOutAmount && trade && openSwapConfirmModal && <>
         <SwapConfirm openSwapConfirmModal={openSwapConfirmModal} setOpenSwapConfirmModal={setOpenSwapConfirmModal}
           tokenA={tokenA} tokenB={tokenB}
           tokenInAmount={tokenInAmount} tokenOutAmount={tokenOutAmount}

@@ -100,7 +100,16 @@ export interface PairResult {
   reservers: [ethers.BigNumber, ethers.BigNumber]
 }
 
-export function useSafeswapV2Pairs() {
+export interface SafeswapV2Pairs {
+  loading: boolean,
+  result: {
+    pairsMap: { [address: string]: Pair } ,
+    pairBalancesMap: { [address: string]: ethers.BigNumber } ,
+    pairTotalSuppliesMap: { [address: string]: ethers.BigNumber } 
+  } | undefined
+}
+
+export function useSafeswapV2Pairs() : SafeswapV2Pairs {
 
   const blockNumber = useBlockNumber();
   const { chainId, provider } = useWeb3React();
@@ -184,6 +193,6 @@ export function useSafeswapV2Pairs() {
     }
   }, [pairResults, erc20Tokens]);
   return {
-    result , loading
+    result, loading
   }
 }
