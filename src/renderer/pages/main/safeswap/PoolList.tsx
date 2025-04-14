@@ -10,6 +10,7 @@ import { applicationUpdateSafeswapTokens } from "../../../state/application/acti
 import { Safe4NetworkChainId, USDT, WSAFE } from "../../../config";
 import { SafeswapV2Pairs, useSafeswapV2Pairs } from "./hooks";
 import { calculatePairAddress } from "./Calculate";
+import { useTranslation } from "react-i18next";
 
 const { Text } = Typography;
 
@@ -23,15 +24,17 @@ export interface PairPool {
 }
 
 export default ({
-  setAssetPoolModule , 
+  setAssetPoolModule,
   safeswapV2Pairs
 }: {
   setAssetPoolModule: (assetPoolModule: AssetPoolModule) => void,
   safeswapV2Pairs: SafeswapV2Pairs
 }) => {
+
+  const { t } = useTranslation();
   const dispatch = useDispatch();
   const { chainId } = useWeb3React();
-  const { loading , result } = safeswapV2Pairs;
+  const { loading, result } = safeswapV2Pairs;
   const pairsMap = result && result.pairsMap;
   const pairBalancesMap = result && result.pairBalancesMap;
   const pairTotalSuppliesMap = result && result.pairTotalSuppliesMap;
@@ -66,15 +69,15 @@ export default ({
 
   return <>
     <Button onClick={() => addLiquidity(undefined, undefined)} type="primary" style={{ width: "100%", height: "60px" }} size="large">
-      添加流动性
+      {t("wallet_safeswap_addliquiditiy")}
     </Button>
     <Divider />
-    <Text type="secondary">已添加仓位</Text>
+    <Text type="secondary">{t("wallet_safeswap_liquiditylist")}</Text>
     <Spin spinning={loading}>
       {
         activePairs && activePairs.length == 0 &&
         <Row style={{ height: "60px", background: "#efefef", width: "100%" }}>
-          <Text strong type="secondary" style={{ margin: "auto" }}>未加入流动性</Text>
+          <Text strong type="secondary" style={{ margin: "auto" }}>{t("wallet_safeswap_liquidity_none")}</Text>
         </Row>
       }
       {
@@ -110,23 +113,23 @@ export default ({
                   </>,
                   children: <Row>
                     <Col span={24}>
-                      <Text>库存 {token0.symbol}</Text>
+                      <Text>{t("wallet_safeswap_reserve")} {token0.symbol}</Text>
                       <Text type="secondary" style={{ float: "right" }}>{reserve0.toSignificant()}</Text>
                     </Col>
                     <Col span={24}>
-                      <Text>库存 {token1.symbol}</Text>
+                      <Text>{t("wallet_safeswap_reserve")} {token1.symbol}</Text>
                       <Text type="secondary" style={{ float: "right" }}>{reserve1.toSignificant()}</Text>
                     </Col>
                     <Col span={24}>
-                      <Text strong>存入 {token0.symbol}</Text>
+                      <Text strong>{t("wallet_safeswap_reserved")} {token0.symbol}</Text>
                       <Text strong style={{ float: "right" }}>{token0Amount.toSignificant(4)}</Text>
                     </Col>
                     <Col span={24}>
-                      <Text strong>存入 {token1.symbol}</Text>
+                      <Text strong>{t("wallet_safeswap_reserved")} {token1.symbol}</Text>
                       <Text strong style={{ float: "right" }}>{token1Amount.toSignificant(4)}</Text>
                     </Col>
                     <Col span={24}>
-                      <Text>价格</Text>
+                      <Text>{t("wallet_safeswap_price")}</Text>
                     </Col>
                     <Col span={12}>
                       <Col span={24} style={{ textAlign: "center" }}>
@@ -146,10 +149,10 @@ export default ({
                     </Col>
                     <Divider />
                     <Col span={12} style={{ textAlign: "center" }}>
-                      <Button onClick={() => addLiquidity(_token0, _token1)}>添加</Button>
+                      <Button onClick={() => addLiquidity(_token0, _token1)}>{t("wallet_safeswap_liquidity_add")}</Button>
                     </Col>
                     <Col span={12} style={{ textAlign: "center" }}>
-                      <Button onClick={() => removeLiquidity(_token0, _token1)}>移除</Button>
+                      <Button onClick={() => removeLiquidity(_token0, _token1)}>{t("wallet_safeswap_liquidity_remove")}</Button>
                     </Col>
                   </Row>
                 }

@@ -4,6 +4,7 @@ import AddLiquidity from "./AddLiquidity";
 import { SafeswapV2Pairs } from "./hooks";
 import PoolList from "./PoolList";
 import RemoveLiquidity from "./RemoveLiquidity";
+import { useTranslation } from "react-i18next";
 
 export enum AssetPoolModule {
   List = "List",
@@ -18,7 +19,7 @@ export default ({
   _assetPoolModule?: AssetPoolModule,
   safeswapV2Pairs: SafeswapV2Pairs
 }) => {
-  const [assetPoolModule, setAssetPoolModule] = useState<AssetPoolModule>(_assetPoolModule ? _assetPoolModule : AssetPoolModule.List);
+  const [assetPoolModule, setAssetPoolModule] = useState<AssetPoolModule>(_assetPoolModule ? _assetPoolModule : AssetPoolModule.Remove);
   return <>
     {
       assetPoolModule == AssetPoolModule.Add && <AddLiquidity safeswapV2Pairs={safeswapV2Pairs} setAssetPoolModule={setAssetPoolModule} />

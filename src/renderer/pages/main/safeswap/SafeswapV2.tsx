@@ -6,6 +6,7 @@ import AssetPool, { AssetPoolModule } from "./AssetPool";
 import { SettingFilled, SettingOutlined } from "@ant-design/icons";
 import SlippageSetting from "./SlippageSetting";
 import { useSafeswapV2Pairs } from "./hooks";
+import { useTranslation } from "react-i18next";
 const { Title, Text, Link } = Typography;
 
 const enum ActiveModule {
@@ -14,7 +15,9 @@ const enum ActiveModule {
 }
 
 export default () => {
-  const [activeModule, setActiveModule] = useState<ActiveModule>(ActiveModule.Swap);
+
+  const { t } = useTranslation();
+  const [activeModule, setActiveModule] = useState<ActiveModule>(ActiveModule.AssetsPool);
   const [_assetPoolModule, set_AssetPoolModule] = useState<AssetPoolModule>();
   const goToAddLiquidity = () => {
     set_AssetPoolModule(AssetPoolModule.Add);
@@ -27,7 +30,7 @@ export default () => {
     <Row style={{ height: "50px" }}>
       <Col span={8}>
         <Title level={4} style={{ lineHeight: "16px", float: "left" }}>
-          互兑交易
+          {t("wallet_safeswap")}
         </Title>
       </Col>
     </Row>
@@ -37,7 +40,7 @@ export default () => {
           <Row style={{ marginBottom: "20px" }}>
             <div style={{ width: "50%", margin: "auto" }}>
               <Alert style={{ margin: "auto" }} type="info" message={<>
-                使用 Safeswap 在 Safe4 网络中进行代币互兑交易
+                {t("wallet_safeswap_swap_tip0")}
               </>}></Alert>
             </div>
           </Row>
@@ -47,19 +50,19 @@ export default () => {
               <Col span={12} style={{ textAlign: "center" }}>
                 <Button onClick={() => setActiveModule(ActiveModule.Swap)}
                   style={{ fontSize: "28px", height: "60px", color: activeModule == ActiveModule.Swap ? "black" : "#b9a4a4" }} type="text">
-                  兑换
+                  {t("wallet_safeswap_swap")}
                 </Button>
               </Col>
               <Col span={12} style={{ textAlign: "center" }}>
                 <Button onClick={() => setActiveModule(ActiveModule.AssetsPool)}
                   style={{ fontSize: "28px", height: "60px", color: activeModule == ActiveModule.AssetsPool ? "black" : "#b9a4a4" }} type="text">
-                  资金池
+                  {t("wallet_safeswap_liquiditypool")}
                 </Button>
                 <Popover placement="rightTop" content={<>
                   <div style={{ width: "300px" }}>
                     <SlippageSetting />
                   </div>
-                </>} title="设置" trigger="click">
+                </>} title={t("wallet_safeswap_settings")} trigger="click">
                   <SettingOutlined style={{ float: "right" }} />
                 </Popover>
               </Col>

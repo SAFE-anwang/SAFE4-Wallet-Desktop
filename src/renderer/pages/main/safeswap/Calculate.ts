@@ -60,6 +60,9 @@ export function calculatePairAddress(_tokenA: Token | undefined, _tokenB: Token 
   }
   const tokenA: Token = _tokenA ? _tokenA : WSAFE[chainId as Safe4NetworkChainId];
   const tokenB: Token = _tokenB ? _tokenB : WSAFE[chainId as Safe4NetworkChainId];
+  if ( tokenA.address == tokenB.address ){
+    return undefined;
+  }
   const [token0, token1] = tokenA.address.toLowerCase() < tokenB.address.toLowerCase() ? [tokenA.address, tokenB.address] : [tokenB.address, tokenA.address];
   const pairAddress = ethers.utils.getCreate2Address(
     SafeswapV2FactoryAddreess,

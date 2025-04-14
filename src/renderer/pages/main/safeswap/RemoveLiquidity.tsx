@@ -194,7 +194,7 @@ export default ({
             setAssetPoolModule(AssetPoolModule.List);
           }} style={{ float: "left", fontSize: "20px" }} />
           <Text style={{ width: "100%", fontSize: "20px", lineHeight: "20px" }}>
-            移除流动性
+            {t("wallet_safeswap_liquidity_removeliquidity")}
           </Text>
         </Col>
         <Divider style={{ marginTop: "20px", marginBottom: "20px" }} />
@@ -202,7 +202,7 @@ export default ({
 
       <Row>
         <Col span={24}>
-          <Text type="secondary" strong>数量</Text>
+          <Text type="secondary" strong>{t("wallet_safeswap_liquidity_removeamount")}</Text>
         </Col>
         <Col span={24}>
           <Text strong style={{ fontSize: "60px" }}>{inputValue}%</Text>
@@ -282,7 +282,7 @@ export default ({
 
       <Row>
         <Col span={24}>
-          <Text strong type="secondary">当前仓位</Text>
+          <Text strong type="secondary">{t("wallet_safeswap_liquidity_currentposition")}</Text>
         </Col>
         <Col span={24} style={{ marginTop: "5px" }}>
           <Row>
@@ -311,7 +311,7 @@ export default ({
             </Col>
             <Col span={12} style={{ textAlign: "right" }}>
               <Text type="secondary">
-                {activeAccountToken0Reserve && JSON.stringify(typeof activeAccountToken0Reserve)}
+                {activeAccountToken0Reserve && ViewFiexdAmount(activeAccountToken0Reserve, token1)}
               </Text>
             </Col>
           </Row>

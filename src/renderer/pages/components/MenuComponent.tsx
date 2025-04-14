@@ -47,7 +47,7 @@ const MenuComponent: React.FC = () => {
       getItem(t("safe3AssetRedeem"), '/main/safe3nav', <ApiOutlined />),
       getItem(t("contract"), '/main/contracts', <FileZipOutlined />),
       getItem(t("wallet_crosschain"), '/main/crosschain', <SyncOutlined />),
-      getItem(t("wallet_swap"), '/main/swap', <SwapOutlined />),
+      getItem(t("wallet_safeswap"), '/main/swap', <SwapOutlined />),
       getItem(t("getTestCoin"), '/main/gettestcoin', <GiftOutlined />),
     ]
   }, [t]);

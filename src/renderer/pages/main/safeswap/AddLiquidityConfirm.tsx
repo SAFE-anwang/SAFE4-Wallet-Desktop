@@ -21,7 +21,6 @@ import { getSlippageTolerancePercent } from "./Swap";
 const { Text } = Typography;
 
 export function getSlippageToleranceBigInteger(slippageTolerance: string) {
-  // 0.0051 
   const a = ethers.utils.parseUnits(slippageTolerance, 4);
   const b = ethers.utils.parseUnits("1", 4);
   return b.sub(a);
@@ -78,7 +77,9 @@ export default ({
           getSlippageToleranceBigInteger(slippageTolerance)
         ).div(10000);
         const value = ethers.utils.parseEther(tokenAAmount);
-        const valueMin = value.mul(Number(slippageTolerance) * 1000).div(1000);
+        const valueMin = value.mul(
+          getSlippageToleranceBigInteger(slippageTolerance)
+        ).div(10000);
         SwapV2RouterContract.addLiquidityETH(
           tokenB.address,
           amountTokenDesired,
@@ -175,7 +176,7 @@ export default ({
   }
 
   return <>
-    <Modal title="添加流动性" footer={null} open={openAddConfirmModal} destroyOnClose onCancel={cancel} >
+    <Modal title={t("wallet_safeswap_addliquiditiy")} footer={null} open={openAddConfirmModal} destroyOnClose onCancel={cancel} >
       <Divider />
       {
         render
@@ -220,7 +221,7 @@ export default ({
       <Row style={{ marginTop: "20px" }}>
         <Col span={24}>
           <Text italic>
-            兑换结果是预估的. 如果价格波动超过 <Text strong>{getSlippageTolerancePercent(slippageTolerance).toSignificant()}% </Text>,您的交易将会被撤回
+            {t("wallet_safeswap_liquidity_tip0")} <Text strong>{getSlippageTolerancePercent(slippageTolerance).toSignificant()}% </Text>,{t("wallet_safeswap_liquidity_tip1")}
           </Text>
         </Col>
       </Row>

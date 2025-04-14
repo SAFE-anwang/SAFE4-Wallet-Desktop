@@ -5,7 +5,7 @@ import { ArrowDownOutlined, SendOutlined, SwapLeftOutlined } from "@ant-design/i
 import { Pair, Percent, Token, TokenAmount, Trade, TradeType } from "@uniswap/sdk";
 import ERC20TokenLogoComponent from "../../components/ERC20TokenLogoComponent";
 import { useWeb3React } from "@web3-react/core";
-import { useContract, useSafeswapV2Router } from "../../../hooks/useContracts";
+import { useContract, useSafeswapV2Router, useWSAFEContract } from "../../../hooks/useContracts";
 import { useSafeswapSlippageTolerance, useTimestamp } from "../../../state/application/hooks";
 import { ethers } from "ethers";
 import { useWalletsActiveAccount } from "../../../state/wallets/hooks";
@@ -32,13 +32,14 @@ export default ({
   tokenB: undefined | Token,
   tokenInAmount: string,
   tokenOutAmount: string,
-  trade: Trade
+  trade: Trade | undefined
 }) => {
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { t } = useTranslation();
   const SwapV2RouterContract = useSafeswapV2Router(true);
+  const WSAFEContract = useWSAFEContract(true);
   const timestamp = useTimestamp();
   const activeAccount = useWalletsActiveAccount();
   const addTransaction = useTransactionAdder();
@@ -62,15 +63,60 @@ export default ({
   const slippageTolerance = useSafeswapSlippageTolerance();
   const slippage = getSlippageTolerancePercent(slippageTolerance);
 
-  const swap = () => {
-    if (SwapV2RouterContract) {
-      setSending(true);
+  const doSwap = () => {
+    trade ? swap() : wrapOrUnwrap();
+  }
 
+  const wrapOrUnwrap = () => {
+    if (WSAFEContract) {
+      setSending(true);
+      if (tokenA == undefined && tokenB) {
+        const value = ethers.utils.parseEther(tokenInAmount);
+        WSAFEContract.deposit({ value })
+          .then((response: any) => {
+            const { hash, data } = response;
+            setTransactionResponse(response);
+            addTransaction({ to: WSAFEContract.address }, response, {
+              call: {
+                from: activeAccount,
+                to: WSAFEContract.address,
+                input: data,
+                value: value.toString(),
+              }
+            });
+            setTxHash(hash);
+          }).catch((err: any) => {
+            setErr(err);
+          })
+      } else if (tokenB == undefined && tokenA) {
+        const value = ethers.utils.parseEther(tokenInAmount);
+        WSAFEContract.withdraw(value)
+          .then((response: any) => {
+            const { hash, data } = response;
+            setTransactionResponse(response);
+            addTransaction({ to: WSAFEContract.address }, response, {
+              call: {
+                from: activeAccount,
+                to: WSAFEContract.address,
+                input: data,
+                value: "0",
+              }
+            });
+            setTxHash(hash);
+          }).catch((err: any) => {
+            setErr(err);
+          })
+      }
+    }
+  }
+
+  const swap = () => {
+    if (SwapV2RouterContract && trade) {
+      setSending(true);
       const path = trade.route.path.map(token => token.address);
       const tradeType: TradeType = trade.tradeType;
       const deadline = timestamp + 60 * 10;
       const to = activeAccount;
-
       if (tradeType == TradeType.EXACT_INPUT) {
         const amountIn = ethers.BigNumber.from(trade.inputAmount.raw.toString());
         const amountOutMin = ethers.BigNumber.from(trade.minimumAmountOut(slippage).raw.toString());
@@ -229,7 +275,7 @@ export default ({
       {
         price && <Row style={{ marginTop: "20px" }}>
           <Col span={24}>
-            <Text type="secondary">价格</Text>
+            <Text type="secondary">{t("wallet_safeswap_price")}</Text>
           </Col>
           <Col span={12}>
             <Col span={24} style={{ textAlign: "center" }}>
@@ -253,25 +299,27 @@ export default ({
   }
 
   const RenderSwapSplippageTip = () => {
-    const tradeType = trade.tradeType;
-    if (tradeType == TradeType.EXACT_INPUT) {
-      const amountOutMin = trade.minimumAmountOut(slippage);
-      return <Row style={{ marginTop: "20px" }}>
-        <Col span={24}>
-          <Text italic>
-            兑换结果是预估的,您将最少得到 <Text strong>{amountOutMin.toSignificant()} {tokenB ? tokenB.symbol : "SAFE"}</Text>或者这笔交易将会被撤回
-          </Text>
-        </Col>
-      </Row>
-    } else if (tradeType == TradeType.EXACT_OUTPUT) {
-      const amountInMax = trade.maximumAmountIn(slippage);
-      return <Row style={{ marginTop: "20px" }}>
-        <Col span={24}>
-          <Text italic>
-            兑换结果是预估的,您将最多支付 <Text strong>{amountInMax.toSignificant()} {tokenA ? tokenA.symbol : "SAFE"}</Text>或者这笔交易将会被撤回
-          </Text>
-        </Col>
-      </Row>
+    if (trade) {
+      const tradeType = trade.tradeType;
+      if (tradeType == TradeType.EXACT_INPUT) {
+        const amountOutMin = trade.minimumAmountOut(slippage);
+        return <Row style={{ marginTop: "20px" }}>
+          <Col span={24}>
+            <Text italic>
+              {t("wallet_safeswap_traderesulttip0")} <Text strong>{amountOutMin.toSignificant()} {tokenB ? tokenB.symbol : "SAFE"}</Text> {t("wallet_safeswap_traderesulttip1")}
+            </Text>
+          </Col>
+        </Row>
+      } else if (tradeType == TradeType.EXACT_OUTPUT) {
+        const amountInMax = trade.maximumAmountIn(slippage);
+        return <Row style={{ marginTop: "20px" }}>
+          <Col span={24}>
+            <Text italic>
+              {t("wallet_safeswap_traderesulttip2")} <Text strong>{amountInMax.toSignificant()} {tokenA ? tokenA.symbol : "SAFE"}</Text> {t("wallet_safeswap_traderesulttip0")}
+            </Text>
+          </Col>
+        </Row>
+      }
     }
     return <></>
   }
@@ -294,7 +342,16 @@ export default ({
         </Col>
         <Col span={21}>
           <Text style={{ fontSize: "24px", lineHeight: "40px" }}>
-            -  {trade.inputAmount.toSignificant()} {tokenA ? tokenA.symbol : "SAFE"}
+            {
+              trade && <>
+                -  {trade.inputAmount.toSignificant()} {tokenA ? tokenA.symbol : "SAFE"}
+              </>
+            }
+            {
+              !trade && <>
+                -  {tokenInAmount} {tokenA ? tokenA.symbol : "SAFE"}
+              </>
+            }
           </Text>
         </Col>
       </Row>
@@ -315,7 +372,16 @@ export default ({
         </Col>
         <Col span={21}>
           <Text type="success" style={{ fontSize: "24px", lineHeight: "40px" }}>
-            + {trade.outputAmount.toSignificant()} {tokenB ? tokenB.symbol : "SAFE"}
+            {
+              trade && <>
+                + {trade.outputAmount.toSignificant()} {tokenB ? tokenB.symbol : "SAFE"}
+              </>
+            }
+            {
+              !trade && <>
+                + {tokenOutAmount} {tokenB ? tokenB.symbol : "SAFE"}
+              </>
+            }
           </Text>
         </Col>
       </Row>
@@ -331,7 +397,7 @@ export default ({
         <Col span={24}>
           {
             !sending && !render && <Button icon={<SendOutlined />} onClick={() => {
-              swap();
+              doSwap();
             }} type="primary" style={{ float: "right" }}>
               {t("wallet_send_status_broadcast")}
             </Button>

@@ -109,8 +109,9 @@ export default ({
   );
 
   const pairAddress = chainId && calculatePairAddress(tokenA, tokenB, chainId);
-  const pair = (pairsMap && pairAddress) && pairsMap[pairAddress];
+  const isValidPair = pairAddress != undefined;
 
+  const pair = (pairsMap && pairAddress) && pairsMap[pairAddress];
   const balanceOfTokenA = tokenAmounts && tokenA ? tokenAmounts[tokenA.address] : balance;
   const balanceOfTokenB = tokenAmounts && tokenB ? tokenAmounts[tokenB.address] : balance;
   const [tokenInAmount, setTokenInAmount] = useState<string>();
@@ -119,7 +120,7 @@ export default ({
   const [openSwapConfirmModal, setOpenSwapConfirmModal] = useState<boolean>(false);
 
   const [trade, setTrade] = useState<Trade>();
-  const liquidityNotFound = (!loading && pair == undefined && trade == undefined);
+  const liquidityNotFound = (!loading && pair == undefined && trade == undefined && isValidPair);
 
   const balanceOfTokenANotEnough = useMemo(() => {
     if (tokenInAmount && balanceOfTokenA) {
@@ -148,13 +149,14 @@ export default ({
   const allowanceForRouterOfTokenA = useMemo(() => {
     return tokenAllowanceAmounts && tokenA ? tokenAllowanceAmounts[tokenA.address] : undefined;
   }, [tokenA, tokenAllowanceAmounts]);
+
   const needApproveTokenA = useMemo(() => {
-    if (tokenA && tokenInAmount && allowanceForRouterOfTokenA && !balanceOfTokenANotEnough && !liquidityNotFound) {
+    if (tokenA && tokenInAmount && allowanceForRouterOfTokenA && !balanceOfTokenANotEnough && !liquidityNotFound && isValidPair) {
       const inAmount = new TokenAmount(tokenA, ethers.utils.parseUnits(tokenInAmount, tokenA.decimals).toBigInt());
       return inAmount.greaterThan(allowanceForRouterOfTokenA)
     }
     return false;
-  }, [allowanceForRouterOfTokenA, tokenInAmount, balanceOfTokenANotEnough, liquidityNotFound]);
+  }, [allowanceForRouterOfTokenA, tokenInAmount, balanceOfTokenANotEnough, liquidityNotFound, isValidPair]);
 
   const approveRouter = useCallback(() => {
     if (tokenA && activeAccount && tokenAContract) {
@@ -222,8 +224,12 @@ export default ({
     if (!decimalExceeded && (isValidInput || isValidInput == 0)) {
       setTokenInAmount(_tokenInAmount);
       if (_tokenInAmount && isValidInput != 0) {
-        const tokenOutAmount = calculate(_tokenInAmount, undefined);
-        setTokenOutAmount(tokenOutAmount && tokenOutAmount.toSignificant());
+        if (isValidPair) {
+          const tokenOutAmount = calculate(_tokenInAmount, undefined);
+          setTokenOutAmount(tokenOutAmount && tokenOutAmount.toSignificant());
+        } else {
+          setTokenOutAmount(_tokenInAmount)
+        }
       } else {
         setTokenOutAmount(undefined);
         setTrade(undefined);
@@ -237,11 +243,15 @@ export default ({
     if (!decimalExceeded && (isValidInput || isValidInput == 0)) {
       setTokenOutAmount(_tokenOutAmount);
       if (_tokenOutAmount && isValidInput != 0) {
-        try {
-          const tokenInAmount = calculate(undefined, _tokenOutAmount);
-          setTokenInAmount(tokenInAmount && tokenInAmount.toSignificant());
-        } catch (err) {
+        if (isValidPair) {
+          try {
+            const tokenInAmount = calculate(undefined, _tokenOutAmount);
+            setTokenInAmount(tokenInAmount && tokenInAmount.toSignificant());
+          } catch (err) {
 
+          }
+        } else {
+          setTokenInAmount(_tokenOutAmount);
         }
       } else {
         setTokenInAmount(undefined);
@@ -275,7 +285,7 @@ export default ({
         trade?.route.path && trade.route.path.length > 2 &&
         <Row>
           <Col span={24}>
-            <Text type="secondary">交易路由</Text>
+            <Text type="secondary">{t("wallet_safeswap_route")}</Text>
           </Col>
           <Col span={24}>
             <Card style={{ marginTop: "10px" }}>
@@ -307,7 +317,7 @@ export default ({
       {
         price && <Row style={{ marginTop: "20px" }}>
           <Col span={24}>
-            <Text type="secondary">价格</Text>
+            <Text type="secondary">{t("wallet_safeswap_price")}</Text>
           </Col>
           <Col span={12}>
             <Col span={24} style={{ textAlign: "center" }}>
@@ -335,7 +345,7 @@ export default ({
       return <>
         <Row style={{ marginTop: "15px" }}>
           <Col span={12}>
-            <Text type="secondary" strong>滑点容差</Text>
+            <Text type="secondary" strong>{t("wallet_safeswap_slippageTolrance")}</Text>
           </Col>
           <Col span={12} style={{ textAlign: "right" }}>
             <Text>{getSlippageTolerancePercent(slippageTolerance).toSignificant()}%</Text>
@@ -352,11 +362,10 @@ export default ({
       const slippagePercent = getSlippageTolerancePercent(slippageTolerance);
       if (tradeType == TradeType.EXACT_INPUT) {
         return <Row>
-          <Col span={6}>
-
-            <Text type="secondary">最少获得</Text>
+          <Col span={12}>
+            <Text type="secondary">{t("wallet_safeswap_minreceived")}</Text>
           </Col>
-          <Col span={18} style={{ textAlign: "right" }}>
+          <Col span={12} style={{ textAlign: "right" }}>
             <Text strong style={{ marginRight: "5px" }}>
               {trade.minimumAmountOut(slippagePercent).toSignificant()}
             </Text>
@@ -367,10 +376,10 @@ export default ({
         </Row>
       } else if (tradeType == TradeType.EXACT_OUTPUT) {
         return <Row>
-          <Col span={6}>
-            <Text type="secondary">最多支付</Text>
+          <Col span={12}>
+            <Text type="secondary">{t("wallet_safeswap_maxsold")}</Text>
           </Col>
-          <Col span={18} style={{ textAlign: "right" }}>
+          <Col span={12} style={{ textAlign: "right" }}>
             <Text strong style={{ marginRight: "5px" }}>
               {trade.maximumAmountIn(slippagePercent).toSignificant()}
             </Text>
@@ -387,8 +396,8 @@ export default ({
     <Spin spinning={loading}>
       <Row>
         <Col span={24}>
-          <Text type="secondary" strong>{t("wallet_crosschain_select_token")}</Text>
-          <Text type="secondary" style={{ float: "right" }}>可用余额:
+          <Text type="secondary" strong>{t("wallet_safeswap_from")}</Text>
+          <Text type="secondary" style={{ float: "right" }}>{t("balance_currentavailable")}:
             {balanceOfTokenA && balanceOfTokenA.toSignificant()}
           </Text>
         </Col>
@@ -424,7 +433,7 @@ export default ({
         {
           balanceOfTokenANotEnough && <Col span={24}>
             <Alert style={{ marginTop: "5px" }} showIcon type="error" message={<>
-              账户可用余额不足
+              {t("wallet_safeswap_tokennotenough")}
             </>} />
           </Col>
         }
@@ -436,8 +445,8 @@ export default ({
       </Row>
       <Row>
         <Col span={24}>
-          <Text type="secondary" strong>选择代币</Text>
-          <Text type="secondary" style={{ float: "right" }}>可用余额:
+          <Text type="secondary" strong>{t("wallet_safeswap_to")}</Text>
+          <Text type="secondary" style={{ float: "right" }}>{t("balance_currentavailable")}:
             {balanceOfTokenB && ViewFiexdAmount(balanceOfTokenB, tokenB, 4)}
           </Text>
         </Col>
@@ -470,7 +479,7 @@ export default ({
         {
           reserverOfTokenBNotEnough && <Col span={24}>
             <Alert style={{ marginTop: "5px" }} showIcon type="error" message={<>
-              超过该交易池库存
+              {t("wallet_safeswap_exceedsreserve")}
             </>} />
           </Col>
         }
@@ -493,9 +502,9 @@ export default ({
           <Col span={24}>
             <Alert style={{ width: "100%" }} type="warning" message={<Row>
               <Col span={24}>
-                <Text>未在 Safeswap 中找到该资金池</Text>
+                <Text>{t("wallet_safeswap_notfoundpair")}</Text>
                 <Link onClick={() => goToAddLiquidity()} style={{ float: "right" }}>
-                  添加流动性
+                  {t("wallet_safeswap_addliquiditiy")}
                 </Link>
               </Col>
             </Row>} />
@@ -505,13 +514,13 @@ export default ({
       {
         needApproveTokenA && tokenA && <Col span={24}>
           <Alert style={{ marginTop: "5px", marginBottom: "10px" }} type="warning" message={<>
-            <Text>需要先授权 Safeswap 访问 {tokenA?.symbol}</Text>
+            <Text>{t("wallet_safeswap_needapprovetoken", { spender: "Safeswap", tokenSymbol: tokenA?.symbol })}</Text>
             <Link disabled={approveTokenHash[tokenA?.address]?.execute} onClick={approveRouter} style={{ float: "right" }}>
               {
                 approveTokenHash[tokenA?.address]?.execute && <SyncOutlined spin />
               }
               {
-                approveTokenHash[tokenA?.address] ? "正在授权..." : "点击授权"
+                approveTokenHash[tokenA?.address] ? t("wallet_safeswap_approving") : t("wallet_safeswap_clicktoapprove")
               }
             </Link>
           </>} />
@@ -528,7 +537,7 @@ export default ({
       </Row>
     </Spin>
     {
-      tokenInAmount && tokenOutAmount && trade && openSwapConfirmModal && <>
+      tokenInAmount && tokenOutAmount && (trade || !isValidPair) && openSwapConfirmModal && <>
         <SwapConfirm openSwapConfirmModal={openSwapConfirmModal} setOpenSwapConfirmModal={setOpenSwapConfirmModal}
           tokenA={tokenA} tokenB={tokenB}
           tokenInAmount={tokenInAmount} tokenOutAmount={tokenOutAmount}
