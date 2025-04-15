@@ -1,8 +1,9 @@
 import { FunctionFragment, Interface } from "ethers/lib/utils";
 import { SysContractABI, SystemContract } from "./SystemContracts";
-import { Application_Crosschain, Application_Crosschain_Pool_BSC, Application_Crosschain_Pool_ETH, Application_Crosschain_Pool_MATIC, Safe4NetworkChainId } from "../config";
+import { Application_Crosschain, Application_Crosschain_Pool_BSC, Application_Crosschain_Pool_ETH, Application_Crosschain_Pool_MATIC, Safe4NetworkChainId, SafeswapV2RouterAddress } from "../config";
 import { ethers } from "ethers";
 import ApplicationContractAbiConfig from "./ApplicationContractAbiConfig";
+import { SafeswapV2ABI, SafeswapV2Contract } from "./SafeswapV2Contracts";
 
 
 export enum SupportAccountManagerFunctions {
@@ -47,6 +48,25 @@ export enum SupportSafe3Functions {
 
 export enum SupportCrosschainFunctions {
   Safe2Eth = "eth2safe", // eth2safe(uint256 _value, string memory _safe_dst_address)
+}
+
+export enum SupportSafeswapV2RouterFunctions {
+
+  // swapExactTokensForTokens
+  // swapTokensForExactTokens
+
+  // swapExactETHForTokens
+  // swapETHForExactTokens
+  // swapExactTokensForETH
+  // swapTokensForExactETH
+
+  SwapExactETHForTokens = "swapExactETHForTokens",  // swapExactETHForTokens( uint256 amountOutMin, address[] path, address to, uint256 deadline )
+  SwapETHForExactTokens = "swapETHForExactTokens",  // swapETHForExactTokens( uint256 amountOut, address[] path, address to, uint256 deadline )
+  SwapExactTokensForETH = "swapExactTokensForETH",  // swapExactTokensForETH( uint256 amountIn, uint256 amountOutMin, address[] path, address to, uint256 deadline )
+  SwapTokensForExactETH = "swapTokensForExactETH",  // swapTokensForExactETH( uint256 amountOut, uint256 amountInMax, address[] path, address to, uint256 deadline )
+
+  SwapExactTokensForTokens = "swapExactTokensForTokens", // swapExactTokensForTokens( uint256 amountIn, uint256 amountOutMin, address[] path, address to, uint256 deadline )
+  SwapTokensForExactTokens = "swapTokensForExactTokens", // swapTokensForExactTokens( uint256 amountOut, uint256 amountInMax, address[] path, address to, uint256 deadline )
 }
 
 function decodeProposalFunctionData(IContract: Interface, fragment: FunctionFragment, input: string): {
@@ -303,6 +323,32 @@ function decodeSafe3FunctionData(
   } : undefined;
 }
 
+function decodeSafeswapV2RouterData(
+  IContract: Interface, fragment: FunctionFragment, input: string): {
+    supportFuncName: string,
+    inputDecodeResult: any
+  } | undefined {
+  let formatDecodeResult = undefined;
+  switch (fragment.name) {
+    case SupportSafeswapV2RouterFunctions.SwapExactETHForTokens:
+    case SupportSafeswapV2RouterFunctions.SwapETHForExactTokens:
+    case SupportSafeswapV2RouterFunctions.SwapExactTokensForETH:
+    case SupportSafeswapV2RouterFunctions.SwapTokensForExactETH:
+
+    case SupportSafeswapV2RouterFunctions.SwapExactTokensForTokens:
+    case SupportSafeswapV2RouterFunctions.SwapTokensForExactTokens:
+      const swap = IContract.decodeFunctionData(fragment, input);
+      formatDecodeResult = swap;
+    default:
+      break;
+  }
+  return formatDecodeResult ? {
+    supportFuncName: fragment.name,
+    inputDecodeResult: formatDecodeResult
+  } : undefined;
+}
+
+
 function decodeCrosschainPoolFunctionData(input: string) {
   const decodeData = ethers.utils.toUtf8String(input);
   try {
@@ -385,6 +431,27 @@ export default (address: string | undefined, input: string | undefined, from?: s
   ) {
     return decodeCrosschainFunctionData(input);
   }
+
+  // For SafeswapV2Router / SafeswapV2Factory
+  if (Object.values(SafeswapV2Contract).some(addr => addr == address)) {
+    try {
+      const abi = SafeswapV2ABI[address as SafeswapV2Contract];
+      const IContract = new Interface(abi);
+      const methodId = input.substring(0, 10);
+      const fragment = IContract.getFunction(methodId);
+      if (fragment) {
+        switch (address) {
+          case SafeswapV2Contract.Router:
+            return decodeSafeswapV2RouterData(IContract, fragment, input);
+          default:
+            return undefined;
+        }
+      }
+    } catch (err) {
+      return undefined;
+    }
+  }
+
 
   if (!Object.values(SystemContract).some(addr => addr == address)) {
     return undefined;

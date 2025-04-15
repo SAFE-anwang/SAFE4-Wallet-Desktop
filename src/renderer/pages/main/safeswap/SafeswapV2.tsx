@@ -17,7 +17,7 @@ const enum ActiveModule {
 export default () => {
 
   const { t } = useTranslation();
-  const [activeModule, setActiveModule] = useState<ActiveModule>(ActiveModule.AssetsPool);
+  const [activeModule, setActiveModule] = useState<ActiveModule>(ActiveModule.Swap);
   const [_assetPoolModule, set_AssetPoolModule] = useState<AssetPoolModule>();
   const goToAddLiquidity = () => {
     set_AssetPoolModule(AssetPoolModule.Add);

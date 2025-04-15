@@ -81,7 +81,6 @@ export default ({
                 USDT
               </Button>
             }
-
           </Flex>
         </Col>
         <Divider />
@@ -114,7 +113,7 @@ export default ({
                           <Text strong>{symbol}</Text>
                         </Col>
                         <Col span={14} style={{ lineHeight: "60px", textAlign: "right" }}>
-                          <Text strong style={{ marginRight: "20px" }}>{tokenAmounts && tokenAmounts[address]?.toExact()} </Text>
+                          <Text strong style={{ marginRight: "20px" }}>{tokenAmounts && tokenAmounts[address]?.toSignificant()} </Text>
                         </Col>
                       </Row>
                     </Col>

@@ -668,4 +668,5 @@ export default {
   wallet_safeswap_liquidity_removeliquidity: "Remove Liquidity",
   wallet_safeswap_liquidity_removeamount: "Amount",
   wallet_safeswap_liquidity_currentposition: "Current Position",
+  wallet_safeswap_liquiditiy_willreceive: "Will Receive"
 }

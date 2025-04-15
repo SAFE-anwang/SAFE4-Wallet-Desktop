@@ -19,7 +19,7 @@ export default ({
   _assetPoolModule?: AssetPoolModule,
   safeswapV2Pairs: SafeswapV2Pairs
 }) => {
-  const [assetPoolModule, setAssetPoolModule] = useState<AssetPoolModule>(_assetPoolModule ? _assetPoolModule : AssetPoolModule.Remove);
+  const [assetPoolModule, setAssetPoolModule] = useState<AssetPoolModule>(_assetPoolModule ? _assetPoolModule : AssetPoolModule.List);
   return <>
     {
       assetPoolModule == AssetPoolModule.Add && <AddLiquidity safeswapV2Pairs={safeswapV2Pairs} setAssetPoolModule={setAssetPoolModule} />

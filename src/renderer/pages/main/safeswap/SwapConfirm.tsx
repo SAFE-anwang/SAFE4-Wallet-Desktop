@@ -136,7 +136,7 @@ export default ({
                 to: SwapV2RouterContract.address,
                 input: data,
                 value: "0",
-              }
+              },
             });
             setTxHash(hash);
           }).catch((err: any) => {

@@ -1,5 +1,5 @@
 import React, { useCallback, useMemo } from "react";
-import { SupportSafe3Functions, SupportAccountManagerFunctions, SupportMasternodeLogicFunctions, SupportProposalFunctions, SupportSupernodeLogicFunctions, SupportSupernodeVoteFunctions, isCrosschainPoolTransaction } from "../../../../../constants/DecodeSupportFunction";
+import { SupportSafe3Functions, SupportAccountManagerFunctions, SupportMasternodeLogicFunctions, SupportProposalFunctions, SupportSupernodeLogicFunctions, SupportSupernodeVoteFunctions, isCrosschainPoolTransaction, SupportSafeswapV2RouterFunctions } from "../../../../../constants/DecodeSupportFunction";
 import { SystemContract } from "../../../../../constants/SystemContracts";
 import { TransactionDetails } from "../../../../../state/transactions/reducer";
 import TransactionElementCallAMDeposit from "./TransactionElementCallAMDeposit";
@@ -17,9 +17,10 @@ import TransactionElementCallSNChange from "./TransactionElementCallSNChange";
 import TransactionElementCallMNChange from "./TransactionElementCallMNChange";
 import TransactionElementCallAMAddLockDay from "./TransactionElementCallAMAddLockDay";
 import { useTranslation } from "react-i18next";
-import { Application_Crosschain, Application_Crosschain_Pool_BSC, Safe4NetworkChainId } from "../../../../../config";
+import { Application_Crosschain, Application_Crosschain_Pool_BSC, Safe4NetworkChainId, SafeswapV2RouterAddress } from "../../../../../config";
 import TransactionElementCallCrosschainPool from "./TransactionElementCallCrosschainPool";
 import TransactionElementCallCrosschain from "./TransactionElementCallCrosschain";
+import TransactionElementCallSafeswapV2Router from "./TransactionElementCallSafeswapV2Router";
 
 export default ({ transaction, setClickTransaction, support }: {
   transaction: TransactionDetails,
@@ -50,14 +51,37 @@ export default ({ transaction, setClickTransaction, support }: {
         return CallSafe3FunsRender(support.supportFuncName, transaction, setClickTransaction, support)
       case Application_Crosschain[Safe4NetworkChainId.Testnet] || Application_Crosschain[Safe4NetworkChainId.Mainnet]:
         return CallCrosschainFunsRender(support.supportFuncName, transaction, setClickTransaction, support);
+      case SafeswapV2RouterAddress:
+        return CallSafeswapV2RouterRender(support.supportFuncName, transaction, setClickTransaction, support);
       default:
-        if ( isCrosschainPoolTransaction(to , from) ){
+        if (isCrosschainPoolTransaction(to, from)) {
           return CallCrosschainPoolFunsRender(support.supportFuncName, transaction, setClickTransaction, support);
         }
         return <>No support Contract-Function-Render</>
     }
     return <></>
   }, [transaction, setClickTransaction, support]);
+
+  const CallSafeswapV2RouterRender = (funcName: string, transaction: TransactionDetails, setClickTransaction: (transaction: TransactionDetails) => void, support: any) => {
+    switch (funcName) {
+      case SupportSafeswapV2RouterFunctions.SwapExactETHForTokens:
+      case SupportSafeswapV2RouterFunctions.SwapETHForExactTokens:
+
+      case SupportSafeswapV2RouterFunctions.SwapExactTokensForETH:
+      case SupportSafeswapV2RouterFunctions.SwapTokensForExactETH:
+
+      case SupportSafeswapV2RouterFunctions.SwapExactTokensForTokens:
+      case SupportSafeswapV2RouterFunctions.SwapTokensForExactTokens:
+
+        return <TransactionElementCallSafeswapV2Router
+          transaction={transaction}
+          setClickTransaction={setClickTransaction}
+          support={support}
+        />
+      default:
+        return <></>
+    }
+  }
 
   const CallCrosschainFunsRender = (funcName: string, transaction: TransactionDetails, setClickTransaction: (transaction: TransactionDetails) => void, support: any) => {
     return <TransactionElementCallCrosschain

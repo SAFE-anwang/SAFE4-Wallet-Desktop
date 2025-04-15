@@ -178,14 +178,14 @@ export default ({
     }
   }
 
-  return <Modal title="移除流动性" footer={null} open={openRemoveConfirmModal} destroyOnClose onCancel={cancel}>
+  return <Modal title={t("wallet_safeswap_liquidity_removeliquidity")} footer={null} open={openRemoveConfirmModal} destroyOnClose onCancel={cancel}>
     <Divider />
     {
       render
     }
     <Row>
       <Col span={24} style={{ marginBottom: "10px" }}>
-        <Text strong>将收到</Text>
+        <Text strong>{t("wallet_safeswap_liquiditiy_willreceive")}</Text>
       </Col>
       <Col span={3}>
         {
@@ -225,7 +225,7 @@ export default ({
     </Row>
     <Row style={{ marginTop: "20px" }}>
       <Col span={24}>
-        <Text italic>兑换结果是预估的. 如果价格波动超过 {getSlippageTolerancePercent(slippageTolerance).toSignificant()}% 您的交易将会被撤回.</Text>
+        <Text italic>{t("wallet_safeswap_liquidity_tip0")} {getSlippageTolerancePercent(slippageTolerance).toSignificant()}% {t("wallet_safeswap_liquidity_tip1")}</Text>
       </Col>
     </Row>
     <Divider />

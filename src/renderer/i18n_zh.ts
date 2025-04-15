@@ -668,4 +668,5 @@ export default {
   wallet_safeswap_liquidity_removeliquidity:"移除流动性",
   wallet_safeswap_liquidity_removeamount:"数量",
   wallet_safeswap_liquidity_currentposition:"当前仓位",
+  wallet_safeswap_liquiditiy_willreceive:"将收到"
 }

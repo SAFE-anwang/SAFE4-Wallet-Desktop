@@ -128,6 +128,7 @@ export default ({ transaction, setClickTransaction, support }: {
   return <>
     <List.Item onClick={() => { setClickTransaction(transaction) }} key={transaction.hash} className="history-element" style={{ paddingLeft: "15px", paddingRight: "15px" }}>
       <List.Item.Meta
+        key={transaction.hash}
         avatar={
           <>
             <span>
