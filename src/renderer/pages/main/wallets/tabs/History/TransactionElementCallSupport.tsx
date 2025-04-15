@@ -21,6 +21,8 @@ import { Application_Crosschain, Application_Crosschain_Pool_BSC, Safe4NetworkCh
 import TransactionElementCallCrosschainPool from "./TransactionElementCallCrosschainPool";
 import TransactionElementCallCrosschain from "./TransactionElementCallCrosschain";
 import TransactionElementCallSafeswapV2Router from "./TransactionElementCallSafeswapV2Router";
+import TransactionElementCallSafeswapV2RouterLiquidity from "./TransactionElementCallSafeswapV2RouterLiquidity";
+import TransactionElementCallSafeswapV2RouterLiquidityRemove from "./TransactionElementCallSafeswapV2RouterLiquidityRemove";
 
 export default ({ transaction, setClickTransaction, support }: {
   transaction: TransactionDetails,
@@ -78,6 +80,23 @@ export default ({ transaction, setClickTransaction, support }: {
           setClickTransaction={setClickTransaction}
           support={support}
         />
+
+      case SupportSafeswapV2RouterFunctions.AddLiquidityETH:
+      case SupportSafeswapV2RouterFunctions.AddLiquidity:
+        return <TransactionElementCallSafeswapV2RouterLiquidity
+          transaction={transaction}
+          setClickTransaction={setClickTransaction}
+          support={support}
+        />
+
+      case SupportSafeswapV2RouterFunctions.RemoveLiquidityETHWithPermit:
+      case SupportSafeswapV2RouterFunctions.RemoveLiquidityWithPermit:
+        return <TransactionElementCallSafeswapV2RouterLiquidityRemove
+          transaction={transaction}
+          setClickTransaction={setClickTransaction}
+          support={support}
+        />
+
       default:
         return <></>
     }

@@ -68,86 +68,77 @@ export default ({ transaction, setClickTransaction, support }: {
     let swapTo: string | undefined = undefined;
 
     if (supportFuncName == SupportSafeswapV2RouterFunctions.SwapExactETHForTokens
-      || supportFuncName == SupportSafeswapV2RouterFunctions.SwapETHForExactTokens
-      || supportFuncName == SupportSafeswapV2RouterFunctions.SwapExactTokensForETH
-      || supportFuncName == SupportSafeswapV2RouterFunctions.SwapTokensForExactETH) {
-
-      if (supportFuncName == SupportSafeswapV2RouterFunctions.SwapExactETHForTokens
-        || supportFuncName == SupportSafeswapV2RouterFunctions.SwapETHForExactTokens) {
-        // swapExactETHForTokens( uint256 amountOutMin, address[] path, address to, uint256 deadline)
-        // swapETHForExactTokens( uint256 amountOut, address[] path, address to, uint256 deadline )
-        let path = inputDecodeResult[1];
-        let to = inputDecodeResult[2];
-        swapTo = to;
-        const tokenBAddress: string = path[path.length - 1];
-        tokenB = tokensMap && tokensMap[tokenBAddress];
-        let tokenAInput = call?.value;
-        tokenAAmount = tokenAInput ? CurrencyAmount.ether(tokenAInput) : undefined;
-
-        const tokenBReceives = tokenTransfers && Object.values(tokenTransfers).filter(tokenTransfer => {
-          return tokenTransfer.to == to && tokenTransfer.token.address.toLocaleLowerCase() == tokenBAddress.toLocaleLowerCase();
-        });
-        if (tokenB == undefined && tokenBReceives && tokenBReceives.length > 0 && chainId) {
+      || supportFuncName == SupportSafeswapV2RouterFunctions.SwapETHForExactTokens) {
+      // swapExactETHForTokens( uint256 amountOutMin, address[] path, address to, uint256 deadline)
+      // swapETHForExactTokens( uint256 amountOut, address[] path, address to, uint256 deadline )
+      let path = inputDecodeResult[1];
+      let to = inputDecodeResult[2];
+      swapTo = to;
+      const tokenBAddress: string = path[path.length - 1];
+      tokenB = tokensMap && tokensMap[tokenBAddress];
+      let tokenAInput = call?.value;
+      tokenAAmount = tokenAInput ? CurrencyAmount.ether(tokenAInput) : undefined;
+      const tokenBReceives = tokenTransfers && Object.values(tokenTransfers).filter(tokenTransfer => {
+        return tokenTransfer.to == to && tokenTransfer.token.address.toLocaleLowerCase() == tokenBAddress.toLocaleLowerCase();
+      });
+      if (tokenBReceives && tokenBReceives.length > 0) {
+        if (!tokenB && chainId) {
           const { symbol, name, decimals, address } = tokenBReceives[0].token;
           tokenB = new Token(chainId, address, decimals, symbol, name);
         }
-        tokenBAmount = tokenB && tokenBReceives?.reduce((tokenAmount, tokenTransfer) => {
+        tokenBAmount = tokenB && tokenBReceives.reduce((tokenAmount, tokenTransfer) => {
           const receive = new TokenAmount(tokenAmount.token, tokenTransfer.value);
           return tokenAmount.add(receive);
         }, new TokenAmount(tokenB, "0"));
-        const tokenAReceives = internalTransfers && Object.values(internalTransfers).filter(internalTransfer => {
-          return internalTransfer.to == to;
-        })
-        if (tokenAAmount && tokenAReceives && tokenAReceives.length > 0) {
-          tokenAAmount = tokenAReceives.reduce((tokenAAmount, internalTransfer) => {
-            return tokenAAmount.subtract(CurrencyAmount.ether(internalTransfer.value));
-          }, tokenAAmount);
-        }
-
       }
-      if (supportFuncName == SupportSafeswapV2RouterFunctions.SwapExactTokensForETH
-        || supportFuncName == SupportSafeswapV2RouterFunctions.SwapTokensForExactETH
-      ) {
-        let path = inputDecodeResult[2];
-        const tokenAAddress: string = path[0];
-        let to = inputDecodeResult[3];
-        swapTo = to;
-        tokenA = tokensMap && tokensMap[tokenAAddress];
-        if (supportFuncName == SupportSafeswapV2RouterFunctions.SwapExactTokensForETH) {
-          // swapExactTokensForETH( uint256 amountIn, uint256 amountOutMin, address[] path, address to, uint256 deadline )
-          let amountIn = inputDecodeResult[0];
-          tokenAAmount = tokenA && new TokenAmount(tokenA, amountIn);
-          const tokenBReceives = internalTransfers && Object.values(internalTransfers).filter(internalTransfer => {
-            return internalTransfer.to == to;
-          });
-          tokenBAmount = tokenBReceives && tokenBReceives.reduce((tokenBAmount, internalTransfer) => {
-            return tokenBAmount.add(CurrencyAmount.ether(internalTransfer.value));
-          }, CurrencyAmount.ether("0"))
-        } else if (supportFuncName == SupportSafeswapV2RouterFunctions.SwapTokensForExactETH) {
-          // swapTokensForExactETH( uint256 amountOut, uint256 amountInMax, address[] path, address to, uint256 deadline )
-          let amountIn = inputDecodeResult[1];
-          tokenAAmount = tokenA && new TokenAmount(tokenA, amountIn);
-          const tokenASpents = tokenTransfers && Object.values(tokenTransfers).filter(tokenTransfer => {
-            return tokenTransfer.token.address.toLocaleLowerCase() == tokenA?.address.toLocaleLowerCase()
-              && tokenTransfer.from == to;
-          });
-          if (tokenA && tokenASpents != undefined && tokenASpents.length > 0) {
-            tokenAAmount = tokenASpents.reduce((tokenAAmount, tokenTransfer) => {
-              if (tokenA) {
-                tokenAAmount = tokenAAmount.add(new TokenAmount(tokenA, tokenTransfer.value));
-              }
-              return tokenAAmount;
-            }, new TokenAmount(tokenA, "0"))
+      const tokenAReceives = internalTransfers && Object.values(internalTransfers).filter(internalTransfer => {
+        return internalTransfer.to == activeAccount;
+      })
+      if (tokenAAmount && tokenAReceives && tokenAReceives.length > 0) {
+        tokenAAmount = tokenAReceives.reduce((tokenAAmount, internalTransfer) => {
+          return tokenAAmount.subtract(CurrencyAmount.ether(internalTransfer.value));
+        }, tokenAAmount);
+      }
+    }
+
+    // swapExactTokensForETH( uint256 amountIn, uint256 amountOutMin, address[] path, address to, uint256 deadline )
+    // swapTokensForExactETH( uint256 amountOut, uint256 amountInMax, address[] path, address to, uint256 deadline )
+    if (supportFuncName == SupportSafeswapV2RouterFunctions.SwapExactTokensForETH
+      || supportFuncName == SupportSafeswapV2RouterFunctions.SwapTokensForExactETH
+    ) {
+      let path = inputDecodeResult[2];
+      const tokenAAddress: string = path[0];
+      let to = inputDecodeResult[3];
+      swapTo = to;
+      tokenA = tokensMap && tokensMap[tokenAAddress];
+      if (supportFuncName == SupportSafeswapV2RouterFunctions.SwapExactTokensForETH) {
+        // swapExactTokensForETH( uint256 amountIn, uint256 amountOutMin, address[] path, address to, uint256 deadline )
+        let amountIn = inputDecodeResult[0];
+        tokenAAmount = tokenA && new TokenAmount(tokenA, amountIn);
+      } else if (supportFuncName == SupportSafeswapV2RouterFunctions.SwapTokensForExactETH) {
+        // swapTokensForExactETH( uint256 amountOut, uint256 amountInMax, address[] path, address to, uint256 deadline )
+        let amountIn = inputDecodeResult[1];
+        tokenAAmount = tokenA && new TokenAmount(tokenA, amountIn);
+      }
+      const tokenBReceives = internalTransfers && Object.values(internalTransfers).filter(internalTransfer => {
+        return internalTransfer.to == activeAccount;
+      });
+      if (tokenBReceives && tokenBReceives.length > 0) {
+        tokenBAmount = tokenBReceives && tokenBReceives.reduce((tokenBAmount, internalTransfer) => {
+          return tokenBAmount.add(CurrencyAmount.ether(internalTransfer.value));
+        }, CurrencyAmount.ether("0"));
+      }
+      const tokenASpents = tokenTransfers && Object.values(tokenTransfers).filter(tokenTransfer => {
+        return tokenTransfer.token.address.toLocaleLowerCase() == tokenA?.address.toLocaleLowerCase()
+          && tokenTransfer.from == activeAccount;
+      });
+      if (tokenA && tokenASpents != undefined && tokenASpents.length > 0) {
+        tokenAAmount = tokenASpents.reduce((tokenAAmount, tokenTransfer) => {
+          if (tokenA) {
+            tokenAAmount = tokenAAmount.add(new TokenAmount(tokenA, tokenTransfer.value));
           }
-          const tokenBReceives = internalTransfers && Object.values(internalTransfers).filter(internalTransfer => {
-            return to == internalTransfer.to;
-          });
-          if (tokenBReceives && tokenBReceives.length > 0) {
-            tokenBAmount = tokenBReceives && tokenBReceives.reduce((tokenBAmount, internalTransfer) => {
-              return tokenBAmount.add(CurrencyAmount.ether(internalTransfer.value));
-            }, CurrencyAmount.ether("0"));
-          }
-        }
+          return tokenAAmount;
+        }, new TokenAmount(tokenA, "0"))
       }
     }
 

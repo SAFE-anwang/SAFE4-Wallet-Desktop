@@ -1,6 +1,6 @@
 import { FunctionFragment, Interface } from "ethers/lib/utils";
 import { SysContractABI, SystemContract } from "./SystemContracts";
-import { Application_Crosschain, Application_Crosschain_Pool_BSC, Application_Crosschain_Pool_ETH, Application_Crosschain_Pool_MATIC, Safe4NetworkChainId, SafeswapV2RouterAddress } from "../config";
+import { Application_Crosschain, Application_Crosschain_Pool_BSC, Application_Crosschain_Pool_ETH, Application_Crosschain_Pool_MATIC, Safe4NetworkChainId, SafeswapV2FactoryAddreess, SafeswapV2RouterAddress } from "../config";
 import { ethers } from "ethers";
 import ApplicationContractAbiConfig from "./ApplicationContractAbiConfig";
 import { SafeswapV2ABI, SafeswapV2Contract } from "./SafeswapV2Contracts";
@@ -67,6 +67,17 @@ export enum SupportSafeswapV2RouterFunctions {
 
   SwapExactTokensForTokens = "swapExactTokensForTokens", // swapExactTokensForTokens( uint256 amountIn, uint256 amountOutMin, address[] path, address to, uint256 deadline )
   SwapTokensForExactTokens = "swapTokensForExactTokens", // swapTokensForExactTokens( uint256 amountOut, uint256 amountInMax, address[] path, address to, uint256 deadline )
+
+  AddLiquidityETH = "addLiquidityETH", // addLiquidityETH( address token, uint256 amountTokenDesired, uint256 amountTokenMin, uint256 amountETHMin, address to, uint256 deadline )
+  AddLiquidity = "addLiquidity", // addLiquidity( address tokenA, address tokenB, uint256 amountADesired, uint256 amountBDesired, uint256 amountAMin, uint256 amountBMin, address to, uint256 deadline )
+
+  RemoveLiquidityETHWithPermit = "removeLiquidityETHWithPermit", // removeLiquidityETHWithPermit( address token, uint256 liquidity, uint256 amountTokenMin, uint256 amountETHMin, address to, uint256 deadline, bool approveMax, uint8 v, bytes32 r, bytes32 s )
+  RemoveLiquidityWithPermit = "removeLiquidityWithPermit", // removeLiquidityWithPermit( address tokenA, address tokenB, uint256 liquidity, uint256 amountAMin, uint256 amountBMin, address to, uint256 deadline, bool approveMax, uint8 v, bytes32 r, bytes32 s )
+}
+
+export enum SupportSafeswapV2FacotryFunctions {
+
+
 }
 
 function decodeProposalFunctionData(IContract: Interface, fragment: FunctionFragment, input: string): {
@@ -334,9 +345,12 @@ function decodeSafeswapV2RouterData(
     case SupportSafeswapV2RouterFunctions.SwapETHForExactTokens:
     case SupportSafeswapV2RouterFunctions.SwapExactTokensForETH:
     case SupportSafeswapV2RouterFunctions.SwapTokensForExactETH:
-
     case SupportSafeswapV2RouterFunctions.SwapExactTokensForTokens:
     case SupportSafeswapV2RouterFunctions.SwapTokensForExactTokens:
+    case SupportSafeswapV2RouterFunctions.AddLiquidityETH:
+    case SupportSafeswapV2RouterFunctions.AddLiquidity:
+    case SupportSafeswapV2RouterFunctions.RemoveLiquidityETHWithPermit:
+    case SupportSafeswapV2RouterFunctions.RemoveLiquidityWithPermit:
       const swap = IContract.decodeFunctionData(fragment, input);
       formatDecodeResult = swap;
     default:
@@ -347,7 +361,6 @@ function decodeSafeswapV2RouterData(
     inputDecodeResult: formatDecodeResult
   } : undefined;
 }
-
 
 function decodeCrosschainPoolFunctionData(input: string) {
   const decodeData = ethers.utils.toUtf8String(input);
@@ -435,13 +448,13 @@ export default (address: string | undefined, input: string | undefined, from?: s
   // For SafeswapV2Router / SafeswapV2Factory
   if (Object.values(SafeswapV2Contract).some(addr => addr == address)) {
     try {
-      const abi = SafeswapV2ABI[address as SafeswapV2Contract];
+      const abi = SafeswapV2ABI[address as unknown as SafeswapV2Contract];
       const IContract = new Interface(abi);
       const methodId = input.substring(0, 10);
       const fragment = IContract.getFunction(methodId);
       if (fragment) {
         switch (address) {
-          case SafeswapV2Contract.Router:
+          case SafeswapV2RouterAddress:
             return decodeSafeswapV2RouterData(IContract, fragment, input);
           default:
             return undefined;
