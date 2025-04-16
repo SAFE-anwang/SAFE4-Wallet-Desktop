@@ -11,6 +11,7 @@ import { CurrencyAmount, Rounding, Token, TokenAmount } from "@uniswap/sdk";
 import { useTokens } from "../../../../../state/transactions/hooks";
 import { Safe4NetworkChainId, USDT, WSAFE } from "../../../../../config";
 import { useWalletsActiveAccount } from "../../../../../state/wallets/hooks";
+import { useTranslation } from "react-i18next";
 
 const { Text } = Typography;
 
@@ -23,6 +24,7 @@ export default ({ transaction, setClickTransaction, support }: {
   }
 }) => {
   const { chainId } = useWeb3React();
+  const { t } = useTranslation();
   const tokens = useTokens();
   const tokensMap = useMemo<{ [address: string]: Token } | undefined>(() => {
     if (chainId) {
@@ -177,7 +179,7 @@ export default ({ transaction, setClickTransaction, support }: {
     <List.Item onClick={() => { setClickTransaction(transaction) }} key={transaction.hash} className="history-element" style={{ paddingLeft: "15px", paddingRight: "15px" }}>
       <List.Item.Meta
         key={transaction.hash}
-        title="添加流动性"
+        title={t("wallet_safeswap_addliquiditiy")}
         avatar={
           <>
             <span>
