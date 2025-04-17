@@ -1,5 +1,5 @@
 import { ArrowDownOutlined, DownOutlined, LeftOutlined, UserOutlined } from "@ant-design/icons";
-import { Alert, Avatar, Button, Card, Col, Divider, Dropdown, Input, MenuProps, message, Row, Select, Space, Typography } from "antd";
+import { Alert, Avatar, Button, Card, Col, Divider, Dropdown, Input, MenuProps, message, Row, Select, Space, Spin, Typography } from "antd";
 import { useTranslation } from "react-i18next";
 import ERC20TokenLogoComponent from "../../../components/ERC20TokenLogoComponent";
 import { useWeb3React } from "@web3-react/core";
@@ -12,6 +12,7 @@ import { ZERO, ONE } from "../../../../utils/CurrentAmountUtils";
 import { CurrencyAmount, TokenAmount } from "@uniswap/sdk";
 import { ethers } from "ethers";
 import CrosschainConfirmModal from "./CrosschainConfirmModal";
+import { fetchCrosschainConfig } from "../../../../services/crosschain";
 
 const { Title, Text, Link } = Typography;
 
@@ -31,11 +32,7 @@ export default () => {
   const USDT_SUPPORT_TARGET_CHAIN: NetworkType[] = [
     NetworkType.BSC, NetworkType.ETH, NetworkType.SOL, NetworkType.TRX
   ];
-  const Token_USDT = useMemo(() => {
-    if (chainId && chainId in Safe4NetworkChainId) {
-      return USDT[chainId as Safe4NetworkChainId];
-    }
-  }, [chainId]);
+  const Token_USDT = chainId && USDT[chainId as Safe4NetworkChainId];
   const tokenUSDTBalance = Token_USDT && useTokenBalances(activeAccount, [Token_USDT])[Token_USDT.address];
 
   const [inputParams, setInputParams] = useState<{
@@ -52,14 +49,46 @@ export default () => {
 
   useEffect(() => {
     setInputParams({
-      token: "SAFE",
-      targetNetwork: NetworkType.BSC,
+      ...inputParams,
       amount: "0.0",
       targetAddress: activeAccount
-    })
+    });
+    setInputErrors({});
+    setInputWarnings({});
   }, [activeAccount]);
 
-  const selectTokenOptions = useMemo(() => {
+  const [loading, setLoading] = useState(true);
+  const [config, setConfig] = useState<{
+    minamount: string,
+    safe2eth: boolean,
+    safe2matic: boolean,
+    safe2bsc: boolean,
+    safe2trx: boolean | undefined,
+    safe2sol: boolean | undefined
+  }>();
+
+  const [fetchCrosschainConfigError, setFetchCrosschainConfigError] = useState<string>();
+  useEffect(() => {
+    if (chainId) {
+      setLoading(true);
+      fetchCrosschainConfig(chainId).then((data) => {
+        setFetchCrosschainConfigError(undefined);
+        setLoading(false);
+        setConfig({
+          minamount: data.minamount,
+          safe2eth: data.eth.safe2eth,
+          safe2matic: data.matic.safe2matic,
+          safe2bsc: data.bsc.safe2bsc,
+          safe2trx: data.trx?.safe2trx,
+          safe2sol: data.sol?.safe2sol
+        })
+      }).catch((err: any) => {
+        setFetchCrosschainConfigError("跨链网关无法访问,请检查本地网络,或者稍后再试.");
+      })
+    }
+  }, [chainId]);
+
+  const selectTokenOptions = () => {
     return <Select defaultValue="SAFE" bordered={false} onChange={(selectToken) => {
       setInputParams({
         ...inputParams,
@@ -80,9 +109,9 @@ export default () => {
         </Option>
       }
     </Select>
-  }, [chainId, Token_USDT]);
+  };
 
-  const targetNetworkSelect = useMemo(() => {
+  const targetNetworkSelect = () => {
     const token = inputParams.token;
     if (token) {
       let targetNetworkTypes: NetworkType[] = [];
@@ -93,6 +122,10 @@ export default () => {
       }
       return <Select style={{ float: "right" }} value={inputParams.targetNetwork} bordered={false}
         onChange={(selectNetworkType) => {
+          setInputErrors({
+            ...inputErrors,
+            targetNetwork: undefined
+          })
           setInputParams({
             ...inputParams,
             targetNetwork: selectNetworkType
@@ -108,7 +141,8 @@ export default () => {
         }
       </Select>
     }
-  }, [inputParams]);
+    return <></>
+  };
 
   const tokenBalance = useMemo(() => {
     if (activeAccountETHBalance && tokenUSDTBalance) {
@@ -120,6 +154,7 @@ export default () => {
     }
     return ZERO;
   }, [activeAccountETHBalance, tokenUSDTBalance, inputParams.token]);
+
   const maxBalance = useMemo(() => {
     if (inputParams.token == 'USDT') {
       return tokenBalance;
@@ -128,6 +163,7 @@ export default () => {
         ? activeAccountETHBalance.subtract(ONE) : ZERO;
     }
   }, [tokenBalance, inputParams.token]);
+
   const maxBalanceClick = useMemo(() => {
     return () => {
       if (maxBalance) {
@@ -145,53 +181,94 @@ export default () => {
 
   const [inputErrors, setInputErrors] = useState<{
     amount?: string,
-    targetAddress?: string
+    targetAddress?: string,
+    targetNetwork?: string
   }>({});
   const [inputWarning, setInputWarnings] = useState<{
-    targetAddress?: string
+    targetAddress?: string,
+    targetNetwork?: string
   }>();
 
   const goNext = useCallback(() => {
-    const { token, amount, targetAddress } = inputParams;
+    const { token, amount, targetAddress, targetNetwork } = inputParams;
     if (!amount) {
       inputErrors.amount = t("please_enter") + t("wallet_send_amount");
     } else {
-      try {
-        CurrencyAmount.ether(ethers.utils.parseEther(amount).toBigInt());
-        if (chainId && maxBalance) {
-          let _amount = undefined;
-          if (token == 'SAFE') {
-            _amount = CurrencyAmount.ether(ethers.utils.parseEther(amount).toBigInt());
-          } else if (token == 'USDT' && Token_USDT) {
-            _amount = new TokenAmount(Token_USDT, ethers.utils.parseUnits(amount, Token_USDT.decimals).toBigInt());
-          }
-          if (_amount) {
-            if (_amount.greaterThan(maxBalance)) {
-              inputErrors.amount = t("wallet_send_amountgeavaiable");
+      if (config) {
+        try {
+          CurrencyAmount.ether(ethers.utils.parseEther(amount).toBigInt());
+          if (chainId && maxBalance) {
+            let _amount = undefined;
+            let _minAmount = undefined;
+            if (token == 'SAFE') {
+              _amount = CurrencyAmount.ether(ethers.utils.parseEther(amount).toBigInt());
+              _minAmount = CurrencyAmount.ether(ethers.utils.parseEther(config.minamount.toString()).toBigInt());
+              if (_minAmount.greaterThan(_amount)) {
+                inputErrors.amount = t("wallet_crosschain_ltminamount");
+              }
+            } else if (token == 'USDT' && Token_USDT) {
+              _amount = new TokenAmount(Token_USDT, ethers.utils.parseUnits(amount, Token_USDT.decimals).toBigInt());
+              _minAmount = new TokenAmount(Token_USDT, ethers.utils.parseUnits(config.minamount.toString(), Token_USDT.decimals).toBigInt());
+              if (_minAmount.greaterThan(_amount)) {
+                inputErrors.amount = t("wallet_crosschain_ltminamount");
+              }
             }
-            if (!_amount.greaterThan(ZERO)) {
+            if (_amount) {
+              if (_amount.greaterThan(maxBalance)) {
+                inputErrors.amount = t("wallet_send_amountgeavaiable");
+              }
+              if (!_amount.greaterThan(ZERO)) {
+                inputErrors.amount = t("enter_correct") + t("wallet_send_amount");
+              }
+            } else {
               inputErrors.amount = t("enter_correct") + t("wallet_send_amount");
             }
-          } else {
-            inputErrors.amount = t("enter_correct") + t("wallet_send_amount");
           }
+        } catch (error) {
+          console.log("Error =", error)
+          inputErrors.amount = t("enter_correct") + t("wallet_send_amount");
         }
-      } catch (error) {
-        inputErrors.amount = t("enter_correct") + t("wallet_send_amount");
       }
+      if (!targetAddress) {
+        inputErrors.targetAddress = t("wallet_send_entercorrectwalletaddress");
+      }
+      // 网关判断是否开启;
+      switch (targetNetwork) {
+        case NetworkType.BSC:
+          if (!config?.safe2bsc) {
+            inputErrors.targetNetwork = t("wallet_crosschain_serverclose");
+          }
+          break;
+        case NetworkType.ETH:
+          if (!config?.safe2eth) {
+            inputErrors.targetNetwork = t("wallet_crosschain_serverclose");
+          }
+          break;
+        case NetworkType.MATIC:
+          if (!config?.safe2matic) {
+            inputErrors.targetNetwork = t("wallet_crosschain_serverclose");
+          }
+          break;
+        case NetworkType.TRX:
+          if (!config?.safe2bsc) {
+            inputErrors.targetNetwork = t("wallet_crosschain_serverclose");
+          }
+          break;
+        case NetworkType.SOL:
+          if (!config?.safe2bsc) {
+            inputErrors.targetNetwork = t("wallet_crosschain_serverclose");
+          }
+          break;
+      }
+      if (inputErrors.amount || inputErrors.targetAddress || inputErrors.targetNetwork) {
+        setInputErrors({
+          ...inputErrors
+        })
+        return;
+      }
+      setOpenCrosschainConfirmModal(true);
     }
-    if (!targetAddress) {
-      inputErrors.targetAddress = t("wallet_send_entercorrectwalletaddress");
-    }
-    if (inputErrors.amount || inputErrors.targetAddress) {
-      setInputErrors({
-        ...inputErrors
-      })
-      return;
-    }
-    console.log("Go Next For Crosschain.", inputParams)
-    setOpenCrosschainConfirmModal(true);
-  }, [inputParams, chainId, maxBalance, inputErrors, Token_USDT])
+  }, [inputParams, chainId, maxBalance, inputErrors, Token_USDT, config])
 
   return <>
 
@@ -215,129 +292,140 @@ export default () => {
           </Row>
           <Divider />
           <Card style={{ width: "50%", margin: "auto" }}>
-            <Row>
-              <Col span={24}>
-                <Text type="secondary" strong>{t("wallet_crosschain_select_token")}</Text>
+            {
+              fetchCrosschainConfigError && <Row style={{ marginBottom: "20px" }}>
+                <Col span={24}>
+                  <Alert type="warning" showIcon message={fetchCrosschainConfigError} />
+                </Col>
+              </Row>
+            }
+            <Spin spinning={loading}>
+              <Row>
+                <Col span={24}>
+                  <Text type="secondary" strong>{t("wallet_crosschain_select_token")}</Text>
+                  {
+                    tokenBalance && <Text style={{ float: "right" }} type="secondary">{t("balance_currentavailable")}:{tokenBalance.toFixed(2)}</Text>
+                  }
+                </Col>
+                <Col span={16}>
+                  <Input value={inputParams.amount} size="large" style={{ height: "80px", width: "150%", fontSize: "24px" }}
+                    onChange={(event) => {
+                      setInputParams({
+                        ...inputParams,
+                        amount: event.target.value
+                      });
+                      setInputErrors({
+                        ...inputErrors,
+                        amount: undefined
+                      })
+                    }} />
+                </Col>
+                <Col span={8}>
+                  <Row style={{ marginTop: "24px" }}>
+                    <Col span={8}>
+                      <div style={{ marginTop: "4px" }}>
+                        <Link onClick={maxBalanceClick}>{t("wallet_send_max")}</Link>
+                        <Divider type="vertical" />
+                      </div>
+                    </Col>
+                    <Col span={16}>
+                      {selectTokenOptions()}
+                    </Col>
+                  </Row>
+                </Col>
                 {
-                  tokenBalance && <Text style={{ float: "right" }} type="secondary">{t("balance_currentavailable")}:{tokenBalance.toFixed(2)}</Text>
+                  inputErrors.amount &&
+                  <Col span={24}>
+                    <Alert showIcon style={{ marginTop: "5px" }} type="error" message={<>
+                      {inputErrors.amount}
+                    </>} />
+                  </Col>
                 }
-              </Col>
-              <Col span={16}>
-                <Input value={inputParams.amount} size="large" style={{ height: "80px", width: "150%", fontSize: "24px" }}
-                  onChange={(event) => {
+              </Row>
+              <Row>
+                <Col span={24}>
+                  <ArrowDownOutlined style={{ fontSize: "24px", color: "green", marginTop: "10px", marginBottom: "10px" }} />
+                </Col>
+              </Row>
+              <Row>
+                <Col span={24}>
+                  <Text type="secondary" strong>{t("wallet_crosschain_select_network")}</Text>
+                </Col>
+                <Col span={16}>
+                  <Input readOnly size="large" style={{ height: "80px", width: "150%", background: "#efefef" }} />
+                </Col>
+                <Col span={8}>
+                  <Row style={{ marginTop: "24px" }}>
+                    <Col span={24}>
+                      {targetNetworkSelect()}
+                    </Col>
+                  </Row>
+                </Col>
+                {
+                  inputErrors.targetNetwork && <Col span={24}>
+                    <Alert style={{ marginTop: "5px" }} showIcon type="error" message={inputErrors.targetNetwork} />
+                  </Col>
+                }
+              </Row>
+              <Row style={{ marginTop: "20px" }}>
+                <Col span={24}>
+                  <Text type="secondary" strong>{t("wallet_crosschain_target_address")}</Text>
+                </Col>
+                <Col span={16}>
+                  <Input onChange={(event) => {
+                    const inputAddress = event.target.value;
                     setInputParams({
                       ...inputParams,
-                      amount: event.target.value
+                      targetAddress: inputAddress.trim()
                     });
                     setInputErrors({
                       ...inputErrors,
-                      amount: undefined
+                      targetAddress: undefined
                     })
-                  }} />
-              </Col>
-
-              <Col span={8}>
-                <Row style={{ marginTop: "24px" }}>
-                  <Col span={8}>
-                    <div style={{ marginTop: "4px" }}>
-                      <Link onClick={maxBalanceClick}>{t("wallet_send_max")}</Link>
-                      <Divider type="vertical" />
-                    </div>
-                  </Col>
-                  <Col span={16}>
-                    {selectTokenOptions}
-                  </Col>
-                </Row>
-              </Col>
-              {
-                inputErrors.amount &&
-                <Col span={24}>
-                  <Alert showIcon style={{ marginTop: "5px" }} type="error" message={<>
-                    {inputErrors.amount}
-                  </>} />
-                </Col>
-              }
-
-            </Row>
-            <Row>
-              <Col span={24}>
-                <ArrowDownOutlined style={{ fontSize: "24px", color: "green", marginTop: "10px", marginBottom: "10px" }} />
-              </Col>
-            </Row>
-            <Row>
-              <Col span={24}>
-                <Text type="secondary" strong>{t("wallet_crosschain_select_network")}</Text>
-              </Col>
-              <Col span={16}>
-                <Input readOnly size="large" style={{ height: "80px", width: "150%", background: "#efefef" }} />
-              </Col>
-              <Col span={8}>
-                <Row style={{ marginTop: "24px" }}>
-                  <Col span={24}>
-                    {targetNetworkSelect}
-                  </Col>
-                </Row>
-              </Col>
-            </Row>
-            <Row style={{ marginTop: "20px" }}>
-              <Col span={24}>
-                <Text type="secondary" strong>{t("wallet_crosschain_target_address")}</Text>
-              </Col>
-              <Col span={16}>
-                <Input onChange={(event) => {
-                  const inputAddress = event.target.value;
-                  setInputParams({
-                    ...inputParams,
-                    targetAddress: inputAddress.trim()
-                  });
-                  setInputErrors({
-                    ...inputErrors,
-                    targetAddress: undefined
-                  })
-                  setInputWarnings({
-                    ...inputWarning,
-                    targetAddress: undefined
-                  })
-                  if (!ethers.utils.isAddress(inputAddress)) {
-                    setInputErrors({
-                      ...inputErrors,
-                      targetAddress: t("wallet_send_entercorrectwalletaddress")
+                    setInputWarnings({
+                      ...inputWarning,
+                      targetAddress: undefined
                     })
-                  } else {
-                    if (inputAddress != activeAccount) {
-                      setInputWarnings({
-                        ...inputWarning,
-                        targetAddress: t("wallet_crosschain_target_address_warning")
+                    if (!ethers.utils.isAddress(inputAddress)) {
+                      setInputErrors({
+                        ...inputErrors,
+                        targetAddress: t("wallet_send_entercorrectwalletaddress")
                       })
+                    } else {
+                      if (inputAddress != activeAccount) {
+                        setInputWarnings({
+                          ...inputWarning,
+                          targetAddress: t("wallet_crosschain_target_address_warning")
+                        })
+                      }
                     }
-                  }
 
-                }} value={inputParams.targetAddress} size="large" style={{ width: "150%", }} />
-              </Col>
-
-              {
-                inputWarning?.targetAddress &&
-                <Col span={24}>
-                  <Alert showIcon style={{ marginTop: "5px" }} type="warning" message={<>
-                    {inputWarning?.targetAddress}
-                  </>} />
+                  }} value={inputParams.targetAddress} size="large" style={{ width: "150%", }} />
                 </Col>
-              }
-              {
-                inputErrors?.targetAddress &&
+                {
+                  inputWarning?.targetAddress &&
+                  <Col span={24}>
+                    <Alert showIcon style={{ marginTop: "5px" }} type="warning" message={<>
+                      {inputWarning?.targetAddress}
+                    </>} />
+                  </Col>
+                }
+                {
+                  inputErrors?.targetAddress &&
+                  <Col span={24}>
+                    <Alert showIcon style={{ marginTop: "5px" }} type="error" message={<>
+                      {inputErrors?.targetAddress}
+                    </>} />
+                  </Col>
+                }
+              </Row>
+              <Divider></Divider>
+              <Row>
                 <Col span={24}>
-                  <Alert showIcon style={{ marginTop: "5px" }} type="error" message={<>
-                    {inputErrors?.targetAddress}
-                  </>} />
+                  <Button type="primary" style={{ float: "right" }} onClick={goNext}>{t("next")}</Button>
                 </Col>
-              }
-            </Row>
-            <Divider></Divider>
-            <Row>
-              <Col span={24}>
-                <Button type="primary" style={{ float: "right" }} onClick={goNext}>{t("next")}</Button>
-              </Col>
-            </Row>
+              </Row>
+            </Spin>
           </Card>
         </Card>
       </div>

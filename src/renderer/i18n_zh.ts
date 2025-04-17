@@ -629,6 +629,9 @@ export default {
   wallet_crosschain_fee: "手续费",
   wallet_crosschain_from: "从",
   wallet_crosschain_fromtxhash: "跨链发起",
+  wallet_crosschain_servererror:"跨链网关无法访问,请检查本地网络,或者稍后再试.",
+  wallet_crosschain_serverclose:"跨链网关未开放",
+  wallet_crosschain_ltminamount:"低于最低跨链资产数量",
 
   wallet_safeswap: "交易",
   wallet_safeswap_swap_tip0: "使用 Safeswap 在 Safe4 网络中进行代币互兑交易",

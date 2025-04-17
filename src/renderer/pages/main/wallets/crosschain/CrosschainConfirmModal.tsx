@@ -4,7 +4,7 @@ import { useWeb3React } from "@web3-react/core";
 import { Alert, Avatar, Button, Col, Divider, Modal, Row, Typography } from "antd"
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { getNetworkLogo, NetworkCoinType, NetworkType, outputNetworkCoin } from "../../../../assets/logo/NetworkLogo";
+import { getNetworkLogo, NetworkType, outputNetworkCoin } from "../../../../assets/logo/NetworkLogo";
 import { Application_Crosschain_Pool_BSC, Application_Crosschain_Pool_ETH, Application_Crosschain_Pool_MATIC, Safe4NetworkChainId, USDT } from "../../../../config";
 import { useCrosschainContract, useIERC20Contract } from "../../../../hooks/useContracts";
 import { useTokenAllowance, useWalletsActiveAccount, useWalletsActiveSigner } from "../../../../state/wallets/hooks";
