@@ -13,7 +13,7 @@ import { useTransactionAdder } from "../../../state/transactions/hooks";
 import { useTranslation } from "react-i18next";
 
 const { Text } = Typography;
-const redeemNeedAmount = "0.01";
+const redeemNeedAmount = "0.001";
 
 export default ({
   addressPrivateKeyMap, safe3RedeemList, safe3RedeemStatistic
