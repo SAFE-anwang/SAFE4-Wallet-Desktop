@@ -10,9 +10,11 @@ export default (): {
   return {
     URL: chainId == Safe4_Network_Config.Testnet.chainId ?
       Safe4_Network_Config.Testnet.Safescan_URL : Safe4_Network_Config.Mainnet.Safescan_URL,
+
     API: chainId == Safe4_Network_Config.Testnet.chainId ?
       Safe4_Network_Config.Testnet.Safescan_Api : Safe4_Network_Config.Mainnet.Safescan_Api,
-      API_Crosschain: (chainId == Safe4_Network_Config.Testnet.chainId ?
+
+    API_Crosschain: (chainId == Safe4_Network_Config.Testnet.chainId ?
       Safe4_Network_Config.Testnet.Safescan_URL : Safe4_Network_Config.Mainnet.Safescan_URL) + "/crosschain" ,
   }
 }

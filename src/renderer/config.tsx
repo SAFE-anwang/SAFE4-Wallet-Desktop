@@ -33,16 +33,16 @@ export const Application_Crosschain: { [chainId in Safe4NetworkChainId]: string 
 // WSAFE 合约地址
 export const WSAFE: { [chainId in Safe4NetworkChainId]: Token } = {
   [Safe4NetworkChainId.Testnet]: new Token(Safe4NetworkChainId.Testnet as number, "0x64c5aB0DFeCCe653751B463AFb05352085c5f2f9", 18, "WSAFE", "Wrapped SAFE"),
-  [Safe4NetworkChainId.Mainnet]: new Token(Safe4NetworkChainId.Mainnet as number, "0x64c5aB0DFeCCe653751B463AFb05352085c5f2f9", 18, "WSAFE", "Wrapped SAFE"),
+  [Safe4NetworkChainId.Mainnet]: new Token(Safe4NetworkChainId.Mainnet as number, "0x0000000000000000000000000000000000001101", 18, "WSAFE", "Wrapped SAFE"),
 };
 // USDT 合约地址
 export const USDT: { [chainId in Safe4NetworkChainId]: Token } = {
   [Safe4NetworkChainId.Testnet]: new Token(Safe4NetworkChainId.Testnet as number, "0x268BFd7F4c5F0531294D9172f5DA84f0CC7812C5", 18, "USDT", "USDT"),
-  [Safe4NetworkChainId.Mainnet]: new Token(Safe4NetworkChainId.Mainnet as number, "0x268BFd7F4c5F0531294D9172f5DA84f0CC7812C5", 18, "USDT", "USDT"),
+  [Safe4NetworkChainId.Mainnet]: new Token(Safe4NetworkChainId.Mainnet as number, "0x61873c9478dEB4Bb2c4d04E86e67c45C09377202", 18, "USDT", "USDT"),
 };
 
-export const SafeswapV2RouterAddress = "0x6476008C612dF9F8Db166844fFE39D24aEa12271";
 export const SafeswapV2FactoryAddreess = "0xB3c827077312163c53E3822defE32cAffE574B42";
+export const SafeswapV2RouterAddress = "0x6476008C612dF9F8Db166844fFE39D24aEa12271";
 export const SafeswapV2InitCodeHash = "0xad0e51aa7a058efb9eb40fd6385473f0175ee7419e8d4f91a4e0294ec12b2d13";
 
 export const Safe4_Network_Config = {
@@ -57,16 +57,16 @@ export const Safe4_Network_Config = {
     claimFrom: "0x0225302942D5f37dA1d18C1d2DE169C5b007aCAb",
   },
   Mainnet: {
-    // chainId: 6666665,
-    // endpoint: "https://safe4.anwang.com/rpc",
-    // Safescan_URL: "https://safe4.anwang.com",
-    // Safescan_Api: "https://safe4.anwang.com/5005",
-    // claimFrom:"0x5DB242e60517a60B65140613D29e86334F2b5739"
-    chainId: 6666666,
-    endpoint: "https://safe4testnet.anwang.com/rpc",
-    Safescan_URL: "https://safe4testnet.anwang.com",
-    Safescan_Api: "https://safe4testnet.anwang.com/5005",
-    claimFrom: "0x0225302942D5f37dA1d18C1d2DE169C5b007aCAb",
+    chainId: 6666665,
+    endpoint: "https://safe4.anwang.com/rpc",
+    Safescan_URL: "https://safe4.anwang.com",
+    Safescan_Api: "https://safe4.anwang.com/5005",
+    claimFrom: "0x5DB242e60517a60B65140613D29e86334F2b5739"
+    // chainId: 6666666,
+    // endpoint: "https://safe4testnet.anwang.com/rpc",
+    // Safescan_URL: "https://safe4testnet.anwang.com",
+    // Safescan_Api: "https://safe4testnet.anwang.com/5005",
+    // claimFrom: "0x0225302942D5f37dA1d18C1d2DE169C5b007aCAb",
   }
 }
 
@@ -114,4 +114,4 @@ const Config = {
   }
 }
 
-export default Config["test"]
+export default Config["prod"]

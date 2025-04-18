@@ -97,7 +97,7 @@ export default () => {
   // Sync Crosschain Transaction Data
   useEffect(() => {
     if (activeAccount && latestBlockNumber > 0 && chainId && safe4BlockNumber) {
-      console.log(`Fetch CrosschainDatas for ${activeAccount} by BlockNumber[${safe4BlockNumber}]`)
+      console.log(`Fetch CrosschainDatas for ${activeAccount} by BlockNumber[${safe4BlockNumber}] // ${API_Crosschain}`)
       fetchCrossChainByAddress(API_Crosschain, { address: activeAccount })
         .then(data => {
           dispatch(updateCrosschains(data));
@@ -107,6 +107,10 @@ export default () => {
         });
     }
   }, [activeAccount, latestBlockNumber, chainId]);
+
+
+
+
   return <>
     {/* <Text>
       {JSON.stringify(stateCrosschains)}

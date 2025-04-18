@@ -6,9 +6,10 @@ export const GET = async function (url: string, params?: any): Promise<any> {
   const response = await fetch(URI_params ? url + URI_params : url, {
       method: 'get',
       headers: {
-          'Content-Type': "application/json"
+          'Content-Type': "application/json" ,
+          'Accept': 'application/json, text/plain, */*'
       }
-  })
+  });
   const data = await response.text();
   const json = data ? JSON.parse(data) : undefined;
   return json as any;
