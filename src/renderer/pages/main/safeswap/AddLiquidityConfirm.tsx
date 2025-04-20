@@ -1,24 +1,26 @@
 
 
-import { Button, Col, Divider, Modal, Row, Typography } from "antd"
+import { Alert, Button, Col, Divider, Modal, Row, Typography } from "antd"
 import TokenLogo from "../../components/TokenLogo";
-import { PlusOutlined, SendOutlined } from "@ant-design/icons";
-import { Token } from "@uniswap/sdk";
+import { PlusOutlined, SendOutlined, SyncOutlined } from "@ant-design/icons";
+import { Token, TokenAmount } from "@uniswap/sdk";
 import ERC20TokenLogoComponent from "../../components/ERC20TokenLogoComponent";
 import { useSafeswapV2Router } from "../../../hooks/useContracts";
 import { useSafeswapSlippageTolerance, useTimestamp } from "../../../state/application/hooks";
-import { ethers } from "ethers";
-import { useWalletsActiveAccount } from "../../../state/wallets/hooks";
+import { Contract, ethers } from "ethers";
+import { useTokenAllowanceAmounts, useWalletsActiveAccount, useWalletsActiveSigner } from "../../../state/wallets/hooks";
 import { useTransactionAdder } from "../../../state/transactions/hooks";
 import useTransactionResponseRender from "../../components/useTransactionResponseRender";
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { applicationUpdateWalletTab } from "../../../state/application/action";
 import { getSlippageTolerancePercent } from "./Swap";
+import { SafeswapV2RouterAddress } from "../../../config";
+import { IERC20_Interface } from "../../../abis";
 
-const { Text } = Typography;
+const { Text, Link } = Typography;
 
 export function getSlippageToleranceBigInteger(slippageTolerance: string) {
   const a = ethers.utils.parseUnits(slippageTolerance, 4);
@@ -42,9 +44,12 @@ export default ({
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const signer = useWalletsActiveSigner();
   const SwapV2RouterContract = useSafeswapV2Router(true);
   const timestamp = useTimestamp();
   const activeAccount = useWalletsActiveAccount();
+  const tokenAContract = tokenA ? new Contract(tokenA.address, IERC20_Interface, signer) : undefined;
+  const tokenBContract = tokenB ? new Contract(tokenB.address, IERC20_Interface, signer) : undefined;
   const addTransaction = useTransactionAdder();
   const {
     render,
@@ -63,8 +68,94 @@ export default ({
       navigate("/main/wallet");
     }
   }, [txHash]);
-
   const slippageTolerance = useSafeswapSlippageTolerance();
+
+  const [waitApprove, setWaitApprove] = useState<boolean>(false);
+  const tokens = useMemo(() => {
+    const tokens = [];
+    tokenA && tokens.push(tokenA);
+    tokenB && tokens.push(tokenB);
+    return tokens;
+  }, [tokenA, tokenB])
+  const tokenAllowanceAmounts = useTokenAllowanceAmounts(activeAccount, SafeswapV2RouterAddress, tokens);
+  const allowanceForRouterOfTokenA = useMemo(() => {
+    return tokenA ? tokenAllowanceAmounts[tokenA.address] : undefined;
+  }, [tokenA, tokenAllowanceAmounts]);
+  const allowanceForRouterOfTokenB = useMemo(() => {
+    return tokenB ? tokenAllowanceAmounts[tokenB.address] : undefined;
+  }, [tokenB, tokenAllowanceAmounts]);
+  const needApproveTokenA = useMemo(() => {
+    if (tokenA && tokenAAmount && allowanceForRouterOfTokenA) {
+      const inAmount = new TokenAmount(tokenA, ethers.utils.parseUnits(tokenAAmount, tokenA.decimals).toBigInt());
+      return inAmount.greaterThan(allowanceForRouterOfTokenA)
+    }
+    return false;
+  }, [allowanceForRouterOfTokenA, tokenAAmount]);
+  const needApproveTokenB = useMemo(() => {
+    if (tokenB && tokenBAmount && allowanceForRouterOfTokenB) {
+      const inAmount = new TokenAmount(tokenB, ethers.utils.parseUnits(tokenBAmount, tokenB.decimals).toBigInt());
+      return inAmount.greaterThan(allowanceForRouterOfTokenB)
+    }
+    return false;
+  }, [allowanceForRouterOfTokenB, tokenBAmount]);
+  const [approveTokenHash, setApproveTokenHash] = useState<{
+    [address: string]: {
+      execute: boolean,
+      hash?: string
+    }
+  }>({});
+  const approveRouter = useCallback(() => {
+    if (tokenA && activeAccount && tokenAContract) {
+      setApproveTokenHash({
+        ...approveTokenHash,
+        [tokenA.address]: {
+          execute: true
+        }
+      });
+      setWaitApprove(true);
+      tokenAContract.approve(SafeswapV2RouterAddress, ethers.utils.parseUnits(tokenAAmount, tokenA.decimals))
+        .then((response: any) => {
+          const { hash, data } = response;
+          setWaitApprove(false);
+          setApproveTokenHash({
+            ...approveTokenHash,
+            [tokenA.address]: {
+              hash,
+              execute: true
+            }
+          })
+        }).catch((err: any) => {
+          setWaitApprove(false);
+          console.log("Approve TokenA Error =", err)
+        })
+    }
+  }, [activeAccount, tokenA, tokenAContract]);
+  const approveRouterForTokenB = useCallback(() => {
+    if (tokenB && activeAccount && tokenBContract) {
+      setApproveTokenHash({
+        ...approveTokenHash,
+        [tokenB.address]: {
+          execute: true
+        }
+      })
+      setWaitApprove(true);
+      tokenBContract.approve(SafeswapV2RouterAddress, ethers.utils.parseUnits(tokenBAmount, tokenB.decimals))
+        .then((response: any) => {
+          const { hash, data } = response;
+          setWaitApprove(false);
+          setApproveTokenHash({
+            ...approveTokenHash,
+            [tokenB.address]: {
+              hash,
+              execute: true
+            }
+          })
+        }).catch((err: any) => {
+          setWaitApprove(false);
+          console.log("Approve TokenB Error =", err)
+        })
+    }
+  }, [activeAccount, tokenB, tokenBContract]);
 
   const swap = () => {
     if (SwapV2RouterContract) {
@@ -225,6 +316,38 @@ export default ({
           </Text>
         </Col>
       </Row>
+      <Row style={{ marginTop: "20px" }}>
+        {
+          tokenA && needApproveTokenA && <Col span={24}>
+            <Alert style={{ marginTop: "10px", marginBottom: "10px" }} type="warning" message={<>
+              <Text>{t("wallet_safeswap_needapprovetoken", { spender: "Safeswap", tokenSymbol: tokenA.symbol })}</Text>
+              <Link disabled={approveTokenHash[tokenA?.address]?.execute || waitApprove} onClick={approveRouter} style={{ float: "right" }}>
+                {
+                  approveTokenHash[tokenA?.address]?.execute && <SyncOutlined spin />
+                }
+                {
+                  approveTokenHash[tokenA?.address] ? t("wallet_safeswap_approving") : t("wallet_safeswap_clicktoapprove")
+                }
+              </Link>
+            </>} />
+          </Col>
+        }
+        {
+          needApproveTokenB && tokenB && <Col span={24}>
+            <Alert style={{ marginTop: "10px", marginBottom: "10px" }} type="warning" message={<>
+              <Text>需要先授权 Safeswap 访问 {tokenB?.symbol}</Text>
+              <Link disabled={approveTokenHash[tokenB?.address]?.execute || waitApprove} onClick={approveRouterForTokenB} style={{ float: "right" }}>
+                {
+                  approveTokenHash[tokenB?.address]?.execute && <SyncOutlined spin />
+                }
+                {
+                  approveTokenHash[tokenB?.address] ? t("wallet_safeswap_approving") : t("wallet_safeswap_clicktoapprove")
+                }
+              </Link>
+            </>} />
+          </Col>
+        }
+      </Row>
       <Divider />
 
       <Row>
@@ -232,7 +355,7 @@ export default ({
           {
             !sending && !render && <Button icon={<SendOutlined />} onClick={() => {
               swap();
-            }} type="primary" style={{ float: "right" }}>
+            }} type="primary" disabled={!tokenAllowanceAmounts || (needApproveTokenB || needApproveTokenA)} style={{ float: "right" }}>
               {t("wallet_send_status_broadcast")}
             </Button>
           }

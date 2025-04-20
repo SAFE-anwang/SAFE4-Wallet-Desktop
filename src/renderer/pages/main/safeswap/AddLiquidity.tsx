@@ -7,7 +7,7 @@ import { ChainId, CurrencyAmount, Token, TokenAmount } from "@uniswap/sdk";
 import { Contract, ethers } from "ethers";
 import { useETHBalances, useTokenAllowanceAmounts, useTokenBalances, useWalletsActiveAccount, useWalletsActiveSigner } from "../../../state/wallets/hooks";
 import { calculateAmountAdd, calculateAmountIn, calculateAmountOut, calculatePairAddress, getReserve, sort } from "./Calculate";
-import { useBlockNumber, useSafeswapTokens } from "../../../state/application/hooks";
+import { useSafeswapTokens } from "../../../state/application/hooks";
 import { useTokens } from "../../../state/transactions/hooks";
 import TokenButtonSelect from "./TokenButtonSelect";
 import { SafeswapV2RouterAddress } from "../../../config";
@@ -15,7 +15,6 @@ import { IERC20_Interface } from "../../../abis";
 import AddLiquidityConfirm from "./AddLiquidityConfirm";
 import { Default_Safeswap_Tokens, isDecimalPrecisionExceeded, parseTokenData, SerializeToken } from "./Swap";
 import { useDispatch } from "react-redux";
-import ViewFiexdAmount from "../../../utils/ViewFiexdAmount";
 import { applicationUpdateSafeswapTokens } from "../../../state/application/action";
 import { AssetPoolModule } from "./AssetPool";
 import { SafeswapV2Pairs, useSafeswapV2Pairs } from "./hooks";
@@ -32,7 +31,6 @@ export default ({
 
   const { t } = useTranslation();
   const { chainId } = useWeb3React();
-  const signer = useWalletsActiveSigner()
   const activeAccount = useWalletsActiveAccount();
   const dispatch = useDispatch();
   const safeswapTokens = useSafeswapTokens();
@@ -43,7 +41,6 @@ export default ({
     return new Token(ChainId.MAINNET, address, decimals, symbol, name);
   })
   const tokenAmounts = useTokenBalances(activeAccount, erc20Tokens);
-  const tokenAllowanceAmounts = useTokenAllowanceAmounts(activeAccount, SafeswapV2RouterAddress, erc20Tokens);
   const balance = useETHBalances([activeAccount])[activeAccount];
 
   const [tokenA, setTokenA] = useState<Token | undefined>(
@@ -66,11 +63,7 @@ export default ({
   const balanceOfTokenB = tokenB ? tokenAmounts[tokenB.address] : balance;
   const [tokenAAmount, settokenAAmount] = useState<string>();
   const [tokenBAmount, settokenBAmount] = useState<string>();
-  const tokenAContract = tokenA ? new Contract(tokenA.address, IERC20_Interface, signer) : undefined;
-  const tokenBContract = tokenB ? new Contract(tokenB.address, IERC20_Interface, signer) : undefined;
-
   const [openAddConfirmModal, setOpenAddConfirmModal] = useState<boolean>(false);
-
   const balanceOfTokenANotEnough = useMemo(() => {
     if (tokenAAmount && balanceOfTokenA) {
       return tokenA ? new TokenAmount(tokenA, ethers.utils.parseUnits(tokenAAmount, tokenA.decimals).toBigInt()).greaterThan(balanceOfTokenA)
@@ -85,79 +78,6 @@ export default ({
     }
     return false;
   }, [tokenB, balanceOfTokenB, tokenAAmount])
-
-  const [approveTokenHash, setApproveTokenHash] = useState<{
-    [address: string]: {
-      execute: boolean,
-      hash?: string
-    }
-  }>({});
-
-  const allowanceForRouterOfTokenA = useMemo(() => {
-    return tokenA ? tokenAllowanceAmounts[tokenA.address] : undefined;
-  }, [tokenA, tokenAllowanceAmounts]);
-  const allowanceForRouterOfTokenB = useMemo(() => {
-    return tokenB ? tokenAllowanceAmounts[tokenB.address] : undefined;
-  }, [tokenB, tokenAllowanceAmounts]);
-
-  const needApproveTokenA = useMemo(() => {
-    if (tokenA && tokenAAmount && allowanceForRouterOfTokenA) {
-      const inAmount = new TokenAmount(tokenA, ethers.utils.parseUnits(tokenAAmount, tokenA.decimals).toBigInt());
-      return inAmount.greaterThan(allowanceForRouterOfTokenA)
-    }
-    return false;
-  }, [allowanceForRouterOfTokenA, tokenAAmount]);
-  const needApproveTokenB = useMemo(() => {
-    if (tokenB && tokenBAmount && allowanceForRouterOfTokenB) {
-      const inAmount = new TokenAmount(tokenB, ethers.utils.parseUnits(tokenBAmount, tokenB.decimals).toBigInt());
-      return inAmount.greaterThan(allowanceForRouterOfTokenB)
-    }
-    return false;
-  }, [allowanceForRouterOfTokenB, tokenBAmount]);
-
-  const approveRouter = useCallback(() => {
-    if (tokenA && activeAccount && tokenAContract) {
-      setApproveTokenHash({
-        ...approveTokenHash,
-        [tokenA.address]: {
-          execute: true
-        }
-      })
-      tokenAContract.approve(SafeswapV2RouterAddress, ethers.constants.MaxUint256)
-        .then((response: any) => {
-          const { hash, data } = response;
-          setApproveTokenHash({
-            ...approveTokenHash,
-            [tokenA.address]: {
-              hash,
-              execute: true
-            }
-          })
-        })
-    }
-  }, [activeAccount, tokenA, tokenAContract]);
-
-  const approveRouterForTokenB = useCallback(() => {
-    if (tokenB && activeAccount && tokenBContract) {
-      setApproveTokenHash({
-        ...approveTokenHash,
-        [tokenB.address]: {
-          execute: true
-        }
-      })
-      tokenBContract.approve(SafeswapV2RouterAddress, ethers.constants.MaxUint256)
-        .then((response: any) => {
-          const { hash, data } = response;
-          setApproveTokenHash({
-            ...approveTokenHash,
-            [tokenB.address]: {
-              hash,
-              execute: true
-            }
-          })
-        })
-    }
-  }, [activeAccount, tokenB, tokenBContract]);
 
   const calculate = useCallback((tokenAAmount: string | undefined, tokenBAmount: string | undefined): CurrencyAmount | undefined => {
     if (chainId && pair) {
@@ -393,41 +313,11 @@ export default ({
       {
         RenderPrice()
       }
-      {
-        !balanceOfTokenANotEnough && needApproveTokenA && tokenA && <Col span={24}>
-          <Alert style={{ marginTop: "10px", marginBottom: "10px" }} type="warning" message={<>
-            <Text>{t("wallet_safeswap_needapprovetoken", { spender: "Safeswap", tokenSymbol: tokenA.symbol })}</Text>
-            <Link disabled={approveTokenHash[tokenA?.address]?.execute} onClick={approveRouter} style={{ float: "right" }}>
-              {
-                approveTokenHash[tokenA?.address]?.execute && <SyncOutlined spin />
-              }
-              {
-                approveTokenHash[tokenA?.address] ? t("wallet_safeswap_approving") : t("wallet_safeswap_clicktoapprove")
-              }
-            </Link>
-          </>} />
-        </Col>
-      }
-      {
-        !balanceOfTokenBNotEnough && needApproveTokenB && tokenB && <Col span={24}>
-          <Alert style={{ marginTop: "10px", marginBottom: "10px" }} type="warning" message={<>
-            <Text>需要先授权 Safeswap 访问 {tokenB?.symbol}</Text>
-            <Link disabled={approveTokenHash[tokenB?.address]?.execute} onClick={approveRouterForTokenB} style={{ float: "right" }}>
-              {
-                approveTokenHash[tokenB?.address]?.execute && <SyncOutlined spin />
-              }
-              {
-                approveTokenHash[tokenB?.address] ? t("wallet_safeswap_approving") : t("wallet_safeswap_clicktoapprove")
-              }
-            </Link>
-          </>} />
-        </Col>
-      }
       <Divider />
       <Row>
         <Col span={24}>
           <Button disabled={
-            (balanceOfTokenANotEnough || needApproveTokenA || balanceOfTokenBNotEnough || needApproveTokenB || !isValidPair)
+            (balanceOfTokenANotEnough || balanceOfTokenBNotEnough || !isValidPair)
           } onClick={() => setOpenAddConfirmModal(true)} type="primary" style={{ float: "right" }}>{t("next")}</Button>
         </Col>
       </Row>

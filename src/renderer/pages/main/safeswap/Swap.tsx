@@ -78,7 +78,6 @@ export default ({
   const pairsMap = result && result.pairsMap;
   const { t } = useTranslation();
   const { chainId } = useWeb3React();
-  const signer = useWalletsActiveSigner()
   const activeAccount = useWalletsActiveAccount();
   const dispatch = useDispatch();
 
@@ -97,9 +96,7 @@ export default ({
     }
   }, [chainId]);
   const tokenAmounts = erc20Tokens && useTokenBalances(activeAccount, erc20Tokens);
-  const tokenAllowanceAmounts = erc20Tokens && useTokenAllowanceAmounts(activeAccount, SafeswapV2RouterAddress, erc20Tokens);
   const balance = useETHBalances([activeAccount])[activeAccount];
-
   const safeswapTokens = useSafeswapTokens();
   const [tokenA, setTokenA] = useState<Token | undefined>(
     safeswapTokens ? parseTokenData(safeswapTokens.tokenA) : Default_Swap_Token ? Default_Swap_Token[0] : undefined
@@ -116,7 +113,6 @@ export default ({
   const balanceOfTokenB = tokenAmounts && tokenB ? tokenAmounts[tokenB.address] : balance;
   const [tokenInAmount, setTokenInAmount] = useState<string>();
   const [tokenOutAmount, setTokenOutAmount] = useState<string>();
-  const tokenAContract = tokenA ? new Contract(tokenA.address, IERC20_Interface, signer) : undefined;
   const [openSwapConfirmModal, setOpenSwapConfirmModal] = useState<boolean>(false);
 
   const [trade, setTrade] = useState<Trade>();
@@ -138,47 +134,6 @@ export default ({
       return _tokenOutAmount.greaterThan(_tokenBReserve);
     }
   }, [pair, trade, tokenB, tokenOutAmount, chainId]);
-
-  const [approveTokenHash, setApproveTokenHash] = useState<{
-    [address: string]: {
-      execute: boolean,
-      hash?: string
-    }
-  }>({});
-
-  const allowanceForRouterOfTokenA = useMemo(() => {
-    return tokenAllowanceAmounts && tokenA ? tokenAllowanceAmounts[tokenA.address] : undefined;
-  }, [tokenA, tokenAllowanceAmounts]);
-
-  const needApproveTokenA = useMemo(() => {
-    if (tokenA && tokenInAmount && allowanceForRouterOfTokenA && !balanceOfTokenANotEnough && !liquidityNotFound && isValidPair) {
-      const inAmount = new TokenAmount(tokenA, ethers.utils.parseUnits(tokenInAmount, tokenA.decimals).toBigInt());
-      return inAmount.greaterThan(allowanceForRouterOfTokenA)
-    }
-    return false;
-  }, [allowanceForRouterOfTokenA, tokenInAmount, balanceOfTokenANotEnough, liquidityNotFound, isValidPair]);
-
-  const approveRouter = useCallback(() => {
-    if (tokenA && activeAccount && tokenAContract) {
-      setApproveTokenHash({
-        ...approveTokenHash,
-        [tokenA.address]: {
-          execute: true
-        }
-      })
-      tokenAContract.approve(SafeswapV2RouterAddress, ethers.constants.MaxUint256)
-        .then((response: any) => {
-          const { hash, data } = response;
-          setApproveTokenHash({
-            ...approveTokenHash,
-            [tokenA.address]: {
-              hash,
-              execute: true
-            }
-          })
-        })
-    }
-  }, [activeAccount, tokenA, tokenAContract]);
 
   const calculate = useCallback((tokenInAmount: string | undefined, tokenOutAmount: string | undefined): CurrencyAmount | undefined => {
     if (chainId && pairsMap) {
@@ -511,26 +466,11 @@ export default ({
           </Col>
         </Row>
       }
-      {
-        needApproveTokenA && tokenA && <Col span={24}>
-          <Alert style={{ marginTop: "5px", marginBottom: "10px" }} type="warning" message={<>
-            <Text>{t("wallet_safeswap_needapprovetoken", { spender: "Safeswap", tokenSymbol: tokenA?.symbol })}</Text>
-            <Link disabled={approveTokenHash[tokenA?.address]?.execute} onClick={approveRouter} style={{ float: "right" }}>
-              {
-                approveTokenHash[tokenA?.address]?.execute && <SyncOutlined spin />
-              }
-              {
-                approveTokenHash[tokenA?.address] ? t("wallet_safeswap_approving") : t("wallet_safeswap_clicktoapprove")
-              }
-            </Link>
-          </>} />
-        </Col>
-      }
       <Divider />
       <Row>
         <Col span={24}>
           <Button disabled={
-            (liquidityNotFound || balanceOfTokenANotEnough || reserverOfTokenBNotEnough || needApproveTokenA)
+            (liquidityNotFound || balanceOfTokenANotEnough || reserverOfTokenBNotEnough)
             || (!(tokenInAmount && tokenOutAmount))
           } onClick={() => setOpenSwapConfirmModal(true)} type="primary" style={{ float: "right" }}>{t("next")}</Button>
         </Col>

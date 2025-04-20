@@ -1,14 +1,14 @@
-import { Button, Col, Divider, Modal, Row, Typography } from "antd"
+import { Alert, Button, Col, Divider, Modal, Row, Typography } from "antd"
 import { Safe4NetworkChainId, SafeswapV2RouterAddress, USDT, WSAFE } from "../../../config";
 import TokenLogo from "../../components/TokenLogo";
-import { ArrowDownOutlined, SendOutlined, SwapLeftOutlined } from "@ant-design/icons";
+import { ArrowDownOutlined, SendOutlined, SwapLeftOutlined, SyncOutlined } from "@ant-design/icons";
 import { Pair, Percent, Token, TokenAmount, Trade, TradeType } from "@uniswap/sdk";
 import ERC20TokenLogoComponent from "../../components/ERC20TokenLogoComponent";
 import { useWeb3React } from "@web3-react/core";
 import { useContract, useSafeswapV2Router, useWSAFEContract } from "../../../hooks/useContracts";
 import { useSafeswapSlippageTolerance, useTimestamp } from "../../../state/application/hooks";
-import { ethers } from "ethers";
-import { useWalletsActiveAccount } from "../../../state/wallets/hooks";
+import { Contract, ethers } from "ethers";
+import { useTokenAllowanceAmounts, useWalletsActiveAccount, useWalletsActiveSigner } from "../../../state/wallets/hooks";
 import { useTransactionAdder } from "../../../state/transactions/hooks";
 import useTransactionResponseRender from "../../components/useTransactionResponseRender";
 import { useCallback, useMemo, useState } from "react";
@@ -17,8 +17,9 @@ import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { applicationUpdateWalletTab } from "../../../state/application/action";
 import { getSlippageTolerancePercent } from "./Swap";
+import { IERC20_Interface } from "../../../abis";
 
-const { Text } = Typography;
+const { Text, Link } = Typography;
 
 export default ({
   openSwapConfirmModal, setOpenSwapConfirmModal,
@@ -43,6 +44,8 @@ export default ({
   const timestamp = useTimestamp();
   const activeAccount = useWalletsActiveAccount();
   const addTransaction = useTransactionAdder();
+  const signer = useWalletsActiveSigner();
+  const tokenAContract = tokenA ? new Contract(tokenA.address, IERC20_Interface, signer) : undefined;
   const {
     render,
     setTransactionResponse,
@@ -50,6 +53,7 @@ export default ({
     response,
     err
   } = useTransactionResponseRender();
+
   const [sending, setSending] = useState<boolean>(false);
   const [txHash, setTxHash] = useState<string>();
   const cancel = useCallback(() => {
@@ -66,6 +70,46 @@ export default ({
   const doSwap = () => {
     trade ? swap() : wrapOrUnwrap();
   }
+
+  const tokenAllowanceAmounts = tokenA && useTokenAllowanceAmounts(activeAccount, SafeswapV2RouterAddress, [tokenA]);
+  const allowanceForRouterOfTokenA = useMemo(() => {
+    return tokenAllowanceAmounts && tokenA ? tokenAllowanceAmounts[tokenA.address] : undefined;
+  }, [tokenA, tokenAllowanceAmounts]);
+  const needApproveTokenA = useMemo(() => {
+    if (tokenA && tokenInAmount && allowanceForRouterOfTokenA) {
+      const inAmount = new TokenAmount(tokenA, ethers.utils.parseUnits(tokenInAmount, tokenA.decimals).toBigInt());
+      return inAmount.greaterThan(allowanceForRouterOfTokenA)
+    }
+    return false;
+  }, [allowanceForRouterOfTokenA, tokenInAmount, tokenA]);
+  const [approveTokenHash, setApproveTokenHash] = useState<{
+    [address: string]: {
+      execute: boolean,
+      hash?: string
+    }
+  }>({});
+  const approveRouter = useCallback(() => {
+    if (tokenA && activeAccount && tokenAContract && trade) {
+      setApproveTokenHash({
+        ...approveTokenHash,
+        [tokenA.address]: {
+          execute: true
+        }
+      })
+      const amountIn = ethers.BigNumber.from(trade.inputAmount.raw.toString());
+      tokenAContract.approve(SafeswapV2RouterAddress, amountIn)
+        .then((response: any) => {
+          const { hash, data } = response;
+          setApproveTokenHash({
+            ...approveTokenHash,
+            [tokenA.address]: {
+              hash,
+              execute: true
+            }
+          })
+        })
+    }
+  }, [activeAccount, tokenA, tokenAContract, trade]);
 
   const wrapOrUnwrap = () => {
     if (WSAFEContract) {
@@ -391,12 +435,29 @@ export default ({
       {
         RenderPrice()
       }
+      <Row style={{ marginTop: "20px" }}>
+        {
+          needApproveTokenA && tokenA && <Col span={24}>
+            <Alert style={{ marginTop: "5px", marginBottom: "10px" }} type="warning" message={<>
+              <Text>{t("wallet_safeswap_needapprovetoken", { spender: "Safeswap", tokenSymbol: tokenA?.symbol })}</Text>
+              <Link disabled={approveTokenHash[tokenA?.address]?.execute} onClick={approveRouter} style={{ float: "right" }}>
+                {
+                  approveTokenHash[tokenA?.address]?.execute && <SyncOutlined spin />
+                }
+                {
+                  approveTokenHash[tokenA?.address] ? t("wallet_safeswap_approving") : t("wallet_safeswap_clicktoapprove")
+                }
+              </Link>
+            </>} />
+          </Col>
+        }
+      </Row>
       <Divider />
 
       <Row>
         <Col span={24}>
           {
-            !sending && !render && <Button icon={<SendOutlined />} onClick={() => {
+            !sending && !render && <Button icon={<SendOutlined />} disabled={needApproveTokenA} onClick={() => {
               doSwap();
             }} type="primary" style={{ float: "right" }}>
               {t("wallet_send_status_broadcast")}
