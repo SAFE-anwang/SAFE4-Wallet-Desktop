@@ -67,7 +67,7 @@ export default () => {
                       <Text strong>{name}</Text>
                     </Col>
                     <Col span={24} style={{ lineHeight: "35px" }}>
-                      <Text strong>{tokenAmounts && tokenAmounts[address]?.toSignificant()} </Text>
+                      <Text strong>{tokenAmounts && tokenAmounts[address]?.toFixed(6)} </Text>
                       <Text type="secondary">{symbol}</Text>
                     </Col>
                   </Row>
