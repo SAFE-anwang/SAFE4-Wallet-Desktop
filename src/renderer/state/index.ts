@@ -4,15 +4,17 @@ import application from './application/reducer';
 import wallets from './wallets/reducer';
 import multicall from './multicall/reducer';
 import transactions from './transactions/reducer';
+import audit from './audit/reducer';
 
 
 const store = configureStore({
-    reducer: {
-        application,
-        wallets,
-        multicall,
-        transactions
-    }
+  reducer: {
+    application,
+    wallets,
+    multicall,
+    transactions,
+    audit
+  }
 })
 
 export default store

@@ -141,7 +141,7 @@ export default ({
           <Text style={{ float: "right" }} strong>{t("wallet_balance_currentavailable")}</Text>
           <br />
           <Text style={{ float: "right", fontSize: "18px", lineHeight: "36px" }}>
-            {activeAccountTokenAmount?.toFixed(2)}
+            {activeAccountTokenAmount?.toSignificant()}
           </Text>
         </Col>
         {

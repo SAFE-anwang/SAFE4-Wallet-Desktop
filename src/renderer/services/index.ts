@@ -4,13 +4,14 @@ import ChecksumAddress from "../utils/ChecksumAddress";
 export const GET = async function (url: string, params?: any): Promise<any> {
   const URI_params = params ? "?" + obj2URIParams(params) : undefined;
   const response = await fetch(URI_params ? url + URI_params : url, {
-      method: 'get',
-      headers: {
-          'Content-Type': "application/json" ,
-          'Accept': 'application/json, text/plain, */*'
-      }
+    // method: 'get',
+    // headers: {
+    //     'Content-Type': "application/json" ,
+    //     'Accept': 'application/json, text/plain, */*'
+    // }
   });
   const data = await response.text();
+  console.log("Get<<", data)
   const json = data ? JSON.parse(data) : undefined;
   return json as any;
 }
@@ -26,12 +27,12 @@ export const POST = async function (url: string, params?: any): Promise<ApiRespo
     })
     const json = await response.json();
     return json as ApiResponse<any>;
-  }catch( err : any ){
-    console.log("fetch err >>>" , err)
+  } catch (err: any) {
+    console.log("fetch err >>>", err)
     return {
-      code : "0",
-      data : {},
-      message:""
+      code: "0",
+      data: {},
+      message: ""
     }
   }
 }
@@ -39,14 +40,14 @@ export const POST = async function (url: string, params?: any): Promise<ApiRespo
 function obj2URIParams(data: any) {
   var _result = [];
   for (var key in data) {
-      var value = data[key];
-      if (value && value.constructor === Array) {
-          value.forEach(function (_value) {
-              _result.push(key + "=" + _value);
-          });
-      } else {
-          _result.push(key + '=' + value);
-      }
+    var value = data[key];
+    if (value && value.constructor === Array) {
+      value.forEach(function (_value) {
+        _result.push(key + "=" + _value);
+      });
+    } else {
+      _result.push(key + '=' + value);
+    }
   }
   return _result.join('&');
 }
@@ -74,11 +75,11 @@ export interface PageQueryDTO {
 }
 
 export interface Safe3AddressVO {
-  address : string ,
-  avaliable : string ,
-  locked : string ,
-  masternode : boolean ,
-  mLockedAmount : string ,
+  address: string,
+  avaliable: string,
+  locked: string,
+  masternode: boolean,
+  mLockedAmount: string,
 }
 
 export interface AddressActivityVO {
@@ -95,10 +96,10 @@ export interface AddressActivityVO {
 }
 
 export interface GetTestCoinVO {
-  address : string,
-  dateTimestamp : number,
-  amount : string,
-  from : string
+  address: string,
+  dateTimestamp: number,
+  amount: string,
+  from: string
 }
 
 export interface SuperNodeVO {
@@ -118,7 +119,7 @@ export interface SuperNodeVO {
   description: string,
   founders: MemberInfoVO[],
   incentivePlan: IncentivePlanVO,
-  state : number
+  state: number
 }
 
 export interface MemberInfoVO {
@@ -140,67 +141,67 @@ export interface IncentivePlanVO {
 }
 
 export interface ContractVO {
-  address : string ,
-  creator : string ,
-  creatorBlockNumber : number,
-  creatorTransactionHash : string,
-  creatorTimestamp : number,
-  name ?: string,
-  compileType ?: string,
-	compileVersion ?: string,
+  address: string,
+  creator: string,
+  creatorBlockNumber: number,
+  creatorTransactionHash: string,
+  creatorTimestamp: number,
+  name?: string,
+  compileType?: string,
+  compileVersion?: string,
 }
 
 export interface ContractCompileVO {
-  address : string ,
-  name ?: string,
-  abi ?: string
+  address: string,
+  name?: string,
+  abi?: string
 }
 
 export interface AddressAnalyticVO {
-  nodeRewards : TimeNodeRewardVO[]
+  nodeRewards: TimeNodeRewardVO[]
 }
 
 export interface TimeNodeRewardVO {
-  time : string ,
-  rewardCount : number ,
-  rewardAmount : string
+  time: string,
+  rewardCount: number,
+  rewardAmount: string
 }
 
 export interface DateTimeNodeRewardVO {
-  date : string ,
-  amount : string ,
-  count : number
+  date: string,
+  amount: string,
+  count: number
 }
 
 export interface CrossChainVO {
 
-  asset : string,
+  asset: string,
 
-  srcAddress : string,
-  srcNetwork : string,
-  srcAmount : string,
-  srcTxHash : string,
-  srcTxBlockNumber : number,
-  srcTxTimestamp : number,
+  srcAddress: string,
+  srcNetwork: string,
+  srcAmount: string,
+  srcTxHash: string,
+  srcTxBlockNumber: number,
+  srcTxTimestamp: number,
 
-  dstAddress : string,
-  dstNetwork : string,
-  dstAmount : string,
-  dstTxHash : string,
-  dstTxBlockNumber : number,
-  dstTxTimestamp : number,
+  dstAddress: string,
+  dstNetwork: string,
+  dstAmount: string,
+  dstTxHash: string,
+  dstTxBlockNumber: number,
+  dstTxTimestamp: number,
 
-  fee : string,
-  status : number
+  fee: string,
+  status: number
 }
 
 export function AddressActivityFormat(activity: AddressActivityVO): AddressActivityVO {
   const { data } = activity;
   let _data: any;
   _data = {
-    ...data ,
-    from : data.from ? ChecksumAddress(data.from) : undefined,
-    to : data.to ? ChecksumAddress(data.to) : undefined
+    ...data,
+    from: data.from ? ChecksumAddress(data.from) : undefined,
+    to: data.to ? ChecksumAddress(data.to) : undefined
   }
   return {
     ...activity,
@@ -211,11 +212,11 @@ export function AddressActivityFormat(activity: AddressActivityVO): AddressActiv
   }
 }
 
-export function ContractVOFormat( contractVO : ContractVO ) : ContractVO {
+export function ContractVOFormat(contractVO: ContractVO): ContractVO {
   return {
     ...contractVO,
-    address : ethers.utils.isAddress(contractVO.address)? ChecksumAddress(contractVO.address) : "",
-    creator : ethers.utils.isAddress(contractVO.creator)? ChecksumAddress(contractVO.creator) : "",
+    address: ethers.utils.isAddress(contractVO.address) ? ChecksumAddress(contractVO.address) : "",
+    creator: ethers.utils.isAddress(contractVO.creator) ? ChecksumAddress(contractVO.creator) : "",
   }
 }
 

@@ -20,7 +20,7 @@ const { Text, Title } = Typography;
 const base58Regex = /^[1-9A-HJ-NP-Za-km-z]{52}$/;
 const evmPrivateRegex = /^(0x)?[0-9a-fA-F]{64}$/;
 const safe3AddressBase58Regex = /^X[a-zA-Z0-9]{33}$/;
-const redeemNeedAmount = "0.01";
+const redeemNeedAmount = "0.005";
 
 const isSafe3DesktopExportPrivateKey = (input: string) => {
   return base58Regex.test(input);

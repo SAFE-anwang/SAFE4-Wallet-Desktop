@@ -1,56 +1,41 @@
 import { Avatar, Button, Card, Col, Divider, Row, Typography } from "antd"
 import { RightOutlined, WalletOutlined, AppstoreAddOutlined } from "@ant-design/icons";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ChainId, Token, TokenAmount } from "@uniswap/sdk";
 import { useTokenBalances, useWalletsActiveAccount } from "../../../../../state/wallets/hooks";
 import TokenSendModal from "./TokenSendModal";
-import { useTokens } from "../../../../../state/transactions/hooks";
+import { useWalletTokens } from "../../../../../state/transactions/hooks";
 import TokenAddModal from "./TokenAddModal";
 import AddressComponent from "../../../../components/AddressComponent";
-import { useWeb3React } from "@web3-react/core";
 import { useTranslation } from "react-i18next";
-import { Safe4NetworkChainId, Safe4_Network_Config, USDT, WSAFE } from "../../../../../config";
 import ERC20TokenLogoComponent from "../../../../components/ERC20TokenLogoComponent";
+import { useAuditTokenList } from "../../../../../state/audit/hooks";
 const { Text } = Typography;
 
 export default () => {
 
   const { t } = useTranslation();
-  const { chainId } = useWeb3React();
-  const [erc20Tokens, setERC20Tokens] = useState<Token[]>([]);
   const activeAccount = useWalletsActiveAccount();
   const [openTokenSendModal, setOpenTokenSendModal] = useState(false);
   const [openTokenAddModal, setOpenTokenAddModal] = useState(false);
   const [selectedToken, setSelectedToken] = useState<Token>();
-  const tokens = useTokens();
-  const tokenAmounts = useTokenBalances(activeAccount, erc20Tokens);
 
-  useEffect(() => {
-    if (tokens && chainId) {
-      const defaultTokenAddresses: { [address: string]: Token } = {};
-      defaultTokenAddresses[USDT[chainId as Safe4NetworkChainId].address] = USDT[chainId as Safe4NetworkChainId];
-      defaultTokenAddresses[WSAFE[chainId as Safe4NetworkChainId].address] = WSAFE[chainId as Safe4NetworkChainId];
-
-      const defaultTokens = Object.keys(defaultTokenAddresses).map(address => defaultTokenAddresses[address]);
-      const erc20Tokens = Object.keys(tokens)
-        .filter(address => {
-          return tokens[address].chainId == chainId
-            && tokens[address].name != "Safeswap V2"
-            && defaultTokenAddresses[address] == undefined
-        })
-        .map(address => {
-          const { name, symbol, decimals } = tokens[address];
-          const token = new Token(
-            ChainId.MAINNET,
-            address, decimals,
-            symbol, name
-          );
-          return token;
-        });
-
-      setERC20Tokens(defaultTokens.concat(erc20Tokens));
+  const auditTokens = useAuditTokenList();
+  const walletTokens = useWalletTokens();
+  const tokenAmounts = useTokenBalances(activeAccount, walletTokens);
+  const tokens = useMemo(() => {
+    const tokens = walletTokens && walletTokens.filter(token => {
+      return token.name != 'Safeswap V2'
+    });
+    if (auditTokens) {
+      const auditMap = auditTokens.reduce((map, token) => {
+        map[token.address] = token;
+        return map;
+      }, {} as { [address: string]: any })
+      return tokens?.filter(token => auditMap[token.address] != undefined)
     }
-  }, [tokens, chainId]);
+    return tokens;
+  }, [walletTokens, auditTokens]);
 
   return <>
     <Row>
@@ -59,9 +44,9 @@ export default () => {
       </Col>
     </Row>
     {
-      erc20Tokens && <Card className="menu-item-container" style={{ marginBottom: "20px", marginTop: "20px" }}>
+      tokens && <Card className="menu-item-container" style={{ marginBottom: "20px", marginTop: "20px" }}>
         {
-          erc20Tokens.map((erc20Token, index) => {
+          tokens.map((erc20Token, index) => {
             const { address, name, symbol, chainId } = erc20Token;
             return <>
               {
@@ -82,7 +67,7 @@ export default () => {
                       <Text strong>{name}</Text>
                     </Col>
                     <Col span={24} style={{ lineHeight: "35px" }}>
-                      <Text strong>{tokenAmounts && tokenAmounts[address]?.toExact()} </Text>
+                      <Text strong>{tokenAmounts && tokenAmounts[address]?.toSignificant()} </Text>
                       <Text type="secondary">{symbol}</Text>
                     </Col>
                   </Row>
@@ -107,7 +92,7 @@ export default () => {
     }
 
     {
-      selectedToken &&
+      selectedToken && openTokenSendModal &&
       <TokenSendModal token={selectedToken} openSendModal={openTokenSendModal} setOpenSendModal={setOpenTokenSendModal} />
     }
 

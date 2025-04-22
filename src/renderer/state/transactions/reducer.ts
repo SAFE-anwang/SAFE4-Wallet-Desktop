@@ -1,5 +1,5 @@
 import { createReducer } from "@reduxjs/toolkit"
-import { addTransaction, checkedTransaction, clearAllTransactions, finalizeTransaction, initCrosschains, loadERC20Tokens, loadTransactionsAndUpdateAddressActivityFetch, refreshAddressTimeNodeReward, reloadTransactionsAndSetAddressActivityFetch, updateCrosschains, updateERC20Token } from "./actions"
+import { addTransaction, checkedTransaction, clearAllTransactions, finalizeTransaction, initCrosschains, loadERC20Tokens, loadTransactionsAndUpdateAddressActivityFetch, refreshAddressTimeNodeReward, reloadTransactionsAndSetAddressActivityFetch, updateAudit, updateCrosschains, updateERC20Token } from "./actions"
 import { IPC_CHANNEL } from "../../config"
 import { DBAddressActivitySignal, DB_AddressActivity_Actions, DB_AddressActivity_Methods } from "../../../main/handlers/DBAddressActivitySingalHandler"
 import { CrossChainVO, DateTimeNodeRewardVO, TimeNodeRewardVO } from "../../services"
@@ -147,7 +147,17 @@ export const initialState: {
   crosschains: {
     [srcTxHash: string]: CrossChainVO
   }
-  chainId?: number
+  chainId?: number,
+
+  audit?: {
+    [chainId: number]: {
+      address: string,
+      name: string,
+      symbol: string,
+      decimals: number
+    }[]
+  }
+
 } = {
   transactions: {},
   tokens: {},
@@ -213,7 +223,7 @@ export default createReducer(initialState, (builder) => {
         addressActivityFetch: {
           ...addressActivityFetch
         },
-        crosschains : {...crosschains},
+        crosschains: { ...crosschains },
         chainId: addressActivityFetch.chainId
       }
     })
@@ -312,7 +322,19 @@ export default createReducer(initialState, (builder) => {
         state.crosschains[srcTxHash] = crosschain;
       });
     })
-
+    .addCase(updateAudit, (state, { payload }) => {
+      const { chainId, tokens } = payload;
+      const _audit: {
+        [chainId: number]: {
+          address: string,
+          name: string,
+          symbol: string,
+          decimals: number
+        }[]
+      } = {};
+      _audit[chainId] = tokens;
+      state.audit = _audit;
+    })
 })
 
 export function Transaction2Activity(txn: TransactionDetails) {

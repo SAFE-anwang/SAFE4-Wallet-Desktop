@@ -108,9 +108,6 @@ export default () => {
     }
   }, [activeAccount, latestBlockNumber, chainId]);
 
-
-
-
   return <>
     {/* <Text>
       {JSON.stringify(stateCrosschains)}

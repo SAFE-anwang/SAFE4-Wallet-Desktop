@@ -206,3 +206,39 @@ export function useERC20Tokens(chainId: Safe4NetworkChainId): Token[] {
     return defaultTokens.concat(walletTokens);
   });
 }
+
+export function useWalletTokens(): Token[] | undefined {
+  const { chainId } = useWeb3React();
+  const defaultTokens = useMemo(() => {
+    if (!chainId) return [];
+    return [
+      USDT[chainId as Safe4NetworkChainId],
+      WSAFE[chainId as Safe4NetworkChainId],
+    ];
+  }, [chainId]);
+
+  const defaultTokenMap = useMemo(() => {
+    const map: Record<string, Token> = {};
+    for (const token of defaultTokens) {
+      map[token.address] = token;
+    }
+    return map;
+  }, [defaultTokens]);
+  const _walletTokens = useSelector((state: AppState) => state.transactions.tokens);
+  const extraTokens = useMemo(() => {
+    if (!chainId || !_walletTokens) return [];
+    return Object.keys(_walletTokens)
+      .filter(address =>
+        _walletTokens[address].chainId === chainId &&
+        defaultTokenMap[address] === undefined
+      )
+      .map(address => {
+        const { name, symbol, decimals } = _walletTokens[address];
+        return new Token(chainId, address, decimals, symbol, name);
+      });
+  }, [_walletTokens, chainId, defaultTokenMap]);
+  return [...defaultTokens, ...extraTokens];
+}
+
+
+
