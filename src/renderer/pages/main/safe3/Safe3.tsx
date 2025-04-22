@@ -33,8 +33,6 @@ const isSafe3Address = (input: string) => {
   return safe3AddressBase58Regex.test(input);
 }
 
-
-
 export interface TxExecuteStatus {
   txHash?: string,
   status: number,
