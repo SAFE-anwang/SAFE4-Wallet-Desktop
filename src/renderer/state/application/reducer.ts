@@ -106,8 +106,10 @@ export interface IApplicationState {
   language: string,
 
   safeswap: {
-    tokenA: { chainId: number, address: string, decimals: number, name?: string, symbol?: string } | undefined,
-    tokenB: { chainId: number, address: string, decimals: number, name?: string, symbol?: string } | undefined
+    [chainId: number]: {
+      tokenA: { chainId: number, address: string, decimals: number, name?: string, symbol?: string } | undefined,
+      tokenB: { chainId: number, address: string, decimals: number, name?: string, symbol?: string } | undefined
+    }
   } | undefined,
   SlippageTolerance: string,
 
@@ -299,14 +301,16 @@ export default createReducer(initialState, (builder) => {
     })
 
     .addCase(applicationUpdateSafeswapTokens, (state, { payload }) => {
-      const { tokenA, tokenB } = payload;
-      state.safeswap = {
+      const { chainId, tokenA, tokenB } = payload;
+      const _safeswap = state.safeswap ?? {};
+      _safeswap[chainId] = {
         tokenA: tokenA ? { ...tokenA } : undefined,
         tokenB: tokenB ? { ...tokenB } : undefined,
       }
+      state.safeswap = _safeswap;
     })
 
-    .addCase(applicationUpdateSafeswapSlippageTolerance, ( state, {payload} ) => {
+    .addCase(applicationUpdateSafeswapSlippageTolerance, (state, { payload }) => {
       state.SlippageTolerance = payload;
     })
 

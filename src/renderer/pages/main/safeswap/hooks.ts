@@ -7,9 +7,10 @@ import { useWalletsActiveAccount } from "../../../state/wallets/hooks";
 import { Contract, ethers } from "ethers";
 import { PairABI } from "../../../constants/SafeswapAbiConfig";
 import { Web3Provider } from "@ethersproject/providers";
-import { useTokens } from "../../../state/transactions/hooks";
+import { useTokens, useWalletTokens } from "../../../state/transactions/hooks";
 import { Safe4NetworkChainId, USDT, WSAFE } from "../../../config";
 import { Pair, Token, TokenAmount } from "@uniswap/sdk";
+import { useAuditTokenList } from "../../../state/audit/hooks";
 
 
 async function getSafeswapV2PairAddresses(safeswapV2Factory: Contract, multicallContract: Contract) {
@@ -103,13 +104,13 @@ export interface PairResult {
 export interface SafeswapV2Pairs {
   loading: boolean,
   result: {
-    pairsMap: { [address: string]: Pair } ,
-    pairBalancesMap: { [address: string]: ethers.BigNumber } ,
-    pairTotalSuppliesMap: { [address: string]: ethers.BigNumber } 
+    pairsMap: { [address: string]: Pair },
+    pairBalancesMap: { [address: string]: ethers.BigNumber },
+    pairTotalSuppliesMap: { [address: string]: ethers.BigNumber }
   } | undefined
 }
 
-export function useSafeswapV2Pairs() : SafeswapV2Pairs {
+export function useSafeswapV2Pairs(): SafeswapV2Pairs {
 
   const blockNumber = useBlockNumber();
   const { chainId, provider } = useWeb3React();
@@ -117,19 +118,22 @@ export function useSafeswapV2Pairs() : SafeswapV2Pairs {
   const safeswapV2Factory = useSafeswapV2Factory(false);
   const multicallContract = useMulticallContract();
   const [pairResults, setPairResults] = useState<{ [address: string]: PairResult }>();
-  const walletTokens = useTokens();
+
+  const walletTokens = useWalletTokens();
+  const auditTokens = useAuditTokenList();
   const erc20Tokens = useMemo(() => {
-    if (chainId) {
-      const defaultTokens = [
-        USDT[chainId as Safe4NetworkChainId],
-        WSAFE[chainId as Safe4NetworkChainId],
-      ]
-      return defaultTokens.concat(walletTokens && Object.keys(walletTokens).map((address) => {
-        const { name, decimals, symbol } = walletTokens[address];
-        return new Token(chainId, address, decimals, symbol, name);
-      }));
+    const tokens = walletTokens && walletTokens.filter(token => {
+      return token.name != 'Safeswap V2'
+    });
+    if (auditTokens) {
+      const auditMap = auditTokens.reduce((map, token) => {
+        map[token.address] = token;
+        return map;
+      }, {} as { [address: string]: any })
+      return tokens?.filter(token => auditMap[token.address] != undefined)
     }
-  }, [chainId, walletTokens]);
+    return tokens;
+  }, [walletTokens, auditTokens]);
 
   const [loading, setLoading] = useState<boolean>(false);
   const [result, setResult] = useState<{

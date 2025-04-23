@@ -8,7 +8,7 @@ import { Contract, ethers } from "ethers";
 import { useETHBalances, useTokenAllowanceAmounts, useTokenBalances, useWalletsActiveAccount, useWalletsActiveSigner } from "../../../state/wallets/hooks";
 import { calculatePairAddress } from "./Calculate";
 import { useSafeswapSlippageTolerance, useSafeswapTokens } from "../../../state/application/hooks";
-import { useTokens } from "../../../state/transactions/hooks";
+import { useTokens, useWalletTokens } from "../../../state/transactions/hooks";
 import TokenButtonSelect from "./TokenButtonSelect";
 import { Safe4NetworkChainId, SafeswapV2RouterAddress, USDT, WSAFE } from "../../../config";
 import { IERC20_Interface } from "../../../abis";
@@ -31,8 +31,6 @@ export const Default_Safeswap_Tokens = (chainId: Safe4NetworkChainId) => {
   return [
     USDT[chainId],
     undefined,
-    // new Token(ChainId.MAINNET, "0xC5a68f24aD442801c454417e9F5aE073DD9D92F6", 18, "TKA", "Token-A"),
-    // new Token(ChainId.MAINNET, "0xb9FE8cBC71B818035AcCfd621d204BAa57377FFA", 18, "TKB", "Token-B")
   ]
 }
 
@@ -82,20 +80,8 @@ export default ({
   const dispatch = useDispatch();
 
   const Default_Swap_Token = chainId && Default_Safeswap_Tokens(chainId);
-  const tokens = useTokens();
-  const erc20Tokens = useMemo(() => {
-    if (chainId) {
-      const defaultTokens = [
-        USDT[chainId as Safe4NetworkChainId],
-        WSAFE[chainId as Safe4NetworkChainId],
-      ]
-      return defaultTokens.concat(Object.keys(tokens).map((address) => {
-        const { name, decimals, symbol } = tokens[address];
-        return new Token(ChainId.MAINNET, address, decimals, symbol, name);
-      }));
-    }
-  }, [chainId]);
-  const tokenAmounts = erc20Tokens && useTokenBalances(activeAccount, erc20Tokens);
+  const walletTokens = useWalletTokens();
+  const tokenAmounts = walletTokens && useTokenBalances(activeAccount, walletTokens);
   const balance = useETHBalances([activeAccount])[activeAccount];
   const safeswapTokens = useSafeswapTokens();
   const [tokenA, setTokenA] = useState<Token | undefined>(
@@ -223,14 +209,17 @@ export default ({
   }
 
   useEffect(() => {
-    dispatch(applicationUpdateSafeswapTokens({
-      tokenA: tokenA ? SerializeToken(tokenA) : undefined,
-      tokenB: tokenB ? SerializeToken(tokenB) : undefined,
-    }));
-    setTokenInAmount(undefined);
-    setTokenOutAmount(undefined);
-    setTrade(undefined);
-  }, [tokenA, tokenB]);
+    if (chainId) {
+      dispatch(applicationUpdateSafeswapTokens({
+        chainId: chainId,
+        tokenA: tokenA ? SerializeToken(tokenA) : undefined,
+        tokenB: tokenB ? SerializeToken(tokenB) : undefined,
+      }));
+      setTokenInAmount(undefined);
+      setTokenOutAmount(undefined);
+      setTrade(undefined);
+    }
+  }, [chainId, tokenA, tokenB]);
 
   const slippageTolerance = useSafeswapSlippageTolerance();
 

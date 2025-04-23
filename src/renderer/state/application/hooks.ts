@@ -3,6 +3,7 @@ import { useSelector } from 'react-redux'
 import { AppState } from '../index';
 import { AfterSetPasswordTODO } from './reducer';
 import { Token } from '@uniswap/sdk';
+import { useWeb3React } from '@web3-react/core';
 
 
 export function useBlockNumber(): number {
@@ -82,12 +83,14 @@ export function useSafeswapTokens(): {
   tokenA: { chainId: number, address: string, decimals: number, name?: string, symbol?: string } | undefined,
   tokenB: { chainId: number, address: string, decimals: number, name?: string, symbol?: string } | undefined
 } | undefined {
+  const { chainId } = useWeb3React();
   return useSelector((state: AppState) => {
-    return state.application.safeswap;
+    if (!chainId || !state.application.safeswap) return undefined;
+    return state.application.safeswap[chainId];
   })
 }
 
-export function useSafeswapSlippageTolerance() : string  {
+export function useSafeswapSlippageTolerance(): string {
   return useSelector((state: AppState) => {
     return state.application.SlippageTolerance;
   })

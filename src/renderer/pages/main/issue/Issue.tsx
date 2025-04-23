@@ -5,7 +5,6 @@ import { CheckboxGroupProps } from "antd/es/checkbox";
 import { ethers } from "ethers";
 import { useState } from "react";
 import { useTranslation } from "react-i18next"
-import { useNavigate } from "react-router-dom";
 import { ContractCompileSignal, ContractCompile_Methods } from "../../../../main/handlers/ContractCompileHandler";
 import { DB_AddressActivity_Actions } from "../../../../main/handlers/DBAddressActivitySingalHandler";
 import { IPC_CHANNEL } from "../../../config";
@@ -14,15 +13,10 @@ import { useETHBalances, useWalletsActiveAccount, useWalletsActiveSigner } from 
 import Safescan from "../../components/Safescan";
 import { SRC20_Template, SRC20_Template_CompileOption, SRC20_Template_Option } from "./SRC20_Template_Config";
 
-const { Text, Title } = Typography;
+const { Text, Title, Link } = Typography;
 const now = () => new Date().getTime()
 
-const options: CheckboxGroupProps<SRC20_Template_Option>['options'] = [
-  { label: '普通资产', value: SRC20_Template_Option.SRC20 },
-  { label: '可增发资产', value: SRC20_Template_Option.SRC20_mintable },
-  { label: '可销毁资产', value: SRC20_Template_Option.SRC20_burnable },
-  { label: '可暂停转账', value: SRC20_Template_Option.SRC20_pausable },
-];
+
 
 export default () => {
 
@@ -33,6 +27,13 @@ export default () => {
   const activeAccount = useWalletsActiveAccount();
   const balance = useETHBalances([activeAccount])[activeAccount];
   const balanceGtZERO = balance && balance.greaterThan(CurrencyAmount.ether("0"));
+
+  const options: CheckboxGroupProps<SRC20_Template_Option>['options'] = [
+    { label: t("wallet_issue_template_src20"), value: SRC20_Template_Option.SRC20 },
+    { label: t("wallet_issue_template_src20_mintable"), value: SRC20_Template_Option.SRC20_mintable },
+    { label: t("wallet_issue_template_src20_burnable"), value: SRC20_Template_Option.SRC20_burnable },
+    { label: t("wallet_issue_template_src20_pausable"), value: SRC20_Template_Option.SRC20_pausable },
+  ];
 
   const [inputParams, setInputParams] = useState<{
     templateType: SRC20_Template_Option,
@@ -66,20 +67,19 @@ export default () => {
       totalSupply?: string
     } = {};
     if (!name) {
-      errors.name = "请输入资产名称";
+      errors.name = t("please_enter")+t("wallet_issue_asset_name");
     }
     if (!symbol) {
-      errors.symbol = "请输入资产符号";
+      errors.symbol = t("please_enter")+t("wallet_issue_asset_symbol");
     }
     if (!totalSupply) {
-      errors.totalSupply = "请输入资产初始供应量";
+      errors.totalSupply = t("please_enter")+t("wallet_issue_asset_totalsupply");
     } else {
       try {
         const _totalSupply = ethers.utils.parseUnits(totalSupply);
         if (!_totalSupply.gt(0)) {
           errors.totalSupply = "初始供应量必须大于零"
         }
-
       } catch (err: any) {
         errors.totalSupply = "请输入正确的数量"
       }
@@ -144,19 +144,19 @@ export default () => {
     switch (inputParams.templateType) {
       case SRC20_Template_Option.SRC20:
         return <>
-          <Text>具备通用的转账功能</Text>
+          <Text>{t("wallet_issue_template_src20_tip")}</Text>
         </>
       case SRC20_Template_Option.SRC20_mintable:
         return <>
-          <Text>创建者可以对资产进行增发</Text>
+          <Text>{t("wallet_issue_template_src20_mintable_tip")}</Text>
         </>
       case SRC20_Template_Option.SRC20_burnable:
         return <>
-          <Text>资产发行者可以销毁指定账户的该类资产数量</Text>
+          <Text>{t("wallet_issue_template_src20_burnable_tip")}</Text>
         </>
       case SRC20_Template_Option.SRC20_pausable:
         return <>
-          <Text>资产发行者可以暂停资产交易</Text>
+          <Text>{t("wallet_issue_template_src20_pausable_tip")}</Text>
         </>
     }
 
@@ -176,12 +176,13 @@ export default () => {
       <div style={{ margin: "auto", width: "90%" }}>
         <Card style={{ marginBottom: "20px" }}>
           <Alert showIcon type="info" message={<>
-            发行 SRC20 标准的资产
+            {t("wallet_issue_tip0")}
+            <Link style={{ marginLeft: "20px" }} onClick={() => window.open("https://github.com/SAFE-anwang/src20")}>查看代码库</Link>
           </>} />
           <Divider />
           <Row>
             <Col span={24}>
-              <Text type="secondary">选择模板</Text>
+              <Text type="secondary">{t("wallet_issue_selecttemplate")}</Text>
             </Col>
             <Col span={24}>
               <Flex vertical gap="middle">
@@ -199,7 +200,7 @@ export default () => {
               </Card>
             </Col>
             <Col span={24} style={{ marginTop: "5px" }}>
-              <Text type="secondary">资产名称</Text>
+              <Text type="secondary">{t("wallet_issue_asset_name")}</Text>
               <br />
               <Input value={inputParams.name} onChange={(event) => {
                 const inputName = event.target.value.trim();
@@ -218,7 +219,7 @@ export default () => {
               }
             </Col>
             <Col span={24} style={{ marginTop: "5px" }}>
-              <Text type="secondary">资产符号</Text>
+              <Text type="secondary">{t("wallet_issue_asset_symbol")}</Text>
               <br />
               <Input value={inputParams.symbol} onChange={(event) => {
                 const inputSymbol = event.target.value.trim();
@@ -237,7 +238,7 @@ export default () => {
               }
             </Col>
             <Col span={24} style={{ marginTop: "5px" }}>
-              <Text type="secondary">初始供应量</Text>
+              <Text type="secondary">{t("wallet_issue_asset_totalsupply")}</Text>
               <br />
               <Input value={inputParams.totalSupply} onChange={(event) => {
                 const inputTotalSupply = event.target.value.trim();
@@ -284,7 +285,7 @@ export default () => {
                 </>} />
               }
               <Button disabled={!balanceGtZERO || deploy?.txHash || deploy?.error} loading={deploy?.execute}
-                onClick={issue} style={{}} type="primary">发行资产</Button>
+                onClick={issue} style={{}} type="primary">{t("wallet_issue_asset_doissue")}</Button>
             </Col>
           </Row>
         </Card>

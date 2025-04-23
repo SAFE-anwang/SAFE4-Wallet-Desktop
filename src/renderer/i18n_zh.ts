@@ -671,5 +671,21 @@ export default {
   wallet_safeswap_liquidity_removeliquidity:"移除流动性",
   wallet_safeswap_liquidity_removeamount:"数量",
   wallet_safeswap_liquidity_currentposition:"当前仓位",
-  wallet_safeswap_liquiditiy_willreceive:"将收到"
+  wallet_safeswap_liquiditiy_willreceive:"将收到",
+
+  wallet_issue:"发行资产",
+  wallet_issue_tip0:"通过已审计的代码模板,发行SRC20标准的代币资产",
+  wallet_issue_selecttemplate:"选择模板",
+  wallet_issue_template_src20:"普通资产",
+  wallet_issue_template_src20_tip:"具备通用的转账功能",
+  wallet_issue_template_src20_mintable:"可增发资产",
+  wallet_issue_template_src20_mintable_tip:"合约管理者可以对指定账户增发该资产",
+  wallet_issue_template_src20_burnable:"可销毁资产",
+  wallet_issue_template_src20_burnable_tip:"合约管理者可以将指定账户的该资产销毁",
+  wallet_issue_template_src20_pausable:"可暂停转账",
+  wallet_issue_template_src20_pausable_tip:"合约管理者可以暂停该资产的转账",
+  wallet_issue_asset_name:"资产名称",
+  wallet_issue_asset_symbol:"资产符号",
+  wallet_issue_asset_totalsupply:"供应量",
+  wallet_issue_asset_doissue:"发行资产",
 }

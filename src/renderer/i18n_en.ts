@@ -668,5 +668,21 @@ export default {
   wallet_safeswap_liquidity_removeliquidity: "Remove Liquidity",
   wallet_safeswap_liquidity_removeamount: "Amount",
   wallet_safeswap_liquidity_currentposition: "Current Position",
-  wallet_safeswap_liquiditiy_willreceive: "Will Receive"
+  wallet_safeswap_liquiditiy_willreceive: "Will Receive",
+
+  wallet_issue: "Issue Asset",
+  wallet_issue_tip0: "Issue an SRC20 standard token using an audited contract template",
+  wallet_issue_selecttemplate: "Select Template",
+  wallet_issue_template_src20: "Standard Asset",
+  wallet_issue_template_src20_tip: "Supports basic transfer functionality",
+  wallet_issue_template_src20_mintable: "Mintable Asset",
+  wallet_issue_template_src20_mintable_tip: "The contract owner can mint additional tokens to a specified account",
+  wallet_issue_template_src20_burnable: "Burnable Asset",
+  wallet_issue_template_src20_burnable_tip: "The contract owner can burn tokens from a specified account",
+  wallet_issue_template_src20_pausable: "Pausable Transfers",
+  wallet_issue_template_src20_pausable_tip: "The contract owner can pause all token transfers",
+  wallet_issue_asset_name: "Asset Name",
+  wallet_issue_asset_symbol: "Asset Symbol",
+  wallet_issue_asset_totalsupply: "Total Supply",
+  wallet_issue_asset_doissue: "Issue Asset"
 }
