@@ -195,6 +195,5 @@ export default ({
         }
       </Col>
     </Row>
-
   </Modal>
 }

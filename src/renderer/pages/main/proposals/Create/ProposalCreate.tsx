@@ -8,15 +8,13 @@ import customParseFormat from 'dayjs/plugin/customParseFormat';
 import locale from 'antd/es/date-picker/locale/zh_CN';
 import 'dayjs/locale/zh-cn';
 import { useCallback, useEffect, useState } from "react";
-import { DateTimeFormat } from "../../../../utils/DateUtils";
 import { CurrencyAmount, JSBI } from "@uniswap/sdk";
 import { ethers } from "ethers";
-import { useBlockNumber } from "../../../../state/application/hooks";
 import { useETHBalances, useWalletsActiveAccount, useWalletsActiveWallet } from "../../../../state/wallets/hooks";
-import { SystemContract } from "../../../../constants/SystemContracts";
 import { ONE, ZERO } from "../../../../utils/CurrentAmountUtils";
 import CreateModalConfirm from "./CreateModal-Confirm";
 import { useTranslation } from "react-i18next";
+import { useProposalBalance } from "../../../../hooks/useProposalBalance";
 
 const { Text, Title } = Typography;
 type RangePickerProps = GetProps<typeof DatePicker.RangePicker>;
@@ -53,11 +51,11 @@ export default () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const activeAccount = useWalletsActiveAccount();
-  const balances = useETHBalances([SystemContract.Proposal, activeAccount]);
+  const balances = useETHBalances([activeAccount]);
   const activeAccountBalance = balances[activeAccount];
-  const proposalContractBalance = balances[SystemContract.Proposal];
-  const [openCreateModal, setOpenCreateModal] = useState<boolean>(false);
+  const proposalContractBalance = useProposalBalance();
 
+  const [openCreateModal, setOpenCreateModal] = useState<boolean>(false);
   const [params, setParams] = useState<{
     payType: PayType,
     title?: string,

@@ -101,13 +101,13 @@ export default () => {
         <TokenLogo />
         <Text style={{ marginLeft: "5px" }} strong>SAFE</Text>
       </Option>
-      {
+      {/* {
         chainId && Token_USDT &&
         <Option key={Token_USDT.address} value={Token_USDT.name}>
           <ERC20TokenLogoComponent style={{ width: "30px", height: "30px" }} chainId={chainId} address={Token_USDT.address} />
           <Text style={{ marginLeft: "5px" }} strong>{Token_USDT.name}</Text>
         </Option>
-      }
+      } */}
     </Select>
   };
 

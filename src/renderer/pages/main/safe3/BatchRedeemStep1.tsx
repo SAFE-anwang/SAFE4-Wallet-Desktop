@@ -4,6 +4,7 @@ import { useSelector } from "react-redux";
 import { AppState } from "../../../state";
 import path from "path";
 import { useTranslation } from "react-i18next";
+import { shell } from 'electron';
 
 const { Text, Paragraph } = Typography;
 
@@ -21,9 +22,12 @@ export default ({
 
   const { t } = useTranslation();
   const data = useSelector<AppState, { [key: string]: any }>(state => state.application.data);
-  const safe3KeystoresFile_windows = data["data"] + "\\safe3.keystores";
-  const safe3KeystoresFile = path.join(data["data"], "safe3.keystores");
+
+  const dumpFileName = "safe3.keystores.delete"
+  const safe3KeystoresFile_windows = data["data"] + `\\${dumpFileName}`;
+  const safe3KeystoresFile = path.join(data["data"], dumpFileName);
   const dumpCommand = `dumpwallet "${safe3KeystoresFile_windows}"`;
+
   const [loading, setLoading] = useState<boolean>(false);
   const [fileError, setFileError] = useState<string>();
 
@@ -53,15 +57,17 @@ export default ({
           setLoading(false);
           setAddressPrivateKeyMap(_addressPrivateKeyMap)
         } catch (err) {
-          setFileError( t("wallet_redeems_batch_safe3keystore_invalid") );
+          setFileError(t("wallet_redeems_batch_safe3keystore_invalid"));
           setLoading(false);
         }
       })
       .catch(err => {
-        setFileError( t("wallet_redeems_batch_safe3keystore_notfound") );
+        setFileError(t("wallet_redeems_batch_safe3keystore_notfound"));
         setLoading(false);
       })
   }
+
+
 
   return <>
     <Row style={{ marginTop: "40px" }}>
@@ -82,6 +88,12 @@ export default ({
         <br />
         <Text style={{ float: "left", fontSize: "16px" }} code>{dumpCommand}</Text>
         <Paragraph style={{ float: "left", fontSize: "16px", marginLeft: "5px" }} copyable={{ text: dumpCommand }} />
+        <br /><br />
+        <Alert type="warning" showIcon message={<>
+          无论您是否完成资产迁移，请在
+          <Text strong>{data["data"]}</Text> 文件夹中删除
+          <Text type="danger" strong>{dumpFileName}</Text>文件,并在回收站中检查是否彻底清理。
+        </>} />
       </Col>
       <Col span={24} style={{ marginTop: "20px" }}>
         <Text strong>{t("wallet_redeems_batch_step1_substep3")}</Text>

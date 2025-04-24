@@ -7,16 +7,15 @@ import { useEffect, useMemo, useState } from "react";
 import { formatProposalInfo, formatVoteInfo, ProposalInfo, VoteInfo } from "../../../../structs/Proposal";
 import { useProposalContract, useSupernodeStorageContract } from "../../../../hooks/useContracts";
 import { DateTimeFormat } from "../../../../utils/DateUtils";
-import AddressView from "../../../components/AddressView";
 import { useBlockNumber, useTimestamp } from "../../../../state/application/hooks";
 import ProposalVoteInfos, { RenderVoteResult } from "./ProposalVoteInfos";
 import { RenderProposalState } from "../ProposalList";
-import { useETHBalances, useWalletsActiveAccount } from "../../../../state/wallets/hooks";
+import { useWalletsActiveAccount } from "../../../../state/wallets/hooks";
 import { CheckCircleFilled, CloseCircleFilled, QuestionCircleFilled } from '@ant-design/icons';
 import VoteModalConfirm from "./VoteModal-Confirm";
-import { SystemContract } from "../../../../constants/SystemContracts";
 import { useTranslation } from "react-i18next";
 import AddressComponent from "../../../components/AddressComponent";
+import { useProposalBalance } from "../../../../hooks/useProposalBalance";
 
 const { Text, Title } = Typography;
 
@@ -30,7 +29,7 @@ export default () => {
   const [voteInfos, setVoteInfos] = useState<VoteInfo[]>();
   const supernodeStorageContract = useSupernodeStorageContract();
   const activeAccount = useWalletsActiveAccount();
-  const proposalContractBalance = useETHBalances([SystemContract.Proposal])[SystemContract.Proposal];
+  const proposalContractBalance = useProposalBalance();
   const [voteStatistic, setVoteStatistic] = useState<{
     agree: number,
     reject: number,

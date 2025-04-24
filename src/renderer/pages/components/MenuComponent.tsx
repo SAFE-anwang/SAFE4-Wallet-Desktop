@@ -28,16 +28,6 @@ const MenuComponent: React.FC = () => {
   const [current, setCurrent] = useState('/main/wallet');
   const navigate = useNavigate();
   const { t } = useTranslation();
-  // const items: MenuItem[] = [
-  //   getItem( "钱包" , '/main/wallet', <WalletOutlined />),
-  //   getItem("超级节点", '/main/supernodes', <ClusterOutlined />),
-  //   getItem("主节点", '/main/masternodes', <ApartmentOutlined />),
-  //   getItem("提案", '/main/proposals', <FilePptOutlined />),
-  //   getItem("Safe3 资产迁移", '/main/safe3nav', <ApiOutlined />),
-  //   getItem('智能合约', '/main/contracts', <FileZipOutlined />),
-  //   // getItem("Test", '/main/test', <ApiOutlined />),
-  //   getItem('领取测试币', '/main/gettestcoin', <GiftOutlined />),
-  // ];
   const items: MenuItem[] = useMemo(() => {
     return [
       getItem(t("wallet"), '/main/wallet', <WalletOutlined />),
@@ -45,10 +35,10 @@ const MenuComponent: React.FC = () => {
       getItem(t("masternode"), '/main/masternodes', <ApartmentOutlined />),
       getItem(t("proposal"), '/main/proposals', <FilePptOutlined />),
       getItem(t("safe3AssetRedeem"), '/main/safe3nav', <ApiOutlined />),
-      getItem(t("contract"), '/main/contracts', <FileZipOutlined />),
       getItem(t("wallet_crosschain"), '/main/crosschain', <SyncOutlined />),
       getItem(t("wallet_safeswap"), '/main/swap', <SwapOutlined />),
       getItem(t("wallet_issue"), '/main/issue', <BankOutlined />),
+      getItem(t("contract"), '/main/contracts', <FileZipOutlined />),
       getItem(t("getTestCoin"), '/main/gettestcoin', <GiftOutlined />),
     ]
   }, [t]);
