@@ -11,7 +11,6 @@ export const GET = async function (url: string, params?: any): Promise<any> {
     // }
   });
   const data = await response.text();
-  console.log("Get<<", data)
   const json = data ? JSON.parse(data) : undefined;
   return json as any;
 }

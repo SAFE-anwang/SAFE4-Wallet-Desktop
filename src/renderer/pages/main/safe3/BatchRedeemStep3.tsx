@@ -66,7 +66,6 @@ export default ({
         const privateKey = safe3Wallet.privateKey;
         const publicKey = "0x" + (safe3Wallet.safe3Address == address ? safe3Wallet.publicKey : safe3Wallet.compressPublicKey);
         const signMsg = await generateRedeemSign(privateKey, address, safe4TargetAddress);
-        console.log(`Encode for ${address} , prikey=${base58PrivateKey}`)
         return {
           publicKey: ethers.utils.arrayify(publicKey),
           signMsg: ethers.utils.arrayify(signMsg),

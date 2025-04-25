@@ -421,7 +421,7 @@ export default {
   wallet_proposals_state_pass: "Passed",
   wallet_proposals_state_rejected: "Rejected",
 
-  wallet_redeems_tip0: "Migrate assets from the Safe3 network to the Safe4 network (Currently testing using the Safe3 network asset snapshot before September 2024).",
+  wallet_redeems_tip0: "Migrate assets from the Safe3 network to the Safe4 network.",
   wallet_redeems_tip1: "The private key you enter is only used for local verification and data signing on this interface.",
   wallet_redeems_mode_single: "Single Address Migration",
   wallet_redeems_mode_single_desc: "Provide the address private key to migrate assets from the Safe3 network to the Safe4 network.",
@@ -474,6 +474,9 @@ export default {
   wallet_redeems_batch_col_locked: "Lock-Up",
   wallet_redeems_batch_col_masternode: "Masternode",
   wallet_redeems_batch_none: "No accounts need to migrate assets.",
+  wallet_redeems_safe3keystores_handletip0:"After exporting the private key from the Safe3 wallet, whether or not the asset migration is completed, later in the",
+  wallet_redeems_safe3keystores_handletip1:" folder delete the ",
+  wallet_redeems_safe3keystores_handletip2:" file, and check the recycle bin to permanently remove it.",
 
   wallet_contracts: "Smart Contract",
   wallet_contracts_tip0: "A smart contract is an automatically executed computer program that operates as a contract in cyberspace.",

@@ -22,7 +22,7 @@ export default ({
   const { t } = useTranslation();
   const data = useSelector<AppState, { [key: string]: any }>(state => state.application.data);
 
-  const dumpFileName = "safe3.keystores.delete"
+  const dumpFileName = "safe3.keystores.DEL"
   const safe3KeystoresFile_windows = data["data"] + `\\${dumpFileName}`;
   const safe3KeystoresFile = path.join(data["data"], dumpFileName);
   const dumpCommand = `dumpwallet "${safe3KeystoresFile_windows}"`;
@@ -88,10 +88,10 @@ export default ({
         <br /><br />
         <Alert onClick={() => {
         }} type="warning" showIcon message={<>
-          无论是否完成资产迁移，请稍后在
-          <Link strong onClick={() => window.electron.shell.openPath(data["data"])}>{data["data"]}</Link>
-          文件夹中删除
-          <Text type="danger" strong>{dumpFileName}</Text>文件,并检查回收站彻底清除.
+          {t("wallet_redeems_safe3keystores_handletip0")} <Link strong onClick={() => window.electron.shell.openPath(data["data"])}>{data["data"]}</Link>
+          {t("wallet_redeems_safe3keystores_handletip1")}
+          <Text type="danger" strong>{dumpFileName}</Text>
+          {t("wallet_redeems_safe3keystores_handletip2")}
         </>} />
       </Col>
       <Col span={24} style={{ marginTop: "20px" }}>
