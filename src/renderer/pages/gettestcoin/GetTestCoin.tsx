@@ -39,13 +39,13 @@ export default () => {
         .then(({ transactionHash, amount, address, from }: any) => {
           addTransaction({
             from: ChecksumAddress(from),
-            to: address,
+            to: ChecksumAddress(address),
             hash: transactionHash,
             chainId
           }, {
             transfer: {
               from: ChecksumAddress(from),
-              to: address,
+              to: ChecksumAddress(address),
               value: ethers.utils.parseEther(amount).toString()
             }
           });

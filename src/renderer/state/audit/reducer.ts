@@ -18,11 +18,11 @@ const initialState: IAuditState = {
   tokens: {
     [Safe4NetworkChainId.Testnet]: [
       { ...WSAFE[Safe4NetworkChainId.Testnet] },
-      { ...USDT[Safe4NetworkChainId.Testnet] }
+      // { ...USDT[Safe4NetworkChainId.Testnet] }
     ],
     [Safe4NetworkChainId.Mainnet]: [
       { ...WSAFE[Safe4NetworkChainId.Mainnet] },
-      { ...USDT[Safe4NetworkChainId.Mainnet] }
+      // { ...USDT[Safe4NetworkChainId.Mainnet] }
     ]
   }
 }

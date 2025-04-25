@@ -147,11 +147,14 @@ export default ({
 
 
   useEffect(() => {
-    dispatch(applicationUpdateSafeswapTokens({
-      tokenA: tokenA ? SerializeToken(tokenA) : undefined,
-      tokenB: tokenB ? SerializeToken(tokenB) : undefined,
-    }));
-  }, [tokenA, tokenB])
+    if (chainId) {
+      dispatch(applicationUpdateSafeswapTokens({
+        chainId,
+        tokenA: tokenA ? SerializeToken(tokenA) : undefined,
+        tokenB: tokenB ? SerializeToken(tokenB) : undefined,
+      }));
+    }
+  }, [tokenA, tokenB, chainId])
 
   const RenderPrice = () => {
     if (chainId && pair) {
