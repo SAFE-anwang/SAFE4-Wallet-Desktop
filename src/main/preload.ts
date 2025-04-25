@@ -1,13 +1,16 @@
 // Disable no-unused-vars, broken for spread args
 /* eslint no-unused-vars: off */
-import { contextBridge, ipcRenderer, IpcRendererEvent, OpenExternalOptions, shell } from 'electron';
+import { contextBridge, ipcRenderer, IpcRendererEvent, OpenExternalOptions } from 'electron';
 
 export type Channels = 'ipc-example';
 
 const electronHandler = {
   shell: {
     openExternal(url: string, options?: OpenExternalOptions) {
-      shell.openExternal(url, options)
+      // shell.openExternal(url, options)
+    },
+    openPath(path: string) {
+      return ipcRenderer.invoke("shell-openPath" , path)
     }
   },
   ipcRenderer: {
@@ -52,20 +55,20 @@ const electronHandler = {
         ipcRenderer.removeListener("ssh2-stderr", subscription);
       };
     },
-    close(){
+    close() {
       return ipcRenderer.invoke('connect-close', {})
     }
-  } ,
+  },
 
-  fileReader : {
-    readFile(filePath : string){
-      return ipcRenderer.invoke("file-read" , { filePath });
+  fileReader: {
+    readFile(filePath: string) {
+      return ipcRenderer.invoke("file-read", { filePath });
     }
-  } ,
+  },
 
-  crypto : {
-    decrypt( params : any ){
-      return ipcRenderer.invoke("crypto-scrypt-decrypt" , params )
+  crypto: {
+    decrypt(params: any) {
+      return ipcRenderer.invoke("crypto-scrypt-decrypt", params)
     }
   }
 

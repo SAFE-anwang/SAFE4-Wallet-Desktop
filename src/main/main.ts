@@ -42,6 +42,10 @@ const appIpcManager = new ApplicationIpcManager(
   resourcePath, app.isPackaged
 ).register(ipcMain);
 
+ipcMain.handle("shell-openPath" , ( _ , path ) => {
+  shell.openPath(path);
+})
+
 // let sshConnection : any;
 // SSH2
 // ipcMain.handle('connect-ssh', async ( _ , { host, username, password }) => {

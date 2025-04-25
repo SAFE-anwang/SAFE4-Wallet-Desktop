@@ -4,9 +4,8 @@ import { useSelector } from "react-redux";
 import { AppState } from "../../../state";
 import path from "path";
 import { useTranslation } from "react-i18next";
-import { shell } from 'electron';
 
-const { Text, Paragraph } = Typography;
+const { Text, Paragraph, Link } = Typography;
 
 export interface AddressPrivateKeyMap {
   [address: string]: {
@@ -67,8 +66,6 @@ export default ({
       })
   }
 
-
-
   return <>
     <Row style={{ marginTop: "40px" }}>
       <Col span={24}>
@@ -89,10 +86,12 @@ export default ({
         <Text style={{ float: "left", fontSize: "16px" }} code>{dumpCommand}</Text>
         <Paragraph style={{ float: "left", fontSize: "16px", marginLeft: "5px" }} copyable={{ text: dumpCommand }} />
         <br /><br />
-        <Alert type="warning" showIcon message={<>
-          无论您是否完成资产迁移，请在
-          <Text strong>{data["data"]}</Text> 文件夹中删除
-          <Text type="danger" strong>{dumpFileName}</Text>文件,并在回收站中检查是否彻底清理。
+        <Alert onClick={() => {
+        }} type="warning" showIcon message={<>
+          无论是否完成资产迁移，请稍后在
+          <Link strong onClick={() => window.electron.shell.openPath(data["data"])}>{data["data"]}</Link>
+          文件夹中删除
+          <Text type="danger" strong>{dumpFileName}</Text>文件,并检查回收站彻底清除.
         </>} />
       </Col>
       <Col span={24} style={{ marginTop: "20px" }}>
