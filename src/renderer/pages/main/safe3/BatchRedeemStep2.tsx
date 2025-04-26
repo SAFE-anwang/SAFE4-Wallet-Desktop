@@ -289,7 +289,7 @@ export default ({
       const { availableInfo, lockedAmount, mnLocked, lockedRedeemHeight } = result;
 
       const needRedeemAvailable = availableInfo?.amount.greaterThan(ZERO)
-        // && availableInfo.redeemHeight == 0;
+        && availableInfo.redeemHeight == 0;
 
       let needRedeemLocked = false;
       if (lockedAmount) {
@@ -305,7 +305,7 @@ export default ({
       }
 
       const needRedeemMasternode = mnLocked
-        // && mnLocked.redeemHeight == 0;
+        && mnLocked.redeemHeight == 0;
       return needRedeemAvailable || needRedeemLocked || needRedeemMasternode;
 
     });
