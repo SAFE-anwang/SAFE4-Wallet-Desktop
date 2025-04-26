@@ -160,7 +160,7 @@ export default ({
           }
         });
       if (Object.keys(_addressLockedQueryMap).length > 0) {
-        console.log("_AddressLockedQueryMap::" , _addressLockedQueryMap);
+        console.log("_AddressLockedQueryMap::", _addressLockedQueryMap);
         setAddressLockedQueryMap(_addressLockedQueryMap);
       } else {
         Object.keys(addressFirstQueryMap).forEach(address => {
@@ -202,7 +202,7 @@ export default ({
   }>();
   // 第三波遍历需要查询锁仓金额的Map;
   useEffect(() => {
-    console.log("遍历需要查询锁仓金额的Map" , addressLockedQueryMap);
+    console.log("遍历需要查询锁仓金额的Map", addressLockedQueryMap);
     if (addressLockedQueryMap && safe3Contract && multicallContract) {
       const calls: CallMulticallAggregateContractCall[] = [];
       Object.keys(addressLockedQueryMap).forEach((addressIndexOffset) => {
@@ -246,7 +246,7 @@ export default ({
             ...addressLockedQueryMap,
             ..._addressLockedQueryResultMap
           });
-        } , ( err ) => { console.log("Error ::" , err) });
+        }, (err) => { console.log("Error ::", err) });
       } else {
         if (addressFirstQueryMap) {
           Object.keys(addressLockedQueryMap).forEach(addressIndexOffset => {

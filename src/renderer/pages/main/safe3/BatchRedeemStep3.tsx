@@ -48,6 +48,7 @@ export default ({
     masternodes: TxExecuteStatus[]
   }>();
   const [redeeming, setRedeeming] = useState<boolean>(false);
+  const [finished, setFinished] = useState<boolean>(false);
 
   useEffect(() => {
     setSafe4TargetAddress(activeAccount)
@@ -83,7 +84,6 @@ export default ({
         masternodes: []
       };
       const BatchMax = 20;
-
       for (let i = 0; i < publicKeyArr.length; i += BatchMax) {
         const slicePublickKeyArr = publicKeyArr.slice(i, i + BatchMax);
         const sliceSignMsgKArr = signMsgArr.slice(i, i + BatchMax);
@@ -191,9 +191,8 @@ export default ({
           return;
         }
       }
-
       setRedeeming(false);
-
+      setFinished(true);
     }
   }, [safe4TargetAddress, safe3RedeemList, addressPrivateKeyMap, safe3Contract])
 
@@ -365,8 +364,18 @@ export default ({
         } />
       </>
     }
-    <Button type="primary" loading={redeeming} disabled={notEnough || redeemTxHashs != undefined} onClick={executeRedeem}>{t("wallet_redeems_button")}</Button>
 
-
+    {
+      !finished &&
+      <Button type="primary" loading={redeeming}
+        disabled={notEnough || redeemTxHashs != undefined} onClick={executeRedeem}>
+        {t("wallet_redeems_button")}
+      </Button>
+    }
+    {
+      finished && <Alert showIcon type="success" message={<>
+        {t("finished")}
+      </>} />
+    }
   </>
 }

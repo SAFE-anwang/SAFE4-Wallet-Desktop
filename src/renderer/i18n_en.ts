@@ -37,6 +37,7 @@ export default {
   use: "Use",
   save: "Save",
   close: "Close",
+  finished: "Finished",
   node_addresss: "Node Address",
 
   welcome: "Entering Decentralized Network",
