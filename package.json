@@ -227,7 +227,7 @@
   },
   "build": {
     "productName": "Safe4-Wallet-Desktop",
-    "appId": "org.anwang",
+    "appId": "safe4.wallet.anwang",
     "asar": true,
     "asarUnpack": "**\\*.{node,dll}",
     "files": [
@@ -285,8 +285,8 @@
     ],
     "publish": {
       "provider": "github",
-      "owner": "org.anwang",
-      "repo": "org.anwang"
+      "owner": "com.anwang",
+      "repo": "com.anwang"
     }
   },
   "collective": {
