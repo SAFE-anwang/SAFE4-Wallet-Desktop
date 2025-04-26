@@ -48,8 +48,9 @@ export default ({
   }, [pairsMap, pairBalancesMap]);
 
   const addLiquidity = (token0: Token | undefined, token1: Token | undefined) => {
-    if (token0 || token1) {
+    if ((token0 || token1) && chainId) {
       dispatch(applicationUpdateSafeswapTokens({
+        chainId,
         tokenA: token0 ? SerializeToken(token0) : undefined,
         tokenB: token1 ? SerializeToken(token1) : undefined
       }));
@@ -58,8 +59,9 @@ export default ({
   }
 
   const removeLiquidity = (token0: Token | undefined, token1: Token | undefined) => {
-    if (token0 || token1) {
+    if ((token0 || token1) && chainId) {
       dispatch(applicationUpdateSafeswapTokens({
+        chainId,
         tokenA: token0 ? SerializeToken(token0) : undefined,
         tokenB: token1 ? SerializeToken(token1) : undefined
       }));

@@ -43,9 +43,9 @@ export default ({
   }, [activeAccount, safe4TargetAddress]);
   const safe3Contract = useSafe3Contract();
   const [redeemTxHashs, setRedeemTxHashs] = useState<{
-    avaiable?: TxExecuteStatus,
-    locked?: TxExecuteStatus,
-    masternode?: TxExecuteStatus
+    avaiables: TxExecuteStatus[],
+    lockeds: TxExecuteStatus[],
+    masternodes: TxExecuteStatus[]
   }>();
   const [redeeming, setRedeeming] = useState<boolean>(false);
 
@@ -71,105 +71,119 @@ export default ({
           signMsg: ethers.utils.arrayify(signMsg),
         };
       })
-
       setRedeeming(true);
       const results = await Promise.all(encodePromises);
       results.forEach(({ publicKey, signMsg }) => {
         publicKeyArr.push(publicKey);
         signMsgArr.push(signMsg);
       });
-      let _redeemTxHashs = redeemTxHashs ?? {};
-      try {
-        let response = await safe3Contract.batchRedeemAvailable(
-          publicKeyArr,
-          signMsgArr,
-          safe4TargetAddress
-        );
-        _redeemTxHashs.avaiable = {
-          status: 1,
-          txHash: response.hash
-        }
-        setRedeemTxHashs({ ..._redeemTxHashs });
-        console.log("执行迁移可用资产Hash:", response.hash);
-        const { data } = response;
-        addTransaction({ to: safe3Contract.address }, response, {
-          call: {
-            from: activeAccount,
-            to: safe3Contract.address,
-            input: data,
-            value: "0"
-          }
-        });
-      } catch (error: any) {
-        _redeemTxHashs.avaiable = {
-          status: 0,
-          error: error.error.reason
-        }
-        setRedeemTxHashs({ ..._redeemTxHashs })
-        console.log("执行迁移可用资产错误,Error:", error.error.reason);
-      }
-      try {
-        let response = await safe3Contract.batchRedeemLocked(
-          publicKeyArr,
-          signMsgArr,
-          safe4TargetAddress
-        );
-        _redeemTxHashs.locked = {
-          status: 1,
-          txHash: response.hash
-        }
-        setRedeemTxHashs({ ..._redeemTxHashs });
-        console.log("执行迁移锁定资产Hash:", response.hash);
-        const { data } = response;
-        addTransaction({ to: safe3Contract.address }, response, {
-          call: {
-            from: activeAccount,
-            to: safe3Contract.address,
-            input: data,
-            value: "0"
-          }
-        });
-      } catch (error: any) {
-        _redeemTxHashs.locked = {
-          status: 0,
-          error: error.error.reason
-        }
-        setRedeemTxHashs({ ..._redeemTxHashs })
-        console.log("执行迁移锁定资产错误,Error:", error);
-      }
+      let _redeemTxHashs = redeemTxHashs ?? {
+        avaiables: [],
+        lockeds: [],
+        masternodes: []
+      };
 
-      try {
-        let response = await safe3Contract.batchRedeemMasterNode(
-          publicKeyArr,
-          signMsgArr,
-          // 做一个等长的空值enode数组;
-          publicKeyArr.map(uint8array => ""),
-          safe4TargetAddress
-        );
-        _redeemTxHashs.masternode = {
-          status: 1,
-          txHash: response.hash
+      const BatchMax = 2;
+
+      for (let i = 0; i < publicKeyArr.length; i += BatchMax) {
+        const slicePublickKeyArr = publicKeyArr.slice(i, i + BatchMax);
+        const sliceSignMsgKArr = publicKeyArr.slice(i, i + BatchMax);
+        try {
+          console.log("batchRedeemAvailable ... ")
+          let response = await safe3Contract.batchRedeemAvailable(
+            slicePublickKeyArr,
+            sliceSignMsgKArr,
+            safe4TargetAddress
+          );
+          _redeemTxHashs.avaiables.push({
+            status: 1,
+            txHash: response.hash
+          })
+          setRedeemTxHashs({ ..._redeemTxHashs });
+          console.log("执行迁移可用资产Hash:", response.hash);
+          const { data } = response;
+          addTransaction({ to: safe3Contract.address }, response, {
+            call: {
+              from: activeAccount,
+              to: safe3Contract.address,
+              input: data,
+              value: "0"
+            }
+          });
+        } catch (error: any) {
+          _redeemTxHashs.avaiables.push({
+            status: 0,
+            error: error.error.reason
+          })
+          setRedeemTxHashs({ ..._redeemTxHashs })
+          console.log("error", error)
+          console.log("执行迁移可用资产错误,Error:", error.error.reason);
+          return;
         }
-        setRedeemTxHashs({ ..._redeemTxHashs });
-        console.log("执行迁移主节点Hash:", response.hash);
-        const { data } = response;
-        addTransaction({ to: safe3Contract.address }, response, {
-          call: {
-            from: activeAccount,
-            to: safe3Contract.address,
-            input: data,
-            value: "0"
-          }
-        });
-      } catch (error: any) {
-        _redeemTxHashs.masternode = {
-          status: 0,
-          error: error.error.reason
+
+        try {
+          let response = await safe3Contract.batchRedeemLocked(
+            publicKeyArr,
+            signMsgArr,
+            safe4TargetAddress
+          );
+          _redeemTxHashs.lockeds.push({
+            status: 1,
+            txHash: response.hash
+          });
+          setRedeemTxHashs({ ..._redeemTxHashs });
+          console.log("执行迁移锁定资产Hash:", response.hash);
+          const { data } = response;
+          addTransaction({ to: safe3Contract.address }, response, {
+            call: {
+              from: activeAccount,
+              to: safe3Contract.address,
+              input: data,
+              value: "0"
+            }
+          });
+        } catch (error: any) {
+          _redeemTxHashs.lockeds.push({
+            status: 0,
+            error: error.error.reason
+          });
+          setRedeemTxHashs({ ..._redeemTxHashs })
+          console.log("执行迁移锁定资产错误,Error:", error);
+          return;
         }
-        setRedeemTxHashs({ ..._redeemTxHashs })
-        console.log("执行迁移主节点错误,Error:", error)
+        try {
+          let response = await safe3Contract.batchRedeemMasterNode(
+            publicKeyArr,
+            signMsgArr,
+            // 做一个等长的空值enode数组;
+            publicKeyArr.map(uint8array => ""),
+            safe4TargetAddress
+          );
+          _redeemTxHashs.masternodes.push({
+            status: 1,
+            txHash: response.hash
+          });
+          setRedeemTxHashs({ ..._redeemTxHashs });
+          console.log("执行迁移主节点Hash:", response.hash);
+          const { data } = response;
+          addTransaction({ to: safe3Contract.address }, response, {
+            call: {
+              from: activeAccount,
+              to: safe3Contract.address,
+              input: data,
+              value: "0"
+            }
+          });
+        } catch (error: any) {
+          _redeemTxHashs.masternodes.push({
+            status: 0,
+            error: error.error.reason
+          })
+          setRedeemTxHashs({ ..._redeemTxHashs })
+          console.log("执行迁移主节点错误,Error:", error)
+        }
+        setRedeeming(false);
       }
-      setRedeeming(false);
     }
   }, [safe4TargetAddress, safe3RedeemList, addressPrivateKeyMap, safe3Contract])
 
@@ -250,61 +264,80 @@ export default ({
       <>
         <Alert style={{ marginTop: "20px", marginBottom: "20px" }} type="success" message={<>
           {
-            redeemTxHashs?.avaiable && <>
-              {
-                redeemTxHashs.avaiable.status == 1 && <>
-                  <Text type="secondary">{t("wallet_redeems_available_txhash")}</Text><br />
-                  <Text strong>{redeemTxHashs.avaiable.txHash}</Text> <br />
-                </>
-              }
-              {
-                redeemTxHashs.avaiable.status == 0 && <>
-                  <Text type="secondary">{t("wallet_redeems_available_error")}</Text><br />
-                  <Text strong type="danger">
-                    <CloseCircleTwoTone twoToneColor="red" style={{ marginRight: "5px" }} />
-                    {redeemTxHashs.avaiable.error}
-                  </Text> <br />
-                </>
-              }
-            </>
+            redeemTxHashs.avaiables && redeemTxHashs.avaiables.map((avaiable) => {
+              return <Row key={"avaiable" + redeemTxHashs.avaiables.indexOf(avaiable)}>
+                {
+                  avaiable.status == 1 && <>
+                    <Col span={24}>
+                      <Text type="secondary">{t("wallet_redeems_available_txhash")}</Text>
+                      <br /><br />
+                      <Text strong>{avaiable.txHash}</Text> <br />
+                    </Col>
+                  </>
+                }
+                {
+                  avaiable.status == 0 && <>
+                    <Col span={24}>
+                      <Text type="secondary">{t("wallet_redeems_available_error")}</Text><br />
+                      <Text strong type="danger">
+                        <CloseCircleTwoTone twoToneColor="red" style={{ marginRight: "5px" }} />
+                        {avaiable.error}
+                      </Text> <br />
+                    </Col>
+                  </>
+                }
+              </Row>
+            })
           }
           {
-            redeemTxHashs?.locked && <>
-              {
-                redeemTxHashs.locked.status == 1 && <>
-                  <Text type="secondary">{t("wallet_redeems_locked_txhash")}</Text><br />
-                  <Text strong>{redeemTxHashs.locked.txHash}</Text> <br />
-                </>
-              }
-              {
-                redeemTxHashs.locked.status == 0 && <>
-                  <Text type="secondary">{t("wallet_redeems_locked_error")}</Text><br />
-                  <Text strong type="danger">
-                    <CloseCircleTwoTone twoToneColor="red" style={{ marginRight: "5px" }} />
-                    {redeemTxHashs.locked.error}
-                  </Text> <br />
-                </>
-              }
-            </>
+            redeemTxHashs.lockeds && redeemTxHashs.lockeds.map(locked => {
+              return <Row key={"locked" + redeemTxHashs.lockeds.indexOf(locked)}>
+                {
+                  locked.status == 1 && <>
+                    <Col span={24}>
+                      <Text type="secondary">{t("wallet_redeems_locked_txhash")}</Text><br />
+                      <Text strong>{locked.txHash}</Text> <br />
+                    </Col>
+                  </>
+                }
+                {
+                  locked.status == 0 && <>
+                    <Col span={24}>
+                      <Text type="secondary">{t("wallet_redeems_locked_error")}</Text><br />
+                      <Text strong type="danger">
+                        <CloseCircleTwoTone twoToneColor="red" style={{ marginRight: "5px" }} />
+                        {locked.error}
+                      </Text> <br />
+                    </Col>
+                  </>
+                }
+              </Row>
+            })
           }
           {
-            redeemTxHashs?.masternode && <>
-              {
-                redeemTxHashs.masternode.status == 1 && <>
-                  <Text type="secondary">{t("wallet_redeems_masternode_txhash")}</Text><br />
-                  <Text strong>{redeemTxHashs.masternode.txHash}</Text> <br />
-                </>
-              }
-              {
-                redeemTxHashs.masternode.status == 0 && <>
-                  <Text type="secondary">{t("wallet_redeems_masternode_error")}</Text><br />
-                  <Text strong type="danger">
-                    <CloseCircleTwoTone twoToneColor="red" style={{ marginRight: "5px" }} />
-                    {redeemTxHashs.masternode.error}
-                  </Text> <br />
-                </>
-              }
-            </>
+            redeemTxHashs.masternodes && redeemTxHashs.masternodes.map(masternode => {
+              return <Row key={"masternode" + redeemTxHashs.masternodes.indexOf(masternode)}>
+                {
+                  masternode.status == 1 && <>
+                    <Col span={24}>
+                      <Text type="secondary">{t("wallet_redeems_masternode_txhash")}</Text><br />
+                      <Text strong>{masternode.txHash}</Text> <br />
+                    </Col>
+                  </>
+                }
+                {
+                  masternode.status == 0 && <>
+                    <Col span={24}>
+                      <Text type="secondary">{t("wallet_redeems_masternode_error")}</Text><br />
+                      <Text strong type="danger">
+                        <CloseCircleTwoTone twoToneColor="red" style={{ marginRight: "5px" }} />
+                        {masternode.error}
+                      </Text> <br />
+                    </Col>
+                  </>
+                }
+              </Row>
+            })
           }
         </>} />
       </>
