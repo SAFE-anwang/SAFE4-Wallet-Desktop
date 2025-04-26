@@ -63,14 +63,14 @@ export default ({
             <Button disabled={selectedToken == undefined} onClick={() => onTokenClick(undefined)} style={{ height: "40px" }} type="default" icon={<TokenLogo />} >
               SAFE
             </Button>
-            {
+            {/* {
               chainId && <Button disabled={selectedToken == USDT[chainId as Safe4NetworkChainId]}
                 onClick={() => onTokenClick(USDT[chainId as Safe4NetworkChainId])} style={{ height: "40px" }} type="default" icon={
                   <Avatar src={USDT_LOGO} />
                 }>
                 USDT
               </Button>
-            }
+            } */}
           </Flex>
         </Col>
         <Divider />

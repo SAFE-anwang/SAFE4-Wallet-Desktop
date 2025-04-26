@@ -37,8 +37,8 @@ export const WSAFE: { [chainId in Safe4NetworkChainId]: Token } = {
 };
 // USDT 合约地址
 export const USDT: { [chainId in Safe4NetworkChainId]: Token } = {
-  [Safe4NetworkChainId.Testnet]: new Token(Safe4NetworkChainId.Testnet as number, "0x268BFd7F4c5F0531294D9172f5DA84f0CC7812C5", 18, "USDT", "USDT"),
-  [Safe4NetworkChainId.Mainnet]: new Token(Safe4NetworkChainId.Mainnet as number, "0x61873c9478dEB4Bb2c4d04E86e67c45C09377202", 18, "USDT", "USDT"),
+  [Safe4NetworkChainId.Testnet]: new Token(Safe4NetworkChainId.Testnet as number, "0x55d398326f99059ff775485246999027b3197955", 18, "USDT", "USDT"),
+  [Safe4NetworkChainId.Mainnet]: new Token(Safe4NetworkChainId.Mainnet as number, "0x55d398326f99059ff775485246999027b3197955", 18, "USDT", "USDT"),
 };
 
 export const SafeswapV2FactoryAddreess = "0xB3c827077312163c53E3822defE32cAffE574B42";
@@ -112,4 +112,4 @@ const Config = {
     Safescan_Api: Safe4_Network_Config.Mainnet.Safescan_Api,
   }
 }
-export default Config["test"]
+export default Config["prod"]

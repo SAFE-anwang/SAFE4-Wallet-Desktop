@@ -35,7 +35,7 @@ const MenuComponent: React.FC = () => {
       getItem(t("masternode"), '/main/masternodes', <ApartmentOutlined />),
       getItem(t("proposal"), '/main/proposals', <FilePptOutlined />),
       getItem(t("safe3AssetRedeem"), '/main/safe3nav', <ApiOutlined />),
-      getItem(t("wallet_crosschain"), '/main/crosschain', <SyncOutlined />),
+      // getItem(t("wallet_crosschain"), '/main/crosschain', <SyncOutlined />),
       getItem(t("wallet_safeswap"), '/main/swap', <SwapOutlined />),
       getItem(t("wallet_issue"), '/main/issue', <BankOutlined />),
       getItem(t("contract"), '/main/contracts', <FileZipOutlined />),
