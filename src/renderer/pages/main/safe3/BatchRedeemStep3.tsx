@@ -55,7 +55,6 @@ export default ({
 
   const executeRedeem = useCallback(async () => {
     if (safe3Contract) {
-
       const addressArr = safe3RedeemList.map(safe3Redeem => safe3Redeem.address);
       const publicKeyArr: Uint8Array[] = [];
       const signMsgArr: Uint8Array[] = [];
@@ -72,6 +71,7 @@ export default ({
         };
       })
       setRedeeming(true);
+
       const results = await Promise.all(encodePromises);
       results.forEach(({ publicKey, signMsg }) => {
         publicKeyArr.push(publicKey);
@@ -82,14 +82,12 @@ export default ({
         lockeds: [],
         masternodes: []
       };
-
-      const BatchMax = 2;
+      const BatchMax = 20;
 
       for (let i = 0; i < publicKeyArr.length; i += BatchMax) {
         const slicePublickKeyArr = publicKeyArr.slice(i, i + BatchMax);
-        const sliceSignMsgKArr = publicKeyArr.slice(i, i + BatchMax);
+        const sliceSignMsgKArr = signMsgArr.slice(i, i + BatchMax);
         try {
-          console.log("batchRedeemAvailable ... ")
           let response = await safe3Contract.batchRedeemAvailable(
             slicePublickKeyArr,
             sliceSignMsgKArr,
@@ -120,11 +118,15 @@ export default ({
           console.log("执行迁移可用资产错误,Error:", error.error.reason);
           return;
         }
+      }
 
+      for (let i = 0; i < publicKeyArr.length; i += BatchMax) {
+        const slicePublickKeyArr = publicKeyArr.slice(i, i + BatchMax);
+        const sliceSignMsgKArr = signMsgArr.slice(i, i + BatchMax);
         try {
           let response = await safe3Contract.batchRedeemLocked(
-            publicKeyArr,
-            signMsgArr,
+            slicePublickKeyArr,
+            sliceSignMsgKArr,
             safe4TargetAddress
           );
           _redeemTxHashs.lockeds.push({
@@ -151,12 +153,17 @@ export default ({
           console.log("执行迁移锁定资产错误,Error:", error);
           return;
         }
+      }
+
+      for (let i = 0; i < publicKeyArr.length; i += BatchMax) {
+        const slicePublickKeyArr = publicKeyArr.slice(i, i + BatchMax);
+        const sliceSignMsgKArr = signMsgArr.slice(i, i + BatchMax);
         try {
           let response = await safe3Contract.batchRedeemMasterNode(
-            publicKeyArr,
-            signMsgArr,
+            slicePublickKeyArr,
+            sliceSignMsgKArr,
             // 做一个等长的空值enode数组;
-            publicKeyArr.map(uint8array => ""),
+            slicePublickKeyArr.map(uint8array => ""),
             safe4TargetAddress
           );
           _redeemTxHashs.masternodes.push({
@@ -181,9 +188,12 @@ export default ({
           })
           setRedeemTxHashs({ ..._redeemTxHashs })
           console.log("执行迁移主节点错误,Error:", error)
+          return;
         }
-        setRedeeming(false);
       }
+
+      setRedeeming(false);
+
     }
   }, [safe4TargetAddress, safe3RedeemList, addressPrivateKeyMap, safe3Contract])
 
@@ -270,7 +280,7 @@ export default ({
                   avaiable.status == 1 && <>
                     <Col span={24}>
                       <Text type="secondary">{t("wallet_redeems_available_txhash")}</Text>
-                      <br /><br />
+                      <br />
                       <Text strong>{avaiable.txHash}</Text> <br />
                     </Col>
                   </>
@@ -289,6 +299,7 @@ export default ({
               </Row>
             })
           }
+
           {
             redeemTxHashs.lockeds && redeemTxHashs.lockeds.map(locked => {
               return <Row key={"locked" + redeemTxHashs.lockeds.indexOf(locked)}>
@@ -314,6 +325,7 @@ export default ({
               </Row>
             })
           }
+
           {
             redeemTxHashs.masternodes && redeemTxHashs.masternodes.map(masternode => {
               return <Row key={"masternode" + redeemTxHashs.masternodes.indexOf(masternode)}>
@@ -339,6 +351,7 @@ export default ({
               </Row>
             })
           }
+
         </>} />
       </>
     }
