@@ -85,7 +85,6 @@ export default ({
     }
   }, [txHash]);
 
-
   return <Modal title={t("wallet_supernodes_joins")} open={openAppendModal} footer={null} destroyOnClose onCancel={cancel}>
     <Divider />
     {

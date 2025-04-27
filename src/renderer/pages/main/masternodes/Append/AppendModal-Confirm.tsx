@@ -13,6 +13,7 @@ import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { applicationUpdateWalletTab } from "../../../../state/application/action";
 import { useTranslation } from "react-i18next";
+import config, { Safe4_Business_Config } from "../../../../config";
 
 const { Text } = Typography;
 
@@ -50,7 +51,7 @@ export default ({
       const value = ethers.utils.parseEther(valueAmount + "");
       masternodeLogicContract.appendRegister(
         masternodeInfo.addr,
-        360,
+        Safe4_Business_Config.Masternode.Create.LockDays,
         {
           value: value,
         }
