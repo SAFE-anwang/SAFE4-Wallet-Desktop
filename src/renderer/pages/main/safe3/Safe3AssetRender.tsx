@@ -1,6 +1,6 @@
 
 import { Alert, Col, Row, Typography, Card, Divider, Button, Tabs, TabsProps, Input, Spin } from "antd";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useMasternodeLogicContract, useMulticallContract, useSafe3Contract } from "../../../hooks/useContracts";
 import { AvailableSafe3Info, formatAvailableSafe3Info, formatLockedSafe3Info, LockedSafe3Info } from "../../../structs/Safe3";
 import { ZERO } from "../../../utils/CurrentAmountUtils";
@@ -18,7 +18,17 @@ export interface Safe3Asset {
     lockedNum: number,
     lockedAmount: CurrencyAmount,
     redeemHeight: number,
-    txLockedAmount: CurrencyAmount
+    txLockedAmount: CurrencyAmount,
+
+    redeemed: {
+      amount: CurrencyAmount,
+      count: number
+    },
+    unredeem: {
+      amount: CurrencyAmount,
+      count: number
+    }
+
   },
   masternode?: {
     redeemHeight: number,
@@ -66,13 +76,21 @@ export default ({
           lockedNum: 0,
           lockedAmount: ZERO,
           redeemHeight: 0,
-          txLockedAmount: ZERO
+          txLockedAmount: ZERO,
+
+          redeemed: {
+            amount: ZERO,
+            count: 0
+          },
+          unredeem: {
+            amount: ZERO,
+            count: 0
+          }
         }
       }
       setSafe3AddressAsset({
         ..._safe3Asset
       });
-
       const lockedNum = (await safe3Contract.callStatic.getLockedNum(address)).toNumber();
       const lockedPage = Math.ceil(lockedNum / LockedTxLimit);
       const lockedPageCalls = [];
@@ -95,10 +113,12 @@ export default ({
           call.result.map(formatLockedSafe3Info)
             .forEach((lockedSafe3Info: LockedSafe3Info) => lockedSafe3Infos.push(lockedSafe3Info));
           // setTempUpdate .... //
-          const tempTotal = lockedSafe3Infos.map(lockTx => lockTx.amount).reduce((total, amount) => {
-            total = total.add(amount);
-            return total;
-          }, ZERO);
+          const tempTotal = lockedSafe3Infos
+            .map(lockTx => lockTx.amount)
+            .reduce((total, amount) => {
+              total = total.add(amount);
+              return total;
+            }, ZERO);
           _safe3Asset.locked.lockedNum = lockedSafe3Infos.length;
           _safe3Asset.locked.lockedAmount = tempTotal;
           setSafe3AddressAsset({
@@ -112,9 +132,25 @@ export default ({
         masternode?: {
           redeemHeight: number,
           lockedAmount: CurrencyAmount
+        },
+        redeemed: {
+          count: number,
+          amount: CurrencyAmount
+        },
+        unredeem: {
+          count: number,
+          amount: CurrencyAmount
         }
       } = {
-        redeemHeight: 0
+        redeemHeight: 1,
+        redeemed: {
+          count: 0,
+          amount: ZERO
+        },
+        unredeem: {
+          count: 0,
+          amount: ZERO
+        }
       };
       const totalLockedAmount = lockedSafe3Infos.map(lockTx => {
         if (lockTx.isMN) {
@@ -123,18 +159,28 @@ export default ({
             lockedAmount: lockTx.amount
           }
         } else {
-          loopResult.redeemHeight = lockTx.redeemHeight;
+          if (lockTx.redeemHeight == 0) {
+            lockTx.redeemHeight = 0;
+            loopResult.unredeem.count = loopResult.unredeem.count + 1;
+            loopResult.unredeem.amount = loopResult.unredeem.amount.add(lockTx.amount);
+          } else {
+            loopResult.redeemed.count = loopResult.redeemed.count + 1;
+            loopResult.redeemed.amount = loopResult.redeemed.amount.add(lockTx.amount);
+          }
         }
         return lockTx.amount;
       }).reduce((total, amount) => {
         total = total.add(amount);
         return total;
       }, ZERO);
+
       _safe3Asset.locked = {
         redeemHeight: loopResult.redeemHeight,
         lockedNum,
         lockedAmount: totalLockedAmount,
-        txLockedAmount: loopResult.masternode ? totalLockedAmount.subtract(loopResult.masternode.lockedAmount) : totalLockedAmount
+        txLockedAmount: loopResult.masternode ? totalLockedAmount.subtract(loopResult.masternode.lockedAmount) : totalLockedAmount,
+        unredeem: { ...loopResult.unredeem },
+        redeemed: { ...loopResult.redeemed }
       }
       if (loopResult.masternode) {
         _safe3Asset.masternode = {
@@ -180,8 +226,22 @@ export default ({
             </Col>
             <Col span={24}>
               <Text delete={
-                safe3AddressAsset && safe3AddressAsset?.locked.redeemHeight > 0
+                safe3AddressAsset && safe3AddressAsset?.locked.unredeem.count == 0
               } strong>{safe3AddressAsset?.locked.lockedAmount.toFixed(2)} SAFE</Text><br />
+              <Row>
+                <Col span={24}>
+                  <Text>未迁移</Text><br />
+                  <Text>{safe3AddressAsset?.locked.unredeem.amount.toFixed(2)} SAFE</Text>
+                  <Divider type="vertical" />
+                  <Text>{safe3AddressAsset?.locked.unredeem.count} </Text>
+                </Col>
+                <Col span={24}>
+                  <Text>已迁移</Text><br />
+                  <Text>{safe3AddressAsset?.locked.redeemed.amount.toFixed(2)} SAFE</Text>
+                  <Divider type="vertical" />
+                  <Text>{safe3AddressAsset?.locked.redeemed.count} </Text>
+                </Col>
+              </Row>
             </Col>
             {
               safe3AddressAsset?.masternode && <>

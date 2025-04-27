@@ -6,7 +6,6 @@ import { AvailableSafe3Info, formatAvailableSafe3Info, formatLockedSafe3Info, fo
 import CallMulticallAggregate, { CallMulticallAggregateContractCall } from "../../../state/multicall/CallMulticallAggregate";
 import { CurrencyAmount, JSBI } from "@uniswap/sdk";
 import { ZERO } from "../../../utils/CurrentAmountUtils";
-import EtherAmount from "../../../utils/EtherAmount";
 import { useTranslation } from "react-i18next";
 
 const { Text, Title } = Typography
@@ -20,7 +19,12 @@ export interface Safe3QueryResult {
 
   lockedAmount?: CurrencyAmount,
   lockedRedeemHeight?: number,
-  mnLocked?: LockedSafe3Info
+  mnLocked?: LockedSafe3Info,
+
+  redeemedCount?: number,
+  redeemedAmount?: CurrencyAmount,
+  unredeemCount?: number,
+  unredeemAmount?: CurrencyAmount
 }
 
 export interface Safe3RedeemStatistic {
@@ -66,11 +70,21 @@ export default ({
           index: number,
           offset: number,
           total?: CurrencyAmount,
+
+          redeemedCount?: number,
+          redeemedAmount?: CurrencyAmount,
+          unredeemCount?: number,
+          unredeemAmount?: CurrencyAmount
         }
       },
       mnLocked?: LockedSafe3Info,
       lockedRedeemHeight?: number,
-      lockedAmount?: CurrencyAmount
+      lockedAmount?: CurrencyAmount,
+
+      redeemedCount?: number,
+      redeemedAmount?: CurrencyAmount,
+      unredeemCount?: number,
+      unredeemAmount?: CurrencyAmount
     }
   }>();
   const [allFinish, setAllFinish] = useState<boolean>(false);
@@ -127,7 +141,7 @@ export default ({
           });
         }
       } else {
-        console.log("ALl Finished!");
+        console.log("ALl Finished! >> ", addressResultMap);
         setAllFinish(true);
       }
     }
@@ -160,7 +174,6 @@ export default ({
           }
         });
       if (Object.keys(_addressLockedQueryMap).length > 0) {
-        console.log("_AddressLockedQueryMap::", _addressLockedQueryMap);
         setAddressLockedQueryMap(_addressLockedQueryMap);
       } else {
         Object.keys(addressFirstQueryMap).forEach(address => {
@@ -172,7 +185,31 @@ export default ({
               .reduce((_total: CurrencyAmount, current: CurrencyAmount | undefined) => {
                 return _total.add(current ?? ZERO)
               }, ZERO);
+
+            const { unredeemAmount, unredeemCount, redeemedAmount, redeemedCount } = Object.keys(locked)
+              .map(addressIndexOffset => locked[addressIndexOffset])
+              .reduce((result, data) => {
+                const { unredeemAmount, unredeemCount, redeemedAmount, redeemedCount } = data;
+                if (unredeemAmount) {
+                  result.unredeemAmount = result.unredeemAmount.add(unredeemAmount);
+                }
+                if (unredeemCount) {
+                  result.unredeemCount = result.unredeemCount + unredeemCount;
+                }
+                if (redeemedAmount) {
+                  result.redeemedAmount = result.redeemedAmount.add(redeemedAmount);
+                }
+                if (redeemedCount) {
+                  result.redeemedCount = result.redeemedCount + redeemedCount;
+                }
+                return result;
+              }, { unredeemAmount: ZERO, unredeemCount: 0, redeemedAmount: ZERO, redeemedCount: 0 });
+
             addressFirstQueryMap[address].lockedAmount = lockedAmount;
+            addressFirstQueryMap[address].unredeemAmount = unredeemAmount;
+            addressFirstQueryMap[address].unredeemCount = unredeemCount;
+            addressFirstQueryMap[address].redeemedAmount = redeemedAmount;
+            addressFirstQueryMap[address].redeemedCount = redeemedCount;
           }
           addressResultMap[address] = {
             ...addressResultMap[address],
@@ -182,7 +219,11 @@ export default ({
             specialInfo,
             mnLocked,
             lockedRedeemHeight,
-            lockedAmount: addressFirstQueryMap[address].lockedAmount
+            lockedAmount: addressFirstQueryMap[address].lockedAmount,
+            unredeemAmount: addressFirstQueryMap[address].unredeemAmount,
+            unredeemCount: addressFirstQueryMap[address].unredeemCount,
+            redeemedAmount: addressFirstQueryMap[address].redeemedAmount,
+            redeemedCount: addressFirstQueryMap[address].redeemedCount,
           }
         });
         console.log("Finish Load CurrentFirstAddressResultMap...>", addressFirstQueryMap)
@@ -198,11 +239,15 @@ export default ({
       total?: CurrencyAmount,
       lockedRedeemHeight?: number,
       mnLocked?: LockedSafe3Info,
+
+      redeemedCount?: number,
+      redeemedAmount?: CurrencyAmount,
+      unredeemCount?: number,
+      unredeemAmount?: CurrencyAmount
     }
   }>();
   // 第三波遍历需要查询锁仓金额的Map;
   useEffect(() => {
-    console.log("遍历需要查询锁仓金额的Map", addressLockedQueryMap);
     if (addressLockedQueryMap && safe3Contract && multicallContract) {
       const calls: CallMulticallAggregateContractCall[] = [];
       Object.keys(addressLockedQueryMap).forEach((addressIndexOffset) => {
@@ -224,7 +269,12 @@ export default ({
               offset: number,
               total?: CurrencyAmount,
               mnLocked?: LockedSafe3Info,
-              lockedRedeemHeight?: number
+              lockedRedeemHeight?: number,
+
+              redeemedCount?: number,
+              redeemedAmount?: CurrencyAmount,
+              unredeemCount?: number,
+              unredeemAmount?: CurrencyAmount
             }
           } = {};
           calls.forEach(call => {
@@ -232,15 +282,28 @@ export default ({
             const lockedTxs = call.result.map(formatLockedSafe3Info);
             let mnLocked = undefined;
             let lockedRedeemHeight = 0;
+
+            let unredeemCount = 0;
+            let unredeemAmount = ZERO;
+            let redeemedCount = 0;
+            let redeemedAmount = ZERO;
+
             const total = lockedTxs.reduce((total: CurrencyAmount, current: LockedSafe3Info) => {
               if (current.isMN) {
                 mnLocked = current;
               } else {
-                lockedRedeemHeight = current.redeemHeight;
+                const { amount, redeemHeight } = current;
+                if (redeemHeight == 0) {
+                  unredeemCount = unredeemCount + 1;
+                  unredeemAmount = unredeemAmount.add(amount);
+                } else {
+                  redeemedCount = redeemedCount + 1;
+                  redeemedAmount = redeemedAmount.add(amount);
+                }
               }
               return total.add(current.amount);
             }, ZERO);
-            _addressLockedQueryResultMap[`${address}_${index}_${offset}`] = { index, offset, total, mnLocked, lockedRedeemHeight }
+            _addressLockedQueryResultMap[`${address}_${index}_${offset}`] = { index, offset, total, mnLocked, lockedRedeemHeight, unredeemCount, unredeemAmount, redeemedCount, redeemedAmount }
           });
           setAddressLockedQueryMap({
             ...addressLockedQueryMap,
@@ -251,7 +314,9 @@ export default ({
         if (addressFirstQueryMap) {
           Object.keys(addressLockedQueryMap).forEach(addressIndexOffset => {
             const address = addressIndexOffset.split("_")[0];
-            const { index, offset, total, mnLocked, lockedRedeemHeight } = addressLockedQueryMap[addressIndexOffset];
+            const { index, offset, total, mnLocked, lockedRedeemHeight,
+              unredeemCount, unredeemAmount, redeemedCount, redeemedAmount
+            } = addressLockedQueryMap[addressIndexOffset];
             if (addressFirstQueryMap[address]) {
               if (!addressFirstQueryMap[address].mnLocked) {
                 addressFirstQueryMap[address].mnLocked = mnLocked;
@@ -263,7 +328,7 @@ export default ({
                 addressFirstQueryMap[address].locked = {};
               }
               if (addressFirstQueryMap[address].locked) {
-                addressFirstQueryMap[address].locked[addressIndexOffset] = { index, offset, total };
+                addressFirstQueryMap[address].locked[addressIndexOffset] = { index, offset, total, unredeemCount, unredeemAmount, redeemedCount, redeemedAmount };
               }
             }
             console.log("Finish load each LockedTxInfos...>", addressLockedQueryMap)
@@ -284,46 +349,36 @@ export default ({
       const hasMasternode = mnLocked
       return hasAvailable || hasLocked || hasMasternode;
     }).map(address => addressResultMap[address]);
+
     const needRedeemList = hasAssetList.filter(result => {
-
-      const { availableInfo, lockedAmount, mnLocked, lockedRedeemHeight } = result;
-
+      const { availableInfo, mnLocked, unredeemCount } = result;
       const needRedeemAvailable = availableInfo?.amount.greaterThan(ZERO)
         && availableInfo.redeemHeight == 0;
-
-      let needRedeemLocked = false;
-      if (lockedAmount) {
-        if (mnLocked) {
-          if (lockedAmount.greaterThan(mnLocked.amount)) {
-            needRedeemLocked = lockedRedeemHeight == 0;
-          } else {
-            needRedeemLocked = mnLocked.redeemHeight == 0;
-          }
-        } else {
-          needRedeemLocked = lockedAmount.greaterThan(ZERO) && lockedRedeemHeight == 0;
-        }
-      }
-
+      let needRedeemLocked = unredeemCount && unredeemCount > 0;
       const needRedeemMasternode = mnLocked
         && mnLocked.redeemHeight == 0;
       return needRedeemAvailable || needRedeemLocked || needRedeemMasternode;
-
     });
-    const needRedeemTotalAvailableAmount = needRedeemList.map(result => result.availableInfo?.amount)
+
+    const needRedeemTotalAvailableAmount = needRedeemList
+      .filter((result) => { return result.availableInfo?.redeemHeight == 0 })
+      .map(result => result.availableInfo?.amount)
       .reduce((total: CurrencyAmount, current: CurrencyAmount | undefined) => { return total.add(current ?? ZERO) }, ZERO);
-    const needRedeemTotalLockedAmount = needRedeemList.map(result => {
-      const lockedAmount = result.lockedAmount;
-      const mnLocked = result.mnLocked;
-      if (lockedAmount) {
-        if (mnLocked && mnLocked.redeemHeight > 0) {
-          return result.lockedAmount?.subtract(mnLocked.amount);
-        } else {
-          return result.lockedAmount;
+
+    const needRedeemTotalLockedAmount = needRedeemList
+      .map(result => {
+        const mnLocked = result.mnLocked;
+        if (mnLocked) {
+          if (mnLocked.redeemHeight == 0) {
+            return result.unredeemAmount?.add(mnLocked.amount);
+          }
         }
-      }
-      return ZERO;
-    }).reduce((total: CurrencyAmount, current: CurrencyAmount | undefined) => { return total.add(current ?? ZERO) }, ZERO);
+        return result.unredeemAmount;
+      })
+      .reduce((total: CurrencyAmount, current: CurrencyAmount | undefined) => { return total.add(current ?? ZERO) }, ZERO);
+
     const needRedeemMasternodeCounts = needRedeemList.filter(result => result.mnLocked && result.mnLocked.redeemHeight == 0).length;
+
     return {
       statistic: {
         needRedeemAddressCount: needRedeemList.length,
@@ -390,16 +445,22 @@ export default ({
         const lockedAmount = addressResultMap[address]?.lockedAmount;
         const lockedRedeemHeight = addressResultMap[address]?.lockedRedeemHeight;
         const mnLocked = addressResultMap[address]?.mnLocked;
+        const redeemedAmount = addressResultMap[address]?.redeemedAmount;
+        const redeemedCount = addressResultMap[address]?.redeemedCount;
+        const unredeemAmount = addressResultMap[address]?.unredeemAmount;
+        const unredeemCount = addressResultMap[address]?.unredeemCount;
+
+
         let needLockedRedeem = false;
         if (lockedAmount) {
           if (mnLocked) {
             if (lockedAmount.greaterThan(mnLocked.amount)) {
-              needLockedRedeem = lockedRedeemHeight == 0;
+              needLockedRedeem = (unredeemCount && unredeemCount > 0) ? true : false;
             } else {
-              needLockedRedeem = mnLocked.redeemHeight == 0;
+              needLockedRedeem = false;
             }
           } else {
-            needLockedRedeem = lockedAmount.greaterThan(ZERO) && lockedRedeemHeight == 0;
+            needLockedRedeem = (unredeemCount && unredeemCount > 0) ? true : false;
           }
         }
         return <>
@@ -410,11 +471,40 @@ export default ({
               </Text>
             </>
           }
+
           {
             needLockedRedeem && <>
-              <Text strong>
-                {lockedAmount?.toExact()} SAFE
-              </Text>
+              <Row>
+                <Col span={24}>
+                  <Text type="secondary">全部锁仓:</Text>
+                  <Text strong>
+                    {lockedAmount?.toExact()} SAFE
+                  </Text>
+                </Col>
+                {
+                  unredeemAmount && redeemedAmount && unredeemAmount.greaterThan(ZERO) && redeemedAmount.greaterThan(ZERO) &&
+                  <>
+                    <Col span={24}>
+                      <Text type="secondary">未迁移:</Text>
+                      <Text strong>
+                        {
+                          unredeemAmount?.toExact()
+                        } SAFE
+                        - {unredeemCount}
+                      </Text>
+                    </Col>
+                    <Col span={24}>
+                      <Text type="secondary">已迁移:</Text>
+                      <Text strong>
+                        {
+                          redeemedAmount?.toExact()
+                        } SAFE
+                        - {redeemedCount}
+                      </Text>
+                    </Col>
+                  </>
+                }
+              </Row>
             </>
           }
         </>

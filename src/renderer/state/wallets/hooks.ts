@@ -44,7 +44,7 @@ export function useWalletsActiveAccount(): string {
   return useSelector((state: AppState) => {
     return state.wallets.activeWallet ? state.wallets.activeWallet.address : "";
   });
-  // return "0xD6869562e17532D5bd5a06E28D0865696374Fd0F";
+  // return "0xAC110c0f70867F77D9d230e377043F52480A0B7d";
 }
 
 export function useWalletsActivePrivateKey(): string | undefined {
@@ -576,4 +576,3 @@ export function useActiveAccountChildWallets(type: SupportChildWalletType) {
 }
 
 
- 

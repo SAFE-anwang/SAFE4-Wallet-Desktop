@@ -22,6 +22,8 @@ const evmPrivateRegex = /^(0x)?[0-9a-fA-F]{64}$/;
 const safe3AddressBase58Regex = /^X[a-zA-Z0-9]{33}$/;
 const redeemNeedAmount = "0.005";
 
+export const Redeem_Locked_MAX = 200;
+
 const isSafe3DesktopExportPrivateKey = (input: string) => {
   return base58Regex.test(input);
 };
@@ -85,7 +87,7 @@ export default () => {
   const balance = useETHBalances([activeAccount])[activeAccount];
   const [redeemTxHashs, setRedeemTxHashs] = useState<{
     avaiable?: TxExecuteStatus,
-    locked?: TxExecuteStatus,
+    locked: TxExecuteStatus[],
     masternode?: TxExecuteStatus
   }>();
   const [redeeming, setRedeeming] = useState<boolean>(false);
@@ -117,8 +119,8 @@ export default () => {
     }
     const avaiable = safe3Asset.availableSafe3Info.amount.greaterThan(ZERO)
       && safe3Asset.availableSafe3Info.redeemHeight == 0;
-    const locked = safe3Asset.locked.txLockedAmount.greaterThan(ZERO)
-      && safe3Asset.locked.redeemHeight == 0;
+    const locked = safe3Asset.locked.unredeem.amount.greaterThan(ZERO)
+      && safe3Asset.locked.unredeem.count > 0;
     const masternode = safe3Asset.masternode
       && safe3Asset.masternode.redeemHeight == 0;
     return avaiable || locked || masternode;
@@ -143,6 +145,7 @@ export default () => {
   useEffect(() => {
     setSafe3Wallet(undefined);
     setRedeemTxHashs(undefined);
+    setFinished(false);
     const safe3Address = safe3Asset?.safe3Address;
     if (safe3PrivateKey && safe3Address) {
       setInputErrors({
@@ -187,6 +190,8 @@ export default () => {
     }
   }, [safe3Asset, safe3Wallet]);
 
+  const [finished, setFinished] = useState<boolean>(false);
+
   const executeRedeem = useCallback(async () => {
     if (safe4TargetAddress && safe3Wallet && safe3Asset && masternodeContract && supernodeContract && safe3Contract) {
       if (!ethers.utils.isAddress(safe4TargetAddress)) {
@@ -197,7 +202,7 @@ export default () => {
       const { privateKey } = safe3Wallet;
       const signMsg = await generateRedeemSign(privateKey, safe3Address, safe4TargetAddress);
       setRedeeming(true);
-      let _redeemTxHashs = redeemTxHashs ?? {};
+      let _redeemTxHashs = redeemTxHashs ?? { locked: [] };
       // safe3 可用资产大于零,且没有被赎回.
       if (
         availableSafe3Info.redeemHeight == 0 &&
@@ -230,44 +235,50 @@ export default () => {
           }
           setRedeemTxHashs({ ..._redeemTxHashs })
           console.log("执行迁移可用资产错误,Error:", error.error.reason);
+          return;
         }
       } else {
         console.log("无需执行迁移可用资产");
       }
-
       // safe3 锁仓资产大于零,且没有被赎回.
       if (
-        locked.redeemHeight == 0 &&
-        locked.txLockedAmount.greaterThan(ZERO)
+        locked.unredeem.count > 0 &&
+        locked.unredeem.amount.greaterThan(ZERO)
       ) {
         try {
-          let response = await safe3Contract.batchRedeemLocked(
-            [ethers.utils.arrayify(publicKey)],
-            [ethers.utils.arrayify(signMsg)],
-            safe4TargetAddress
-          );
-          console.log("redeem lockeed txhash:", response.hash)
-          _redeemTxHashs.locked = {
-            status: 1,
-            txHash: response.hash
+          const unredeemCount = locked.unredeem.count;
+          const needRedeemTime = Math.ceil(unredeemCount / Redeem_Locked_MAX);
+          console.log("Need Redeem Time :", needRedeemTime);
+          for (let i = 0; i < needRedeemTime; i++) {
+            let response = await safe3Contract.batchRedeemLocked(
+              [ethers.utils.arrayify(publicKey)],
+              [ethers.utils.arrayify(signMsg)],
+              safe4TargetAddress
+            );
+            console.log(`redeem lockeed txhash:${i}`, response.hash)
+            _redeemTxHashs.locked?.push({
+              status: 1,
+              txHash: response.hash
+            });
+            setRedeemTxHashs({ ..._redeemTxHashs });
+            addTransaction({ to: safe3Contract.address }, response, {
+              call: {
+                from: activeAccount,
+                to: safe3Contract.address,
+                input: response.data,
+                value: "0"
+              }
+            });
+            console.log("执行迁移锁定资产Hash:", response.hash);
           }
-          setRedeemTxHashs({ ..._redeemTxHashs });
-          addTransaction({ to: safe3Contract.address }, response, {
-            call: {
-              from: activeAccount,
-              to: safe3Contract.address,
-              input: response.data,
-              value: "0"
-            }
-          });
-          console.log("执行迁移锁定资产Hash:", response.hash);
         } catch (error: any) {
-          _redeemTxHashs.locked = {
+          _redeemTxHashs.locked?.push({
             status: 0,
             error: error.toString()
-          }
-          setRedeemTxHashs({ ..._redeemTxHashs })
+          });
+          setRedeemTxHashs({ ..._redeemTxHashs });
           console.log("执行迁移锁定资产错误,Error:", error);
+          return;
         }
       } else {
         console.log("无需执行迁移锁定资产.")
@@ -305,11 +316,13 @@ export default () => {
           }
           setRedeemTxHashs({ ..._redeemTxHashs })
           console.log("执行迁移主节点错误,Error:", error)
+          return;
         }
       } else {
         console.log("无需执行迁移主节点.")
       }
       setRedeeming(false);
+      setFinished(true);
     }
   }, [safe3Wallet, safe3Asset, safe4TargetAddress, safe3Contract, masternodeContract, supernodeContract]);
 
@@ -472,17 +485,25 @@ export default () => {
                       } />
                     </>
                   }
-
-                  <Button
-                    loading={redeeming}
-                    disabled={redeemEnable && !redeemTxHashs ? false : true}
-                    style={{ marginTop: "5px" }} type="primary"
-                    onClick={() => {
-                      executeRedeem();
-                    }}>
-                    {t("wallet_redeems_button")}
-                  </Button>
-
+                  {
+                    !finished && <Button
+                      loading={redeeming}
+                      disabled={redeemEnable && !redeemTxHashs ? false : true}
+                      style={{ marginTop: "5px" }} type="primary"
+                      onClick={() => {
+                        executeRedeem();
+                      }}>
+                      {t("wallet_redeems_button")}
+                    </Button>
+                  }
+                  {
+                    finished &&
+                    <Row>
+                      <Col span={24}>
+                        <Alert type="success" showIcon message={t("finished")} />
+                      </Col>
+                    </Row>
+                  }
                   {
                     redeemTxHashs &&
                     <>
@@ -507,23 +528,29 @@ export default () => {
                           </>
                         }
                         {
-                          redeemTxHashs?.locked && <>
-                            {
-                              redeemTxHashs.locked.status == 1 && <>
-                                <Text type="secondary">{t("wallet_redeems_locked_txhash")}</Text><br />
-                                <Text strong>{redeemTxHashs.locked.txHash}</Text> <br />
-                              </>
-                            }
-                            {
-                              redeemTxHashs.locked.status == 0 && <>
-                                <Text type="secondary">{t("wallet_redeems_locked_error")}</Text><br />
-                                <Text strong type="danger">
-                                  <CloseCircleTwoTone twoToneColor="red" style={{ marginRight: "5px" }} />
-                                  {redeemTxHashs.locked.error}
-                                </Text> <br />
-                              </>
-                            }
-                          </>
+                          redeemTxHashs.locked && redeemTxHashs.locked.map((locked) => {
+                            return <>
+                              {
+                                locked.status == 1 && <Row key={locked.txHash}>
+                                  <Col span={24}>
+                                    <Text type="secondary">{t("wallet_redeems_locked_txhash")}</Text><br />
+                                    <Text strong>{locked.txHash}</Text> <br />
+                                  </Col>
+                                </Row>
+                              }
+                              {
+                                locked.status == 0 && <Row>
+                                  <Col span={24}>
+                                    <Text type="secondary">{t("wallet_redeems_locked_error")}</Text><br />
+                                    <Text strong type="danger">
+                                      <CloseCircleTwoTone twoToneColor="red" style={{ marginRight: "5px" }} />
+                                      {locked.error}
+                                    </Text> <br />
+                                  </Col>
+                                </Row>
+                              }
+                            </>
+                          })
                         }
                         {
                           redeemTxHashs?.masternode && <>

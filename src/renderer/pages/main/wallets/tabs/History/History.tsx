@@ -12,7 +12,7 @@ import { refreshAddressTimeNodeReward, reloadTransactionsAndSetAddressActivityFe
 import "./index.css"
 import { AppState } from "../../../../../state";
 import { ZERO } from "../../../../../utils/CurrentAmountUtils";
-import { fetchAddressAnalytic, fetchAddressAnalyticNodeRewards } from "../../../../../services/address";
+import { fetchAddressAnalyticNodeRewards } from "../../../../../services/address";
 import { useWeb3React } from "@web3-react/core";
 import { AddressAnalyticVO, DateTimeNodeRewardVO } from "../../../../../services";
 import { TimestampTheStartOf } from "../../../../../utils/DateUtils";

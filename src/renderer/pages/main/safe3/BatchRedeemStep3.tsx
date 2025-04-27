@@ -7,7 +7,7 @@ import { useETHBalances, useWalletsActiveAccount } from "../../../state/wallets/
 import Safe3PrivateKey, { generateRedeemSign } from "../../../utils/Safe3PrivateKey";
 import { AddressPrivateKeyMap } from "./BatchRedeemStep1";
 import { Safe3QueryResult, Safe3RedeemStatistic } from "./BatchRedeemStep2";
-import { TxExecuteStatus } from "../safe3/Safe3";
+import { Redeem_Locked_MAX, TxExecuteStatus } from "../safe3/Safe3";
 import { CloseCircleTwoTone } from "@ant-design/icons";
 import { useTransactionAdder } from "../../../state/transactions/hooks";
 import { useTranslation } from "react-i18next";
@@ -56,9 +56,19 @@ export default ({
 
   const executeRedeem = useCallback(async () => {
     if (safe3Contract) {
+      const safe3QueryResultMap = safe3RedeemList.reduce((map, queryResult) => {
+        map[queryResult.address] = queryResult;
+        return map;
+      }, {} as {
+        [address: string]: Safe3QueryResult
+      });
       const addressArr = safe3RedeemList.map(safe3Redeem => safe3Redeem.address);
       const publicKeyArr: Uint8Array[] = [];
       const signMsgArr: Uint8Array[] = [];
+
+      const publicKeyAddressMap: {
+        [publicKeyStr: string]: string
+      } = {};
 
       const encodePromises = addressArr.map(async address => {
         const base58PrivateKey = addressPrivateKeyMap[address].privateKey;
@@ -66,6 +76,7 @@ export default ({
         const privateKey = safe3Wallet.privateKey;
         const publicKey = "0x" + (safe3Wallet.safe3Address == address ? safe3Wallet.publicKey : safe3Wallet.compressPublicKey);
         const signMsg = await generateRedeemSign(privateKey, address, safe4TargetAddress);
+        publicKeyAddressMap[publicKey] = address;
         return {
           publicKey: ethers.utils.arrayify(publicKey),
           signMsg: ethers.utils.arrayify(signMsg),
@@ -123,35 +134,48 @@ export default ({
       for (let i = 0; i < publicKeyArr.length; i += BatchMax) {
         const slicePublickKeyArr = publicKeyArr.slice(i, i + BatchMax);
         const sliceSignMsgKArr = signMsgArr.slice(i, i + BatchMax);
-        try {
-          let response = await safe3Contract.batchRedeemLocked(
-            slicePublickKeyArr,
-            sliceSignMsgKArr,
-            safe4TargetAddress
-          );
-          _redeemTxHashs.lockeds.push({
-            status: 1,
-            txHash: response.hash
-          });
-          setRedeemTxHashs({ ..._redeemTxHashs });
-          console.log("执行迁移锁定资产Hash:", response.hash);
-          const { data } = response;
-          addTransaction({ to: safe3Contract.address }, response, {
-            call: {
-              from: activeAccount,
-              to: safe3Contract.address,
-              input: data,
-              value: "0"
+        const totalUnredeemCount = slicePublickKeyArr
+          .map(publicKeyArr => publicKeyAddressMap[ethers.utils.hexlify(publicKeyArr)])
+          .map(address => safe3QueryResultMap[address])
+          .reduce((total, safe3QueryResult) => {
+            if (safe3QueryResult.unredeemCount) {
+              return total + safe3QueryResult.unredeemCount;
             }
-          });
-        } catch (error: any) {
-          _redeemTxHashs.lockeds.push({
-            status: 0,
-            error: error.error.reason
-          });
-          setRedeemTxHashs({ ..._redeemTxHashs })
-          console.log("执行迁移锁定资产错误,Error:", error);
-          return;
+            return total;
+          }, 0);
+        const needRedeemTime = Math.ceil(totalUnredeemCount / Redeem_Locked_MAX);
+        console.log("Need Redeem Time :", needRedeemTime);
+        for (let i = 0; i < needRedeemTime; i++) {
+          try {
+            let response = await safe3Contract.batchRedeemLocked(
+              slicePublickKeyArr,
+              sliceSignMsgKArr,
+              safe4TargetAddress
+            );
+            _redeemTxHashs.lockeds.push({
+              status: 1,
+              txHash: response.hash
+            });
+            setRedeemTxHashs({ ..._redeemTxHashs });
+            console.log("执行迁移锁定资产Hash:", response.hash);
+            const { data } = response;
+            addTransaction({ to: safe3Contract.address }, response, {
+              call: {
+                from: activeAccount,
+                to: safe3Contract.address,
+                input: data,
+                value: "0"
+              }
+            });
+          } catch (error: any) {
+            _redeemTxHashs.lockeds.push({
+              status: 0,
+              error: error.error.reason
+            });
+            setRedeemTxHashs({ ..._redeemTxHashs })
+            console.log("执行迁移锁定资产错误,Error:", error);
+            return;
+          }
         }
       }
 
