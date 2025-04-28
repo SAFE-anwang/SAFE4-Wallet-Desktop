@@ -44,7 +44,6 @@ export function useWalletsActiveAccount(): string {
   return useSelector((state: AppState) => {
     return state.wallets.activeWallet ? state.wallets.activeWallet.address : "";
   });
-  // return "0xAC110c0f70867F77D9d230e377043F52480A0B7d";
 }
 
 export function useWalletsActivePrivateKey(): string | undefined {

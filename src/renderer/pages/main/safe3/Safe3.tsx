@@ -22,7 +22,7 @@ const evmPrivateRegex = /^(0x)?[0-9a-fA-F]{64}$/;
 const safe3AddressBase58Regex = /^X[a-zA-Z0-9]{33}$/;
 const redeemNeedAmount = "0.005";
 
-export const Redeem_Locked_MAX = 200;
+export const Redeem_Locked_MAX = 100;
 
 const isSafe3DesktopExportPrivateKey = (input: string) => {
   return base58Regex.test(input);
@@ -250,10 +250,18 @@ export default () => {
           const needRedeemTime = Math.ceil(unredeemCount / Redeem_Locked_MAX);
           console.log("Need Redeem Time :", needRedeemTime);
           for (let i = 0; i < needRedeemTime; i++) {
-            let response = await safe3Contract.batchRedeemLocked(
+
+            const estimateGas = await safe3Contract.estimateGas.batchRedeemLocked(
               [ethers.utils.arrayify(publicKey)],
               [ethers.utils.arrayify(signMsg)],
               safe4TargetAddress
+            );
+            const gasLimit = estimateGas.mul(2);
+            let response = await safe3Contract.batchRedeemLocked(
+              [ethers.utils.arrayify(publicKey)],
+              [ethers.utils.arrayify(signMsg)],
+              safe4TargetAddress,
+              { gasLimit }
             );
             console.log(`redeem lockeed txhash:${i}`, response.hash)
             _redeemTxHashs.locked?.push({

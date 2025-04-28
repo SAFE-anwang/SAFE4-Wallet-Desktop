@@ -36,26 +36,28 @@ export default ({
     return false;
   }, [recordUseInfo])
 
-  const [addLockDay, setAddLockDay] = useState<string>( isMemberOfNode ? "360" : "" );
+  const [addLockDay, setAddLockDay] = useState<string>(isMemberOfNode ? "360" : "");
   const [addLockDayError, setAddLockDayError] = useState<string>();
 
   const goNext = () => {
     let _addLockDayError;
     if (!addLockDay) {
-      _addLockDayError = t("please_enter")+t("wallet_locked_addLockDay");
+      _addLockDayError = t("please_enter") + t("wallet_locked_addLockDay");
     } else {
       try {
         const _lockDay = JSBI.BigInt(addLockDay);
         if (JSBI.greaterThan(JSBI.BigInt(1), _lockDay)) {
-          _addLockDayError = t("enter_correct")+t("days");
+          _addLockDayError = t("enter_correct") + t("days");
         }
-        goNextCallback(Number(_lockDay));
+        if (JSBI.greaterThan(_lockDay, JSBI.BigInt(3666))) {
+          _addLockDayError = t("enter_correct") + t("days");
+        }
       } catch (error) {
-        _addLockDayError = t("enter_correct")+t("days");
+        _addLockDayError = t("enter_correct") + t("days");
       }
     }
     if (!_addLockDayError) {
-
+      goNextCallback(Number(addLockDay));
     } else {
       setAddLockDayError(_addLockDayError);
     }
@@ -103,7 +105,7 @@ export default ({
         <br />
         {
           !isMemberOfNode &&
-          <Input placeholder={t("enter")+t("wallet_locked_addLockDay")} style={{ width: "30%" }} onChange={(event) => {
+          <Input placeholder={t("enter") + t("wallet_locked_addLockDay")} style={{ width: "30%" }} onChange={(event) => {
             const input = event.target.value.trim();
             setAddLockDay(input);
             setAddLockDayError(undefined);
@@ -112,7 +114,7 @@ export default ({
         {
           isMemberOfNode &&
           <InputNumber size="large" defaultValue={360} step={360} min={360} max={3600} onKeyPress={(e) => e.preventDefault()} style={{ width: "30%" }} onChange={(value) => {
-            setAddLockDay(value+"");
+            setAddLockDay(value + "");
           }} />
         }
         <br />

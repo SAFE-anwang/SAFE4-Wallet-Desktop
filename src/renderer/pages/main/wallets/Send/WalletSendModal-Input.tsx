@@ -79,7 +79,12 @@ export default ({
     }
     if (openSendLock && (!lockDay || Number.isNaN(lockDay))) {
       inputErrors.lockDay = t("enter_correct") + t("wallet_lock_lockday");
+    } else {
+      if (lockDay && lockDay > 3666) {
+        inputErrors.lockDay = t("enter_correct") + t("wallet_lock_lockday");
+      }
     }
+
     if (inputErrors.to || inputErrors.amount || inputErrors.lockDay) {
       setInputErrors({ ...inputErrors })
       return;

@@ -119,7 +119,7 @@ export function useTransactions(account?: string) {
       .sort((t0, t1) => {
         return t1.addedTime - t0.addedTime
       })
-      .slice(0,500);
+      .slice(0,200);
   }, [account, transactions, chainId]);
   const dateTransactions: {
     [date: string]: {

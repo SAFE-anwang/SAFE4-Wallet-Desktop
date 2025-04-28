@@ -63,8 +63,8 @@ export default ({
         }
         // 锁仓必须大于等于1Safe
         const ONE = CurrencyAmount.ether(ethers.utils.parseEther("1").toBigInt());
-        if ( !(_amount.equalTo( ONE ) || _amount.greaterThan(ONE)) ){
-          inputErrors.amount = t("wallet_lock_amount_lessthen",{lessLockAmount:"1"});
+        if (!(_amount.equalTo(ONE) || _amount.greaterThan(ONE))) {
+          inputErrors.amount = t("wallet_lock_amount_lessthen", { lessLockAmount: "1" });
         }
       } catch (error) {
         inputErrors.amount = t("enter_correct") + t("wallet_lock_amount");
@@ -74,6 +74,9 @@ export default ({
       try {
         const _lockDay = JSBI.BigInt(lockDay);
         if (JSBI.greaterThan(JSBI.BigInt(0), _lockDay)) {
+          inputErrors.lockDay = t("enter_correct") + t("wallet_lock_lockday");
+        }
+        if (JSBI.greaterThan(_lockDay, JSBI.BigInt(3666))) {
           inputErrors.lockDay = t("enter_correct") + t("wallet_lock_lockday");
         }
       } catch (error) {

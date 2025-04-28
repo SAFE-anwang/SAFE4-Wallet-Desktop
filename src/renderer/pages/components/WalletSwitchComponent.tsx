@@ -67,7 +67,7 @@ export default () => {
                 </Tooltip>
               }
               <Text style={{ float: "left" }}>{_name}</Text>
-              <Text strong style={{ float: "right", marginLeft: "50px" }}>{balance?.toSignificant(3)}</Text>
+              <Text strong style={{ float: "right", marginLeft: "50px" }}>{balance?.toFixed(3)}</Text>
             </Col>
             <Col span={24}>
               <Text style={{

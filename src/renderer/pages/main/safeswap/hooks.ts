@@ -11,6 +11,7 @@ import { useTokens, useWalletTokens } from "../../../state/transactions/hooks";
 import { Safe4NetworkChainId, USDT, WSAFE } from "../../../config";
 import { Pair, Token, TokenAmount } from "@uniswap/sdk";
 import { useAuditTokenList } from "../../../state/audit/hooks";
+import { shallowEqual } from "react-redux";
 
 
 async function getSafeswapV2PairAddresses(safeswapV2Factory: Contract, multicallContract: Contract) {
@@ -106,7 +107,8 @@ export interface SafeswapV2Pairs {
   result: {
     pairsMap: { [address: string]: Pair },
     pairBalancesMap: { [address: string]: ethers.BigNumber },
-    pairTotalSuppliesMap: { [address: string]: ethers.BigNumber }
+    pairTotalSuppliesMap: { [address: string]: ethers.BigNumber },
+    blockNumber: number
   } | undefined
 }
 
@@ -117,10 +119,14 @@ export function useSafeswapV2Pairs(): SafeswapV2Pairs {
   const activeAccount = useWalletsActiveAccount();
   const safeswapV2Factory = useSafeswapV2Factory(false);
   const multicallContract = useMulticallContract();
-  const [pairResults, setPairResults] = useState<{ [address: string]: PairResult }>();
+  const [_pairResults, setPairResults] = useState<{
+    blockNumber: number,
+    pairResults: { [address: string]: PairResult }
+  }>();
 
   const walletTokens = useWalletTokens();
   const auditTokens = useAuditTokenList();
+
   const erc20Tokens = useMemo(() => {
     const tokens = walletTokens && walletTokens.filter(token => {
       return token.name != 'Safeswap V2'
@@ -139,7 +145,8 @@ export function useSafeswapV2Pairs(): SafeswapV2Pairs {
   const [result, setResult] = useState<{
     pairsMap: { [address: string]: Pair },
     pairBalancesMap: { [address: string]: ethers.BigNumber },
-    pairTotalSuppliesMap: { [address: string]: ethers.BigNumber }
+    pairTotalSuppliesMap: { [address: string]: ethers.BigNumber },
+    blockNumber: number
   }>();
 
   useEffect(() => {
@@ -149,18 +156,24 @@ export function useSafeswapV2Pairs(): SafeswapV2Pairs {
         const pairAddresses = await getSafeswapV2PairAddresses(safeswapV2Factory, multicallContract);
         const pairResults = await getPairCallResults(pairAddresses, provider, activeAccount, multicallContract);
         console.log("[SafeswapV2].Update Pairs = ", pairAddresses.length);
-        setPairResults(pairResults);
+        setPairResults({
+          blockNumber,
+          pairResults: pairResults
+        });
       }
     }
     loadSafeswapV2();
   }, [safeswapV2Factory, multicallContract, blockNumber, provider, activeAccount]);
 
   useEffect(() => {
-    if (pairResults && erc20Tokens) {
+    if (_pairResults && erc20Tokens) {
+
       const tokensMap: { [address: string]: Token } = erc20Tokens.reduce((map, token) => {
         map[token.address] = token;
         return map;
       }, {} as { [address: string]: Token });
+      const pairResults = _pairResults.pairResults;
+      const blockNumber = _pairResults.blockNumber;
 
       const pairsMap = Object.keys(pairResults).filter(pairAddress => {
         const { token0, token1 } = pairResults[pairAddress];
@@ -189,14 +202,25 @@ export function useSafeswapV2Pairs(): SafeswapV2Pairs {
         return map;
       }, {} as { [address: string]: ethers.BigNumber });
 
-      setResult({
-        pairsMap, pairBalancesMap, pairTotalSuppliesMap
-      })
+      console.log("[SafeswapV2].Update Pairs Result.")
+      setResult((prev) => {
+        if (prev != undefined && prev.blockNumber == blockNumber) {
+          return prev
+        }
+        console.log("-Do Update Pairs Result for blockNumber-" , blockNumber)
+        return {
+          pairsMap,
+          pairBalancesMap,
+          pairTotalSuppliesMap,
+          blockNumber
+        };
+      });
       setLoading(false);
-
     }
-  }, [pairResults, erc20Tokens]);
+  }, [_pairResults, erc20Tokens]);
+
   return {
     result, loading
   }
+
 }

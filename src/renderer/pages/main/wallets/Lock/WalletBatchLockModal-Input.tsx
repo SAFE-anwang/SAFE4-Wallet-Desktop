@@ -113,7 +113,7 @@ export default ({
     if (!perLockAmount) {
       inputErrors.perLockAmount = t("please_enter") + t("wallet_batchLock_eachLockAmount");
     }
-    if (!lockTimes || !(lockTimes > 0)) {
+    if (!lockTimes || !(lockTimes > 0) || (lockTimes > 360) ) {
       inputErrors.lockTimes = t("please_enter") + t("wallet_batchLock_totalLockCount");
     }
     if (!startLockMonth) {
@@ -122,7 +122,7 @@ export default ({
     if (!toAddress || !ethers.utils.isAddress(toAddress)) {
       inputErrors.toAddress = t("enter_correct") + t("wallet_batchLock_lockWalletAddress");
     }
-    if (!periodMonth || !(periodMonth > 0)) {
+    if (!periodMonth || !(periodMonth > 0) || periodMonth > 12) {
       inputErrors.periodMonth = "请输入锁仓间隔月份";
     }
     if (perLockAmount) {

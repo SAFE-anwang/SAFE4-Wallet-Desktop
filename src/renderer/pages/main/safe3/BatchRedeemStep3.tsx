@@ -147,10 +147,17 @@ export default ({
         console.log("Need Redeem Time :", needRedeemTime);
         for (let i = 0; i < needRedeemTime; i++) {
           try {
-            let response = await safe3Contract.batchRedeemLocked(
+            const estimateGas = await safe3Contract.estimateGas.batchRedeemLocked(
               slicePublickKeyArr,
               sliceSignMsgKArr,
               safe4TargetAddress
+            );
+            const gasLimit = estimateGas.mul(2);
+            let response = await safe3Contract.batchRedeemLocked(
+              slicePublickKeyArr,
+              sliceSignMsgKArr,
+              safe4TargetAddress,
+              { gasLimit }
             );
             _redeemTxHashs.lockeds.push({
               status: 1,

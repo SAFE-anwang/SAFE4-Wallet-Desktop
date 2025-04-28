@@ -54,14 +54,17 @@ export default () => {
                   <Divider style={{ margin: "0px 0px" }} />
                 </>
               }
-              <Row onClick={() => {
-                setSelectedToken(erc20Token);
-                setOpenTokenSendModal(true);
-              }} className='menu-item' style={{ height: "80px", lineHeight: "80px" }}>
-                <Col span={2} style={{ textAlign: "center" }}>
+              <Row className='menu-item' style={{ height: "80px", lineHeight: "80px" }}>
+                <Col onClick={() => {
+                  setSelectedToken(erc20Token);
+                  setOpenTokenSendModal(true);
+                }} span={2} style={{ textAlign: "center" }}>
                   <ERC20TokenLogoComponent chainId={chainId} address={address} />
                 </Col>
-                <Col span={10}>
+                <Col onClick={() => {
+                  setSelectedToken(erc20Token);
+                  setOpenTokenSendModal(true);
+                }} span={12}>
                   <Row>
                     <Col span={24} style={{ lineHeight: "35px", marginTop: "5px" }}>
                       <Text strong>{name}</Text>
@@ -72,7 +75,7 @@ export default () => {
                     </Col>
                   </Row>
                 </Col>
-                <Col span={12} style={{ paddingRight: "30px", paddingTop: "5px" }}>
+                <Col span={10} style={{ paddingRight: "30px", paddingTop: "5px" }}>
                   <Row>
                     <Col span={24} style={{ lineHeight: "35px", marginTop: "5px" }}>
                       <Text style={{ float: "right" }} type="secondary">{t("wallet_tokens_contract")}</Text>

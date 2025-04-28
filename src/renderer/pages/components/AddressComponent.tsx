@@ -46,10 +46,9 @@ export default ({
       }
       {
         qrcode && <Link onClick={(event) => {
-          // 阻止事件冒泡
-          event.stopPropagation();
-          // 阻止默认行为（如果有）
-          event.preventDefault();
+          event.preventDefault(); // 阻止默认行为（如果有）
+          event.stopPropagation();  // 阻止事件冒泡
+          (event as any).nativeEvent.stopImmediatePropagation(); // 再阻止捕获阶段的处理
           setOpenAddress(_address);
           setOpenAddressQRCode(true);
         }}>

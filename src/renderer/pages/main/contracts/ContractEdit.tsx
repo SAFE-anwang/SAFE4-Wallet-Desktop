@@ -151,7 +151,7 @@ export default () => {
 
         <Card>
           <Alert type='info' showIcon message={<>
-            <Text>{t("wallet_contracts_deploy_tip0")} (<Link onClick={() => window.open("https://docs.soliditylang.org/zh/v0.8.17/")}>{t("wallet_contracts_deploy_link_soliditydoc")}</Link>)</Text>
+            <Text>{t("wallet_contracts_deploy_tip0")} (<Link onClick={() => window.open("https://docs.soliditylang.org/en/v0.8.17/")}>{t("wallet_contracts_deploy_link_soliditydoc")}</Link>)</Text>
             <br />
             <Text>{t("wallet_contracts_deploy_tip1")} <Link onClick={() => {
               dispatch(applicationControlDirectDeploy(true));
