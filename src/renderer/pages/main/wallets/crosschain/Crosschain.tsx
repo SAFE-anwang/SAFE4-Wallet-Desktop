@@ -145,22 +145,20 @@ export default () => {
   };
 
   const tokenBalance = useMemo(() => {
-    if (activeAccountETHBalance && tokenUSDTBalance) {
-      if (inputParams.token == 'USDT') {
-        return tokenUSDTBalance;
-      } else {
-        return activeAccountETHBalance;
-      }
+    if (inputParams.token == 'USDT' && tokenUSDTBalance) {
+      return tokenUSDTBalance;
+    } else {
+      return activeAccountETHBalance;
     }
-    return ZERO;
   }, [activeAccountETHBalance, tokenUSDTBalance, inputParams.token]);
 
   const maxBalance = useMemo(() => {
     if (inputParams.token == 'USDT') {
       return tokenBalance;
     } else {
-      return (activeAccountETHBalance && activeAccountETHBalance.greaterThan(ZERO) && activeAccountETHBalance.greaterThan(ONE))
-        ? activeAccountETHBalance.subtract(ONE) : ZERO;
+      const minKeepBalance = CurrencyAmount.ether(ethers.utils.parseEther("0.0001").toBigInt());
+      return (activeAccountETHBalance && activeAccountETHBalance.greaterThan(ZERO) && activeAccountETHBalance.greaterThan(minKeepBalance))
+        ? activeAccountETHBalance.subtract(minKeepBalance) : ZERO;
     }
   }, [tokenBalance, inputParams.token]);
 

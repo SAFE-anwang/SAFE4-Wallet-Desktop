@@ -237,10 +237,10 @@ export default () => {
       () => console.log("")
     )
     if (term) {
-      updateSteps(0, "下载 Safe4 节点程序");
+      updateSteps(0, "下载 SAFE4 节点程序");
       const CMD_download_success = await CMD_download.execute(term);
       if (CMD_download_success){
-        updateSteps(0, "解压 Safe4 节点程序");
+        updateSteps(0, "解压 SAFE4 节点程序");
         const CMD_unzip_success = await CMD_unzip.execute(term);
       }
       updateSteps(1, "上传节点地址加密 Keystore 文件");

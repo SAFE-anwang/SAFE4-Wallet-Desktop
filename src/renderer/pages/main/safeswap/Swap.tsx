@@ -18,6 +18,7 @@ import { applicationUpdateSafeswapTokens } from "../../../state/application/acti
 import ViewFiexdAmount from "../../../utils/ViewFiexdAmount";
 import { SafeswapV2Pairs, useSafeswapV2Pairs } from "./hooks";
 import ERC20TokenLogoComponent from "../../components/ERC20TokenLogoComponent";
+import TokenSymbol from "../../components/TokenSymbol";
 const { Text, Link } = Typography;
 
 export const SafeswapV2_Fee_Rate = "0.003";
@@ -241,7 +242,7 @@ export default ({
                     const isLastToken = tokenIndex == trade.route.path.length - 1;
                     return <Space style={{ flex: "1 1" }} key={token.address}>
                       <ERC20TokenLogoComponent style={{ width: "20px", height: "20px", padding: "1px" }} address={token.address} chainId={token.chainId} />
-                      <Text ellipsis strong style={{ fontSize: "14px" }}>{token.symbol}</Text>
+                      <Text ellipsis strong style={{ fontSize: "14px" }}>{TokenSymbol(token)}</Text>
                       {
                         !isLastToken && <RightOutlined />
                       }
@@ -266,18 +267,18 @@ export default ({
           </Col>
           <Col span={12}>
             <Col span={24} style={{ textAlign: "center" }}>
-              <Text strong>{price.toSignificant(4)}</Text> {tokenB ? tokenB.symbol : "SAFE"}
+              <Text strong>{price.toSignificant(4)}</Text> {tokenB ? TokenSymbol(tokenB) : "SAFE"}
             </Col>
             <Col span={24} style={{ textAlign: "center" }}>
-              <Text>1 {tokenA ? tokenA.symbol : "SAFE"}</Text>
+              <Text>1 {tokenA ? TokenSymbol(tokenA) : "SAFE"}</Text>
             </Col>
           </Col>
           <Col span={12}>
             <Col span={24} style={{ textAlign: "center" }}>
-              <Text strong>{price.invert().toSignificant(4)}</Text> {tokenA ? tokenA.symbol : "SAFE"}
+              <Text strong>{price.invert().toSignificant(4)}</Text> {tokenA ? TokenSymbol(tokenA) : "SAFE"}
             </Col>
             <Col span={24} style={{ textAlign: "center" }}>
-              <Text>1 {tokenB ? tokenB.symbol : "SAFE"}</Text>
+              <Text>1 {tokenB ? TokenSymbol(tokenB) : "SAFE"}</Text>
             </Col>
           </Col>
         </Row>
@@ -315,7 +316,7 @@ export default ({
               {trade.minimumAmountOut(slippagePercent).toSignificant()}
             </Text>
             <Text strong>
-              {tokenB ? tokenB.symbol : "SAFE"}
+              {tokenB ? TokenSymbol(tokenB) : "SAFE"}
             </Text>
           </Col>
         </Row>
@@ -329,7 +330,7 @@ export default ({
               {trade.maximumAmountIn(slippagePercent).toSignificant()}
             </Text>
             <Text strong>
-              {tokenA ? tokenA.symbol : "SAFE"}
+              {tokenA ? TokenSymbol(tokenA) : "SAFE"}
             </Text>
           </Col>
         </Row>
@@ -343,7 +344,7 @@ export default ({
         <Col span={24}>
           <Text type="secondary" strong>{t("wallet_safeswap_from")}</Text>
           <Text type="secondary" style={{ float: "right" }}>{t("balance_currentavailable")}:
-            {balanceOfTokenA && balanceOfTokenA.toSignificant()}
+            {balanceOfTokenA && ViewFiexdAmount(balanceOfTokenA, tokenA)}
           </Text>
         </Col>
         <Col span={16}>
@@ -392,7 +393,7 @@ export default ({
         <Col span={24}>
           <Text type="secondary" strong>{t("wallet_safeswap_to")}</Text>
           <Text type="secondary" style={{ float: "right" }}>{t("balance_currentavailable")}:
-            {balanceOfTokenB && ViewFiexdAmount(balanceOfTokenB, tokenB, 4)}
+            {balanceOfTokenB && ViewFiexdAmount(balanceOfTokenB, tokenB)}
           </Text>
         </Col>
         <Col span={16}>

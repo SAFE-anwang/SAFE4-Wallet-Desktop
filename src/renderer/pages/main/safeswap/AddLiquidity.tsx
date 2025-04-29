@@ -18,6 +18,8 @@ import { useDispatch } from "react-redux";
 import { applicationUpdateSafeswapTokens } from "../../../state/application/action";
 import { AssetPoolModule } from "./AssetPool";
 import { SafeswapV2Pairs, useSafeswapV2Pairs } from "./hooks";
+import TokenSymbol from "../../components/TokenSymbol";
+import ViewFiexdAmount from "../../../utils/ViewFiexdAmount";
 const { Text, Link } = Typography;
 
 
@@ -169,18 +171,18 @@ export default ({
           </Col>
           <Col span={12}>
             <Col span={24} style={{ textAlign: "center" }}>
-              <Text strong>{tokenAPrice.toSignificant(4)}</Text> {tokenB ? tokenB.symbol : "SAFE"}
+              <Text strong>{tokenAPrice.toSignificant(4)}</Text> {tokenB ? TokenSymbol(tokenB) : "SAFE"}
             </Col>
             <Col span={24} style={{ textAlign: "center" }}>
-              <Text>1 {tokenA ? tokenA.symbol : "SAFE"}</Text>
+              <Text>1 {tokenA ? TokenSymbol(tokenA) : "SAFE"}</Text>
             </Col>
           </Col>
           <Col span={12}>
             <Col span={24} style={{ textAlign: "center" }}>
-              <Text strong>{tokenBPrice.toSignificant(4)}</Text> {tokenA ? tokenA.symbol : "SAFE"}
+              <Text strong>{tokenBPrice.toSignificant(4)}</Text> {tokenA ? TokenSymbol(tokenA) : "SAFE"}
             </Col>
             <Col span={24} style={{ textAlign: "center" }}>
-              <Text>1 {tokenB ? tokenB.symbol : "SAFE"}</Text>
+              <Text>1 {tokenB ? TokenSymbol(tokenB) : "SAFE"}</Text>
             </Col>
           </Col>
         </Row>
@@ -227,7 +229,7 @@ export default ({
         <Col span={24}>
           <Text type="secondary" strong>{t("wallet_safeswap_addreserve")}</Text>
           <Text type="secondary" style={{ float: "right" }}>{t("balance_currentavailable")}:
-            {balanceOfTokenA?.toSignificant()}
+            {balanceOfTokenA && ViewFiexdAmount(balanceOfTokenA, tokenA)}
           </Text>
         </Col>
         <Col span={16}>
@@ -276,7 +278,7 @@ export default ({
         <Col span={24}>
           <Text type="secondary" strong>{t("wallet_safeswap_addreserve")}</Text>
           <Text type="secondary" style={{ float: "right" }}>{t("balance_currentavailable")}:
-            {balanceOfTokenB?.toSignificant()}
+            {balanceOfTokenB && ViewFiexdAmount(balanceOfTokenB, tokenB)}
           </Text>
         </Col>
         <Col span={16}>

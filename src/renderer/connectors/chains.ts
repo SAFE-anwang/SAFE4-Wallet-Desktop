@@ -10,7 +10,7 @@ const BSC: AddEthereumChainParameter['nativeCurrency'] = {
 }
 
 const SAFE4: AddEthereumChainParameter['nativeCurrency'] = {
-  name: 'Safe4',
+  name: 'SAFE4',
   symbol: 'SAFE',
   decimals: 18,
 }
@@ -59,7 +59,7 @@ export const MAINNET_CHAINS: ChainConfig = {
 export const TESTNET_CHAINS: ChainConfig = {
   6666666: {
     urls: [Default_Web3_Endpoint].filter(Boolean),
-    name: 'Safe4',
+    name: 'SAFE4',
     nativeCurrency: SAFE4,
   },
 }

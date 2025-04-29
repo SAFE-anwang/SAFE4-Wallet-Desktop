@@ -20,8 +20,9 @@ const { Text, Title } = Typography;
 const base58Regex = /^[1-9A-HJ-NP-Za-km-z]{52}$/;
 const evmPrivateRegex = /^(0x)?[0-9a-fA-F]{64}$/;
 const safe3AddressBase58Regex = /^X[a-zA-Z0-9]{33}$/;
-const redeemNeedAmount = "0.005";
 
+export const redeemNeedAmount = "0.0005";
+// 进行锁仓资产赎回的时候,每次最多赎回100个锁仓.
 export const Redeem_Locked_MAX = 100;
 
 const isSafe3DesktopExportPrivateKey = (input: string) => {

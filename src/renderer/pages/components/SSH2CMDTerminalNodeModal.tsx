@@ -307,11 +307,11 @@ export default ({
       (data: string) => {
         if (data) {
           console.log("[.ps]=", data);
-          console.log("[.ps]", "Safe4 节点进程存在;");
+          console.log("[.ps]", "SAFE4 节点进程存在;");
           return true;
         }
         console.log("[.ps]=", data);
-        console.log("[.ps]", "Safe4 节点进程不存在;")
+        console.log("[.ps]", "SAFE4 节点进程不存在;")
         return false;
       },
       () => console.log(""),

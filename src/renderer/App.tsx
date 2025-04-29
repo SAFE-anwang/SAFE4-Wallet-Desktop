@@ -230,7 +230,7 @@ export default function App() {
                   <Image preview={false} style={{ marginTop: "10px", width: "80%" }} src={SAFE_LOGO} />
                 </Col>
                 <Col span={24} style={{ textAlign: "center", marginTop: "10px" }}>
-                  <Text style={{ fontSize: "28px" }}>Safe4</Text>
+                  <Text style={{ fontSize: "28px" }}>SAFE4</Text>
                 </Col>
                 <Col span={24} style={{ textAlign: "center", marginTop: "10px" }}>
                   <Text type='secondary' style={{ fontSize: "18px" }}>{t("welcome")}</Text>

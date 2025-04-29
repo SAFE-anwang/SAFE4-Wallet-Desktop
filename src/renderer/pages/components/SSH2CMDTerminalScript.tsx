@@ -302,7 +302,7 @@ export default (({
             items={[
               {
                 title: '正在执行',
-                description: "下载 Safe4 节点程序",
+                description: "下载 SAFE4 节点程序",
               },
               {
                 title: '等待执行',

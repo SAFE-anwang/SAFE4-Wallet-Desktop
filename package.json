@@ -1,5 +1,5 @@
 {
-  "description": "A Wallet for Safe4 Blockchain Desktop Apps",
+  "description": "A Wallet for SAFE4 Blockchain Desktop Apps",
   "keywords": [
     "electron",
     "boilerplate",
@@ -226,7 +226,7 @@
     "ssh2-sftp-client": "^10.0.3"
   },
   "build": {
-    "productName": "Safe4-Wallet-Desktop",
+    "productName": "SAFE4-Wallet-Desktop",
     "appId": "safe4.wallet.anwang",
     "asar": true,
     "asarUnpack": "**\\*.{node,dll}",

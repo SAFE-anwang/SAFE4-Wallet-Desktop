@@ -10,6 +10,8 @@ import { Token } from "@uniswap/sdk";
 import { Safe4NetworkChainId, USDT, WSAFE } from "../../../config";
 import ERC20TokenLogoComponent from "../../components/ERC20TokenLogoComponent";
 import { useAuditTokenList } from "../../../state/audit/hooks";
+import TokenName from "../../components/TokenName";
+import TokenSymbol from "../../components/TokenSymbol";
 
 const { Text } = Typography;
 
@@ -26,8 +28,6 @@ export default ({
   selectedToken?: Token | undefined
 }) => {
 
-  const { t } = useTranslation();
-  const { chainId } = useWeb3React();
   const activeAccount = useWalletsActiveAccount();
 
   const walletTokens = useWalletTokens();
@@ -53,7 +53,7 @@ export default ({
   }
 
   return <>
-    <Modal style={{ maxHeight: 800, overflowY: 'auto' }} open={openTokenSelectModal} footer={null} destroyOnClose onCancel={() => setOpenTokenSelectModal(false)}>
+    <Modal style={{ maxHeight: 800, overflowY: 'auto' }} width={600} open={openTokenSelectModal} footer={null} destroyOnClose onCancel={() => setOpenTokenSelectModal(false)}>
       <Row>
         <Col span={24}>
           <Text>基础通证</Text>
@@ -100,7 +100,10 @@ export default ({
                     <Col span={20}>
                       <Row>
                         <Col span={10} style={{}}>
-                          <Text style={{ fontSize: "14px", height: "30px" }} strong>{symbol}</Text>
+                          <Text style={{ fontSize: "14px", height: "30px" }} strong>
+                            {TokenSymbol(erc20Token)}
+                          </Text>
+                          <Text code>SRC20</Text>
                         </Col>
                         <Col span={14} style={{ lineHeight: "60px", textAlign: "right" }}>
                           <Text strong style={{ marginRight: "20px" }}>{tokenAmounts && tokenAmounts[address]?.toSignificant()} </Text>

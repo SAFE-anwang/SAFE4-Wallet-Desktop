@@ -19,6 +19,7 @@ import { applicationUpdateWalletTab } from "../../../state/application/action";
 import { getSlippageTolerancePercent } from "./Swap";
 import { SafeswapV2RouterAddress } from "../../../config";
 import { IERC20_Interface } from "../../../abis";
+import TokenSymbol from "../../components/TokenSymbol";
 
 const { Text, Link } = Typography;
 
@@ -284,7 +285,7 @@ export default ({
         </Col>
         <Col span={21}>
           <Text style={{ fontSize: "24px", lineHeight: "40px" }}>
-            - {tokenAAmount} {tokenA ? tokenA.symbol : "SAFE"}
+            - {tokenAAmount} {tokenA ? TokenSymbol(tokenA) : "SAFE"} {tokenA ? <Text code>SRC20</Text> : <></>}
           </Text>
         </Col>
       </Row>
@@ -305,7 +306,7 @@ export default ({
         </Col>
         <Col span={21}>
           <Text style={{ fontSize: "24px", lineHeight: "40px" }}>
-            - {tokenBAmount} {tokenB ? tokenB.symbol : "SAFE"}
+            - {tokenBAmount} {tokenB ? TokenSymbol(tokenB) : "SAFE"} {tokenB ? <Text code>SRC20</Text> : <></>}
           </Text>
         </Col>
       </Row>
@@ -320,7 +321,7 @@ export default ({
         {
           tokenA && needApproveTokenA && <Col span={24}>
             <Alert style={{ marginTop: "10px", marginBottom: "10px" }} type="warning" message={<>
-              <Text>{t("wallet_safeswap_needapprovetoken", { spender: "Safeswap", tokenSymbol: tokenA.symbol })}</Text>
+              <Text>{t("wallet_safeswap_needapprovetoken", { spender: "Safeswap", tokenSymbol: tokenA ? TokenSymbol(tokenA) : "" })}</Text>
               <Link disabled={approveTokenHash[tokenA?.address]?.execute || waitApprove} onClick={approveRouter} style={{ float: "right" }}>
                 {
                   approveTokenHash[tokenA?.address]?.execute && <SyncOutlined spin />
@@ -335,7 +336,7 @@ export default ({
         {
           needApproveTokenB && tokenB && <Col span={24}>
             <Alert style={{ marginTop: "10px", marginBottom: "10px" }} type="warning" message={<>
-              <Text>需要先授权 Safeswap 访问 {tokenB?.symbol}</Text>
+              <Text>需要先授权 Safeswap 访问 {tokenB? TokenSymbol(tokenB) : ""}</Text>
               <Link disabled={approveTokenHash[tokenB?.address]?.execute || waitApprove} onClick={approveRouterForTokenB} style={{ float: "right" }}>
                 {
                   approveTokenHash[tokenB?.address]?.execute && <SyncOutlined spin />

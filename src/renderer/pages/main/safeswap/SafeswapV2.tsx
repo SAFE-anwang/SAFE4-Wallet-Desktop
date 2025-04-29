@@ -7,6 +7,7 @@ import { SettingFilled, SettingOutlined } from "@ant-design/icons";
 import SlippageSetting from "./SlippageSetting";
 import { useSafeswapV2Pairs } from "./hooks";
 import { useTranslation } from "react-i18next";
+import { useSafeswapTokens } from "../../../state/application/hooks";
 const { Title, Text, Link } = Typography;
 
 const enum ActiveModule {
@@ -23,7 +24,6 @@ export default () => {
     set_AssetPoolModule(AssetPoolModule.Add);
     setActiveModule(ActiveModule.AssetsPool);
   }
-
   const safeswapV2Pairs = useSafeswapV2Pairs();
 
   return <>

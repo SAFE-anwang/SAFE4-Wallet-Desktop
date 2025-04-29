@@ -307,7 +307,8 @@ export default () => {
       </Col>
       <Col span={6}>
         <Row>
-          <Col offset={18} span={6} style={{ textAlign: "center" }}>
+          {/** 提现全部按钮 */}
+          {/* <Col offset={18} span={6} style={{ textAlign: "center" }}>
             <Button style={{
               height: "45px", width: "45px"
             }} size='large' shape="circle" icon={<RetweetOutlined />} onClick={() => {
@@ -316,7 +317,7 @@ export default () => {
             }
             } /><br />
             <Text>{t("wallet_withdraw")}</Text>
-          </Col>
+          </Col> */}
         </Row>
       </Col>
     </Row>

@@ -10,6 +10,8 @@ import AddressComponent from "../../../../components/AddressComponent";
 import { useTranslation } from "react-i18next";
 import ERC20TokenLogoComponent from "../../../../components/ERC20TokenLogoComponent";
 import { useAuditTokenList } from "../../../../../state/audit/hooks";
+import TokenName from "../../../../components/TokenName";
+import TokenSymbol from "../../../../components/TokenSymbol";
 const { Text } = Typography;
 
 export default () => {
@@ -67,11 +69,12 @@ export default () => {
                 }} span={12}>
                   <Row>
                     <Col span={24} style={{ lineHeight: "35px", marginTop: "5px" }}>
-                      <Text strong>{name}</Text>
+                      <Text strong>{TokenName(erc20Token)}</Text>
+                      <Text style={{ fontSize: "14px", marginLeft: "2px" }} code>SRC20</Text>
                     </Col>
                     <Col span={24} style={{ lineHeight: "35px" }}>
                       <Text strong>{tokenAmounts && tokenAmounts[address]?.toFixed(6)} </Text>
-                      <Text type="secondary">{symbol}</Text>
+                      <Text type="secondary">{TokenSymbol(erc20Token)}</Text>
                     </Col>
                   </Row>
                 </Col>

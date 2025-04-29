@@ -18,6 +18,7 @@ import { useTranslation } from "react-i18next";
 import { applicationUpdateWalletTab } from "../../../state/application/action";
 import { getSlippageTolerancePercent } from "./Swap";
 import { IERC20_Interface } from "../../../abis";
+import TokenSymbol from "../../components/TokenSymbol";
 
 const { Text, Link } = Typography;
 
@@ -75,13 +76,15 @@ export default ({
   const allowanceForRouterOfTokenA = useMemo(() => {
     return tokenAllowanceAmounts && tokenA ? tokenAllowanceAmounts[tokenA.address] : undefined;
   }, [tokenA, tokenAllowanceAmounts]);
+
   const needApproveTokenA = useMemo(() => {
-    if (tokenA && tokenInAmount && allowanceForRouterOfTokenA) {
+    if (tokenA && tokenInAmount && allowanceForRouterOfTokenA && trade) {
       const inAmount = new TokenAmount(tokenA, ethers.utils.parseUnits(tokenInAmount, tokenA.decimals).toBigInt());
       return inAmount.greaterThan(allowanceForRouterOfTokenA)
     }
     return false;
-  }, [allowanceForRouterOfTokenA, tokenInAmount, tokenA]);
+  }, [allowanceForRouterOfTokenA, tokenInAmount, tokenA , trade]);
+
   const [approveTokenHash, setApproveTokenHash] = useState<{
     [address: string]: {
       execute: boolean,
@@ -323,18 +326,18 @@ export default ({
           </Col>
           <Col span={12}>
             <Col span={24} style={{ textAlign: "center" }}>
-              <Text strong>{price.toSignificant(4)}</Text> {tokenB ? tokenB.symbol : "SAFE"}
+              <Text strong>{price.toSignificant(4)}</Text> {tokenB ? TokenSymbol(tokenB) : "SAFE"}
             </Col>
             <Col span={24} style={{ textAlign: "center" }}>
-              <Text>1 {tokenA ? tokenA.symbol : "SAFE"}</Text>
+              <Text>1 {tokenA ? TokenSymbol(tokenA) : "SAFE"}</Text>
             </Col>
           </Col>
           <Col span={12}>
             <Col span={24} style={{ textAlign: "center" }}>
-              <Text strong>{price.invert().toSignificant(4)}</Text> {tokenA ? tokenA.symbol : "SAFE"}
+              <Text strong>{price.invert().toSignificant(4)}</Text> {tokenA ? TokenSymbol(tokenA) : "SAFE"}
             </Col>
             <Col span={24} style={{ textAlign: "center" }}>
-              <Text>1 {tokenB ? tokenB.symbol : "SAFE"}</Text>
+              <Text>1 {tokenB ? TokenSymbol(tokenB) : "SAFE"}</Text>
             </Col>
           </Col>
         </Row>
@@ -350,7 +353,7 @@ export default ({
         return <Row style={{ marginTop: "20px" }}>
           <Col span={24}>
             <Text italic>
-              {t("wallet_safeswap_traderesulttip0")} <Text strong>{amountOutMin.toSignificant()} {tokenB ? tokenB.symbol : "SAFE"}</Text> {t("wallet_safeswap_traderesulttip1")}
+              {t("wallet_safeswap_traderesulttip0")} <Text strong>{amountOutMin.toSignificant()} {tokenB ? TokenSymbol(tokenB) : "SAFE"}</Text> {t("wallet_safeswap_traderesulttip1")}
             </Text>
           </Col>
         </Row>
@@ -359,7 +362,7 @@ export default ({
         return <Row style={{ marginTop: "20px" }}>
           <Col span={24}>
             <Text italic>
-              {t("wallet_safeswap_traderesulttip2")} <Text strong>{amountInMax.toSignificant()} {tokenA ? tokenA.symbol : "SAFE"}</Text> {t("wallet_safeswap_traderesulttip0")}
+              {t("wallet_safeswap_traderesulttip2")} <Text strong>{amountInMax.toSignificant()} {tokenA ? TokenSymbol(tokenA) : "SAFE"}</Text> {t("wallet_safeswap_traderesulttip0")}
             </Text>
           </Col>
         </Row>
@@ -388,12 +391,12 @@ export default ({
           <Text style={{ fontSize: "24px", lineHeight: "40px" }}>
             {
               trade && <>
-                -  {trade.inputAmount.toSignificant()} {tokenA ? tokenA.symbol : "SAFE"}
+                -  {trade.inputAmount.toSignificant()} {tokenA ? TokenSymbol(tokenA) : "SAFE"} {tokenA ? <Text code>SRC20</Text> : <></>}
               </>
             }
             {
               !trade && <>
-                -  {tokenInAmount} {tokenA ? tokenA.symbol : "SAFE"}
+                -  {tokenInAmount} {tokenA ? TokenSymbol(tokenA) : "SAFE"} {tokenA ? <Text code>SRC20</Text> : <></>}
               </>
             }
           </Text>
@@ -415,15 +418,15 @@ export default ({
           }
         </Col>
         <Col span={21}>
-          <Text type="success" style={{ fontSize: "24px", lineHeight: "40px" }}>
+          <Text type="success" style={{ fontSize: "24px", lineHeight: "48px" }}>
             {
               trade && <>
-                + {trade.outputAmount.toSignificant()} {tokenB ? tokenB.symbol : "SAFE"}
+                + {trade.outputAmount.toSignificant()} {tokenB ? TokenSymbol(tokenB) : "SAFE"} {tokenB ? <Text code>SRC20</Text> : <></>}
               </>
             }
             {
               !trade && <>
-                + {tokenOutAmount} {tokenB ? tokenB.symbol : "SAFE"}
+                + {tokenOutAmount} {tokenB ? TokenSymbol(tokenB) : "SAFE"} {tokenB ? <Text code>SRC20</Text> : <></>}
               </>
             }
           </Text>
@@ -439,7 +442,7 @@ export default ({
         {
           needApproveTokenA && tokenA && <Col span={24}>
             <Alert style={{ marginTop: "5px", marginBottom: "10px" }} type="warning" message={<>
-              <Text>{t("wallet_safeswap_needapprovetoken", { spender: "Safeswap", tokenSymbol: tokenA?.symbol })}</Text>
+              <Text>{t("wallet_safeswap_needapprovetoken", { spender: "Safeswap", tokenSymbol: tokenA? TokenSymbol(tokenA) : "" })}</Text>
               <Link disabled={approveTokenHash[tokenA?.address]?.execute} onClick={approveRouter} style={{ float: "right" }}>
                 {
                   approveTokenHash[tokenA?.address]?.execute && <SyncOutlined spin />

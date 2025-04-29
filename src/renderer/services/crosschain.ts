@@ -32,10 +32,10 @@ export async function fetchCrosschainConfig(chainId: number): Promise<{
   }
 }> {
   if (chainId == Safe4NetworkChainId.Testnet) {
-    const serverResponse = await GET("https://safewallet.anwang.com/v1/gate/testnet");
+    const serverResponse = await GET("https://safewallet.anwang.com/v1/gate/testnet4");
     return serverResponse;
   } else {
-    const serverResponse = await GET("https://safewallet.anwang.com/v1/gate/mainnet");
+    const serverResponse = await GET("https://safewallet.anwang.com/v1/gate/mainnet4");
     return serverResponse;
   }
 }

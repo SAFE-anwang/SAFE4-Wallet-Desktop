@@ -7,13 +7,12 @@ import { useETHBalances, useWalletsActiveAccount } from "../../../state/wallets/
 import Safe3PrivateKey, { generateRedeemSign } from "../../../utils/Safe3PrivateKey";
 import { AddressPrivateKeyMap } from "./BatchRedeemStep1";
 import { Safe3QueryResult, Safe3RedeemStatistic } from "./BatchRedeemStep2";
-import { Redeem_Locked_MAX, TxExecuteStatus } from "../safe3/Safe3";
+import { Redeem_Locked_MAX, redeemNeedAmount, TxExecuteStatus } from "../safe3/Safe3";
 import { CloseCircleTwoTone } from "@ant-design/icons";
 import { useTransactionAdder } from "../../../state/transactions/hooks";
 import { useTranslation } from "react-i18next";
 
 const { Text } = Typography;
-const redeemNeedAmount = "0.005";
 
 export default ({
   addressPrivateKeyMap, safe3RedeemList, safe3RedeemStatistic

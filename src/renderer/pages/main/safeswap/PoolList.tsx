@@ -11,6 +11,7 @@ import { Safe4NetworkChainId, USDT, WSAFE } from "../../../config";
 import { SafeswapV2Pairs, useSafeswapV2Pairs } from "./hooks";
 import { calculatePairAddress } from "./Calculate";
 import { useTranslation } from "react-i18next";
+import TokenSymbol from "../../components/TokenSymbol";
 
 const { Text } = Typography;
 
@@ -109,25 +110,25 @@ export default ({
                       <Col span={24} style={{ paddingTop: "-2px" }}>
                         <ERC20TokenLogoComponent style={{ width: "36px", height: "36px", padding: "4px" }} address={token0.address} chainId={token0.chainId} />
                         <ERC20TokenLogoComponent style={{ width: "36px", height: "36px", padding: "4px" }} address={token1.address} chainId={token1.chainId} />
-                        <Text strong style={{ marginLeft: "20px" }}>{token0.symbol} / {token1.symbol}</Text>
+                        <Text strong style={{ marginLeft: "20px" }}>{ TokenSymbol(token0) } / { TokenSymbol(token1) }</Text>
                       </Col>
                     </Row>
                   </>,
                   children: <Row>
                     <Col span={24}>
-                      <Text>{t("wallet_safeswap_reserve")} {token0.symbol}</Text>
+                      <Text>{t("wallet_safeswap_reserve")} {  TokenSymbol(token0) }</Text>
                       <Text type="secondary" style={{ float: "right" }}>{reserve0.toSignificant()}</Text>
                     </Col>
                     <Col span={24}>
-                      <Text>{t("wallet_safeswap_reserve")} {token1.symbol}</Text>
+                      <Text>{t("wallet_safeswap_reserve")} {  TokenSymbol(token1) }</Text>
                       <Text type="secondary" style={{ float: "right" }}>{reserve1.toSignificant()}</Text>
                     </Col>
                     <Col span={24}>
-                      <Text strong>{t("wallet_safeswap_reserved")} {token0.symbol}</Text>
+                      <Text strong>{t("wallet_safeswap_reserved")} {  TokenSymbol(token0) }</Text>
                       <Text strong style={{ float: "right" }}>{token0Amount.toSignificant(4)}</Text>
                     </Col>
                     <Col span={24}>
-                      <Text strong>{t("wallet_safeswap_reserved")} {token1.symbol}</Text>
+                      <Text strong>{t("wallet_safeswap_reserved")} {  TokenSymbol(token1) }</Text>
                       <Text strong style={{ float: "right" }}>{token1Amount.toSignificant(4)}</Text>
                     </Col>
                     <Col span={24}>
@@ -135,18 +136,18 @@ export default ({
                     </Col>
                     <Col span={12}>
                       <Col span={24} style={{ textAlign: "center" }}>
-                        <Text strong>{price[PriceType.A2B]}</Text> {token0 ? token0.symbol : "SAFE"}
+                        <Text strong>{price[PriceType.A2B]}</Text> {token0 ?  TokenSymbol(token0) : "SAFE"}
                       </Col>
                       <Col span={24} style={{ textAlign: "center" }}>
-                        <Text>1 {token1 ? token1.symbol : "SAFE"}</Text>
+                        <Text>1 {token1 ?  TokenSymbol(token1) : "SAFE"}</Text>
                       </Col>
                     </Col>
                     <Col span={12}>
                       <Col span={24} style={{ textAlign: "center" }}>
-                        <Text strong>{price[PriceType.B2A]}</Text> {token1 ? token1.symbol : "SAFE"}
+                        <Text strong>{price[PriceType.B2A]}</Text> {token1 ?  TokenSymbol(token1): "SAFE"}
                       </Col>
                       <Col span={24} style={{ textAlign: "center" }}>
-                        <Text>1 {token0 ? token0.symbol : "SAFE"}</Text>
+                        <Text>1 {token0 ?  TokenSymbol(token0) : "SAFE"}</Text>
                       </Col>
                     </Col>
                     <Divider />

@@ -70,7 +70,7 @@ export default ({
           <TokenLogo width="30px" height="30px" />
         </Col>
         <Col span={22}>
-          <Text strong>Safe4 {t("network")}</Text>
+          <Text strong>SAFE4 {t("network")}</Text>
           <br />
           <AddressComponent address={activeAccount} />
         </Col>
@@ -125,7 +125,7 @@ export default ({
           <TokenLogo />
         </Col>
         <Col span={22}>
-          <Text strong>Safe4 {t("network")}</Text>
+          <Text strong>SAFE4 {t("network")}</Text>
           <br />
           {
             call?.to && <AddressComponent address={call?.to} />
