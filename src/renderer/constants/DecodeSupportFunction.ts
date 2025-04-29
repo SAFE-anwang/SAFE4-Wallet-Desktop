@@ -363,8 +363,8 @@ function decodeSafeswapV2RouterData(
 }
 
 function decodeCrosschainPoolFunctionData(input: string) {
-  const decodeData = ethers.utils.toUtf8String(input);
   try {
+    const decodeData = ethers.utils.toUtf8String(input);
     const supportFuncName = decodeData.substring(0, decodeData.indexOf(":"));
     const data = decodeData.substring(decodeData.indexOf(":") + 1);
     return {
