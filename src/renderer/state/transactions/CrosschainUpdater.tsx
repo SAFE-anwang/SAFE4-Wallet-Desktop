@@ -100,9 +100,10 @@ export default () => {
       console.log(`Fetch CrosschainDatas for ${activeAccount} by BlockNumber[${safe4BlockNumber}] // ${API_Crosschain}`)
       fetchCrossChainByAddress(API_Crosschain, { address: activeAccount })
         .then(data => {
+          console.log("Fetch crosschain data ==" , data)
           dispatch(updateCrosschains(data));
           window.electron.ipcRenderer.sendMessage(
-            IPC_CHANNEL, [CrosschainSignal, Crosschain_Methods.saveOrUpdate, [data]]
+            IPC_CHANNEL, [CrosschainSignal, Crosschain_Methods.saveOrUpdate, [data , chainId]]
           )
         });
     }

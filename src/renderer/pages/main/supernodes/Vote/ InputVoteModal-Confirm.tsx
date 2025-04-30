@@ -88,24 +88,6 @@ export default ({
           <Text style={{ fontSize: "32px" }} strong>{amount} SAFE</Text>
         </Col>
       </Row>
-      <Row >
-        <Col span={24}>
-          <Text type="secondary">{t("wallet_send_from")}</Text>
-        </Col>
-        <Col span={24} style={{ paddingLeft: "5px" }} >
-          <Text>{t("wallet_account_normal")}</Text>
-        </Col>
-      </Row>
-      <br />
-      <Row>
-        <Col span={24}>
-          <Text type="secondary">{t("wallet_send_from")}</Text>
-        </Col>
-        <Col span={24} style={{ paddingLeft: "5px" }} >
-          <Text>{t("wallet_account_locked")}</Text>
-        </Col>
-      </Row>
-      <Divider />
       <Row>
         <Col span={24}>
           <Text type="secondary">{t("wallet_supernodes_votes_to")}</Text>

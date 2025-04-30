@@ -35,7 +35,8 @@ export default ({
   };
   const activeAccount = useWalletsActiveAccount();
   const crosschainDirection = getCrosschainDirection(support.supportFuncName);
-  const crosschainData = useCrosschain(hash);
+  const indexHash = crosschainDirection == CrosschainDirection.SAFE4_NETWORKS ? hash : support.inputDecodeResult;
+  const crosschainData = useCrosschain(indexHash);
   const crosschainSpin = useMemo(() => {
     if (crosschainDirection) {
       if (crosschainDirection == CrosschainDirection.SAFE4_NETWORKS) {
@@ -140,7 +141,6 @@ export default ({
       <Text type="secondary">{t("wallet_crosschain")}</Text>
     </Row>
     <Card>
-      {/* <Text>{JSON.stringify(support)}</Text> */}
       <Row>
         <Col span={24}>
           <Text type="secondary">{t("wallet_crosschain_asset")}</Text>
