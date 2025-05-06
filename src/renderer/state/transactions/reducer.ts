@@ -1,5 +1,5 @@
 import { createReducer } from "@reduxjs/toolkit"
-import { addTransaction, checkedTransaction, clearAllTransactions, finalizeTransaction, initCrosschains, loadERC20Tokens, loadTransactionsAndUpdateAddressActivityFetch, refreshAddressTimeNodeReward, reloadTransactionsAndSetAddressActivityFetch, updateAudit, updateCrosschains, updateERC20Token } from "./actions"
+import { addTransaction, checkedTransaction, clearAllTransactions, finalizeTransaction, initCrosschains, loadERC20Tokens, loadTransactionsAndUpdateAddressActivityFetch, refreshAddressTimeNodeReward, reloadTransactionsAndSetAddressActivityFetch, removeERC20Token, updateAudit, updateCrosschains, updateERC20Token } from "./actions"
 import { IPC_CHANNEL } from "../../config"
 import { DBAddressActivitySignal, DB_AddressActivity_Actions, DB_AddressActivity_Methods } from "../../../main/handlers/DBAddressActivitySingalHandler"
 import { CrossChainVO, DateTimeNodeRewardVO, TimeNodeRewardVO } from "../../services"
@@ -142,6 +142,7 @@ export const initialState: {
       symbol: string,
       decimals: number,
       chainId: number,
+      props ?: any
     }
   },
   crosschains: {
@@ -306,6 +307,12 @@ export default createReducer(initialState, (builder) => {
       const { chainId, address, name, symbol, decimals } = payload;
       state.tokens[address] = {
         name, symbol, decimals, chainId
+      }
+    })
+    .addCase(removeERC20Token,(state, { payload }) => {
+      const { chainId , address } = payload;
+      if ( state.tokens[address] && state.tokens[address].chainId == chainId ){
+        delete state.tokens[address];
       }
     })
 

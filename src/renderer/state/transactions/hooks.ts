@@ -119,7 +119,7 @@ export function useTransactions(account?: string) {
       .sort((t0, t1) => {
         return t1.addedTime - t0.addedTime
       })
-      .slice(0,200);
+      .slice(0, 200);
   }, [account, transactions, chainId]);
   const dateTransactions: {
     [date: string]: {
@@ -217,7 +217,6 @@ export function useWalletTokens(): Token[] | undefined {
       WSAFE[chainId as Safe4NetworkChainId],
     ];
   }, [chainId]);
-
   const defaultTokenMap = useMemo(() => {
     const map: Record<string, Token> = {};
     for (const token of defaultTokens) {
@@ -229,12 +228,19 @@ export function useWalletTokens(): Token[] | undefined {
   const extraTokens = useMemo(() => {
     if (!chainId || !_walletTokens) return [];
     return Object.keys(_walletTokens)
-      .filter(address =>
-        _walletTokens[address].chainId === chainId &&
-        defaultTokenMap[address] === undefined
-      )
+      .filter(address => {
+        if (_walletTokens[address].chainId === chainId &&
+          defaultTokenMap[address] === undefined) {
+          if (_walletTokens[address].props) {
+            const props = JSON.parse(_walletTokens[address].props);
+            return !props.hide;
+          }
+          return true;
+        }
+        return false;
+      })
       .map(address => {
-        const { name, symbol, decimals } = _walletTokens[address];
+        const { name, symbol, decimals, props } = _walletTokens[address];
         return new Token(chainId, address, decimals, symbol, name);
       });
   }, [_walletTokens, chainId, defaultTokenMap]);

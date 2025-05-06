@@ -48,7 +48,8 @@ export const loadERC20Tokens = createAction<{
     name : string,
     symbol : string ,
     decimals : number ,
-    chainId : number
+    chainId : number ,
+    props ?: any
   }
 }>("transactions/loadERC20Tokens");
 
@@ -57,6 +58,9 @@ export const updateERC20Token = createAction<{
   name : string , symbol : string,
   decimals : number
 }>("transactions/updateERC20Token")
+export const removeERC20Token = createAction<{
+  chainId : number, address : string,
+}>("transactions/removeERC20Token")
 
 export const updateCrosschains = createAction<CrossChainVO[]>("transactions/updateCrosschains")
 

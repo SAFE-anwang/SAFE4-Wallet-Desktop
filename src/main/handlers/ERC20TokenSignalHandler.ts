@@ -7,7 +7,8 @@ export const ERC20TokensSignal = "DB:sqlite3/erc20Tokens";
 
 export enum ERC20Tokens_Methods {
   save = "save",
-  getAll = "getAll"
+  getAll = "getAll",
+  remove = "remove"
 }
 
 export class ERC20TokenSignalHandler implements ListenSignalHandler {
@@ -54,8 +55,11 @@ export class ERC20TokenSignalHandler implements ListenSignalHandler {
         event.reply(Channel, [this.getSingal(), method, [rows]])
       })
     } else if (ERC20Tokens_Methods.save == method) {
-      const { chainId, address, name, symbol, decimals } = params[0];
-      this.saveOrUpdate(chainId, address, name, symbol, decimals);
+      const { chainId, address, name, symbol, decimals, props } = params[0];
+      this.saveOrUpdate(chainId, address, name, symbol, decimals, props);
+    } else if (ERC20Tokens_Methods.remove == method) {
+      const { chainId, address } = params[0];
+      this.remove(chainId, address)
     }
   }
 
@@ -66,7 +70,41 @@ export class ERC20TokenSignalHandler implements ListenSignalHandler {
       })
   }
 
-  private saveOrUpdate(chainId: number, address: string, name: string, symbol: string, decimals: number) {
+  private remove(chainId: number, address: string) {
+    this.db.all(
+      "SELECT * FROM ERC20_Tokens where address = ? and chain_id = ?",
+      [address, chainId],
+      (err: any, rows: any) => {
+        if (!err) {
+          if (rows[0]) {
+            const { props } = rows[0];
+            let newProps = undefined;
+            if (!props) {
+              const _props = {
+                hide: true
+              };
+              newProps = JSON.stringify(_props);
+            } else {
+              const _props = JSON.parse(props);
+              _props.hide = true;
+              newProps = JSON.stringify(_props);
+            }
+            this.db.run(
+              "UPDATE ERC20_Tokens set props = ? where address = ? and chain_id = ?",
+              [newProps, address, chainId],
+              (err: any) => {
+                if (!err) {
+                  console.log(`Update ERC20_Tokens: ${address}/${chainId}-hide = true `);
+                }
+              }
+            )
+          }
+        }
+      }
+    )
+  }
+
+  private saveOrUpdate(chainId: number, address: string, name: string, symbol: string, decimals: number, props?: any) {
     this.db.all("SELECT * FROM ERC20_Tokens where address = ? and chain_id = ?", [address, chainId],
       (err: any, rows: any) => {
         if (rows.length == 0) {
@@ -80,9 +118,24 @@ export class ERC20TokenSignalHandler implements ListenSignalHandler {
             }
           )
         } else {
+          const dbProps = rows[0].props;
+          let newProps = undefined;
+          if ( props ){
+            if ( dbProps ){
+              const _dbProps = JSON.parse(dbProps);
+              newProps = JSON.stringify({
+                ..._dbProps,
+                ...props
+              })
+            } else {
+              newProps = JSON.stringify(props);
+            }
+          } else {
+            newProps = dbProps;
+          }
           this.db.run(
-            "UPDATE ERC20_Tokens Set name = ?,symbol = ?,decims = ? WHERE address = ? and chain_id = ?",
-            [name, symbol, decimals, address, chainId],
+            "UPDATE ERC20_Tokens Set name = ?,symbol = ?,decims = ? , props = ? WHERE address = ? and chain_id = ?",
+            [name, symbol, decimals, newProps, address, chainId],
             (err: any) => {
               if (!err) {
                 console.log(`[sqlite3/ERC20_Tokens] Update ERC20-Token:${name}[${symbol}]:${decimals}:_${address}_ChainId=${chainId}`)

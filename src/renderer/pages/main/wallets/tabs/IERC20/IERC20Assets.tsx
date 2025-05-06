@@ -1,5 +1,5 @@
 import { Avatar, Button, Card, Col, Divider, Row, Typography } from "antd"
-import { RightOutlined, WalletOutlined, AppstoreAddOutlined } from "@ant-design/icons";
+import { RightOutlined, WalletOutlined, AppstoreAddOutlined, StopOutlined } from "@ant-design/icons";
 import { useEffect, useMemo, useState } from "react";
 import { ChainId, Token, TokenAmount } from "@uniswap/sdk";
 import { useTokenBalances, useWalletsActiveAccount } from "../../../../../state/wallets/hooks";
@@ -12,6 +12,11 @@ import ERC20TokenLogoComponent from "../../../../components/ERC20TokenLogoCompon
 import { useAuditTokenList } from "../../../../../state/audit/hooks";
 import TokenName from "../../../../components/TokenName";
 import TokenSymbol from "../../../../components/TokenSymbol";
+import TokenAddModalAndTokenList from "./TokenAddModalAndTokenList";
+import { IPC_CHANNEL, Safe4NetworkChainId, USDT, WSAFE } from "../../../../../config";
+import { useDispatch } from "react-redux";
+import { removeERC20Token } from "../../../../../state/transactions/actions";
+import { ERC20Tokens_Methods, ERC20TokensSignal } from "../../../../../../main/handlers/ERC20TokenSignalHandler";
 const { Text } = Typography;
 
 export default () => {
@@ -22,6 +27,7 @@ export default () => {
   const [openTokenAddModal, setOpenTokenAddModal] = useState(false);
   const [selectedToken, setSelectedToken] = useState<Token>();
 
+  const dispatch = useDispatch();
   const auditTokens = useAuditTokenList();
   const walletTokens = useWalletTokens();
   const tokenAmounts = useTokenBalances(activeAccount, walletTokens);
@@ -38,6 +44,25 @@ export default () => {
     }
     return tokens;
   }, [walletTokens, auditTokens]);
+
+  const disalbeHide = (address: string) => {
+    if (address.toLocaleLowerCase() == WSAFE[Safe4NetworkChainId.Testnet].address.toLocaleLowerCase()
+      || address.toLocaleLowerCase() == WSAFE[Safe4NetworkChainId.Mainnet].address.toLocaleLowerCase()
+      || address.toLocaleLowerCase() == USDT[Safe4NetworkChainId.Testnet].address.toLocaleLowerCase()
+      || address.toLocaleLowerCase() == USDT[Safe4NetworkChainId.Mainnet].address.toLocaleLowerCase()) {
+      return true;
+    }
+    return false;
+  }
+
+  const removeToken = (address: string, chainId: number) => {
+    dispatch(removeERC20Token({ chainId, address }));
+    window.electron.ipcRenderer.sendMessage(
+      IPC_CHANNEL, [ERC20TokensSignal, ERC20Tokens_Methods.remove, [{
+        chainId, address
+      }]]
+    );
+  }
 
   return <>
     <Row>
@@ -66,7 +91,7 @@ export default () => {
                 <Col onClick={() => {
                   setSelectedToken(erc20Token);
                   setOpenTokenSendModal(true);
-                }} span={12}>
+                }} span={10}>
                   <Row>
                     <Col span={24} style={{ lineHeight: "35px", marginTop: "5px" }}>
                       <Text strong>{TokenName(erc20Token)}</Text>
@@ -90,20 +115,22 @@ export default () => {
                     </Col>
                   </Row>
                 </Col>
+                <Col span={2}>
+                  <Button onClick={() => removeToken(address, chainId)} disabled={disalbeHide(address)} icon={<StopOutlined />}>
+                    隐藏
+                  </Button>
+                </Col>
               </Row>
             </>
           })
         }
       </Card>
     }
-
     {
       selectedToken && openTokenSendModal &&
       <TokenSendModal token={selectedToken} openSendModal={openTokenSendModal} setOpenSendModal={setOpenTokenSendModal} />
     }
-
-    <TokenAddModal openTokenAddModal={openTokenAddModal} setOpenTokenAddModal={setOpenTokenAddModal} />
-
+    <TokenAddModalAndTokenList openTokenAddModal={openTokenAddModal} setOpenTokenAddModal={setOpenTokenAddModal} />
   </>
 
 }

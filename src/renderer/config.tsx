@@ -112,4 +112,4 @@ const Config = {
     Safescan_Api: Safe4_Network_Config.Mainnet.Safescan_Api,
   }
 }
-export default Config["prod"]
+export default Config["test"]
