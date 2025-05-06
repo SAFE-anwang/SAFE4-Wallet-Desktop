@@ -3,7 +3,7 @@ import { useWeb3React } from "@web3-react/core";
 import { Alert, Button, Card, Col, Divider, Flex, Input, Radio, Row, Typography } from "antd";
 import { CheckboxGroupProps } from "antd/es/checkbox";
 import { ethers } from "ethers";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next"
 import { ContractCompileSignal, ContractCompile_Methods } from "../../../../main/handlers/ContractCompileHandler";
 import { DB_AddressActivity_Actions } from "../../../../main/handlers/DBAddressActivitySingalHandler";
@@ -12,11 +12,12 @@ import { useTransactionAdder } from "../../../state/transactions/hooks";
 import { useETHBalances, useWalletsActiveAccount, useWalletsActiveSigner } from "../../../state/wallets/hooks";
 import Safescan from "../../components/Safescan";
 import { SRC20_Template, SRC20_Template_CompileOption, SRC20_Template_Option } from "./SRC20_Template_Config";
+import { useDispatch } from "react-redux";
+import { applicationUpdateWalletTab } from "../../../state/application/action";
+import { useNavigate } from "react-router-dom";
 
 const { Text, Title, Link } = Typography;
 const now = () => new Date().getTime()
-
-
 
 export default () => {
 
@@ -27,6 +28,8 @@ export default () => {
   const activeAccount = useWalletsActiveAccount();
   const balance = useETHBalances([activeAccount])[activeAccount];
   const balanceGtZERO = balance && balance.greaterThan(CurrencyAmount.ether("0"));
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
 
   const options: CheckboxGroupProps<SRC20_Template_Option>['options'] = [
     { label: t("wallet_issue_template_src20"), value: SRC20_Template_Option.SRC20 },
@@ -67,13 +70,13 @@ export default () => {
       totalSupply?: string
     } = {};
     if (!name) {
-      errors.name = t("please_enter")+t("wallet_issue_asset_name");
+      errors.name = t("please_enter") + t("wallet_issue_asset_name");
     }
     if (!symbol) {
-      errors.symbol = t("please_enter")+t("wallet_issue_asset_symbol");
+      errors.symbol = t("please_enter") + t("wallet_issue_asset_symbol");
     }
     if (!totalSupply) {
-      errors.totalSupply = t("please_enter")+t("wallet_issue_asset_totalsupply");
+      errors.totalSupply = t("please_enter") + t("wallet_issue_asset_totalsupply");
     } else {
       try {
         const _totalSupply = ethers.utils.parseUnits(totalSupply);
@@ -129,6 +132,8 @@ export default () => {
             addedTime: now()
           }
         ]]);
+        dispatch(applicationUpdateWalletTab("history"));
+        navigate("/main/wallet");
       }).catch((err: any) => {
         setDeploy({
           ...deploy,
@@ -140,7 +145,6 @@ export default () => {
   }
 
   const RenderTemplateTip = () => {
-
     switch (inputParams.templateType) {
       case SRC20_Template_Option.SRC20:
         return <>
@@ -159,138 +163,119 @@ export default () => {
           <Text>{t("wallet_issue_template_src20_pausable_tip")}</Text>
         </>
     }
-
     return <></>
   }
 
-
   return <>
-    <Row style={{ height: "50px" }}>
-      <Col span={12}>
-        <Title level={4} style={{ lineHeight: "16px" }}>
-          {t("wallet_issue")}
-        </Title>
+
+    <Row>
+      <Col span={24}>
+        <Text type="secondary">{t("wallet_issue_selecttemplate")}</Text>
+      </Col>
+      <Col span={24}>
+        <Flex vertical gap="middle">
+          <Radio.Group options={options} onChange={(event) => {
+            setInputParams({
+              ...inputParams,
+              templateType: event.target.value
+            })
+          }} defaultValue={SRC20_Template_Option.SRC20} />
+        </Flex>
+      </Col>
+      <Col span={24} style={{ marginTop: "10px" }}>
+        <Card>
+          {RenderTemplateTip()}
+        </Card>
+      </Col>
+      <Col span={24} style={{ marginTop: "5px" }}>
+        <Text type="secondary">{t("wallet_issue_asset_name")}</Text>
+        <br />
+        <Input value={inputParams.name} onChange={(event) => {
+          const inputName = event.target.value.trim();
+          setInputParams({
+            ...inputParams,
+            name: inputName
+          });
+          setInputErrors({
+            ...inputErrors,
+            name: undefined
+          })
+        }} style={{ width: "30%" }} />
+        {
+          inputErrors?.name &&
+          <Alert type="error" style={{ marginTop: "5px", width: "30%" }} showIcon message={inputErrors.name} />
+        }
+      </Col>
+      <Col span={24} style={{ marginTop: "5px" }}>
+        <Text type="secondary">{t("wallet_issue_asset_symbol")}</Text>
+        <br />
+        <Input value={inputParams.symbol} onChange={(event) => {
+          const inputSymbol = event.target.value.trim();
+          setInputParams({
+            ...inputParams,
+            symbol: inputSymbol
+          });
+          setInputErrors({
+            ...inputErrors,
+            symbol: undefined
+          })
+        }} style={{ width: "30%" }} />
+        {
+          inputErrors?.symbol &&
+          <Alert type="error" style={{ marginTop: "5px", width: "30%" }} showIcon message={inputErrors.symbol} />
+        }
+      </Col>
+      <Col span={24} style={{ marginTop: "5px" }}>
+        <Text type="secondary">{t("wallet_issue_asset_totalsupply")}</Text>
+        <br />
+        <Input value={inputParams.totalSupply} onChange={(event) => {
+          const inputTotalSupply = event.target.value.trim();
+          setInputParams({
+            ...inputParams,
+            totalSupply: inputTotalSupply
+          });
+          setInputErrors({
+            ...inputErrors,
+            totalSupply: undefined
+          })
+        }} style={{ width: "30%" }} />
+        {
+          inputErrors?.totalSupply &&
+          <Alert type="error" style={{ marginTop: "5px", width: "30%" }} showIcon message={inputErrors.totalSupply} />
+        }
       </Col>
     </Row>
-    <div style={{ width: "100%", paddingTop: "40px" }}>
-      <div style={{ margin: "auto", width: "90%" }}>
-        <Card style={{ marginBottom: "20px" }}>
-          <Alert showIcon type="info" message={<>
-            {t("wallet_issue_tip0")}
-            <Link style={{ marginLeft: "20px" }} onClick={() => window.open("https://github.com/SAFE-anwang/src20")}>查看代码库</Link>
+    <Divider />
+    <Row>
+      <Col span={24}>
+        {
+          deploy?.txHash && <Alert style={{ marginBottom: "5px" }} type="success" showIcon message={<>
+            <Row>
+              <Col span={18}>
+                <Text>交易哈希:{deploy.txHash}</Text>
+              </Col>
+              <Col span={6} style={{ textAlign: "right" }}>
+                <Safescan url={`/tx/${deploy.txHash}`} />
+              </Col>
+            </Row>
           </>} />
-          <Divider />
-          <Row>
-            <Col span={24}>
-              <Text type="secondary">{t("wallet_issue_selecttemplate")}</Text>
-            </Col>
-            <Col span={24}>
-              <Flex vertical gap="middle">
-                <Radio.Group options={options} onChange={(event) => {
-                  setInputParams({
-                    ...inputParams,
-                    templateType: event.target.value
-                  })
-                }} defaultValue={SRC20_Template_Option.SRC20} />
-              </Flex>
-            </Col>
-            <Col span={24} style={{ marginTop: "10px" }}>
-              <Card>
-                {RenderTemplateTip()}
-              </Card>
-            </Col>
-            <Col span={24} style={{ marginTop: "5px" }}>
-              <Text type="secondary">{t("wallet_issue_asset_name")}</Text>
-              <br />
-              <Input value={inputParams.name} onChange={(event) => {
-                const inputName = event.target.value.trim();
-                setInputParams({
-                  ...inputParams,
-                  name: inputName
-                });
-                setInputErrors({
-                  ...inputErrors,
-                  name: undefined
-                })
-              }} style={{ width: "30%" }} />
-              {
-                inputErrors?.name &&
-                <Alert type="error" style={{ marginTop: "5px", width: "30%" }} showIcon message={inputErrors.name} />
-              }
-            </Col>
-            <Col span={24} style={{ marginTop: "5px" }}>
-              <Text type="secondary">{t("wallet_issue_asset_symbol")}</Text>
-              <br />
-              <Input value={inputParams.symbol} onChange={(event) => {
-                const inputSymbol = event.target.value.trim();
-                setInputParams({
-                  ...inputParams,
-                  symbol: inputSymbol
-                });
-                setInputErrors({
-                  ...inputErrors,
-                  symbol: undefined
-                })
-              }} style={{ width: "30%" }} />
-              {
-                inputErrors?.symbol &&
-                <Alert type="error" style={{ marginTop: "5px", width: "30%" }} showIcon message={inputErrors.symbol} />
-              }
-            </Col>
-            <Col span={24} style={{ marginTop: "5px" }}>
-              <Text type="secondary">{t("wallet_issue_asset_totalsupply")}</Text>
-              <br />
-              <Input value={inputParams.totalSupply} onChange={(event) => {
-                const inputTotalSupply = event.target.value.trim();
-                setInputParams({
-                  ...inputParams,
-                  totalSupply: inputTotalSupply
-                });
-                setInputErrors({
-                  ...inputErrors,
-                  totalSupply: undefined
-                })
-              }} style={{ width: "30%" }} />
-              {
-                inputErrors?.totalSupply &&
-                <Alert type="error" style={{ marginTop: "5px", width: "30%" }} showIcon message={inputErrors.totalSupply} />
-              }
-            </Col>
-          </Row>
-          <Divider />
-          <Row>
-            <Col span={24}>
-              {
-                deploy?.txHash && <Alert style={{ marginBottom: "5px" }} type="success" showIcon message={<>
-                  <Row>
-                    <Col span={18}>
-                      <Text>交易哈希:{deploy.txHash}</Text>
-                    </Col>
-                    <Col span={6} style={{ textAlign: "right" }}>
-                      <Safescan url={`/tx/${deploy.txHash}`} />
-                    </Col>
-                  </Row>
-                </>} />
-              }
-              {
-                deploy?.error && <Alert style={{ marginBottom: "5px" }} type="error" showIcon message={<>
-                  <Row>
-                    <Col span={24}>
-                      <Text type="danger">失败</Text>
-                    </Col>
-                    <Col span={24}>
-                      <Text>{deploy.error.toString()}</Text>
-                    </Col>
-                  </Row>
-                </>} />
-              }
-              <Button disabled={!balanceGtZERO || deploy?.txHash || deploy?.error} loading={deploy?.execute}
-                onClick={issue} style={{}} type="primary">{t("wallet_issue_asset_doissue")}</Button>
-            </Col>
-          </Row>
-        </Card>
-      </div>
-    </div>
+        }
+        {
+          deploy?.error && <Alert style={{ marginBottom: "5px" }} type="error" showIcon message={<>
+            <Row>
+              <Col span={24}>
+                <Text type="danger">失败</Text>
+              </Col>
+              <Col span={24}>
+                <Text>{deploy.error.toString()}</Text>
+              </Col>
+            </Row>
+          </>} />
+        }
+        <Button disabled={!balanceGtZERO || deploy?.txHash || deploy?.error} loading={deploy?.execute}
+          onClick={issue} style={{}} type="primary">{t("wallet_issue_asset_doissue")}</Button>
+      </Col>
+    </Row>
 
   </>
 

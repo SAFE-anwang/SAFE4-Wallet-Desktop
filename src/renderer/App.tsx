@@ -61,6 +61,7 @@ import { useTranslation } from 'react-i18next';
 import Crosschain from './pages/main/wallets/crosschain/Crosschain';
 import SafeswapV2 from './pages/main/safeswap/SafeswapV2';
 import Issue from './pages/main/issue/Issue';
+import IssueIndex from './pages/main/issue/IssueIndex';
 const { Text } = Typography;
 
 export default function App() {
@@ -330,7 +331,7 @@ export default function App() {
                     <Route path="/main/contracts/edit" element={<ContractEdit />} />
                     <Route path="/main/crosschain" element={<Crosschain />} />
                     <Route path="/main/swap" element={<SafeswapV2 />} />
-                    <Route path="/main/issue" element={<Issue />} />
+                    <Route path="/main/issue" element={<IssueIndex />} />
                   </Routes>
                 </Col>
               </Row>
