@@ -167,7 +167,6 @@ export default () => {
   }
 
   return <>
-
     <Row>
       <Col span={24}>
         <Text type="secondary">{t("wallet_issue_selecttemplate")}</Text>

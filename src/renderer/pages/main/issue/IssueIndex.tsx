@@ -18,13 +18,12 @@ export default () => {
     },
     {
       key: 'list',
-      label: "已发行资产",
+      label: "资产管理",
       children: <AssetList />,
     }
   ];
 
   return <>
-
     <Row style={{ height: "50px" }}>
       <Col span={12}>
         <Title level={4} style={{ lineHeight: "16px" }}>
@@ -32,10 +31,8 @@ export default () => {
         </Title>
       </Col>
     </Row>
-
     <div style={{ width: "100%", paddingTop: "40px" }}>
       <div style={{ margin: "auto", width: "90%" }}>
-
         <Card style={{ marginBottom: "20px" }}>
           <Alert showIcon type="info" message={<>
             <Row>
@@ -50,11 +47,9 @@ export default () => {
           </>} />
         </Card>
         <Divider />
-
         <Card>
           <Tabs style={{ width: "100%" }} items={tabItems} />
         </Card>
-
       </div>
     </div>
 
