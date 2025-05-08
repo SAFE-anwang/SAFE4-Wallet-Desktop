@@ -3,6 +3,7 @@ import { useAuditTokenList } from "../../../state/audit/hooks"
 import AddressComponent from "../../components/AddressComponent";
 import EditAssetModal from "./EditAssetModal";
 import { useState } from "react";
+import PromotionModal from "./PromotionModal";
 
 const { Text } = Typography;
 
@@ -10,11 +11,17 @@ export default () => {
 
   const auditTokens = useAuditTokenList();
   const [openEditAssetModal, setOpenEditAssetModal] = useState(false);
+  const [openPromotionModal, setOpenPromotionModal] = useState(false);
   const [selectAddress, setSelectAddress] = useState<string>();
 
   const clickEdit = (address: string) => {
     setSelectAddress(address);
     setOpenEditAssetModal(true);
+  }
+
+  const clickPromotion = (address: string) => {
+    setSelectAddress(address);
+    setOpenPromotionModal(true);
   }
 
   const columns = [
@@ -59,7 +66,9 @@ export default () => {
           <Button onClick={() => {
             clickEdit(address);
           }}>编辑</Button>
-          <Button>推广</Button>
+          <Button onClick={() => {
+            clickPromotion(address);
+          }}>推广</Button>
         </Space>
       }
     },
@@ -70,6 +79,10 @@ export default () => {
     {
       openEditAssetModal && selectAddress &&
       <EditAssetModal openEditAssetModal={openEditAssetModal} setOpenEditAssetModal={setOpenEditAssetModal} address={selectAddress} />
+    }
+    {
+      openPromotionModal && selectAddress &&
+      <PromotionModal openPromotionModal={openPromotionModal} setOpenPromotionModal={setOpenPromotionModal} address={selectAddress} />
     }
   </>
 

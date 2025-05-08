@@ -6,6 +6,7 @@ import CallMulticallAggregate, { CallMulticallAggregateContractCall } from "../.
 import { TxExecuteStatus } from "../safe3/Safe3";
 import { useWalletsActiveAccount } from "../../../state/wallets/hooks";
 import { useTransactionAdder } from "../../../state/transactions/hooks";
+import useSRC20Prop from "../../../hooks/useSRC20Prop";
 
 const { Text } = Typography;
 
@@ -27,14 +28,12 @@ export default ({
   address: string
 }) => {
 
-  const multicallContract = useMulticallContract();
   const SRC20Contract = useContract(address, ISRC20_Interface, true);
-  const [loading, setLoading] = useState<boolean>();
   const [updating, setUpdating] = useState<boolean>();
   const [updateFinish, setUpdateFinish] = useState<boolean>(false);
-  const [src20TokenProp, setSrc20TokenProp] = useState<SRC20TokenProp>();
   const activeAccount = useWalletsActiveAccount();
   const addTransaction = useTransactionAdder();
+  const { src20TokenProp , loading } = useSRC20Prop(address);
 
   const [inputParams, setInputParams] = useState<SRC20TokenProp>({
     name: "",
@@ -56,60 +55,13 @@ export default ({
     setOpenEditAssetModal(false);
   }
 
-  useEffect(() => {
-    if (multicallContract && SRC20Contract) {
-      const nameCall: CallMulticallAggregateContractCall = {
-        contract: SRC20Contract,
-        functionName: "name",
-        params: []
-      };
-      const symbolCall: CallMulticallAggregateContractCall = {
-        contract: SRC20Contract,
-        functionName: "symbol",
-        params: []
-      };
-      const descriptionCall: CallMulticallAggregateContractCall = {
-        contract: SRC20Contract,
-        functionName: "description",
-        params: []
-      };
-      const whitePaperUrlCall: CallMulticallAggregateContractCall = {
-        contract: SRC20Contract,
-        functionName: "whitePaperUrl",
-        params: []
-      };
-      const orgNameCall: CallMulticallAggregateContractCall = {
-        contract: SRC20Contract,
-        functionName: "orgName",
-        params: []
-      };
-      const officiaUrlCall: CallMulticallAggregateContractCall = {
-        contract: SRC20Contract,
-        functionName: "officialUrl",
-        params: []
-      };
-      const calls = [nameCall, symbolCall,
-        descriptionCall, whitePaperUrlCall, orgNameCall, officiaUrlCall];
-      setLoading(true);
-      CallMulticallAggregate(multicallContract, calls, () => {
-        setLoading(false);
-        const name = nameCall.result;
-        const symbol = symbolCall.result;
-        const description = descriptionCall.result;
-        const whitePaperUrl = whitePaperUrlCall.result;
-        const orgName = orgNameCall.result;
-        const officialUrl = officiaUrlCall.result;
-        const src20Prop: SRC20TokenProp = {
-          name, symbol,
-          description, whitePaperUrl, orgName, officialUrl
-        }
-        setSrc20TokenProp(src20Prop);
-        setInputParams({
-          ...src20Prop
-        })
+  useEffect( () => {
+    if ( src20TokenProp ){
+      setInputParams({
+        ...src20TokenProp
       })
     }
-  }, [address, multicallContract, SRC20Contract]);
+  } , [ src20TokenProp ] )
 
   const update = async () => {
     if (src20TokenProp && SRC20Contract && activeAccount) {
