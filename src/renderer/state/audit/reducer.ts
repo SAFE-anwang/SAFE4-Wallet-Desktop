@@ -9,7 +9,8 @@ export interface IAuditState {
       name?: string,
       symbol?: string,
       decimals : number,
-      chainId: number
+      chainId: number ,
+      creator ?: string
     }[]
   }
 }

@@ -4,15 +4,21 @@ import AddressComponent from "../../components/AddressComponent";
 import EditAssetModal from "./EditAssetModal";
 import { useState } from "react";
 import PromotionModal from "./PromotionModal";
+import { isLocalWallet } from "../../../hooks/useWalletName";
+import { useWalletsActiveAccount } from "../../../state/wallets/hooks";
 
 const { Text } = Typography;
 
 export default () => {
 
-  const auditTokens = useAuditTokenList();
   const [openEditAssetModal, setOpenEditAssetModal] = useState(false);
   const [openPromotionModal, setOpenPromotionModal] = useState(false);
   const [selectAddress, setSelectAddress] = useState<string>();
+  const activeAccount = useWalletsActiveAccount();
+
+  const auditTokens = useAuditTokenList();
+  const myAuditTokens = auditTokens && auditTokens.filter(
+    auditToken => auditToken.creator && isLocalWallet(auditToken.creator).isLocal);
 
   const clickEdit = (address: string) => {
     setSelectAddress(address);
@@ -51,10 +57,10 @@ export default () => {
     },
     {
       title: '管理者',
-      dataIndex: 'address',
-      key: 'address',
-      render: (address: string) => {
-        return <AddressComponent address={address} qrcode copyable ellipsis />
+      dataIndex: 'creator',
+      key: 'creator',
+      render: (creator: string) => {
+        return creator && <AddressComponent address={creator} qrcode copyable ellipsis />
       }
     },
     {
@@ -62,8 +68,10 @@ export default () => {
       dataIndex: 'address',
       key: 'address',
       render: (address: string, data: any, index: number) => {
+        const creator = data.creator;
+        const isActiveAccount = creator == activeAccount;
         return <Space>
-          <Button onClick={() => {
+          <Button disabled={!isActiveAccount} onClick={() => {
             clickEdit(address);
           }}>编辑</Button>
           <Button onClick={() => {
@@ -75,7 +83,7 @@ export default () => {
   ];
 
   return <>
-    <Table dataSource={auditTokens} columns={columns} />
+    <Table dataSource={myAuditTokens} columns={columns} />
     {
       openEditAssetModal && selectAddress &&
       <EditAssetModal openEditAssetModal={openEditAssetModal} setOpenEditAssetModal={setOpenEditAssetModal} address={selectAddress} />
