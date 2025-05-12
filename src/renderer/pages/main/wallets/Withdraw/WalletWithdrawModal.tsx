@@ -32,8 +32,8 @@ export default ({
     setOpenWithdrawModal(false);
     if (txHash){
       setTxHash(undefined);
-      dispatch(applicationUpdateWalletTab("history"));
-      navigate("/main/wallet");
+      // dispatch(applicationUpdateWalletTab("history"));
+      // navigate("/main/wallet");
     }
   } , [txHash]);
 
