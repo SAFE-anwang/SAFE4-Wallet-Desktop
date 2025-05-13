@@ -22,8 +22,9 @@ export default ({
   const { t } = useTranslation();
   const data = useSelector<AppState, { [key: string]: any }>(state => state.application.data);
 
-  const dumpFileName = "safe3.keystores.DEL"
-  const safe3KeystoresFile_windows = data["data"] + `\\${dumpFileName}`;
+  const dumpFileName = "safe3.keystores.DEL";
+  // const safe3KeystoresFile_windows = data["data"] + `\\${dumpFileName}`;
+  const safe3KeystoresFile_windows = data["data"].indexOf("/") >= 0 ? data["data"] + `/${dumpFileName}` : data["data"] + `\\${dumpFileName}`;
   const safe3KeystoresFile = path.join(data["data"], dumpFileName);
   const dumpCommand = `dumpwallet "${safe3KeystoresFile_windows}"`;
 
