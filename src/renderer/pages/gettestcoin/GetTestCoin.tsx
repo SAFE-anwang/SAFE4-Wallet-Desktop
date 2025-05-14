@@ -111,13 +111,13 @@ export default () => {
   const [getCoinTransfers, setGetCoinTransfers] = useState();
 
   useEffect(() => {
-    if (chainId) {
+    if (chainId && activeAccount) {
       const method = DB_AddressActivity_Methods.getActivitiesFromToAction;
       window.electron.ipcRenderer.sendMessage(IPC_CHANNEL, [DBAddressActivitySignal, method, [
         chainId == Safe4_Network_Config.Testnet.chainId ? Safe4_Network_Config.Testnet.claimFrom : Safe4_Network_Config.Mainnet.claimFrom,
         activeAccount, DB_AddressActivity_Actions.Transfer, chainId
       ]]);
-      window.electron.ipcRenderer.once(IPC_CHANNEL, (arg) => {
+      window.electron.ipcRenderer.on(IPC_CHANNEL, (arg) => {
         if (arg instanceof Array && arg[0] == DBAddressActivitySignal && arg[1] == method) {
           const data = arg[2][0];
           const hashes: {
@@ -141,7 +141,6 @@ export default () => {
             }
             return false;
           })
-          console.log(hashes)
           setGetCoinTransfers(transfers);
         }
       });

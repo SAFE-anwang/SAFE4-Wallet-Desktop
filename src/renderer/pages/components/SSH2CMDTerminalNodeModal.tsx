@@ -93,7 +93,7 @@ export default ({
         Safe4Info: ".safe4_info",
         // 默认的 Safe4DataDir
         Safe4DataDir: ".safe4/safetest",
-        isMainnet : chainId == Safe4NetworkChainId.Mainnet
+        isMainnet: chainId == Safe4NetworkChainId.Mainnet
       }
     } else {
       // 正式网络相关配置
@@ -106,7 +106,7 @@ export default ({
         Safe4Info: ".safe4_info",
         // 默认的 Safe4DataDir
         Safe4DataDir: ".safe4",
-        isMainnet : chainId == Safe4NetworkChainId.Mainnet
+        isMainnet: chainId == Safe4NetworkChainId.Mainnet
       }
     }
   }, [chainId]);
@@ -121,11 +121,11 @@ export default ({
       },
       {
         title: t("ssh2_connect_execute_state_waiting"),
-        description:  t("ssh2_connect_execute_steps1")
+        description: t("ssh2_connect_execute_steps1")
       },
       {
         title: t("ssh2_connect_execute_state_waiting"),
-        description:  t("ssh2_connect_execute_steps2")
+        description: t("ssh2_connect_execute_steps2")
       }
     ];
 
@@ -165,9 +165,9 @@ export default ({
     username: string,
     password: string,
   }>({
-    host: "",
+    host: "39.108.69.183",
     username: "root",
-    password: ""
+    password: "Zy654321!"
   });
   const [inputErrors, setInputErrors] = useState<{
     host: string | undefined,
@@ -204,7 +204,7 @@ export default ({
         const stderr = args[0][0];
         term.write(`\x1b[34m${stderr}\x1b[0m`);
       });
-      term.write( `${t("ssh2_connect_waiting")}\r\n`);
+      term.write(`${t("ssh2_connect_waiting")}\r\n`);
     }
     return () => {
       // Cleanup and dispose the terminal instance
@@ -374,9 +374,64 @@ export default ({
     )
 
     if (term) {
+
       let needAttachIpc = false;
+      let forceUpdateNode = false;
       updateSteps(0, t("ssh2_connect_exeucte_steps_checksafe4running"));
-      const CMD_psSafe4_success = await CMD_psSafe4.execute(term);
+      try {
+        _Safe4MD5Sum = JSON.parse((await (await fetch(DEFAULT_CONFIG.Safe4FileMD5)).text()).trim()).md5;
+        console.log("从服务器获取最新 MD5值", _Safe4MD5Sum);
+        const CMD_checkzip: CommandState = new CommandState(
+          `[ -f ${Safe4FileName} ] && md5sum ${Safe4FileName} || echo "File does not exist"`,
+          (data: string) => {
+            if (data.trim() == "File does not exist") {
+              console.log(`[.md5] ${Safe4FileName} 文件不存在`);
+              return false;
+            } else {
+              const [md5] = data.trim().split(" ");
+              console.log(`[.md5] ${Safe4FileName} 文件存在,md5=`, md5);
+              if (_Safe4MD5Sum != md5.trim()) {
+                console.log(`[.md5] ${Safe4FileName} 文件与服务器文件[${_Safe4MD5Sum}]不一致.`);
+                return false;
+              }
+            }
+            console.log(`[.md5] ${Safe4FileName} 文件且与服务器文件[${_Safe4MD5Sum}]一直.`);
+            return true;
+          },
+          () => console.log(""),
+          () => console.log("")
+        );
+        const CMD_checkzip_success = await CMD_checkzip.execute(term);
+        forceUpdateNode = !CMD_checkzip_success;
+      } catch (err) {
+
+      }
+      let CMD_psSafe4_success = await CMD_psSafe4.execute(term);
+      if (CMD_psSafe4_success && forceUpdateNode) {
+        const CMD_catSafe4Info_success = await CMD_catSafe4Info.execute(term);
+        const _BinPath = _Safe4GethPath.substring(0, _Safe4GethPath.lastIndexOf("/"));
+        const CMD_Stop: CommandState = new CommandState(
+          `cd ${_BinPath} && cd ../ && ./stop.sh`,
+          () => {
+            return true;
+          },
+          () => console.log(""),
+          () => console.log("")
+        )
+        updateSteps(0, t("节点非最新版本,正在关闭节点程序"));
+        const CMD_Stop_Success = await CMD_Stop.execute(term);
+        const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+        let Loop_psSafe4_Success = true;
+        while (Loop_psSafe4_Success) {
+          console.log("检查 geth 是否停止..")
+          Loop_psSafe4_Success = await CMD_psSafe4.execute(term);
+          if (Loop_psSafe4_Success) {
+            await delay(3000);
+          }
+        }
+        CMD_psSafe4_success = false;
+      }
+
       let keystoreExist = false;
       if (!CMD_psSafe4_success) {
         try {
