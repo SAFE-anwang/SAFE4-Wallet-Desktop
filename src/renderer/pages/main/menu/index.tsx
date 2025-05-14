@@ -35,7 +35,7 @@ export default () => {
               <NumberOutlined />
             </Col>
             <Col span={20}>
-              {t("version")} 2.0.0
+              {t("version")} 2.0.1
             </Col>
             {/* <Col span={2} style={{ textAlign: "center" }}>
               <RightOutlined />
