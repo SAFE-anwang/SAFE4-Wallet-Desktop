@@ -165,9 +165,9 @@ export default ({
     username: string,
     password: string,
   }>({
-    host: "39.108.69.183",
+    host: "",
     username: "root",
-    password: "Zy654321!"
+    password: ""
   });
   const [inputErrors, setInputErrors] = useState<{
     host: string | undefined,
