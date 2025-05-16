@@ -89,7 +89,7 @@ export default ({
       return {
         // 节点程序的下载地址
         Safe4FileURL: "https://www.anwang.com/download/safe4_node/safe4.linux.latest.tar.gz",
-        Safe4FileMD5: "https://www.anwang.com/download/safe4_node/safe4.linux.latest.md5.json",
+        Safe4FileMD5: `https://www.anwang.com/download/safe4_node/safe4.linux.latest.md5.json?_t=${Date.now()}`,
         Safe4FileName: "safe4.linux.latest.tar.gz",
         // 从这里读区 geth 运行后写入的数据,从而加载 geth 的路径,以及data_dir
         Safe4Info: ".safe4_info",
@@ -102,7 +102,7 @@ export default ({
       return {
         // 节点程序的下载地址
         Safe4FileURL: "https://www.anwang.com/download/safe4_node/safe4.linux.latest.tar.gz",
-        Safe4FileMD5: "https://www.anwang.com/download/safe4_node/safe4.linux.latest.md5.json",
+        Safe4FileMD5: `https://www.anwang.com/download/safe4_node/safe4.linux.latest.md5.json?_t=${Date.now()}`,
         Safe4FileName: "safe4.linux.latest.tar.gz",
         // 从这里读区 geth 运行后写入的数据,从而加载 geth 的路径,以及 data_dir
         Safe4Info: ".safe4_info",
