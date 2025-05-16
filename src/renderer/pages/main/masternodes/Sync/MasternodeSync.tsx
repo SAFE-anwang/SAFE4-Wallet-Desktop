@@ -201,7 +201,7 @@ export default () => {
         } catch (err: any) {
           _updateResult.address = {
             status: 0,
-            error: err.error.reason
+            error: JSON.stringify(err)
           }
         }
         setUpdateResult({ ..._updateResult });
