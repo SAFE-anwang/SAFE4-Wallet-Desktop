@@ -12,23 +12,24 @@ import EtherAmount from "../../../../../utils/EtherAmount";
 
 const { Text } = Typography;
 
-export default ({ transaction, setClickTransaction, support , title }: {
+export default ({ transaction, setClickTransaction, support, title }: {
   transaction: TransactionDetails,
   setClickTransaction: (transaction: TransactionDetails) => void,
   support: {
     supportFuncName: string,
     inputDecodeResult: any
-  } ,
-  title : string
+  },
+  title: string
 }) => {
   const {
     status,
     call,
   } = transaction;
-  const { addr, value } = useMemo(() => {
+  const { addr, value , id } = useMemo(() => {
     return {
       from: transaction.refFrom,
       addr: support.inputDecodeResult._addr,
+      id: support.inputDecodeResult._id,
       value: call?.value,
     }
   }, [transaction, call, support]);
@@ -41,7 +42,7 @@ export default ({ transaction, setClickTransaction, support , title }: {
             icon={<ClusterOutlined style={{ color: "black" }} />}
             title={title}
             status={status}
-            description={addr}
+            description={addr ? addr : "超级节点ID:" + id }
             assetFlow={<>
               <Text type="secondary" strong>
                 {value && EtherAmount({ raw: value, fix: 18 })} SAFE

@@ -77,6 +77,20 @@ export default () => {
       || masternodeInfo?.description != updateParams.description
   }, [masternodeInfo, updateParams]);
 
+  const IP = useMemo(() => {
+    if (masternodeInfo) {
+      try {
+        const enode = masternodeInfo.enode;
+        const match = enode.match(/@([\d.]+):\d+/);
+        const ip = match ? match[1] : null;
+        return ip;
+      } catch (err) {
+        return undefined;
+      }
+    }
+    return undefined;
+  }, [masternodeInfo]);
+
   useEffect(() => {
     if (walletsActiveKeystore?.mnemonic) {
       setNodeAddressSelectType(NodeAddressSelectType.GEN)
@@ -272,7 +286,11 @@ export default () => {
       // DO update address
       if (masternodeInfo.addr != address) {
         try {
-          const response = await masternodeLogicContract.changeAddress(masternodeInfo.addr, address);
+          const estimateGas = await masternodeLogicContract.estimateGas.changeAddress(
+            masternodeInfo.addr, address
+          );
+          const gasLimit = estimateGas.mul(2);
+          const response = await masternodeLogicContract.changeAddress(masternodeInfo.addr, address, { gasLimit });
           const { hash, data } = response;
           addTransaction({ to: masternodeLogicContract.address }, response, {
             call: {
@@ -303,7 +321,7 @@ export default () => {
       // DO Update Enode
       if (masternodeInfo.enode != enode) {
         try {
-          const response = await masternodeLogicContract.changeEnode(address, enode);
+          const response = await masternodeLogicContract.changeEnodeByID(masternodeInfo.id, enode);
           const { hash, data } = response;
           addTransaction({ to: masternodeLogicContract.address }, response, {
             call: {
@@ -330,7 +348,7 @@ export default () => {
       // DO Update description
       if (description != masternodeInfo.description) {
         try {
-          const response = await masternodeLogicContract.changeDescription(address, description);
+          const response = await masternodeLogicContract.changeDescriptionByID(masternodeInfo.id, description);
           const { hash, data } = response;
           addTransaction({ to: masternodeLogicContract.address }, response, {
             call: {
@@ -640,6 +658,7 @@ export default () => {
       openSSH2CMDTerminalNodeModal && updateParams.address &&
       <SSH2CMDTerminalNodeModal openSSH2CMDTerminalNodeModal={openSSH2CMDTerminalNodeModal} setOpenSSH2CMDTerminalNodeModal={setOpenSSH2CMDTerminalNodeModal}
         nodeAddress={updateParams.address} nodeAddressPrivateKey={nodeAddressPrivateKey}
+        IP={IP ? IP : undefined}
         onSuccess={(enode: string, nodeAddress: string) => {
           setHelpResult({ enode, nodeAddress });
           setUpdateParams({

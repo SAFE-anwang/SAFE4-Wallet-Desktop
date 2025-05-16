@@ -44,7 +44,6 @@ import ModifyPassword from './pages/main/menu/password/ModifyPassword';
 import { SAFE_LOGO } from './assets/logo/AssetsLogo';
 import BatchRedeem from './pages/main/safe3/BatchRedeem';
 import RedeemNav from './pages/main/safe3/RedeemNav';
-import EditMasternode from './pages/main/masternodes/EditMasternode';
 import SelectMasternodeRegisterMode from './pages/main/masternodes/Register/SelectMasternodeRegisterMode';
 import MasternodeRegisterAssist from './pages/main/masternodes/Register/MasternodeRegisterAssist';
 import SelectSupernodeRegisterMode from './pages/main/supernodes/Register/SelectSupernodeRegisterMode';
@@ -312,7 +311,6 @@ export default function App() {
                     <Route path="/main/masternodes/selectSyncMode" element={<SelectMasternodeSyncMode />} />
                     <Route path="/main/masternodes/sync" element={<MasternodeSync />} />
                     <Route path="/main/masternodes/syncAssist" element={<MasternodeSyncAssist />} />
-                    <Route path="/main/masternodes/edit" element={<EditMasternode />} />
                     <Route path="/main/proposals" element={<Proposals />} />
                     <Route path="/main/proposals/create" element={<ProposalCreate />} />
                     <Route path="/main/proposals/vote" element={<ProposalVote />} />

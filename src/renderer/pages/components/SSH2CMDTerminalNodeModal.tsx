@@ -60,12 +60,14 @@ export default ({
   nodeAddressPrivateKey,
   isSupernode,
   nodeAddress,
+  IP,
   onSuccess,
   onError
 }: {
   nodeAddressPrivateKey?: string,
   isSupernode?: boolean,
   nodeAddress: string,
+  IP?: string,
   openSSH2CMDTerminalNodeModal: boolean
   setOpenSSH2CMDTerminalNodeModal: (openSSH2CMDTerminalNodeModal: boolean) => void
   onSuccess: (enode: string, nodeAddress: string) => void
@@ -165,7 +167,7 @@ export default ({
     username: string,
     password: string,
   }>({
-    host: "",
+    host: IP ? IP : "",
     username: "root",
     password: ""
   });

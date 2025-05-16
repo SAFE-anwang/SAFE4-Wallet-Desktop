@@ -103,7 +103,7 @@ export default () => {
       if (!description) {
         inputErrors.description = t("enter") + t("wallet_supernodes_description");
       } else if (description.length < InputRules.description.min || description.length > InputRules.description.max) {
-       inputErrors.description = t("wallet_supernodes_description_lengthrule" , {min: InputRules.description.min, max:InputRules.description.max} )
+        inputErrors.description = t("wallet_supernodes_description_lengthrule", { min: InputRules.description.min, max: InputRules.description.max })
       }
       if (inputErrors.address || inputErrors.enode || inputErrors.description) {
         setInputErrors(inputErrors);
@@ -189,7 +189,11 @@ export default () => {
       // DO update address
       if (supernodeInfo.addr != address) {
         try {
-          const response = await supernodeLoginContract.changeAddress(supernodeInfo.addr, address);
+          const estimateGas = await supernodeLoginContract.estimateGas.changeAddress(
+            supernodeInfo.addr, address
+          );
+          const gasLimit = estimateGas.mul(2);
+          const response = await supernodeLoginContract.changeAddress(supernodeInfo.addr, address, { gasLimit });
           const { hash, data } = response;
           addTransaction({ to: supernodeLoginContract.address }, response, {
             call: {
@@ -216,7 +220,7 @@ export default () => {
       // DO Update Enode
       if (supernodeInfo.enode != enode) {
         try {
-          const response = await supernodeLoginContract.changeEnode(address, enode);
+          const response = await supernodeLoginContract.changeEnodeByID(supernodeInfo.id, enode);
           const { hash, data } = response;
           addTransaction({ to: supernodeLoginContract.address }, response, {
             call: {
@@ -243,7 +247,7 @@ export default () => {
       // DO Update description
       if (description != supernodeInfo.description) {
         try {
-          const response = await supernodeLoginContract.changeDescription(address, description);
+          const response = await supernodeLoginContract.changeDescriptionByID(supernodeInfo.id, description);
           const { hash, data } = response;
           addTransaction({ to: supernodeLoginContract.address }, response, {
             call: {
@@ -270,7 +274,7 @@ export default () => {
       // DO Update name
       if (name != supernodeInfo.name) {
         try {
-          const response = await supernodeLoginContract.changeName(address, name);
+          const response = await supernodeLoginContract.changeNameByID(supernodeInfo.id, name);
           const { hash, data } = response;
           addTransaction({ to: supernodeLoginContract.address }, response, {
             call: {
@@ -287,7 +291,7 @@ export default () => {
         } catch (err: any) {
           console.log("Error >>", err)
           _updateResult.name = {
-            status: 1,
+            status: 0,
             error: err.error.reason
           }
         }
@@ -426,7 +430,7 @@ export default () => {
               {
                 updateResult &&
                 <>
-                  <Alert style={{ marginTop: "20px" , marginBottom:"20px" }} type="success" message={<>
+                  <Alert style={{ marginTop: "20px", marginBottom: "20px" }} type="success" message={<>
                     {
                       updateResult.address && <>
                         {
@@ -505,7 +509,7 @@ export default () => {
                     }
                     <br />
                     <Text italic>{t("wallet_supernodes_sync_update_tip")}</Text>
-                  </>}/>
+                  </>} />
                 </>
               }
             </Col>
@@ -513,7 +517,7 @@ export default () => {
             <Col span={24} style={{ textAlign: "right" }}>
               {
                 isNodeCreator &&
-                <Button disabled={!needUpdate || (updateResult != undefined && !updating) } type="primary" onClick={doUpdate} loading={updating}>{t("update")}</Button>
+                <Button disabled={!needUpdate || (updateResult != undefined && !updating)} type="primary" onClick={doUpdate} loading={updating}>{t("update")}</Button>
               }
               {
                 !isNodeCreator && <>

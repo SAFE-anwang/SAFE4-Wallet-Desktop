@@ -172,6 +172,9 @@ export default ({ transaction, setClickTransaction, support }: {
   }
 
   const CallSupernodeLogicFuncRender = (funcName: string, transaction: TransactionDetails, setClickTransaction: (transaction: TransactionDetails) => void, support: any) => {
+
+    let title;
+
     switch (funcName) {
       case SupportSupernodeLogicFunctions.Register:
         return <TransactionElementCallSNRegister
@@ -186,39 +189,43 @@ export default ({ transaction, setClickTransaction, support }: {
           support={support}
         />
       case SupportSupernodeLogicFunctions.ChangeName:
-        return <TransactionElementCallSNChange
-          transaction={transaction}
-          setClickTransaction={setClickTransaction}
-          support={support}
-          title={t("wallet_history_sn_update_name")}
-        />
+        title = t("wallet_history_sn_update_name");
+        break;
       case SupportSupernodeLogicFunctions.ChangeAddress:
-        return <TransactionElementCallSNChange
-          transaction={transaction}
-          setClickTransaction={setClickTransaction}
-          support={support}
-          title={t("wallet_history_sn_update_address")}
-        />
+        title = t("wallet_history_sn_update_address");
+        break;
       case SupportSupernodeLogicFunctions.ChangeDescription:
-        return <TransactionElementCallSNChange
-          transaction={transaction}
-          setClickTransaction={setClickTransaction}
-          support={support}
-          title={t("wallet_history_sn_update_description")}
-        />
+        title = t("wallet_history_sn_update_description");
+        break;
       case SupportSupernodeLogicFunctions.ChangeEncode:
-        return <TransactionElementCallSNChange
-          transaction={transaction}
-          setClickTransaction={setClickTransaction}
-          support={support}
-          title={t("wallet_history_sn_update_enode")}
-        />
+        title = t("wallet_history_sn_update_enode");
+        break;
+      case SupportSupernodeLogicFunctions.ChangeNameByID:
+        title = t("wallet_history_sn_update_name");
+        break;
+      case SupportSupernodeLogicFunctions.ChangeDescriptionByID:
+        title = t("wallet_history_sn_update_description");
+        break;
+      case SupportSupernodeLogicFunctions.ChangeEncodeByID:
+        title = t("wallet_history_sn_update_enode");
+        break;
       default:
         return <></>
+    }
+    if (title) {
+      return <TransactionElementCallSNChange
+        transaction={transaction}
+        setClickTransaction={setClickTransaction}
+        support={support}
+        title={title}
+      />
     }
   }
 
   const CallMasternodeLogicFuncRender = (funcName: string, transaction: TransactionDetails, setClickTransaction: (transaction: TransactionDetails) => void, support: any) => {
+
+    let title = undefined;
+
     switch (funcName) {
       case SupportMasternodeLogicFunctions.Register:
         return <TransactionElementCallMNRegister
@@ -240,21 +247,27 @@ export default ({ transaction, setClickTransaction, support }: {
           support={support}
         />
       case SupportMasternodeLogicFunctions.ChangeEncode:
-        return <TransactionElementCallMNChange
-          title={t("wallet_history_mn_update_enode")}
-          transaction={transaction}
-          setClickTransaction={setClickTransaction}
-          support={support}
-        />
+        title = t("wallet_history_mn_update_enode");
+        break;
       case SupportMasternodeLogicFunctions.ChangeDescription:
-        return <TransactionElementCallMNChange
-          title={t("wallet_history_mn_update_description")}
-          transaction={transaction}
-          setClickTransaction={setClickTransaction}
-          support={support}
-        />
+        title = t("wallet_history_mn_update_description");
+        break;
+      case SupportMasternodeLogicFunctions.ChangeEncodeByID:
+        title = t("wallet_history_mn_update_enode");
+        break;
+      case SupportMasternodeLogicFunctions.ChangeDescriptionByID:
+        title = t("wallet_history_mn_update_description");
+        break;
       default:
         return <></>
+    }
+    if (title) {
+      return <TransactionElementCallMNChange
+        title={title}
+        transaction={transaction}
+        setClickTransaction={setClickTransaction}
+        support={support}
+      />
     }
   }
 

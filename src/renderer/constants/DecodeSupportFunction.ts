@@ -20,6 +20,10 @@ export enum SupportSupernodeLogicFunctions {
   ChangeAddress = "changeAddress",   // function changeAddress(address _addr, address _newAddr)
   ChangeEncode = "changeEnode",         // function changeEnode(address _addr, string memory _enode)
   ChangeDescription = "changeDescription",
+
+  ChangeNameByID = "changeNameByID",      // function changeName(address _addr, address _name)
+  ChangeEncodeByID = "changeEnodeByID",
+  ChangeDescriptionByID = "changeDescriptionByID",
 }
 export enum SupportSupernodeVoteFunctions {
   VoteOrApproval = "voteOrApproval", // function voteOrApproval(bool _isVote, address _dstAddr, uint[] memory _recordIDs)
@@ -31,6 +35,9 @@ export enum SupportMasternodeLogicFunctions {
   ChangeAddress = "changeAddress",   // function changeAddress(address _addr, address _newAddr)
   ChangeEncode = "changeEnode",         // function changeEnode(address _addr, string memory _enode)
   ChangeDescription = "changeDescription",
+
+  ChangeEncodeByID = "changeEnodeByID",
+  ChangeDescriptionByID = "changeDescriptionByID",
 }
 export enum SupportProposalFunctions {
   Create = "create",                //function create(string memory _title, uint _payAmount, uint _payTimes, uint _startPayTime, uint _endPayTime, string memory _description) external payable returns (uint);
@@ -151,6 +158,18 @@ function decodeMasternodeLogicFunctionData(IContract: Interface, fragment: Funct
         _addr: changeDescription[0],
       }
       break;
+    case SupportMasternodeLogicFunctions.ChangeEncodeByID:
+      let changeEnodeByID = IContract.decodeFunctionData(fragment, input);
+      formatDecodeResult = {
+        _id: changeEnodeByID[0],
+      }
+      break;
+    case SupportMasternodeLogicFunctions.ChangeDescriptionByID:
+      let changeDescriptionByID = IContract.decodeFunctionData(fragment, input);
+      formatDecodeResult = {
+        _id: changeDescriptionByID[0],
+      }
+      break;
     default:
       break;
   }
@@ -203,6 +222,24 @@ function decodeSupernodeLogicFunctionData(IContract: Interface, fragment: Functi
       let changeDescription = IContract.decodeFunctionData(fragment, input);
       formatDecodeResult = {
         _addr: changeDescription[0],
+      }
+      break;
+    case SupportSupernodeLogicFunctions.ChangeNameByID:
+      let changeNameByID = IContract.decodeFunctionData(fragment, input);
+      formatDecodeResult = {
+        _id: changeNameByID[0],
+      }
+      break;
+    case SupportSupernodeLogicFunctions.ChangeEncodeByID:
+      let changeEnodeByID = IContract.decodeFunctionData(fragment, input);
+      formatDecodeResult = {
+        _id: changeEnodeByID[0],
+      }
+      break;
+    case SupportSupernodeLogicFunctions.ChangeDescriptionByID:
+      let changeDescriptionByID = IContract.decodeFunctionData(fragment, input);
+      formatDecodeResult = {
+        _id: changeDescriptionByID[0],
       }
       break;
     default:

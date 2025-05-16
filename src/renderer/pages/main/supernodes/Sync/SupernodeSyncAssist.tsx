@@ -81,6 +81,20 @@ export default () => {
       || supernodeInfo?.name != updateParams.name
   }, [supernodeInfo, updateParams]);
 
+  const IP = useMemo(() => {
+    if (supernodeInfo) {
+      try {
+        const enode = supernodeInfo.enode;
+        const match = enode.match(/@([\d.]+):\d+/);
+        const ip = match ? match[1] : null;
+        return ip;
+      } catch (err) {
+        return undefined;
+      }
+    }
+    return undefined;
+  }, [supernodeInfo])
+
   useEffect(() => {
     if (walletsActiveKeystore?.mnemonic) {
       setNodeAddressSelectType(NodeAddressSelectType.GEN)
@@ -279,7 +293,11 @@ export default () => {
       // DO update address
       if (supernodeInfo.addr != address) {
         try {
-          const response = await supernodeLogicContract.changeAddress(supernodeInfo.addr, address);
+          const estimateGas = await supernodeLogicContract.estimateGas.changeAddress(
+            supernodeInfo.addr, address
+          );
+          const gasLimit = estimateGas.mul(2);
+          const response = await supernodeLogicContract.changeAddress(supernodeInfo.addr, address, { gasLimit });
           const { hash, data } = response;
           addTransaction({ to: supernodeLogicContract.address }, response, {
             call: {
@@ -310,7 +328,7 @@ export default () => {
       // DO Update Enode
       if (supernodeInfo.enode != enode) {
         try {
-          const response = await supernodeLogicContract.changeEnode(address, enode);
+          const response = await supernodeLogicContract.changeEnodeByID(supernodeInfo.id, enode);
           const { hash, data } = response;
           addTransaction({ to: supernodeLogicContract.address }, response, {
             call: {
@@ -337,7 +355,7 @@ export default () => {
       // DO Update description
       if (description != supernodeInfo.description) {
         try {
-          const response = await supernodeLogicContract.changeDescription(address, description);
+          const response = await supernodeLogicContract.changeDescriptionByID(supernodeInfo.id, description);
           const { hash, data } = response;
           addTransaction({ to: supernodeLogicContract.address }, response, {
             call: {
@@ -365,7 +383,7 @@ export default () => {
       // DO update name
       if (name != supernodeInfo.name) {
         try {
-          const response = await supernodeLogicContract.changeName(address, name);
+          const response = await supernodeLogicContract.changeNameByID(supernodeInfo.id, name);
           const { hash, data } = response;
           addTransaction({ to: supernodeLogicContract.address }, response, {
             call: {
@@ -718,7 +736,7 @@ export default () => {
       openSSH2CMDTerminalNodeModal && updateParams.address &&
       <SSH2CMDTerminalNodeModal openSSH2CMDTerminalNodeModal={openSSH2CMDTerminalNodeModal} setOpenSSH2CMDTerminalNodeModal={setOpenSSH2CMDTerminalNodeModal}
         nodeAddress={updateParams.address} nodeAddressPrivateKey={nodeAddressPrivateKey}
-        isSupernode={true}
+        isSupernode={true} IP={IP ? IP : undefined}
         onSuccess={(enode: string, nodeAddress: string) => {
           setHelpResult({ enode, nodeAddress });
           setUpdateParams({

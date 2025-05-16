@@ -180,7 +180,11 @@ export default () => {
       // DO update address
       if (masternodeInfo.addr != address) {
         try {
-          const response = await masternodeLogicContract.changeAddress(masternodeInfo.addr, address);
+          const estimateGas = await masternodeLogicContract.estimateGas.changeAddress(
+            masternodeInfo.addr, address
+          );
+          const gasLimit = estimateGas.mul(2);
+          const response = await masternodeLogicContract.changeAddress(masternodeInfo.addr, address , {gasLimit});
           const { hash, data } = response;
           addTransaction({ to: masternodeLogicContract.address }, response, {
             call: {
@@ -207,7 +211,7 @@ export default () => {
       // DO Update Enode
       if (masternodeInfo.enode != enode) {
         try {
-          const response = await masternodeLogicContract.changeEnode(address, enode);
+          const response = await masternodeLogicContract.changeEnodeByID(masternodeInfo.id, enode);
           const { hash, data } = response;
           addTransaction({ to: masternodeLogicContract.address }, response, {
             call: {
@@ -234,7 +238,7 @@ export default () => {
       // DO Update description
       if (description != masternodeInfo.description) {
         try {
-          const response = await masternodeLogicContract.changeDescription(address, description);
+          const response = await masternodeLogicContract.changeDescriptionByID(masternodeInfo.id, description);
           const { hash, data } = response;
           addTransaction({ to: masternodeLogicContract.address }, response, {
             call: {
@@ -250,7 +254,7 @@ export default () => {
           }
         } catch (err: any) {
           _updateResult.description = {
-            status: 1,
+            status: 0,
             error: err.error.reason
           }
         }
