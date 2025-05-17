@@ -220,7 +220,11 @@ export default () => {
       // DO Update Enode
       if (supernodeInfo.enode != enode) {
         try {
-          const response = await supernodeLoginContract.changeEnodeByID(supernodeInfo.id, enode);
+          const estimateGas = await supernodeLoginContract.estimateGas.changeEnodeByID(
+            supernodeInfo.id, enode
+          );
+          const gasLimit = estimateGas.mul(2);
+          const response = await supernodeLoginContract.changeEnodeByID(supernodeInfo.id, enode , {gasLimit} );
           const { hash, data } = response;
           addTransaction({ to: supernodeLoginContract.address }, response, {
             call: {
@@ -247,7 +251,11 @@ export default () => {
       // DO Update description
       if (description != supernodeInfo.description) {
         try {
-          const response = await supernodeLoginContract.changeDescriptionByID(supernodeInfo.id, description);
+          const estimateGas = await supernodeLoginContract.estimateGas.changeDescriptionByID(
+            supernodeInfo.id, description
+          );
+          const gasLimit = estimateGas.mul(2);
+          const response = await supernodeLoginContract.changeDescriptionByID(supernodeInfo.id, description, {gasLimit});
           const { hash, data } = response;
           addTransaction({ to: supernodeLoginContract.address }, response, {
             call: {
@@ -274,7 +282,12 @@ export default () => {
       // DO Update name
       if (name != supernodeInfo.name) {
         try {
-          const response = await supernodeLoginContract.changeNameByID(supernodeInfo.id, name);
+
+          const estimateGas = await supernodeLoginContract.estimateGas.changeDescriptionByID(
+            supernodeInfo.id, name
+          );
+          const gasLimit = estimateGas.mul(2);
+          const response = await supernodeLoginContract.changeNameByID(supernodeInfo.id, name , {gasLimit});
           const { hash, data } = response;
           addTransaction({ to: supernodeLoginContract.address }, response, {
             call: {

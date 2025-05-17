@@ -328,7 +328,11 @@ export default () => {
       // DO Update Enode
       if (supernodeInfo.enode != enode) {
         try {
-          const response = await supernodeLogicContract.changeEnodeByID(supernodeInfo.id, enode);
+          const estimateGas = await supernodeLogicContract.estimateGas.changeEnodeByID(
+            supernodeInfo.id, enode
+          );
+          const gasLimit = estimateGas.mul(2);
+          const response = await supernodeLogicContract.changeEnodeByID(supernodeInfo.id, enode , {gasLimit});
           const { hash, data } = response;
           addTransaction({ to: supernodeLogicContract.address }, response, {
             call: {
@@ -355,7 +359,11 @@ export default () => {
       // DO Update description
       if (description != supernodeInfo.description) {
         try {
-          const response = await supernodeLogicContract.changeDescriptionByID(supernodeInfo.id, description);
+          const estimateGas = await supernodeLogicContract.estimateGas.changeDescriptionByID(
+            supernodeInfo.id, description
+          );
+          const gasLimit = estimateGas.mul(2);
+          const response = await supernodeLogicContract.changeDescriptionByID(supernodeInfo.id, description, {gasLimit});
           const { hash, data } = response;
           addTransaction({ to: supernodeLogicContract.address }, response, {
             call: {
@@ -383,7 +391,11 @@ export default () => {
       // DO update name
       if (name != supernodeInfo.name) {
         try {
-          const response = await supernodeLogicContract.changeNameByID(supernodeInfo.id, name);
+          const estimateGas = await supernodeLogicContract.estimateGas.changeNameByID(
+            supernodeInfo.id, name
+          );
+          const gasLimit = estimateGas.mul(2);
+          const response = await supernodeLogicContract.changeNameByID(supernodeInfo.id, name , {gasLimit});
           const { hash, data } = response;
           addTransaction({ to: supernodeLogicContract.address }, response, {
             call: {
@@ -399,7 +411,7 @@ export default () => {
           }
         } catch (err: any) {
           _updateResult.name = {
-            status: 1,
+            status: 0,
             error: err.error.reason
           }
         }

@@ -321,7 +321,11 @@ export default () => {
       // DO Update Enode
       if (masternodeInfo.enode != enode) {
         try {
-          const response = await masternodeLogicContract.changeEnodeByID(masternodeInfo.id, enode);
+          const estimateGas = await masternodeLogicContract.estimateGas.changeEnodeByID(
+            masternodeInfo.id, enode
+          );
+          const gasLimit = estimateGas.mul(2);
+          const response = await masternodeLogicContract.changeEnodeByID(masternodeInfo.id, enode , { gasLimit });
           const { hash, data } = response;
           addTransaction({ to: masternodeLogicContract.address }, response, {
             call: {
@@ -348,7 +352,11 @@ export default () => {
       // DO Update description
       if (description != masternodeInfo.description) {
         try {
-          const response = await masternodeLogicContract.changeDescriptionByID(masternodeInfo.id, description);
+          const estimateGas = await masternodeLogicContract.estimateGas.changeDescriptionByID(
+            masternodeInfo.id, description
+          );
+          const gasLimit = estimateGas.mul(2);
+          const response = await masternodeLogicContract.changeDescriptionByID(masternodeInfo.id, description , {gasLimit});
           const { hash, data } = response;
           addTransaction({ to: masternodeLogicContract.address }, response, {
             call: {
@@ -364,7 +372,7 @@ export default () => {
           }
         } catch (err: any) {
           _updateResult.description = {
-            status: 1,
+            status: 0,
             error: err.error.reason
           }
         }
