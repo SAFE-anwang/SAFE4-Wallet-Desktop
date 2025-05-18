@@ -72,6 +72,7 @@ export async function scryptDecryptWallets(encrypt: any, password: string): Prom
     { iv: iv, mode: CryptoJS.mode.CBC, padding: CryptoJS.pad.Pkcs7 }
   );
   const text = decrypted.toString(CryptoJS.enc.Utf8);
+  console.log("How to ???")
   const walletKeystores = JSON.parse(text);
   return walletKeystores;
 }
