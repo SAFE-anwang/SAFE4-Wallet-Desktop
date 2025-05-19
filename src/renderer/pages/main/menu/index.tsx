@@ -1,4 +1,4 @@
-import { Typography, Card, Divider, Row, Col } from 'antd';
+import { Typography, Card, Divider, Row, Col, Badge } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import {
@@ -7,6 +7,7 @@ import {
 import "./index.css"
 import { useTranslation } from 'react-i18next';
 import LanguageSelector from './language/LanguageSelector';
+import Version from './version';
 
 const { Title, Text } = Typography;
 
@@ -28,20 +29,9 @@ export default () => {
         <Card className="menu-item-container" style={{ marginBottom: "20px" }}>
 
           <Divider style={{ margin: "0px 0px" }} />
-          <Row className='menu-item' onClick={() => {
-            // navigate("/main/menu/storage")
-          }}>
-            <Col span={2} style={{ textAlign: "center" }}>
-              <NumberOutlined />
-            </Col>
-            <Col span={20}>
-              {t("version")} 2.0.3
-            </Col>
-            {/* <Col span={2} style={{ textAlign: "center" }}>
-              <RightOutlined />
-            </Col> */}
-          </Row>
+          <Version />
           <Divider style={{ margin: "0px 0px" }} />
+
           <Row className='menu-item' onClick={() => {
             navigate("/main/menu/network")
           }}>

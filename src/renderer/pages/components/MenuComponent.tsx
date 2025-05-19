@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { AppstoreOutlined, WalletOutlined, SettingOutlined, ClusterOutlined, ApartmentOutlined, FilePptOutlined, ApiOutlined, GiftOutlined, FileZipOutlined, SyncOutlined, SwapOutlined, BankOutlined } from '@ant-design/icons';
-import { Button, Dropdown, MenuProps, MenuTheme, Space, message } from 'antd';
+import { Badge, Button, Dropdown, MenuProps, MenuTheme, Space, message } from 'antd';
 import { Menu, Switch } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import WalletSwitchComponent from './WalletSwitchComponent';
@@ -42,8 +42,9 @@ const MenuComponent: React.FC = () => {
       getItem(t("getTestCoin"), '/main/gettestcoin', <GiftOutlined />),
     ]
   }, [t]);
+
   const bottom_items: MenuItem[] = [
-    getItem(t("menu"), '/main/menu', <SettingOutlined />),
+    getItem(<>{t("menu")}</>, '/main/menu', <Badge style={{height:"8px",width:"8px"}} dot><SettingOutlined /></Badge>),
   ];
 
   const onClick: MenuProps['onClick'] = (e) => {
