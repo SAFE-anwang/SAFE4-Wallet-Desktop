@@ -104,6 +104,7 @@ export interface IApplicationState {
   },
 
   language: string,
+  platform: string
 
   safeswap: {
     [chainId: number]: {
@@ -135,7 +136,8 @@ const initialState: IApplicationState = {
   },
   language: "zh",
   safeswap: undefined,
-  SlippageTolerance: "0.005"
+  SlippageTolerance: "0.005",
+  platform : "",
 }
 
 export default createReducer(initialState, (builder) => {
@@ -148,6 +150,7 @@ export default createReducer(initialState, (builder) => {
     state.data["kys"] = kys;
     state.rpcConfigs = rpcConfigs;
     state.language = appProps.language;
+    state.platform = appProps.platform;
   })
 
     .addCase(applicationBlockchainUpdateBlockNumber, (state, { payload }) => {

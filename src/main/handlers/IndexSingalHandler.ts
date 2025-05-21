@@ -77,7 +77,8 @@ export class IndexSingalHandler implements ListenSignalHandler {
       wallet_names,
       app_props,
       os : {
-        locale : this.ctx.osLocale
+        locale : this.ctx.osLocale ,
+        platform : this.ctx.os
       }
     }
   }

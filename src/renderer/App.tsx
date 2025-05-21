@@ -165,6 +165,7 @@ export default function App() {
         if (!appProps.language) {
           appProps.language = os.locale;
         }
+        appProps.platform = os.platform;
         setDbRpcConfigs(rpcConfigs);
         dispatch(applicationDataLoaded({
           path, rpcConfigs, appProps

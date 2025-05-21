@@ -96,4 +96,10 @@ export function useSafeswapSlippageTolerance(): string {
   })
 }
 
+export function useApplicationPlatform() : string {
+  return useSelector((state: AppState) => {
+    return state.application.platform;
+  })
+}
+
 

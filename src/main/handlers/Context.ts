@@ -16,6 +16,7 @@ export class Context {
     };
 
   osLocale : string = "zh";
+  os : string = "";
 
   constructor(resourcePath: string, appIsPackaged: boolean) {
     this.path.resource = resourcePath;
@@ -42,8 +43,9 @@ export class Context {
     this.path.kys = path.join(this.path.data, this.path.kys);
   }
 
-  public updateOSLocale( locale : string ){
+  public updateOSLocale( locale : string , os : string ){
     this.osLocale = locale;
+    this.os = os;
   }
 
 }

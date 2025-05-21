@@ -194,6 +194,14 @@ export interface CrossChainVO {
   status: number
 }
 
+export interface WalletVersionVO {
+  appName : string ,
+  appOS   : string ,
+  version : string ,
+  url     : string ,
+  updates : string
+}
+
 export function AddressActivityFormat(activity: AddressActivityVO): AddressActivityVO {
   const { data } = activity;
   let _data: any;

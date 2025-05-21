@@ -1,10 +1,14 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { AppstoreOutlined, WalletOutlined, SettingOutlined, ClusterOutlined, ApartmentOutlined, FilePptOutlined, ApiOutlined, GiftOutlined, FileZipOutlined, SyncOutlined, SwapOutlined, BankOutlined } from '@ant-design/icons';
 import { Badge, Button, Dropdown, MenuProps, MenuTheme, Space, message } from 'antd';
 import { Menu, Switch } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import WalletSwitchComponent from './WalletSwitchComponent';
 import { useTranslation } from 'react-i18next';
+import { useWeb3React } from '@web3-react/core';
+import { fetchWalletLatest } from '../../services/getWalletVersion';
+import useSafeScan from '../../hooks/useSafeScan';
+import { useApplicationPlatform } from '../../state/application/hooks';
 
 type MenuItem = Required<MenuProps>['items'][number];
 
@@ -28,6 +32,10 @@ const MenuComponent: React.FC = () => {
   const [current, setCurrent] = useState('/main/wallet');
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const { chainId } = useWeb3React();
+  const { API } = useSafeScan();
+  const platform = useApplicationPlatform();
+
   const items: MenuItem[] = useMemo(() => {
     return [
       getItem(t("wallet"), '/main/wallet', <WalletOutlined />),
@@ -44,13 +52,24 @@ const MenuComponent: React.FC = () => {
   }, [t]);
 
   const bottom_items: MenuItem[] = [
-    getItem(<>{t("menu")}</>, '/main/menu', <Badge style={{height:"8px",width:"8px"}} dot><SettingOutlined /></Badge>),
+    getItem(<>{t("menu")}</>, '/main/menu', <Badge style={{ height: "8px", width: "8px" }} dot><SettingOutlined /></Badge>),
   ];
 
   const onClick: MenuProps['onClick'] = (e) => {
     setCurrent(e.key);
     navigate(e.key)
   };
+
+  useEffect(() => {
+    if ( platform && API ){
+      console.log("Platform ==> " , platform)
+      fetchWalletLatest(API, { appOS: "windows" }).then(data => {
+        console.log("Fetch Wallet.Latest = " , data )
+      }).catch(err => {
+        console.log("fetch Wallet.latest.Error ", err);
+      })
+    }
+  }, [API , platform]);
 
   return (
     <div style={{

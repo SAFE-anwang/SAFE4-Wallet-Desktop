@@ -15,6 +15,7 @@ import log from 'electron-log';
 import MenuBuilder from './menu';
 import { resolveHtmlPath } from './util';
 import { ApplicationIpcManager } from './ApplicationIpcManager';
+const os = require('os');
 const fs = require("fs");
 const ssh2 = require("ssh2");
 
@@ -188,6 +189,6 @@ app
       // dock icon is clicked and there are no other windows open.
       if (mainWindow === null) createWindow();
     });
-    appIpcManager.ctx.updateOSLocale( app.getLocale() );
+    appIpcManager.ctx.updateOSLocale( app.getLocale() , os.platform());
   })
   .catch(console.log);
