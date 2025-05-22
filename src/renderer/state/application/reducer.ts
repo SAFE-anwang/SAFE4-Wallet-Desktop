@@ -22,9 +22,11 @@ import {
   applicationUpdateLanguage,
   applicationUpdateSafeswapTokens,
   applicationUpdateSafeswapSlippageTolerance,
+  applicationUpdateWalletUpdateVersion,
+  applicationUpdateWalletUpdateIgore,
 } from './action';
 
-import { ContractVO } from '../../services';
+import { ContractVO, WalletVersionVO } from '../../services';
 import { Token } from '@uniswap/sdk';
 
 export const enum AfterSetPasswordTODO {
@@ -104,7 +106,14 @@ export interface IApplicationState {
   },
 
   language: string,
-  platform: string
+  platform: string,
+
+  WalletUpdate: {
+    currentVersion: string,
+    currentVersionCode: number,
+    latestWallet?: WalletVersionVO,
+    ignore : boolean,
+  },
 
   safeswap: {
     [chainId: number]: {
@@ -113,7 +122,6 @@ export interface IApplicationState {
     }
   } | undefined,
   SlippageTolerance: string,
-
 }
 
 const initialState: IApplicationState = {
@@ -137,7 +145,12 @@ const initialState: IApplicationState = {
   language: "zh",
   safeswap: undefined,
   SlippageTolerance: "0.005",
-  platform : "",
+  platform: "",
+  WalletUpdate: {
+    currentVersion:    "2.0.3" ,
+    currentVersionCode: 100    ,
+    ignore : false
+  }
 }
 
 export default createReducer(initialState, (builder) => {
@@ -315,6 +328,14 @@ export default createReducer(initialState, (builder) => {
 
     .addCase(applicationUpdateSafeswapSlippageTolerance, (state, { payload }) => {
       state.SlippageTolerance = payload;
+    })
+
+    .addCase(applicationUpdateWalletUpdateVersion, (state, { payload }) => {
+      state.WalletUpdate.latestWallet = payload;
+    })
+
+    .addCase(applicationUpdateWalletUpdateIgore , (state , {payload}) => {
+      state.WalletUpdate.ignore = payload;
     })
 
 })

@@ -8,7 +8,10 @@ import { useTranslation } from 'react-i18next';
 import { useWeb3React } from '@web3-react/core';
 import { fetchWalletLatest } from '../../services/getWalletVersion';
 import useSafeScan from '../../hooks/useSafeScan';
-import { useApplicationPlatform } from '../../state/application/hooks';
+import { useApplicationPlatform, useApplicationWalletUpdate, useBlockNumber } from '../../state/application/hooks';
+import { useDispatch } from 'react-redux';
+import { applicationUpdateWalletUpdateVersion } from '../../state/application/action';
+import VersionModal from '../main/menu/version/VersionModal';
 
 type MenuItem = Required<MenuProps>['items'][number];
 
@@ -32,9 +35,10 @@ const MenuComponent: React.FC = () => {
   const [current, setCurrent] = useState('/main/wallet');
   const navigate = useNavigate();
   const { t } = useTranslation();
-  const { chainId } = useWeb3React();
   const { API } = useSafeScan();
   const platform = useApplicationPlatform();
+  const blockNumber = useBlockNumber();
+  const dispatch = useDispatch();
 
   const items: MenuItem[] = useMemo(() => {
     return [
@@ -51,25 +55,40 @@ const MenuComponent: React.FC = () => {
     ]
   }, [t]);
 
-  const bottom_items: MenuItem[] = [
-    getItem(<>{t("menu")}</>, '/main/menu', <Badge style={{ height: "8px", width: "8px" }} dot><SettingOutlined /></Badge>),
-  ];
-
   const onClick: MenuProps['onClick'] = (e) => {
     setCurrent(e.key);
     navigate(e.key)
   };
 
   useEffect(() => {
-    if ( platform && API ){
-      console.log("Platform ==> " , platform)
-      fetchWalletLatest(API, { appOS: "windows" }).then(data => {
-        console.log("Fetch Wallet.Latest = " , data )
+    if (platform && API) {
+      fetchWalletLatest(API, { appOS: platform }).then(data => {
+        if (data.appName) {
+          dispatch(applicationUpdateWalletUpdateVersion(data));
+        }
       }).catch(err => {
-        console.log("fetch Wallet.latest.Error ", err);
+
       })
     }
-  }, [API , platform]);
+  }, [API, platform, blockNumber]);
+
+  const walletUpdate = useApplicationWalletUpdate();
+  const isLatestWalletVersion = walletUpdate.latestWallet ? walletUpdate.latestWallet.version == walletUpdate.currentVersion : true;
+
+  const bottom_items = useMemo<MenuItem[]>(() => {
+    return [
+      getItem(<>{t("menu")}</>, '/main/menu', !isLatestWalletVersion ? <Badge style={{ height: "8px", width: "8px" }} dot><SettingOutlined /></Badge> : <SettingOutlined />),
+    ]
+  }, [isLatestWalletVersion]);
+  const [openVersionModal, setOpenVersionModal] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (walletUpdate && walletUpdate.latestWallet) {
+      if (walletUpdate.currentVersion != walletUpdate.latestWallet.version && !walletUpdate.ignore) {
+        setOpenVersionModal(true);
+      }
+    }
+  }, [walletUpdate])
 
   return (
     <div style={{
@@ -108,6 +127,7 @@ const MenuComponent: React.FC = () => {
           items={bottom_items}
         />
       </div>
+      <VersionModal openVersionModal={openVersionModal} setOpenVersionModal={setOpenVersionModal} />
     </div>
   );
 };

@@ -1,6 +1,6 @@
 import { createAction } from '@reduxjs/toolkit';
 import { AfterSetPasswordTODO } from './reducer';
-import { ContractVO } from '../../services';
+import { ContractVO, WalletVersionVO } from '../../services';
 import { Token } from '@uniswap/sdk';
 
 export const applicationBlockchainUpdateBlockNumber = createAction<{ blockNumber: number, timestamp: number }>
@@ -119,3 +119,7 @@ export const applicationUpdateSafeswapTokens = createAction<{
 )
 
 export const applicationUpdateSafeswapSlippageTolerance = createAction<string>("application/updateSafeswapSlippageTolerance");
+
+export const applicationUpdateWalletUpdateVersion = createAction<WalletVersionVO>("application/updateWalletUpdate");
+
+export const applicationUpdateWalletUpdateIgore = createAction<boolean>("application/updateWalletUpdateIgnore");

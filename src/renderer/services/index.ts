@@ -199,7 +199,8 @@ export interface WalletVersionVO {
   appOS   : string ,
   version : string ,
   url     : string ,
-  updates : string
+  updates : string ,
+  versionCode : number ,
 }
 
 export function AddressActivityFormat(activity: AddressActivityVO): AddressActivityVO {

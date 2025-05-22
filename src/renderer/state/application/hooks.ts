@@ -2,7 +2,6 @@
 import { useSelector } from 'react-redux'
 import { AppState } from '../index';
 import { AfterSetPasswordTODO } from './reducer';
-import { Token } from '@uniswap/sdk';
 import { useWeb3React } from '@web3-react/core';
 
 
@@ -98,7 +97,17 @@ export function useSafeswapSlippageTolerance(): string {
 
 export function useApplicationPlatform() : string {
   return useSelector((state: AppState) => {
-    return state.application.platform;
+    const platform = state.application.platform;
+    if ( platform.indexOf("darwin") >= 0 ){
+      return "macos";
+    }
+    return "windows"
+  })
+}
+
+export function useApplicationWalletUpdate(){
+  return useSelector((state: AppState) => {
+    return state.application.WalletUpdate;
   })
 }
 
