@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next";
 import { useApplicationWalletUpdate } from "../../../../state/application/hooks";
 import { useDispatch } from "react-redux";
 import { applicationUpdateWalletUpdateIgore } from "../../../../state/application/action";
+import { useMemo } from "react";
 
 const { Title, Text, Link } = Typography;
 
@@ -21,6 +22,20 @@ export default ({
   const walletTooLow = walletUpdate.latestWallet ? walletUpdate.latestWallet.versionCode - walletUpdate.currentVersionCode > 10 : false;
 
   const dispatch = useDispatch();
+  const updates = useMemo(() => {
+    if (walletUpdate.latestWallet) {
+      const _updates = JSON.parse(walletUpdate.latestWallet.updates);
+      try {
+        const arr = JSON.parse(walletUpdate.latestWallet.updates);
+        if (typeof arr == 'object') {
+          return arr;
+        }
+      } catch (err) {
+        return [];
+      }
+      return [];
+    }
+  }, [walletUpdate]);
 
   const cancel = () => {
     setOpenVersionModal(false);
@@ -32,7 +47,7 @@ export default ({
       <Divider />
       <Row>
         {
-          walletTooLow && <Col span={24} style={{marginBottom:"20px"}}>
+          walletTooLow && <Col span={24} style={{ marginBottom: "20px" }}>
             <Alert type="warning" showIcon message={<>
               您当前使用的版本太低,强烈推荐您安装最新钱包.
             </>} />
@@ -44,11 +59,11 @@ export default ({
         </Col>
         <Col span={24} style={{ marginTop: "5px" }}>
           {
-            walletUpdate.latestWallet && walletUpdate.latestWallet.updates && <>
+            updates && <>
               <Text type="secondary">更新日志</Text>
               <ul style={{ marginTop: "5px" }}>
                 {
-                  JSON.parse(walletUpdate.latestWallet.updates).map((tip: string) => {
+                  updates.map((tip: string) => {
                     return <li>{tip}</li>
                   })
                 }
