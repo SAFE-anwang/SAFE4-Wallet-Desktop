@@ -24,6 +24,7 @@ import {
   applicationUpdateSafeswapSlippageTolerance,
   applicationUpdateWalletUpdateVersion,
   applicationUpdateWalletUpdateIgore,
+  applicationUpdateSNAddresses,
 } from './action';
 
 import { ContractVO, WalletVersionVO } from '../../services';
@@ -112,8 +113,12 @@ export interface IApplicationState {
     currentVersion: string,
     currentVersionCode: number,
     latestWallet?: WalletVersionVO,
-    ignore : boolean,
+    ignore: boolean,
   },
+
+  SNAddresses?: {
+    [chainId: number]: string[],
+  }
 
   safeswap: {
     [chainId: number]: {
@@ -147,9 +152,9 @@ const initialState: IApplicationState = {
   SlippageTolerance: "0.005",
   platform: "",
   WalletUpdate: {
-    currentVersion:    "2.0.3" ,
-    currentVersionCode: 100    ,
-    ignore : false
+    currentVersion: "2.0.3",
+    currentVersionCode: 100,
+    ignore: false
   }
 }
 
@@ -334,8 +339,15 @@ export default createReducer(initialState, (builder) => {
       state.WalletUpdate.latestWallet = payload;
     })
 
-    .addCase(applicationUpdateWalletUpdateIgore , (state , {payload}) => {
+    .addCase(applicationUpdateWalletUpdateIgore, (state, { payload }) => {
       state.WalletUpdate.ignore = payload;
+    })
+
+    .addCase(applicationUpdateSNAddresses, (state, { payload }) => {
+      const _snAddresses: { [chainId: number]: string[] } = {
+        [payload.chainId] : payload.addresses
+      };
+      state.SNAddresses = _snAddresses;
     })
 
 })

@@ -3,17 +3,11 @@ import { CurrencyAmount, JSBI } from '@uniswap/sdk';
 import { Typography, Row, Col, Progress, Table, Badge, Button, Space, Card, Alert, Divider, Modal, Input } from 'antd';
 import { ColumnsType } from 'antd/es/table';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useAccountManagerContract, useMulticallContract, useSupernodeStorageContract, useSupernodeVoteContract } from '../../../hooks/useContracts';
 import { formatSupernodeInfo, SupernodeInfo } from '../../../structs/Supernode';
-import { useDispatch } from 'react-redux';
-import { applicationControlUpdateEditSupernodeId, applicationControlVoteSupernode } from '../../../state/application/action';
 import { ethers } from 'ethers';
 import { useWalletsActiveAccount } from '../../../state/wallets/hooks';
-import Supernode from './Supernode';
 import AddressComponent from '../../components/AddressComponent';
-import { Safe4_Business_Config } from '../../../config';
-import { ZERO } from '../../../utils/CurrentAmountUtils';
 import { useBlockNumber, useSNAddresses, useTimestamp } from '../../../state/application/hooks';
 import { RenderNodeState } from './Supernodes';
 import useAddrNodeInfo from '../../../hooks/useAddrIsNode';
@@ -21,7 +15,6 @@ import { AccountRecord, formatAccountRecord, formatRecordUseInfo } from '../../.
 import { DateTimeFormat } from '../../../utils/DateUtils';
 import { useTranslation } from 'react-i18next';
 import { LockOutlined, UnlockFilled, UnlockOutlined } from '@ant-design/icons';
-import SwitchVoteModal from './SwitchVoteModal';
 
 const { Text } = Typography;
 
@@ -35,19 +28,17 @@ export function toFixedNoRound(number: number, decimalPlaces: number) {
   return parseFloat(truncatedStr).toFixed(decimalPlaces);
 }
 
-const Supernode_Page_Size = 10;
+const Supernode_Page_Size = 5;
 
 export default ({
-  queryMySupernodes, queryJoinSupernodes, queryVotedSupernodes
+  selectCallback,
+  disabledSNAddresses
 }: {
-  queryMySupernodes: boolean,
-  queryJoinSupernodes: boolean,
-  queryVotedSupernodes: boolean,
+  selectCallback: (supernodeInfo: SupernodeInfo) => void,
+  disabledSNAddresses: string[],
 }) => {
 
   const { t } = useTranslation();
-  const navigate = useNavigate();
-  const dispatch = useDispatch();
   const blockNumber = useBlockNumber();
   const timestamp = useTimestamp();
   const supernodeStorageContract = useSupernodeStorageContract();
@@ -57,8 +48,7 @@ export default ({
   const activeAccount = useWalletsActiveAccount();
   const [supernodes, setSupernodes] = useState<SupernodeInfo[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
-  const [openSupernodeModal, setOpenSupernodeModal] = useState<boolean>(false);
-  const [openSupernodeInfo, setOpenSupernodeInfo] = useState<SupernodeInfo>();
+
   const [queryKey, setQueryKey] = useState<string>();
   const [queryKeyError, setQueryKeyError] = useState<string>();
   const [allVoteNum, setAllVoteNum] = useState<CurrencyAmount>(CurrencyAmount.ether(JSBI.BigInt(1)));
@@ -73,7 +63,6 @@ export default ({
   }, [activeAccountNodeInfo]);
   const snAddresses = useSNAddresses();
 
-  const [openSwitchVoteModal, setOpenSwitchVoteModal] = useState<boolean>(false);
 
   useEffect(() => {
     if (supernodeVoteContract) {
@@ -96,59 +85,18 @@ export default ({
         doSearch();
         return;
       }
-      if (queryMySupernodes && activeAccount) {
-        // getAddrNum4Creator
-        supernodeStorageContract.callStatic.getAddrNum4Creator(activeAccount)
-          .then(data => {
-            if (data.toNumber() == 0) {
-              setSupernodes([]);
-            }
-            setPagination({
-              total: data.toNumber(),
-              pageSize: pagination ? pagination.pageSize : Supernode_Page_Size,
-              current: 1,
-            })
-          });
-      } else if (queryJoinSupernodes && activeAccount) {
-        // getAddrNum4Creator
-        supernodeStorageContract.callStatic.getAddrNum4Partner(activeAccount)
-          .then(data => {
-            if (data.toNumber() == 0) {
-              setSupernodes([]);
-            }
-            setPagination({
-              total: data.toNumber(),
-              pageSize: pagination ? pagination.pageSize : Supernode_Page_Size,
-              current: 1,
-            })
-          });
-      } else if (queryVotedSupernodes && activeAccount) {
-        // getSNNum4Voter
-        supernodeVoteContract.callStatic.getSNNum4Voter(activeAccount)
-          .then(data => {
-            if (data.toNumber() == 0) {
-              setSupernodes([]);
-            }
-            setPagination({
-              total: data.toNumber(),
-              pageSize: pagination ? pagination.pageSize : Supernode_Page_Size,
-              current: 1,
-            })
-          });
-      } else {
-        // function getNum() external view returns (uint);
-        supernodeStorageContract.callStatic.getNum()
-          .then(data => {
-            if (data.toNumber() == 0) {
-              setSupernodes([]);
-            }
-            setPagination({
-              total: data.toNumber(),
-              pageSize: pagination ? pagination.pageSize : Supernode_Page_Size,
-              current: 1,
-            })
-          });
-      }
+      // function getNum() external view returns (uint);
+      supernodeStorageContract.callStatic.getNum()
+        .then(data => {
+          if (data.toNumber() == 0) {
+            setSupernodes([]);
+          }
+          setPagination({
+            total: data.toNumber(),
+            pageSize: pagination ? pagination.pageSize : Supernode_Page_Size,
+            current: 1,
+          })
+        });
     }
   }, [supernodeStorageContract, supernodeVoteContract, activeAccount, blockNumber, queryKey]);
 
@@ -185,17 +133,7 @@ export default ({
             const supernodeInfo = formatSupernodeInfo(_supernodeInfo);
             supernodeInfo.totalVoteNum = CurrencyAmount.ether(JSBI.BigInt(totalVoteNum));
             supernodeInfo.totalAmount = CurrencyAmount.ether(JSBI.BigInt(totalAmount));
-            if (queryMySupernodes) {
-              if (supernodeInfo.creator == activeAccount) {
-                supernodeInfos.push(supernodeInfo);
-              }
-            } else if (queryJoinSupernodes) {
-              if (supernodeInfo.founders.map(founder => founder.addr).indexOf(activeAccount) >= 0) {
-                supernodeInfos.push(supernodeInfo);
-              }
-            } else {
-              supernodeInfos.push(supernodeInfo);
-            }
+            supernodeInfos.push(supernodeInfo);
           }
 
           const getRecordByIDFragment = accountManagerContract.interface.getFunction("getRecordByID");
@@ -236,13 +174,12 @@ export default ({
             });
         })
     }
-  }, [supernodeStorageContract, supernodeVoteContract, accountManagerContract, multicallContract, queryMySupernodes, queryJoinSupernodes, activeAccount]);
+  }, [supernodeStorageContract, supernodeVoteContract, accountManagerContract, multicallContract, activeAccount]);
 
   useEffect(() => {
     if (pagination && supernodeStorageContract && supernodeVoteContract && multicallContract) {
       const { pageSize, current, total } = pagination;
       if (current && pageSize && total) {
-
         //////////////////// 正序 ////////////////////////
         let _position = (current - 1) * pageSize;
         let _offset = pageSize;
@@ -259,29 +196,10 @@ export default ({
           return;
         }
         setLoading(true);
-        if (queryMySupernodes) {
-          // getAddrs4Creator:
-          supernodeStorageContract.callStatic.getAddrs4Creator(activeAccount, position, offset)
-            .then((addresses: any) => {
-              loadSupernodeInfoList(addresses.map((addr: any) => addr).reverse())
-            });
-        } else if (queryJoinSupernodes) {
-          supernodeStorageContract.callStatic.getAddrs4Partner(activeAccount, _position, _offset)
-            .then((addresses: any) => {
-              loadSupernodeInfoList(addresses)
-            });
-        } else if (queryVotedSupernodes) {
-          supernodeVoteContract.callStatic.getSNs4Voter(activeAccount, _position, _offset)
-            .then((result: any) => {
-              const addresses = result[0];
-              loadSupernodeInfoList(addresses);
-            });
-        } else {
-          supernodeStorageContract.callStatic.getAll(_position, _offset)
-            .then((addresses: any) => {
-              loadSupernodeInfoList(addresses)
-            });
-        }
+        supernodeStorageContract.callStatic.getAll(_position, _offset)
+          .then((addresses: any) => {
+            loadSupernodeInfoList(addresses)
+          });
       }
     }
   }, [pagination]);
@@ -378,9 +296,6 @@ export default ({
       key: 'addr',
       render: (addr, supernodeInfo: SupernodeInfo) => {
         const { id, founders, incentivePlan } = supernodeInfo;
-        const amount = founders.map(founder => founder.amount).reduce((a0, a1) => { return a0.add(a1) }, ZERO);
-        const supernodeTarget = CurrencyAmount.ether(ethers.utils.parseEther(Safe4_Business_Config.Supernode.Create.LockAmount + "").toBigInt());
-        const couldAddPartner = supernodeTarget.greaterThan(amount) && activeAccountNodeInfo && !activeAccountNodeInfo.isNode;
         return <>
           <Row>
             <Col span={4}>
@@ -398,52 +313,10 @@ export default ({
             </Col>
             <Col span={20}>
               <Text>{id}</Text>
-              {
-                !queryJoinSupernodes && !queryMySupernodes && <>
-                  <Divider type='vertical' />
-                  <Text type='secondary'>投票分红:{incentivePlan.voter}%</Text>
-                </>
-              }
+              <Divider type='vertical' />
+              <Text type='secondary'>投票分红:{incentivePlan.voter}%</Text>
               <Space direction='horizontal' style={{ float: "right" }}>
-                {
-                  queryMySupernodes &&
-                  <Button size='small' type={supernodeInfo.state != 1 ? "primary" : "default"} style={{ float: "right" }} onClick={() => {
-                    dispatch(applicationControlUpdateEditSupernodeId(supernodeInfo.id));
-                    navigate("/main/supernodes/selectSyncMode")
-                  }}>{t("sync")}</Button>
-                }
-                {
-                  couldAddPartner &&
-                  <Button size='small' type='primary' style={{ float: "right" }} onClick={() => {
-                    dispatch(applicationControlVoteSupernode(addr));
-                    navigate("/main/supernodes/append");
-                  }}>{t("join")}</Button>
-                }
-                {
-                  couldVote && !couldAddPartner && <Button size='small' type='default' style={{ float: "right" }} onClick={() => {
-                    dispatch(applicationControlVoteSupernode(addr));
-                    navigate("/main/supernodes/vote");
-                  }}>{t("vote")}</Button>
-                }
-                {
-                  queryVotedSupernodes && <Button size='small' type='default' style={{ float: "right" }} onClick={() => {
-                    setOpenSupernodeInfo(supernodeInfo);
-                    setOpenSwitchVoteModal(true);
-                  }}>转投</Button>
-                }
-                <Button size='small' type='default' style={{ float: "right" }} onClick={() => {
-                  // if (supernodeStorageContract) {
-                  //   supernodeStorageContract.callStatic.getInfo(addr)
-                  //     .then(_supernodeInfo => {
-                  //       setOpenSupernodeInfo(formatSupernodeInfo(_supernodeInfo));
-                  //       setOpenSupernodeModal(true);
-                  //     })
-                  //     .catch(err => {
-                  //     })
-                  // }
-                  setOpenSupernodeInfo(supernodeInfo);
-                  setOpenSupernodeModal(true);
-                }}>{t("view")}</Button>
+                <Button disabled={disabledSNAddresses.indexOf(addr) >= 0} size='small' type='primary' onClick={() => selectCallback(supernodeInfo)}>确定</Button>
               </Space>
             </Col>
           </Row>
@@ -494,13 +367,13 @@ export default ({
         }
       }
     }
-  }, [supernodeStorageContract, queryKey, queryMySupernodes, queryJoinSupernodes]);
+  }, [supernodeStorageContract, queryKey]);
 
   return <>
 
     <Row style={{ marginBottom: "20px" }}>
       {
-        !queryVotedSupernodes && <>
+        <>
           <Col span={12}>
             <Input.Search size='large' placeholder={t("wallet_supernodes_id") + " | " + t("wallet_supernodes_address")} onChange={(event) => {
               setQueryKeyError(undefined);
@@ -517,18 +390,6 @@ export default ({
       }
     </Row>
 
-    {
-      queryMySupernodes && <Row style={{ marginBottom: "20px" }}>
-        <Col span={24}>
-          <Alert type='info' message={<>
-            <Text>{t("wallet_supernodes_my_tip0")}</Text><br />
-            <Text>{t("wallet_supernodes_my_tip1")} <Text strong>{t("sync")}</Text> ,{t("wallet_supernodes_my_tip2")}</Text><br />
-            <Text strong>{t("wallet_supernodes_my_tip3")}</Text><br />
-          </>} />
-        </Col>
-      </Row>
-    }
-
     <Table loading={loading} onChange={(pagination) => {
       const { current, pageSize, total } = pagination;
       setPagination({
@@ -537,21 +398,6 @@ export default ({
         total
       })
     }} dataSource={supernodes} columns={columns} size="large" pagination={pagination} />
-
-    <Modal open={openSupernodeModal} width={1100} footer={null} closable onCancel={() => {
-      setOpenSupernodeInfo(undefined);
-      setOpenSupernodeModal(false);
-    }}>
-      {
-        openSupernodeInfo && <Supernode supernodeInfo={openSupernodeInfo} />
-      }
-    </Modal>
-
-    {
-      openSwitchVoteModal && openSupernodeInfo && <>
-        <SwitchVoteModal supernodeInfo={openSupernodeInfo} openSwitchVoteModal={openSwitchVoteModal} setOpenSwitchVoteModal={setOpenSwitchVoteModal} />
-      </>
-    }
 
   </>
 }

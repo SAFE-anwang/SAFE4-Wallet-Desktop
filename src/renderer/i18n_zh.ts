@@ -198,6 +198,7 @@ export default {
   wallet_supernodes_list: "超级节点列表",
   wallet_supernodes_mine: "我的超级节点",
   wallet_supernodes_join: "我加入的超级节点",
+  wallet_supernodes_myvoted: "我投票的超级节点",
   wallet_supernodes_rank: "排名",
   wallet_supernodes_state: "状态",
   wallet_supernodes_state_online: "在线",

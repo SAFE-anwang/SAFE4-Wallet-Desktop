@@ -111,7 +111,7 @@ export const applicationUpdateLanguage = createAction<string>(
 )
 
 export const applicationUpdateSafeswapTokens = createAction<{
-  chainId : number ,
+  chainId: number,
   tokenA: { chainId: number, address: string, decimals: number, name?: string, symbol?: string } | undefined,
   tokenB: { chainId: number, address: string, decimals: number, name?: string, symbol?: string } | undefined
 }>(
@@ -123,3 +123,5 @@ export const applicationUpdateSafeswapSlippageTolerance = createAction<string>("
 export const applicationUpdateWalletUpdateVersion = createAction<WalletVersionVO>("application/updateWalletUpdate");
 
 export const applicationUpdateWalletUpdateIgore = createAction<boolean>("application/updateWalletUpdateIgnore");
+
+export const applicationUpdateSNAddresses = createAction<{ chainId: number, addresses: string[] }>("application/updateSNAddresses");

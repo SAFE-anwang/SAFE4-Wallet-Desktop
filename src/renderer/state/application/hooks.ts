@@ -111,4 +111,11 @@ export function useApplicationWalletUpdate(){
   })
 }
 
+export function useSNAddresses(){
+  const {chainId} = useWeb3React();
+  if (!chainId) return undefined;
+  return useSelector((state: AppState) => {
+    return state.application.SNAddresses?state.application.SNAddresses[chainId]:undefined;
+  })
+}
 

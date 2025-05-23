@@ -76,7 +76,7 @@ export default ({
             }
             setPagination({
               total: data.toNumber(),
-              pageSize: Masternodes_Page_Size,
+              pageSize: pagination ? pagination.pageSize : Masternodes_Page_Size,
               current: 1,
             })
           })
@@ -88,7 +88,7 @@ export default ({
             }
             setPagination({
               total: data.toNumber(),
-              pageSize: Masternodes_Page_Size,
+              pageSize: pagination ? pagination.pageSize : Masternodes_Page_Size,
               current: 1,
             })
           })
@@ -101,7 +101,7 @@ export default ({
             }
             setPagination({
               total: data.toNumber(),
-              pageSize: Masternodes_Page_Size,
+              pageSize: pagination ? pagination.pageSize : Masternodes_Page_Size,
               current: 1,
             })
           })

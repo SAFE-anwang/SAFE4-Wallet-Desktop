@@ -6,6 +6,11 @@ import { useWalletsActiveAccount } from '../../../state/wallets/hooks';
 import SupernodeList from './SupernodeList';
 import useAddrNodeInfo from '../../../hooks/useAddrIsNode';
 import { useTranslation } from 'react-i18next';
+import { useMulticallContract, useSupernodeStorageContract } from '../../../hooks/useContracts';
+import { useBlockNumber, useSNAddresses } from '../../../state/application/hooks';
+import { useWeb3React } from '@web3-react/core';
+import { useDispatch } from 'react-redux';
+import { applicationUpdateSNAddresses } from '../../../state/application/action';
 
 const { Title, Text } = Typography;
 
@@ -39,25 +44,33 @@ export default () => {
   const activeAccount = useWalletsActiveAccount();
   const activeAccountNodeInfo = useAddrNodeInfo(activeAccount);
   const [activeItemKey, setActiveItemKey] = useState("list");
-
+  const blockNumber = useBlockNumber();
+  const { chainId } = useWeb3React();
+  const dispatch = useDispatch();
   const items = useMemo<TabsProps['items']>(() => {
     return [
       {
         key: 'list',
         label: t("wallet_supernodes_list"),
-        children: <SupernodeList queryMySupernodes={false} queryJoinSupernodes={false} />,
+        children: <SupernodeList queryMySupernodes={false} queryJoinSupernodes={false} queryVotedSupernodes={false} />,
       },
       {
         key: 'mySupernodes',
         label: t("wallet_supernodes_mine"),
-        children: <SupernodeList queryMySupernodes={true} queryJoinSupernodes={false} />,
+        children: <SupernodeList queryMySupernodes={true} queryJoinSupernodes={false} queryVotedSupernodes={false} />,
         disabled: activeAccountNodeInfo == undefined || (activeAccountNodeInfo?.isNode),
       },
       {
         key: 'myJoinedSupernodes',
         label: t("wallet_supernodes_join"),
         disabled: activeAccountNodeInfo == undefined || (activeAccountNodeInfo?.isNode),
-        children: <SupernodeList queryMySupernodes={false} queryJoinSupernodes={true} />,
+        children: <SupernodeList queryMySupernodes={false} queryJoinSupernodes={true} queryVotedSupernodes={false} />,
+      },
+      {
+        key: 'myVotedSupernodes',
+        label: t("wallet_supernodes_myvoted"),
+        disabled: activeAccountNodeInfo == undefined || (activeAccountNodeInfo?.isNode),
+        children: <SupernodeList queryMySupernodes={false} queryJoinSupernodes={false} queryVotedSupernodes={true} />,
       },
     ]
   }, [activeAccount, activeAccountNodeInfo]);
@@ -66,7 +79,30 @@ export default () => {
     if (activeAccountNodeInfo && activeAccountNodeInfo.isNode) {
       setActiveItemKey("list");
     }
-  }, [activeAccount, activeAccountNodeInfo])
+  }, [activeAccount, activeAccountNodeInfo]);
+
+  const supernodeStorageContract = useSupernodeStorageContract();
+  useEffect(() => {
+    if (supernodeStorageContract && chainId) {
+      const fetchSNAddresses = async () => {
+        const num = await supernodeStorageContract.callStatic.getNum();
+        const querySize = 100;
+        const queryTimes = Math.ceil(num / querySize);
+        const snAddresses: string[] = [];
+        for (let i = 0; i < queryTimes; i++) {
+          const _addresses = await supernodeStorageContract.callStatic.getAll(
+            querySize * i, querySize
+          );
+          snAddresses.push(..._addresses);
+        }
+        dispatch(applicationUpdateSNAddresses({
+          chainId, addresses: snAddresses
+        }))
+      }
+      fetchSNAddresses();
+    }
+  }, [supernodeStorageContract, blockNumber, chainId]);
+
 
   return <>
     <Row style={{ height: "50px" }}>

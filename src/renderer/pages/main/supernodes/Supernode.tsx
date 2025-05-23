@@ -20,15 +20,10 @@ export default ({
 
   const { t } = useTranslation();
   const supernodeVoteContract = useSupernodeVoteContract();
-  const [totalVoteNum, setTotalVoteNum] = useState<CurrencyAmount>();
   const [totalVoteAmount, setTotalVoteAmount] = useState<CurrencyAmount>();
 
   useEffect(() => {
     if (supernodeVoteContract) {
-      // function getTotalVoteNum(address _addr) external view returns (uint);
-      // function getTotalAmount(address _addr) external view returns (uint);
-      supernodeVoteContract.callStatic.getTotalVoteNum(supernodeInfo.addr)
-        .then(data => { setTotalVoteNum(CurrencyAmount.ether(data)) })
       supernodeVoteContract.callStatic.getTotalAmount(supernodeInfo.addr)
         .then(data => { setTotalVoteAmount(CurrencyAmount.ether(data)) })
     }

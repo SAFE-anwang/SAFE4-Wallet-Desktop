@@ -198,6 +198,7 @@ export default {
   wallet_supernodes_list: "Supernode List",
   wallet_supernodes_mine: "My Supernodes",
   wallet_supernodes_join: "Joined Supernodes",
+  wallet_supernodes_myvoted: "Voted Supernodes",
   wallet_supernodes_rank: "Rank",
   wallet_supernodes_state: "State",
   wallet_supernodes_state_online: "Online",
