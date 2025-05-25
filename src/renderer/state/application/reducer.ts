@@ -25,6 +25,7 @@ import {
   applicationUpdateWalletUpdateVersion,
   applicationUpdateWalletUpdateIgore,
   applicationUpdateSNAddresses,
+  applicationRemoveRpcConfig,
 } from './action';
 
 import { ContractVO, WalletVersionVO } from '../../services';
@@ -307,6 +308,13 @@ export default createReducer(initialState, (builder) => {
 
     .addCase(applicationAddRpcConfig, (state, { payload }) => {
       state.rpcConfigs?.push(payload);
+    })
+
+    .addCase(applicationRemoveRpcConfig, (state, { payload }) => {
+      const _cache = state.rpcConfigs;
+      state.rpcConfigs = _cache?.filter( rpcConfig => {
+        return ! ( rpcConfig.endpoint == payload.endpoint );
+      })
     })
 
     .addCase(applicationControlUpdateEditMasternodeId, (state, { payload }) => {

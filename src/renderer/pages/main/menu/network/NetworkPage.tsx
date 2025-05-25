@@ -8,9 +8,8 @@ import NetworkOption from './NetworkOption';
 import { isSafe4Mainnet, isSafe4Network, isSafe4Testnet } from '../../../../utils/Safe4Network';
 import { useApplicationRpcConfigs } from '../../../../state/application/hooks';
 import { useEffect, useState } from 'react';
-import { IPC_CHANNEL, Safe4_Network_Config } from '../../../../config';
+import { Safe4_Network_Config } from '../../../../config';
 import NetworkAddModal from './NetworkAddModal';
-import { RpcConfigSignal, RpcConfigSingalHandler, RpcConfig_Methods } from '../../../../../main/handlers/RpcConfigSignalHandler';
 import { useTranslation } from 'react-i18next';
 
 const { Title, Text } = Typography;
@@ -129,8 +128,6 @@ export default () => {
         </Card>
       </div>
     </div>
-
     <NetworkAddModal openAddModal={openAddModal} cancel={() => { setOpenAddModal(false) }} />
-
   </>
 }

@@ -4,10 +4,12 @@ import { Typography, Button, Card, Divider, Statistic, Row, Col, Modal, Flex, To
 import { useEffect, useState } from "react";
 import { isSafe4Mainnet, isSafe4Network, isSafe4Testnet } from "../../../../utils/Safe4Network";
 import { useDispatch } from "react-redux";
-import { applicationBlockchainUpdateBlockNumber, applicationUpdateWeb3Rpc } from "../../../../state/application/action";
+import { applicationBlockchainUpdateBlockNumber, applicationRemoveRpcConfig, applicationUpdateWeb3Rpc } from "../../../../state/application/action";
 import { clearAllTransactions } from "../../../../state/transactions/actions";
 import { walletsClearWalletChildWallets } from "../../../../state/wallets/action";
 import { useTranslation } from "react-i18next";
+import { IPC_CHANNEL, Safe4_Network_Config } from "../../../../config";
+import { RpcConfig_Methods, RpcConfigSignal } from "../../../../../main/handlers/RpcConfigSignalHandler";
 
 const { Text } = Typography;
 
@@ -26,16 +28,19 @@ export default ({
     isActive: boolean,
     isActiving: boolean
   } | undefined>();
+  const currentChainId = useWeb3React().chainId;
 
   const switchWeb3ReactConnect = () => {
     if (chainId) {
       dispatch(applicationBlockchainUpdateBlockNumber({ blockNumber: 0, timestamp: 0 }))
-      dispatch(clearAllTransactions(""));
+      if (chainId != currentChainId) {
+        dispatch(clearAllTransactions(""));
+      }
       dispatch(applicationUpdateWeb3Rpc({
         chainId: chainId,
         endpoint: endpoint
       }));
-      dispatch(walletsClearWalletChildWallets())
+      dispatch(walletsClearWalletChildWallets());
     }
   }
 
@@ -101,6 +106,14 @@ export default ({
     }
     return true;
   }
+  const isDefaultEndpoint = (endpoint == Safe4_Network_Config.Mainnet.endpoint || endpoint == Safe4_Network_Config.Testnet.endpoint);
+  const isActiveEndpoint = endpoint == activeEndpoint;
+
+  const deleteEndpoint = () => {
+    dispatch(applicationRemoveRpcConfig({ endpoint }));
+    const method = RpcConfig_Methods.delete;
+    window.electron.ipcRenderer.sendMessage(IPC_CHANNEL, [RpcConfigSignal, method, [endpoint]] );
+  }
 
   return <>
     <Card key={endpoint} size='small' style={{ marginBottom: "10px", background: endpoint == activeEndpoint ? "#efefef" : "" }}>
@@ -118,6 +131,11 @@ export default ({
             <Button disabled={cantUseable()} size='small' onClick={switchWeb3ReactConnect}>
               {t("use")}
             </Button>
+            {
+              !isDefaultEndpoint && !isActiveEndpoint && <Button size="small" onClick={deleteEndpoint}>
+                删除
+              </Button>
+            }
           </Space>
         </Col>
       </Row>

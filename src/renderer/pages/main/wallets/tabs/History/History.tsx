@@ -40,10 +40,14 @@ export default () => {
   const [openClearHistoryModal, setOpenClearHistoryModal] = useState<boolean>(false);
 
   useEffect(() => {
+
+    console.log("Do load Tx from DB....");
+
     const addressActivtiesLoadActivities = DB_AddressActivity_Methods.loadActivities;
     const timeNodeRewardsGetAll = TimeNodeReward_Methods.getAll;
     if (activeAccount && chainId && latestBlockNumber > 0) {
       if (activeAccount != addressActivityFetch?.address || chainId != addressActivityFetch.chainId) {
+        console.log("Do load Tx from DB2....");
         window.electron.ipcRenderer.sendMessage(IPC_CHANNEL, [DBAddressActivitySignal, addressActivtiesLoadActivities, [activeAccount, chainId]]);
       }
       window.electron.ipcRenderer.sendMessage(IPC_CHANNEL, [TimeNodeRewardSignal, timeNodeRewardsGetAll, [activeAccount, chainId]]);

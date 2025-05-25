@@ -72,6 +72,10 @@ export const applicationAddRpcConfig = createAction<{ endpoint: string, chainId:
   "application/addRpcConfig"
 );
 
+export const applicationRemoveRpcConfig = createAction<{ endpoint: string }>(
+  "application/removeRpcConfig"
+);
+
 export const applicationControlContractVO = createAction<ContractVO>(
   "application/controlContractVO"
 )

@@ -5,6 +5,7 @@ export const RpcConfigSignal = "DB:sqlite3/rpcConfig";
 
 export enum RpcConfig_Methods {
   saveOrUpdate = "saveOrUpdate",
+  delete = "delete"
 }
 
 export class RpcConfigSingalHandler implements ListenSignalHandler {
@@ -43,7 +44,21 @@ export class RpcConfigSingalHandler implements ListenSignalHandler {
     if (RpcConfig_Methods.saveOrUpdate == method) {
       const rpcConfig = params[0];
       data = this.saveOrUpdate( rpcConfig );
+    } else if (RpcConfig_Methods.delete == method){
+      const endpoint = params[0];
+      this.delete(endpoint);
     }
+  }
+
+  private delete ( endpoint : string ){
+    this.db.run( "delete from rpc_config where endpoint = ?" , [endpoint] ,
+      ( err : any , rows : any ) => {
+        if ( !err ){
+          console.log("delete rpc_config succes.." , endpoint);
+        } else {
+          console.log("delete rpc_config err.." , endpoint , err);
+        }
+      })
   }
 
   private saveOrUpdate( rpcConfig : { endpoint : string , chainId : number , active : number } ) {
