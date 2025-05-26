@@ -153,7 +153,7 @@ const initialState: IApplicationState = {
   SlippageTolerance: "0.005",
   platform: "",
   WalletUpdate: {
-    currentVersion: "2.0.3",
+    currentVersion: "2.0.4",
     currentVersionCode: 100,
     ignore: false
   }

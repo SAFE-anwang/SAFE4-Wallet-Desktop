@@ -19,7 +19,7 @@ export default ({
 }) => {
 
   const walletUpdate = useApplicationWalletUpdate();
-  const walletTooLow = walletUpdate.latestWallet ? walletUpdate.latestWallet.versionCode - walletUpdate.currentVersionCode > 10 : false;
+  const walletTooLow = walletUpdate.latestWallet ? walletUpdate.latestWallet.versionCode - walletUpdate.currentVersionCode > 20 : false;
 
   const dispatch = useDispatch();
   const updates = useMemo(() => {

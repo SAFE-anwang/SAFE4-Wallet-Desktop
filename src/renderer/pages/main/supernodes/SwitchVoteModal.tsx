@@ -93,7 +93,7 @@ export default ({
 
   return <Modal width={1200} destroyOnClose title="投票变更" open={openSwitchVoteModal} footer={null} onCancel={cancel}>
     <Divider />
-    <Card title="已投锁仓记录">
+    <Card title="投票锁仓记录">
       <VotersAccountRecords selectAccountRecordIdCallback={(selectAccountRecordIds) => {
         setSelectAccountRecords(selectAccountRecordIds);
         if (selectAccountRecordIds.length > 0) {

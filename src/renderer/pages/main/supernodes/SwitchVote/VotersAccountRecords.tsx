@@ -2,13 +2,15 @@ import { useCallback, useEffect, useMemo, useState } from "react"
 import { SupernodeInfo } from "../../../../structs/Supernode";
 import { useWalletsActiveAccount } from "../../../../state/wallets/hooks";
 import { useAccountManagerContract, useMulticallContract, useSupernodeVoteContract } from "../../../../hooks/useContracts";
-import { Checkbox, CheckboxProps, Col, GetProp, Pagination, Row, Spin, Tooltip, Typography } from "antd";
+import { Alert, Checkbox, CheckboxProps, Col, Divider, GetProp, Pagination, Row, Spin, Tooltip, Typography } from "antd";
 import { AccountRecord, formatAccountRecord, formatRecordUseInfo } from "../../../../structs/AccountManager";
 import { useTranslation } from "react-i18next";
 import { useBlockNumber } from "../../../../state/application/hooks";
 import { ClusterOutlined } from "@ant-design/icons";
 
 const AccountRecords_Page_Size = 25;
+
+const { Text } = Typography;
 
 export default ({
   supernodeInfo, selectAccountRecordIdCallback, usedVotedIdsCache
@@ -146,7 +148,7 @@ export default ({
                 </Row>
                 <Row style={{ fontSize: "12px" }}>
                   {
-                    supernodeInfo.addr == accountRecord.recordUseInfo?.votedAddr && <ClusterOutlined/>
+                    supernodeInfo.addr == accountRecord.recordUseInfo?.votedAddr && <ClusterOutlined />
                   }
                   {accountRecord.amount.toFixed(2)} SAFE
                 </Row>
@@ -189,7 +191,14 @@ export default ({
       <Checkbox indeterminate={indeterminate} checked={checkAll} onChange={onAccountRecordCheckAllChange}>
         选择全部可用锁仓记录
       </Checkbox>
-      <br /><br />
+      <Alert style={{ marginTop: "20px" }} type='info' showIcon message={
+        <>
+          <Text>必须同时满足如下条件的投票锁仓记录才能进行转投</Text><br />
+          <Text>1. 投票给当前 <Text type="secondary" strong>超级节点ID:{supernodeInfo.id}<Divider type="vertical"/>{supernodeInfo.name}</Text> 的锁仓</Text><br />
+          <Text>2. 满足质押时间才可以进行转投</Text><br />
+        </>
+      } />
+      <Divider />
       <Checkbox.Group
         options={optionsAllAccountRecords}
         onChange={onAccountRecordCheckChange}
