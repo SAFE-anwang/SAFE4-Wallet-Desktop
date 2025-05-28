@@ -20,12 +20,14 @@ export class CommandState {
 
   command: string;
 
+  host : string;
   handle: (data: string) => boolean;
   onSuccess: () => void;
   onFailure: () => void;
 
-  constructor(command: string, handle: (data: string) => boolean, onSuccess: () => void, onFailure: () => void) {
+  constructor(host : string , command: string, handle: (data: string) => boolean, onSuccess: () => void, onFailure: () => void) {
     this.command = command;
+    this.host = host;
     this.handle = handle;
     this.onSuccess = onSuccess;
     this.onFailure = onFailure;
@@ -40,7 +42,7 @@ export class CommandState {
           term.writeln(this.command);
         }
         try {
-          const data = await window.electron.ssh2.execute(this.command);
+          const data = await window.electron.sshs.execute(this.host,this.command);
           resolve(this.handle(data));
         } catch (err: any) {
           reject(err);
@@ -185,7 +187,7 @@ export default ({
       const term = new Terminal({
         cursorBlink: true,
         fontFamily: 'monospace',
-        fontSize: 14,
+        fontSize: 12,
         theme: {
           background: '#000000', // 黑色背景
           foreground: '#FFFFFF', // 白色文本
@@ -198,9 +200,11 @@ export default ({
       terminalInstance.current.loadAddon(fitAddon);
       terminalInstance.current.open(terminalRef.current);
       // 注册 ssh2 数据监听
-      removeSSH2Stderr = window.electron.ssh2.on((...args: any[]) => {
-        const stderr = args[0][0];
-        term.write(`\x1b[34m${stderr}\x1b[0m`);
+      removeSSH2Stderr = window.electron.sshs.on((...args: any[]) => {
+        const [host , stderr] = args[0];
+        if ( host == inputParams.host){
+          term.write(`\x1b[34m${stderr}\x1b[0m`);
+        }
       });
       term.write(`${t("ssh2_connect_waiting")}\r\n`);
     }
@@ -212,7 +216,8 @@ export default ({
       if (removeSSH2Stderr) {
         removeSSH2Stderr();
       }
-      window.electron.ssh2.close();
+      console.log("[Render]:Close connect:" , inputParams.host);
+      window.electron.sshs.close(inputParams.host);
     };
   }, []);
 
@@ -262,7 +267,7 @@ export default ({
       const port = 22;
       term.writeln(`Connect to ${host}`);
       setConnecting(true);
-      window.electron.ssh2.connect(host, port, username, password)
+      window.electron.sshs.connect(host, port, username, password)
         .then(async (chunk: any) => {
           console.log(`Connect to ${host} successed,Receive::`, chunk);
           setConnecting(false);
@@ -304,6 +309,7 @@ export default ({
     let _Safe4GethPath = "";
 
     const CMD_psSafe4: CommandState = new CommandState(
+      inputParams.host,
       "ps aux| grep geth | grep -v grep",
       (data: string) => {
         if (data) {
@@ -320,6 +326,7 @@ export default ({
     );
 
     const CMD_catSafe4Info: CommandState = new CommandState(
+      inputParams.host,
       `cat ${Safe4Info}`,
       (data) => {
         const safe4InfoArr = data.split("\n");
@@ -346,6 +353,7 @@ export default ({
     )
 
     const CMD_download: CommandState = new CommandState(
+      inputParams.host,
       `wget -O ${Safe4FileName} ${Safe4FileURL} --no-check-certificate`,
       () => {
         return true;
@@ -354,6 +362,7 @@ export default ({
       () => console.log()
     )
     const CMD_unzip: CommandState = new CommandState(
+      inputParams.host,
       `tar -zxvf ${Safe4FileName}`,
       (data) => {
         _Safe4NodeDir = data.substring(0, data.indexOf("/"));
@@ -365,6 +374,7 @@ export default ({
     )
 
     const CMD_mkdirDataDir: CommandState = new CommandState(
+      inputParams.host,
       `mkdir -p ${_Safe4DataDir}/keystore`,
       () => true,
       () => console.log(""),
@@ -380,6 +390,7 @@ export default ({
         _Safe4MD5Sum = JSON.parse((await (await fetch(DEFAULT_CONFIG.Safe4FileMD5)).text()).trim()).md5;
         console.log("从服务器获取最新 MD5值", _Safe4MD5Sum);
         const CMD_checkzip: CommandState = new CommandState(
+          inputParams.host,
           `[ -f ${Safe4FileName} ] && md5sum ${Safe4FileName} || echo "File does not exist"`,
           (data: string) => {
             if (data.trim() == "File does not exist") {
@@ -409,6 +420,7 @@ export default ({
         const CMD_catSafe4Info_success = await CMD_catSafe4Info.execute(term);
         const _BinPath = _Safe4GethPath.substring(0, _Safe4GethPath.lastIndexOf("/"));
         const CMD_Stop: CommandState = new CommandState(
+          inputParams.host,
           `cd ${_BinPath} && cd ../ && ./stop.sh`,
           () => {
             return true;
@@ -439,6 +451,7 @@ export default ({
 
         }
         const CMD_checkzip: CommandState = new CommandState(
+          inputParams.host,
           `[ -f ${Safe4FileName} ] && md5sum ${Safe4FileName} || echo "File does not exist"`,
           (data: string) => {
             if (data.trim() == "File does not exist") {
@@ -471,6 +484,7 @@ export default ({
         updateSteps(0, t("ssh2_connect_exeucte_steps_initkeystore"));
         const CMD_mkdirDataDir_success = await CMD_mkdirDataDir.execute(term);
         const CMD_checkKeystore: CommandState = new CommandState(
+          inputParams.host,
           `find ${_Safe4DataDir}/keystore -type f -name "*${nodeAddress.substring(2).toLocaleLowerCase()}*" -print -quit | grep -q '.' && echo "Keystore file exists" || echo "Keystore file does not exist"`,
           (data: string) => {
             let _data = data.trim();
@@ -500,6 +514,7 @@ export default ({
           const DateStr = DateTimeFormat(new Date(), "yyyy-MM-dd\'T'\HH-mm-ss.sss\'Z\'");
           const targetFile = `${_Safe4DataDir}/keystore/UTC--${DateStr}--${address.toLowerCase().substring(2)}`;
           const CMD_importKey: CommandState = new CommandState(
+            inputParams.host,
             `echo "${keystoreStr}" > ${targetFile}`,
             () => {
               return true;
@@ -517,6 +532,7 @@ export default ({
 
         const testNetStartFlag = isMainnet ? "" : "--safetest"
         const CMD_start: CommandState = new CommandState(
+          inputParams.host,
           isSupernode ? `cd ${_Safe4NodeDir} && ./start.sh ${testNetStartFlag} ${inputParams.host} ${nodeAddress.toLowerCase()}`
             : `cd ${_Safe4NodeDir} && ./start.sh ${testNetStartFlag} ${inputParams.host}`,
           () => {
@@ -534,6 +550,7 @@ export default ({
       updateSteps(1, t("ssh2_connect_execute_steps_safe4noderunning"));
 
       const CMD_checkKeystore: CommandState = new CommandState(
+        inputParams.host,
         `find ${_Safe4DataDir}/keystore -type f -name "*${nodeAddress.substring(2).toLocaleLowerCase()}*" -print -quit | grep -q '.' && echo "Keystore file exists" || echo "Keystore file does not exist"`,
         (data: string) => {
           let _data = data.trim();
@@ -553,6 +570,7 @@ export default ({
       )
 
       const CMD_exportEnode: CommandState = new CommandState(
+        inputParams.host,
         `cat ${_Safe4DataDir}/geth/nodekey`,
         (nodeKey: string) => {
           console.log("[.cat nodekey]nodeKey=", nodeKey);
@@ -576,6 +594,7 @@ export default ({
       )
 
       const CMD_attachMinerStop: CommandState = new CommandState(
+        inputParams.host,
         `${_Safe4GethPath} --exec "miner.stop()" attach ${_Safe4DataDir}/geth.ipc`,
         (result) => {
           return true;
@@ -584,16 +603,19 @@ export default ({
         () => { }
       );
       const CMD_attachSetMiner: CommandState = new CommandState(
+        inputParams.host,
         `${_Safe4GethPath} --exec "miner.setEtherbase('${nodeAddress.toLowerCase()}')" attach ${_Safe4DataDir}/geth.ipc`,
         () => true,
         () => { }, () => { }
       );
       const CMD_attachUnlockMiner: CommandState = new CommandState(
+        inputParams.host,
         `${_Safe4GethPath} --exec "personal.unlockAccount('${nodeAddress.toLowerCase()}', '', 0)" attach ${_Safe4DataDir}/geth.ipc`,
         () => true,
         () => { }, () => { }
       );
       const CMD_attachMinderStart: CommandState = new CommandState(
+        inputParams.host,
         `${_Safe4GethPath} --exec "miner.start()" attach ${_Safe4DataDir}/geth.ipc`,
         (result) => {
           console.log("cmd_acctch stop result :", result)
@@ -620,6 +642,7 @@ export default ({
         const DateStr = DateTimeFormat(new Date(), "yyyy-MM-dd\'T'\HH-mm-ss.sss\'Z\'");
         const targetFile = `${_Safe4DataDir}/keystore/UTC--${DateStr}--${address.toLowerCase().substring(2)}`;
         const CMD_importKey: CommandState = new CommandState(
+          inputParams.host,
           `echo "${keystoreStr}" > ${targetFile}`,
           () => {
             return true;

@@ -14,6 +14,7 @@ import { LocalFileReader } from "./handlers/LocalFileReaderIpc";
 import { CryptoIpc } from "./CryptoIpc";
 import { AppPropSignalHandler } from "./handlers/AppPropSignalHandler";
 import { CrosschainSignalHandler } from "./handlers/CrosschainSignalHandler";
+import { SSHSIpc } from "./SSHSIpc";
 
 export const Channel : Channels = "ipc-example";
 
@@ -62,6 +63,7 @@ export class ApplicationIpcManager {
       }
     });
     new SSH2Ipc(ipcMain);
+    new SSHSIpc(ipcMain);
     new LocalFileReader(ipcMain);
     new CryptoIpc(ipcMain);
     return this;

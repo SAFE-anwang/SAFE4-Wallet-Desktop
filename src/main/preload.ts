@@ -60,6 +60,31 @@ const electronHandler = {
     }
   },
 
+  sshs: {
+    connect(host: string, port: number, username: string, password: string) {
+      return ipcRenderer.invoke('sshs-connect-ssh', { host, username, password });
+    },
+    execute(host: string , command: string) {
+      return ipcRenderer.invoke('sshs-exec-command', { host, command })
+    },
+    shell(command: string) {
+      return ipcRenderer.invoke('sshs-shell-command', { command })
+    },
+    on(func: (...args: unknown[]) => void) {
+      const subscription = (_event: IpcRendererEvent, ...args: unknown[]) =>
+        func(...args);
+      ipcRenderer.on("sshs-ssh2-stderr", subscription);
+
+      return () => {
+        ipcRenderer.removeListener("sshs-ssh2-stderr", subscription);
+      };
+    },
+    close(host:string) {
+      console.log("sshs close connect :" , host)
+      return ipcRenderer.invoke('sshs-connect-close', {host})
+    }
+  },
+
   fileReader: {
     readFile(filePath: string) {
       return ipcRenderer.invoke("file-read", { filePath });

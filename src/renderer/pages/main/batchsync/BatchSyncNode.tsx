@@ -24,7 +24,7 @@ export default () => {
     completeds: SyncNodeTask[]
   }>();
 
-  const tasks = Array.from({ length: 2 }).map((_, i) => ({
+  const tasks = Array.from({ length: 20 }).map((_, i) => ({
     id: i,
     title: `主节点 ${i + 1}`,
   }));
