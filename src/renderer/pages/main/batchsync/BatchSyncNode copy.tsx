@@ -3,7 +3,6 @@ import { useWalletsActiveAccount } from "../../../state/wallets/hooks"
 import { useCallback, useEffect, useState } from "react";
 import SyncNode from "./SyncNode";
 import TabPane from "antd/es/tabs/TabPane";
-import { SyncOutlined } from "@ant-design/icons";
 
 const { Text } = Typography;
 
@@ -11,8 +10,6 @@ export interface SyncNodeTask {
   id: number,
   title: string,
 }
-
-const concurrency = 5;
 
 export default () => {
 
@@ -24,12 +21,12 @@ export default () => {
     completeds: SyncNodeTask[]
   }>();
 
-  const tasks = Array.from({ length: 2 }).map((_, i) => ({
-    id: i,
-    title: `主节点 ${i + 1}`,
-  }));
 
   useEffect(() => {
+    const tasks = Array.from({ length: 500 }).map((_, i) => ({
+      id: i,
+      title: `任务${i + 1}`,
+    }));
     setPool({
       pendings: [...tasks],
       executings: [],
@@ -40,9 +37,9 @@ export default () => {
   const startToSync = () => {
     if (pool?.pendings) {
       const pendings = pool.pendings;
-      const executings = pendings.slice(0, concurrency);
+      const executings = pendings.slice(0, 5);
       setPool({
-        pendings: pendings.slice(concurrency),
+        pendings: pendings.slice(5),
         executings,
         completeds: []
       })
@@ -63,7 +60,7 @@ export default () => {
                 <List.Item>
                   <List.Item.Meta
                     title={<a>{item.title}</a>}
-                    description=""
+                    description="11111"
                   />
                 </List.Item>
               )}
@@ -77,11 +74,11 @@ export default () => {
       <Col span={16}>
         <Text>正在同步节点</Text>
         <Button onClick={startToSync}>开始</Button>
-        <Tabs type="card" activeKey={activeKey} onChange={(key) => {setActiveKey(key)}}>
+        <Tabs type="card" activeKey={activeKey} onChange={(key) => { setActiveKey(key) }}>
           {
             pool?.executings.map((node, i) => {
               return (
-                <TabPane key={String(node.id)} tab={<><SyncOutlined spin /> {`${pool.executings[i].title}`} </>} />
+                <TabPane key={String(node.id)} tab={`${pool.executings[i].title}`} />
               )
             })
           }
@@ -95,17 +92,14 @@ export default () => {
                   setPool(prevPool => {
                     if (!prevPool) return prevPool;
                     const { pendings, executings, completeds } = prevPool;
-                    // 从执行数组中移除
+                    // 移除执行完成的任务
                     const newExecuting = executings.filter(task => task.id !== finishedTask.id);
-                    // 将已完成数组排序
-                    const newCompleted = [finishedTask, ...completeds.filter(task => task.id != finishedTask.id)]
-                      .sort((taskA, taskB) => taskB.id - taskA.id);
-                    if (newCompleted.length == tasks.length) {
-                      console.log("Done!!")
-                    }
+                    const newCompleted = [finishedTask, ...completeds.filter( task => task.id != finishedTask.id) ].sort( (taskA,taskB) => taskB.id - taskA.id ) ;
+
                     // 如果还有等待任务
-                    if (pendings.length > 0 && executings.length <= concurrency) {
+                    if (pendings.length > 0 && executings.length <= 5) {
                       const [nextTask, ...restPendings] = pendings;
+                      // 防止重复添加（某些回调并发触发）
                       const alreadyExecuting = newExecuting.find(task => task.id === nextTask.id);
                       if (alreadyExecuting) {
                         return {
@@ -148,7 +142,7 @@ export default () => {
                 <List.Item>
                   <List.Item.Meta
                     title={<a>{item.title}</a>}
-                    description=""
+                    description="11111"
                   />
                 </List.Item>
               )}
