@@ -23,6 +23,22 @@ const style: React.CSSProperties = {
   gap: 8,
 };
 
+
+const sshconfigs: SSH2ConnectConfig[] = [
+  {
+    host: "47.119.151.64",
+    username: "root",
+    password: "Zy654321!",
+    port: 22
+  },
+  {
+    host: "139.108.69.183",
+    username: "root",
+    password: "Zy654321!",
+    port: 22
+  }
+];
+
 export default () => {
 
   const activeAccount = useWalletsActiveAccount();
@@ -211,7 +227,7 @@ export default () => {
         {
           step == 1 && <>
             <Card style={{ marginTop: "20px" }}>
-
+              <BatchSSHCheck />
             </Card>
           </>
         }
@@ -302,8 +318,6 @@ export default () => {
         </Row>
       </Col>
     </Row>
-
-    <BatchSSHCheck />
 
   </>
 

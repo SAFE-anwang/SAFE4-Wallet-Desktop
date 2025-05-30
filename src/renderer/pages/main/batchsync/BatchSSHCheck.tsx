@@ -1,5 +1,7 @@
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { SSH2ConnectConfig } from "../../../../main/SSH2Ipc"
+import { useBatchSSHCheck } from "../../../hooks/useBatchSSHCheck";
+import { Button } from "antd";
 
 const sshconfigs: SSH2ConnectConfig[] = [
   {
@@ -9,31 +11,23 @@ const sshconfigs: SSH2ConnectConfig[] = [
     port: 22
   },
   {
-    host: "139.108.69.183",
+    host: "39.108.69.183",
     username: "root",
     password: "Zy654321!",
     port: 22
   }
 ];
 
+
 export default () => {
 
-
-
-  useEffect( () => {
-    sshconfigs.forEach( sshConfig => {
-      // window.electron.sshs.connect( sshConfig.host , sshConfig.port , sshConfig.username , sshConfig.password )
-      //   .then( data => {
-      //     console.log("host << " , data) ;
-      //     window.electron.sshs.close( sshConfig.host );
-      //   } )
-      //   .catch( err => {
-      //     console.log("sshs-connect-error:" , err)
-      //   } )
-    } )
-  } , [] );
+  const { results , start } = useBatchSSHCheck( sshconfigs );
 
   return <>
+
+    <Button onClick={start}>Check...</Button>
+
+    {JSON.stringify(results)}
 
   </>
 
