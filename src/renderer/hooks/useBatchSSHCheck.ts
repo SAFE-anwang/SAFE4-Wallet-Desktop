@@ -1,44 +1,48 @@
 import { useRef, useState } from "react";
 import { SSH2ConnectConfig } from "../../main/SSH2Ipc";
 
+export enum SSHCheckStatus {
+  Pending = "pending",
+  Running = "running",
+  Success = "success",
+  Failed = "failed"
+}
 
 export interface SSHCheckResult {
-  id: string;
-  status: "pending" | "running" | "success" | "failed";
+  host: string;
+  status: SSHCheckStatus;
   message?: string;
 }
 
 export const useBatchSSHCheck = (
   sshConfigs: SSH2ConnectConfig[],
-  maxConcurrency: number = 1
+  maxConcurrency: number = 2
 ) => {
   const [results, setResults] = useState<SSHCheckResult[]>([]);
   const queueRef = useRef<SSH2ConnectConfig[]>([]);
   const runningRef = useRef(0);
 
-  const updateResult = (id: string, update: Partial<SSHCheckResult>) => {
+  const updateResult = (host: string, update: Partial<SSHCheckResult>) => {
     setResults(prev =>
       prev.map(item =>
-        item.id === id ? { ...item, ...update } : item
+        item.host === host ? { ...item, ...update } : item
       )
     );
   };
 
   const checkSSH = async (config: SSH2ConnectConfig) => {
     try {
-      updateResult(config.host, { status: "running" });
-
-      const connectResponse = await window.electron.sshs.connect( config.host , config.port , config.username , config.password );
+      updateResult(config.host, { status: SSHCheckStatus.Running });
+      const connectResponse = await window.electron.sshs.connect(config.host, config.port, config.username, config.password);
       const isSuccess = true;
-      console.log("Connect Response = " , connectResponse);
-      window.electron.sshs.close( config.host );
+      window.electron.sshs.close(config.host);
       updateResult(config.host, {
-        status: isSuccess ? "success" : "failed",
+        status: isSuccess ? SSHCheckStatus.Success : SSHCheckStatus.Failed,
         message: isSuccess ? "Connected" : "Failed to connect",
       });
     } catch (err: any) {
       updateResult(config.host, {
-        status: "failed",
+        status: SSHCheckStatus.Failed,
         message: err.message || "Unknown error",
       });
     } finally {
@@ -64,8 +68,8 @@ export const useBatchSSHCheck = (
     queueRef.current = [...sshConfigs];
     setResults(
       sshConfigs.map(cfg => ({
-        id: cfg.host,
-        status: "pending",
+        host: cfg.host,
+        status: SSHCheckStatus.Pending,
       }))
     );
     runNext();

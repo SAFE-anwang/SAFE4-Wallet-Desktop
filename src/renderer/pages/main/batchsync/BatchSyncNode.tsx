@@ -2,48 +2,35 @@ import { Avatar, Button, Card, Col, Divider, Input, List, Radio, RadioChangeEven
 import { useWalletsActiveAccount } from "../../../state/wallets/hooks"
 import { useCallback, useEffect, useState } from "react";
 import SyncNode from "./SyncNode";
-import { DeleteOutlined, EditTwoTone, SyncOutlined } from "@ant-design/icons";
+import { CheckCircleFilled, CloseCircleFilled, CloseCircleOutlined, DeleteOutlined, EditOutlined, EditTwoTone, SyncOutlined } from "@ant-design/icons";
 import useMasternodesForCreator from "../../../hooks/useMasternodesForCreator";
 import { RenderNodeState } from "../supernodes/Supernodes";
 import { SSH2ConnectConfig } from "../../../../main/SSH2Ipc";
-import BatchSSHCheck from "./BatchSSHCheck";
+import BatchSSHCheck, { NodeSSHConfigValidateCheckResult } from "./BatchSSHCheck";
+import { SSHCheckResult, SSHCheckStatus } from "../../../hooks/useBatchSSHCheck";
 
 const { Text } = Typography;
+// 并发同步执行数..
+const concurrency = 5;
 
 export interface SyncNodeTask {
-  id: number,
+  id: string,
   title: string,
   node: any
 }
-const concurrency = 5;
 
-const style: React.CSSProperties = {
-  display: 'flex',
-  flexDirection: 'column',
-  gap: 8,
-};
-
-
-const sshconfigs: SSH2ConnectConfig[] = [
-  {
-    host: "47.119.151.64",
-    username: "root",
-    password: "Zy654321!",
-    port: 22
-  },
-  {
-    host: "139.108.69.183",
-    username: "root",
-    password: "Zy654321!",
-    port: 22
-  }
-];
+enum BatchSyncStep {
+  LoadNodes = 0,
+  CheckSSH = 1,
+  BatchSync = 2
+}
 
 export default () => {
 
+  const [step, setStep] = useState<number>(BatchSyncStep.LoadNodes);
+
   const activeAccount = useWalletsActiveAccount();
   const masternodesResult = useMasternodesForCreator({ creator: activeAccount });
-  const [step, setStep] = useState<number>(0);
 
   const [activeKey, setActiveKey] = useState<string>();
   const [pool, setPool] = useState<{
@@ -53,17 +40,26 @@ export default () => {
   }>();
 
   const [nodeSSHConfigMap, setNodeSSHConfigMap] = useState<{
-    [id: number]: SSH2ConnectConfig
+    [id: string]: SSH2ConnectConfig
   }>({});
-  const [selectTaskSSHConfig, setSelectTaskSSHConfig] = useState<number>();
 
+  const [selectTaskSSHConfig, setSelectTaskSSHConfig] = useState<string>();
+  const [nodeSSHConfigValidateCheckMap, setNodeSSHConfigValidateCheckMap] = useState<{
+    [id: string]: NodeSSHConfigValidateCheckResult
+  }>({});
+  const [nodeSSHConfigConnectCheckMap, setNodeSSHConfigConnectCheckMap] = useState<{
+    [id: string]: SSHCheckResult
+  }>({});
+
+
+  // 加载节点信息,以及默认的服务器配置.
   useEffect(() => {
     if (masternodesResult) {
       const { loading, finished, num, masternodes } = masternodesResult;
       const tasks = masternodes.sort((m0, m1) => m1.id - m0.id).map((masternode) => {
         return {
-          id: masternode.id,
-          title: "主节点-" + masternode.id,
+          id: "MN:" + masternode.id,
+          title: "主节点-" + masternode.id + "123",
           node: masternode
         }
       });
@@ -75,7 +71,7 @@ export default () => {
       if (masternodesResult.finished && masternodesResult.masternodes.length == masternodesResult.num) {
         setStep(1);
         masternodesResult.masternodes.forEach(mn => {
-          nodeSSHConfigMap[mn.id] = {
+          nodeSSHConfigMap["MN:" + mn.id] = {
             host: "",
             port: 22,
             username: "root",
@@ -87,10 +83,22 @@ export default () => {
   }, [masternodesResult]);
 
   useEffect(() => {
+    if (step == BatchSyncStep.CheckSSH && pool?.pendings) {
+      const pendingIds = pool.pendings.map(task => task.id);
+      const _nodeSSHConfigMap = { ...nodeSSHConfigMap };
+      Object.keys(nodeSSHConfigMap).filter(id => pendingIds.indexOf(id) < 0)
+        .forEach(id => {
+          delete _nodeSSHConfigMap[id];
+        })
+      setNodeSSHConfigMap({ ..._nodeSSHConfigMap });
+    }
+  }, [pool, step]);
+
+  useEffect(() => {
     if (pool?.executings && pool.executings.length > 0 && pool.executings.filter(task => String(task.id) == activeKey).length == 0) {
       setActiveKey(String(pool.executings[pool.executings.length - 1].id))
     }
-  }, [pool, activeKey])
+  }, [pool, activeKey]);
 
   const startToSync = () => {
     if (pool?.pendings) {
@@ -127,17 +135,42 @@ export default () => {
                 <List.Item>
                   <List.Item.Meta
                     title={<>
-                      {RenderNodeState(item.node.state)}
-                      <Text style={{ marginLeft: "10px" }}>{item.title}</Text>
+                      <Row>
+                        <Col span={20}>
+                          {RenderNodeState(item.node.state)}
+                          <Text style={{ marginLeft: "5px" }}>{item.title}</Text>
+                        </Col>
+                        <Col span={4} style={{ textAlign: "right" }}>
+                          {nodeSSHConfigConnectCheckMap[item.id]?.status == SSHCheckStatus.Running && <><SyncOutlined spin /></>}
+                          {nodeSSHConfigConnectCheckMap[item.id]?.status == SSHCheckStatus.Success && <><CheckCircleFilled style={{ color: "green" }} /></>}
+                          {nodeSSHConfigConnectCheckMap[item.id]?.status == SSHCheckStatus.Failed && <><CloseCircleFilled style={{ color: "red" }} /></>}
+                        </Col>
+                      </Row>
                     </>}
                     description={<>
                       <Row>
-                        <Col span={12}>{nodeSSHConfigMap[item.id].host}</Col>
+                        <Col span={12}>
+                          {nodeSSHConfigMap[item.id].host}
+                        </Col>
                         <Col span={12} style={{ textAlign: "right" }}>
-                          <Space style={{ marginRight: "20px" }} >
-                            <Button size="small" icon={<><DeleteOutlined /></>} />
+                          <Space style={{ marginRight: "10px" }} >
+                            <Button size="small" icon={<><DeleteOutlined /></>} onClick={() => {
+                              if (step == BatchSyncStep.CheckSSH) {
+                                if (pool?.pendings) {
+                                  const _newPending = pool.pendings.filter(task => task.id != item.id)
+                                  setPool(({
+                                    ...pool,
+                                    pendings: _newPending
+                                  }));
+                                }
+                              }
+                            }} />
                             <Button onClick={() => selectTaskSSHConfig == item.id ? setSelectTaskSSHConfig(undefined) : setSelectTaskSSHConfig(item.id)}
-                              size="small" icon={<><EditTwoTone /></>} />
+                              size="small" icon={
+                                <>
+                                  {nodeSSHConfigValidateCheckMap[item.id]?.isValid ? <EditOutlined /> : <EditTwoTone style={{ fontSize: "26px" }} />}
+                                </>
+                              } />
                           </Space>
                         </Col>
                       </Row>
@@ -222,12 +255,18 @@ export default () => {
               ]}
             />
           </Col>
+          <Text>{JSON.stringify(nodeSSHConfigConnectCheckMap)}</Text>
         </Row>
 
         {
-          step == 1 && <>
+          step == BatchSyncStep.CheckSSH && <>
             <Card style={{ marginTop: "20px" }}>
-              <BatchSSHCheck />
+              <BatchSSHCheck nodeSSHConfigMap={nodeSSHConfigMap}
+                nodeSSHConfigValidateCheckMap={nodeSSHConfigValidateCheckMap}
+                nodeSSHConfigConnectCheckMap={nodeSSHConfigConnectCheckMap}
+
+                setNodeSSHConfigValidateCheckMap={setNodeSSHConfigValidateCheckMap}
+                setNodeSSHConfigConnectCheckMap={setNodeSSHConfigConnectCheckMap} />
             </Card>
           </>
         }
@@ -255,7 +294,7 @@ export default () => {
                     const newExecuting = executings.filter(task => task.id !== finishedTask.id);
                     // 将已完成数组排序
                     const newCompleted = [finishedTask, ...completeds.filter(task => task.id != finishedTask.id)]
-                      .sort((taskA, taskB) => taskA.id - taskB.id);
+                      .sort((taskA, taskB) => Number(taskA.id.split(":")[1]) - Number(taskB.id.split(":")[1]));
                     if (newCompleted.length == masternodesResult.masternodes.length) {
                       console.log("Done!!")
                     }
