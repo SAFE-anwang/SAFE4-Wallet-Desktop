@@ -1,7 +1,9 @@
 import { useEffect, useMemo } from "react";
 import { SSH2ConnectConfig } from "../../../../main/SSH2Ipc"
-import { SSHCheckResult, useBatchSSHCheck } from "../../../hooks/useBatchSSHCheck";
+import { SSHCheckResult, SSHCheckStatus, useBatchSSHCheck } from "../../../hooks/useBatchSSHCheck";
 import { Alert, Button, Col, Row, Typography } from "antd";
+import { useDispatch } from "react-redux";
+import { applicationSaveOrUpdateSSHConfigs } from "../../../state/application/action";
 
 const { Text } = Typography;
 
@@ -31,16 +33,19 @@ export interface NodeSSHConfigValidateCheckResult {
   errMsg?: string,
 }
 
-export default ({ nodeSSHConfigMap, nodeSSHConfigValidateCheckMap, nodeSSHConfigConnectCheckMap , setNodeSSHConfigValidateCheckMap , setNodeSSHConfigConnectCheckMap }: {
+export default ({ nodeSSHConfigMap, nodeSSHConfigValidateCheckMap, nodeSSHConfigConnectCheckMap, setNodeSSHConfigValidateCheckMap, setNodeSSHConfigConnectCheckMap }: {
+  
   nodeSSHConfigMap: {
     [id: string]: SSH2ConnectConfig
   },
+
   nodeSSHConfigValidateCheckMap: {
     [id: string]: NodeSSHConfigValidateCheckResult
   },
   nodeSSHConfigConnectCheckMap: {
     [id: string]: SSHCheckResult
   },
+
   setNodeSSHConfigValidateCheckMap: (nodeSSHConfigValidateCheckMap: {
     [id: string]: NodeSSHConfigValidateCheckResult
   }) => void,
@@ -53,6 +58,7 @@ export default ({ nodeSSHConfigMap, nodeSSHConfigValidateCheckMap, nodeSSHConfig
     const nodeSSHConfigValidateCheckMap: {
       [id: string]: NodeSSHConfigValidateCheckResult
     } = {};
+
     Object.keys(nodeSSHConfigMap).forEach(id => {
       const { host, port, username, password } = nodeSSHConfigMap[(id)];
       if (!host || !port || !username || !password) {
@@ -66,7 +72,7 @@ export default ({ nodeSSHConfigMap, nodeSSHConfigValidateCheckMap, nodeSSHConfig
         }
       }
     });
-    setNodeSSHConfigValidateCheckMap(nodeSSHConfigValidateCheckMap)
+    setNodeSSHConfigValidateCheckMap(nodeSSHConfigValidateCheckMap);
   }, [nodeSSHConfigMap]);
 
   const { validCount, invalidCount } = useMemo(() => {
@@ -84,11 +90,12 @@ export default ({ nodeSSHConfigMap, nodeSSHConfigValidateCheckMap, nodeSSHConfig
     const HostIdMap: {
       [host: string]: string
     } = {};
-    Object.keys( nodeSSHConfigMap ).forEach( id => {
-      HostIdMap[ nodeSSHConfigMap[id].host ] = id;
-    } );
+    Object.keys(nodeSSHConfigMap).forEach(id => {
+      HostIdMap[nodeSSHConfigMap[id].host] = id;
+    });
     return HostIdMap;
-  }, [nodeSSHConfigMap])
+  }, [nodeSSHConfigMap]);
+
   const { results, start } = useBatchSSHCheck(Object.values(nodeSSHConfigMap));
 
   useEffect(() => {
@@ -100,14 +107,30 @@ export default ({ nodeSSHConfigMap, nodeSSHConfigValidateCheckMap, nodeSSHConfig
         HostCheckResultMap[result.host] = result;
       });
       const _nodeSSHConfigConnectCheckMap = { ...nodeSSHConfigConnectCheckMap };
-      Object.keys( HostCheckResultMap ).forEach( host => {
+
+      const validSSHConnects : SSH2ConnectConfig[] = [];
+      Object.keys(HostCheckResultMap).forEach(host => {
         const id = HostIdMap[host];
         const result = HostCheckResultMap[host];
         _nodeSSHConfigConnectCheckMap[id] = result;
+        if ( result.status == SSHCheckStatus.Success ){
+          validSSHConnects.push(  )
+        }
       });
       setNodeSSHConfigConnectCheckMap({ ..._nodeSSHConfigConnectCheckMap });
     }
-  }, [results , HostIdMap]);
+  }, [results, HostIdMap]);
+
+  const { connectSuccessCount, connectFailedCount } = useMemo(() => {
+    const connectSuccessCount = Object.keys(nodeSSHConfigConnectCheckMap)
+      .filter(id => nodeSSHConfigConnectCheckMap[id].status == SSHCheckStatus.Success).length;
+    const connectFailedCount = Object.keys(nodeSSHConfigConnectCheckMap)
+      .filter(id => HostIdMap[ nodeSSHConfigConnectCheckMap[id].host ] && nodeSSHConfigConnectCheckMap[id].status == SSHCheckStatus.Failed).length;
+    return {
+      connectSuccessCount,
+      connectFailedCount
+    }
+  }, [nodeSSHConfigConnectCheckMap]);
 
 
   return <>
@@ -160,13 +183,51 @@ export default ({ nodeSSHConfigMap, nodeSSHConfigValidateCheckMap, nodeSSHConfig
       invalidCount == 0 && <Row style={{ marginTop: "20px" }}>
         <Col span={24}>
           <Text strong>2. SSH连接有效性检查</Text>
-          <br />
-          <Text>{JSON.stringify(nodeSSHConfigMap)}</Text>
         </Col>
+        {
+          connectFailedCount > 0 && <Col span={24} style={{ marginTop: "5px" }}>
+            <Alert type="error" showIcon message={<>
+              <Row>
+                <Col span={24}>
+                  <Text>无法进行 SSH 连接数量:{connectFailedCount}</Text>
+                </Col>
+                <Col span={24}>
+                  {
+                    Object.keys(nodeSSHConfigConnectCheckMap)
+                      .filter(id => HostIdMap[ nodeSSHConfigConnectCheckMap[id].host ] && nodeSSHConfigConnectCheckMap[(id)].status == SSHCheckStatus.Failed)
+                      .map(id => {
+                        const nodeSSHConfigConnectCheck = nodeSSHConfigConnectCheckMap[(id)];
+                        return <>
+                          <Row key={id}>
+                            <Col span={4}>
+                              <Text strong>主节点-{HostIdMap[nodeSSHConfigConnectCheck.host]}</Text>
+                            </Col>
+                            <Col span={18}>
+                              <Text>{nodeSSHConfigConnectCheck.message}</Text>
+                            </Col>
+                          </Row>
+                        </>
+                      })
+                  }
+                </Col>
+              </Row>
+            </>} />
+          </Col>
+        }
+        <Col span={24} style={{ marginTop: "5px" }}>
+          <Alert type="success" showIcon message={<>
+            <Row>
+              <Col span={24}>
+                <Text>成功进行 SSH 连接数量:{connectSuccessCount}</Text>
+              </Col>
+            </Row>
+          </>} />
+        </Col>
+
         <Col span={24} style={{ marginTop: "5px" }}>
           <Button type="primary" onClick={start}>执行检查</Button>
         </Col>
-        <Text>{JSON.stringify(nodeSSHConfigConnectCheckMap)}</Text>
+
       </Row>
     }
 

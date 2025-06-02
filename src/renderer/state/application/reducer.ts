@@ -26,10 +26,15 @@ import {
   applicationUpdateWalletUpdateIgore,
   applicationUpdateSNAddresses,
   applicationRemoveRpcConfig,
+  applicationLoadSSHConfigs,
+  applicationSaveOrUpdateSSHConfigs,
 } from './action';
 
 import { ContractVO, WalletVersionVO } from '../../services';
 import { Token } from '@uniswap/sdk';
+import { SSH2ConnectConfig } from '../../../main/SSH2Ipc';
+import { IPC_CHANNEL } from '../../config';
+import { SSHConfigSignal, SSHConfig_Methods } from '../../../main/handlers/SSHConfigSignalHandler';
 
 export const enum AfterSetPasswordTODO {
   CREATE = "create",
@@ -128,6 +133,11 @@ export interface IApplicationState {
     }
   } | undefined,
   SlippageTolerance: string,
+
+  sshConfigMap: {
+    [host: string]: SSH2ConnectConfig
+  }
+
 }
 
 const initialState: IApplicationState = {
@@ -156,7 +166,8 @@ const initialState: IApplicationState = {
     currentVersion: "2.0.4",
     currentVersionCode: 100,
     ignore: false
-  }
+  },
+  sshConfigMap: {}
 }
 
 export default createReducer(initialState, (builder) => {
@@ -312,8 +323,8 @@ export default createReducer(initialState, (builder) => {
 
     .addCase(applicationRemoveRpcConfig, (state, { payload }) => {
       const _cache = state.rpcConfigs;
-      state.rpcConfigs = _cache?.filter( rpcConfig => {
-        return ! ( rpcConfig.endpoint == payload.endpoint );
+      state.rpcConfigs = _cache?.filter(rpcConfig => {
+        return !(rpcConfig.endpoint == payload.endpoint);
       })
     })
 
@@ -353,9 +364,47 @@ export default createReducer(initialState, (builder) => {
 
     .addCase(applicationUpdateSNAddresses, (state, { payload }) => {
       const _snAddresses: { [chainId: number]: string[] } = {
-        [payload.chainId] : payload.addresses
+        [payload.chainId]: payload.addresses
       };
       state.SNAddresses = _snAddresses;
+    })
+
+    .addCase(applicationLoadSSHConfigs, (state, { payload }) => {
+      const _sshConfigMap: {
+        [host: string]: SSH2ConnectConfig
+      } = {};
+      payload.forEach(config => {
+        _sshConfigMap[config.host] = config;
+      });
+      state.sshConfigMap = { ..._sshConfigMap };
+    })
+
+    .addCase(applicationSaveOrUpdateSSHConfigs, (state, { payload }) => {
+      const needUpdates: SSH2ConnectConfig[] = [];
+      payload.filter(config => {
+        const { host, port, username, password } = config;
+        if (!state.sshConfigMap[host]) {
+          needUpdates.push(config);
+        } else {
+          const _config = state.sshConfigMap[host];
+          if (port != _config.port
+            || username != _config.username
+            || password != _config.password) {
+            needUpdates.push(config);
+          }
+        }
+      });
+      const _sshConfigMap: {
+        [host: string]: SSH2ConnectConfig
+      } = {};
+      needUpdates.forEach(config => {
+        _sshConfigMap[config.host] = config;
+      });
+      window.electron.ipcRenderer.sendMessage( IPC_CHANNEL , [ SSHConfigSignal , SSHConfig_Methods.saveOrUpdate , [ needUpdates ] ] );
+      state.sshConfigMap = {
+        ...state.sshConfigMap,
+        ..._sshConfigMap
+      };
     })
 
 })

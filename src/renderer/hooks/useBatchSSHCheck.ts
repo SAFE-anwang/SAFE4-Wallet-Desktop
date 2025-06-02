@@ -1,5 +1,7 @@
 import { useRef, useState } from "react";
+import { useDispatch } from "react-redux";
 import { SSH2ConnectConfig } from "../../main/SSH2Ipc";
+import { applicationSaveOrUpdateSSHConfigs } from "../state/application/action";
 
 export enum SSHCheckStatus {
   Pending = "pending",
@@ -21,6 +23,7 @@ export const useBatchSSHCheck = (
   const [results, setResults] = useState<SSHCheckResult[]>([]);
   const queueRef = useRef<SSH2ConnectConfig[]>([]);
   const runningRef = useRef(0);
+  const dispatch = useDispatch();
 
   const updateResult = (host: string, update: Partial<SSHCheckResult>) => {
     setResults(prev =>
@@ -40,6 +43,7 @@ export const useBatchSSHCheck = (
         status: isSuccess ? SSHCheckStatus.Success : SSHCheckStatus.Failed,
         message: isSuccess ? "Connected" : "Failed to connect",
       });
+      dispatch(applicationSaveOrUpdateSSHConfigs([config]));
     } catch (err: any) {
       updateResult(config.host, {
         status: SSHCheckStatus.Failed,

@@ -8,6 +8,9 @@ import { RenderNodeState } from "../supernodes/Supernodes";
 import { SSH2ConnectConfig } from "../../../../main/SSH2Ipc";
 import BatchSSHCheck, { NodeSSHConfigValidateCheckResult } from "./BatchSSHCheck";
 import { SSHCheckResult, SSHCheckStatus } from "../../../hooks/useBatchSSHCheck";
+import { Channel } from "../../../../main/ApplicationIpcManager";
+import { IPC_CHANNEL } from "../../../config";
+import { SSHConfigSignal, SSHConfig_Methods } from "../../../../main/handlers/SSHConfigSignalHandler";
 
 const { Text } = Typography;
 // 并发同步执行数..
@@ -51,6 +54,15 @@ export default () => {
     [id: string]: SSHCheckResult
   }>({});
 
+  useEffect( () => {
+    window.electron.ipcRenderer.sendMessage(IPC_CHANNEL, [ SSHConfigSignal, SSHConfig_Methods.getAll, [] ])
+    window.electron.ipcRenderer.once(IPC_CHANNEL, (arg) => {
+      if (arg instanceof Array && arg[0] == SSHConfigSignal && arg[1] == SSHConfig_Methods.getAll) {
+        const rows = arg[2][0];
+        console.log("SSH-load-rows ==>" , rows)
+      }
+    });
+  } , [] );
 
   // 加载节点信息,以及默认的服务器配置.
   useEffect(() => {
@@ -153,25 +165,28 @@ export default () => {
                           {nodeSSHConfigMap[item.id].host}
                         </Col>
                         <Col span={12} style={{ textAlign: "right" }}>
-                          <Space style={{ marginRight: "10px" }} >
-                            <Button size="small" icon={<><DeleteOutlined /></>} onClick={() => {
-                              if (step == BatchSyncStep.CheckSSH) {
-                                if (pool?.pendings) {
-                                  const _newPending = pool.pendings.filter(task => task.id != item.id)
-                                  setPool(({
-                                    ...pool,
-                                    pendings: _newPending
-                                  }));
+                          {
+                            step == BatchSyncStep.CheckSSH &&
+                            <Space style={{ marginRight: "10px" }} >
+                              <Button disabled={ Object.keys(nodeSSHConfigMap).length == 1 } size="small" icon={<><DeleteOutlined /></>} onClick={() => {
+                                if (step == BatchSyncStep.CheckSSH) {
+                                  if (pool?.pendings) {
+                                    const _newPending = pool.pendings.filter(task => task.id != item.id)
+                                    setPool(({
+                                      ...pool,
+                                      pendings: _newPending
+                                    }));
+                                  }
                                 }
-                              }
-                            }} />
-                            <Button onClick={() => selectTaskSSHConfig == item.id ? setSelectTaskSSHConfig(undefined) : setSelectTaskSSHConfig(item.id)}
-                              size="small" icon={
-                                <>
-                                  {nodeSSHConfigValidateCheckMap[item.id]?.isValid ? <EditOutlined /> : <EditTwoTone style={{ fontSize: "26px" }} />}
-                                </>
-                              } />
-                          </Space>
+                              }} />
+                              <Button onClick={() => selectTaskSSHConfig == item.id ? setSelectTaskSSHConfig(undefined) : setSelectTaskSSHConfig(item.id)}
+                                size="small" icon={
+                                  <>
+                                    {nodeSSHConfigValidateCheckMap[item.id]?.isValid ? <EditOutlined /> : <EditTwoTone style={{ fontSize: "26px" }} />}
+                                  </>
+                                } />
+                            </Space>
+                          }
                         </Col>
                       </Row>
                       {
@@ -255,7 +270,6 @@ export default () => {
               ]}
             />
           </Col>
-          <Text>{JSON.stringify(nodeSSHConfigConnectCheckMap)}</Text>
         </Row>
 
         {

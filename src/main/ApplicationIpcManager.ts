@@ -15,6 +15,7 @@ import { CryptoIpc } from "./CryptoIpc";
 import { AppPropSignalHandler } from "./handlers/AppPropSignalHandler";
 import { CrosschainSignalHandler } from "./handlers/CrosschainSignalHandler";
 import { SSHSIpc } from "./SSHSIpc";
+import { SSHConfigSignalHandler } from "./handlers/SSHConfigSignalHandler";
 
 export const Channel : Channels = "ipc-example";
 
@@ -37,6 +38,7 @@ export class ApplicationIpcManager {
       this.listenSignalHandlers.push( new ERC20TokenSignalHandler( ctx, indexSignalHandler.getSqlite3DB()));
       this.listenSignalHandlers.push( new AppPropSignalHandler( ctx, indexSignalHandler.getSqlite3DB()));
       this.listenSignalHandlers.push( new CrosschainSignalHandler( ctx, indexSignalHandler.getSqlite3DB()));
+      this.listenSignalHandlers.push( new SSHConfigSignalHandler( ctx, indexSignalHandler.getSqlite3DB()));
     });
     this.listenSignalHandlers.push(indexSignalHandler);
   }

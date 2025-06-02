@@ -2,6 +2,7 @@ import { createAction } from '@reduxjs/toolkit';
 import { AfterSetPasswordTODO } from './reducer';
 import { ContractVO, WalletVersionVO } from '../../services';
 import { Token } from '@uniswap/sdk';
+import { SSH2ConnectConfig } from '../../../main/SSH2Ipc';
 
 export const applicationBlockchainUpdateBlockNumber = createAction<{ blockNumber: number, timestamp: number }>
   ("application/blockchainUpdateBlockNumber")
@@ -129,3 +130,7 @@ export const applicationUpdateWalletUpdateVersion = createAction<WalletVersionVO
 export const applicationUpdateWalletUpdateIgore = createAction<boolean>("application/updateWalletUpdateIgnore");
 
 export const applicationUpdateSNAddresses = createAction<{ chainId: number, addresses: string[] }>("application/updateSNAddresses");
+
+export const applicationLoadSSHConfigs = createAction<SSH2ConnectConfig[]>("application/loadSSHConfigs");
+
+export const applicationSaveOrUpdateSSHConfigs = createAction<SSH2ConnectConfig[]>("application/saveOrUpdateSSHConfigs");
