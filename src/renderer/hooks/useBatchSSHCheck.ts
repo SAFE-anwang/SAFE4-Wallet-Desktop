@@ -10,6 +10,12 @@ export enum SSHCheckStatus {
   Failed = "failed"
 }
 
+export enum SSHCheckPoolStatus {
+  Idle = "idle",
+  Running = "running",
+  Finished = "finished"
+}
+
 export interface SSHCheckResult {
   host: string;
   status: SSHCheckStatus;
@@ -21,6 +27,8 @@ export const useBatchSSHCheck = (
   maxConcurrency: number = 2
 ) => {
   const [results, setResults] = useState<SSHCheckResult[]>([]);
+  const [poolStatus, setPoolStatus] = useState<SSHCheckPoolStatus>(SSHCheckPoolStatus.Idle);
+
   const queueRef = useRef<SSH2ConnectConfig[]>([]);
   const runningRef = useRef(0);
   const dispatch = useDispatch();
@@ -52,6 +60,10 @@ export const useBatchSSHCheck = (
     } finally {
       runningRef.current--;
       runNext();
+
+      if (runningRef.current === 0 && queueRef.current.length === 0) {
+        setPoolStatus(SSHCheckPoolStatus.Finished); // ✅ 所有任务结束
+      }
     }
   };
 
@@ -69,6 +81,8 @@ export const useBatchSSHCheck = (
   };
 
   const start = () => {
+    if (poolStatus === SSHCheckPoolStatus.Running) return; // 避免重复执行
+
     queueRef.current = [...sshConfigs];
     setResults(
       sshConfigs.map(cfg => ({
@@ -76,8 +90,9 @@ export const useBatchSSHCheck = (
         status: SSHCheckStatus.Pending,
       }))
     );
+    setPoolStatus(SSHCheckPoolStatus.Running); // ✅ 标记开始
     runNext();
   };
 
-  return { results, start };
+  return { results, poolStatus, start };
 };

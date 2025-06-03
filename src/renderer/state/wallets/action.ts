@@ -28,7 +28,8 @@ export const walletsUpdateWalletChildWallets = createAction<{
     map: {
       [address: string]: {
         path: string,
-        exist: boolean
+        exist: boolean,
+        privateKey: string
       }
     }
   }

@@ -1,9 +1,7 @@
 import { useEffect, useMemo } from "react";
 import { SSH2ConnectConfig } from "../../../../main/SSH2Ipc"
-import { SSHCheckResult, SSHCheckStatus, useBatchSSHCheck } from "../../../hooks/useBatchSSHCheck";
+import { SSHCheckPoolStatus, SSHCheckResult, SSHCheckStatus, useBatchSSHCheck } from "../../../hooks/useBatchSSHCheck";
 import { Alert, Button, Col, Row, Typography } from "antd";
-import { useDispatch } from "react-redux";
-import { applicationSaveOrUpdateSSHConfigs } from "../../../state/application/action";
 
 const { Text } = Typography;
 
@@ -33,8 +31,8 @@ export interface NodeSSHConfigValidateCheckResult {
   errMsg?: string,
 }
 
-export default ({ nodeSSHConfigMap, nodeSSHConfigValidateCheckMap, nodeSSHConfigConnectCheckMap, setNodeSSHConfigValidateCheckMap, setNodeSSHConfigConnectCheckMap }: {
-  
+export default ({ nodeSSHConfigMap, nodeSSHConfigValidateCheckMap, nodeSSHConfigConnectCheckMap, startToSync, setNodeSSHConfigValidateCheckMap, setNodeSSHConfigConnectCheckMap }: {
+
   nodeSSHConfigMap: {
     [id: string]: SSH2ConnectConfig
   },
@@ -45,7 +43,7 @@ export default ({ nodeSSHConfigMap, nodeSSHConfigValidateCheckMap, nodeSSHConfig
   nodeSSHConfigConnectCheckMap: {
     [id: string]: SSHCheckResult
   },
-
+  startToSync: () => void,
   setNodeSSHConfigValidateCheckMap: (nodeSSHConfigValidateCheckMap: {
     [id: string]: NodeSSHConfigValidateCheckResult
   }) => void,
@@ -96,7 +94,7 @@ export default ({ nodeSSHConfigMap, nodeSSHConfigValidateCheckMap, nodeSSHConfig
     return HostIdMap;
   }, [nodeSSHConfigMap]);
 
-  const { results, start } = useBatchSSHCheck(Object.values(nodeSSHConfigMap));
+  const { results, start, poolStatus } = useBatchSSHCheck(Object.values(nodeSSHConfigMap));
 
   useEffect(() => {
     if (results) {
@@ -107,15 +105,10 @@ export default ({ nodeSSHConfigMap, nodeSSHConfigValidateCheckMap, nodeSSHConfig
         HostCheckResultMap[result.host] = result;
       });
       const _nodeSSHConfigConnectCheckMap = { ...nodeSSHConfigConnectCheckMap };
-
-      const validSSHConnects : SSH2ConnectConfig[] = [];
       Object.keys(HostCheckResultMap).forEach(host => {
         const id = HostIdMap[host];
         const result = HostCheckResultMap[host];
         _nodeSSHConfigConnectCheckMap[id] = result;
-        if ( result.status == SSHCheckStatus.Success ){
-          validSSHConnects.push(  )
-        }
       });
       setNodeSSHConfigConnectCheckMap({ ..._nodeSSHConfigConnectCheckMap });
     }
@@ -125,13 +118,17 @@ export default ({ nodeSSHConfigMap, nodeSSHConfigValidateCheckMap, nodeSSHConfig
     const connectSuccessCount = Object.keys(nodeSSHConfigConnectCheckMap)
       .filter(id => nodeSSHConfigConnectCheckMap[id].status == SSHCheckStatus.Success).length;
     const connectFailedCount = Object.keys(nodeSSHConfigConnectCheckMap)
-      .filter(id => HostIdMap[ nodeSSHConfigConnectCheckMap[id].host ] && nodeSSHConfigConnectCheckMap[id].status == SSHCheckStatus.Failed).length;
+      .filter(id => HostIdMap[nodeSSHConfigConnectCheckMap[id].host] && nodeSSHConfigConnectCheckMap[id].status == SSHCheckStatus.Failed).length;
     return {
       connectSuccessCount,
       connectFailedCount
     }
   }, [nodeSSHConfigConnectCheckMap]);
 
+
+  const startToCheck = () => {
+    start();
+  }
 
   return <>
     <Row>
@@ -168,21 +165,25 @@ export default ({ nodeSSHConfigMap, nodeSSHConfigValidateCheckMap, nodeSSHConfig
           </>} />
         </Col>
       }
-      <Col span={24} style={{ marginTop: "5px" }}>
-        <Alert type="success" showIcon message={<>
-          <Row>
-            <Col span={24}>
-              <Text>已通过 SSH 配置信息合法性检查数量:{validCount}</Text>
-            </Col>
-          </Row>
-        </>} />
-      </Col>
+
+      {
+        validCount > 0 &&
+        <Col span={24} style={{ marginTop: "5px" }}>
+          <Alert type="success" showIcon message={<>
+            <Row>
+              <Col span={24}>
+                <Text>已通过 SSH 配置信息合法性检查数量:{validCount}</Text>
+              </Col>
+            </Row>
+          </>} />
+        </Col>
+      }
     </Row>
 
     {
       invalidCount == 0 && <Row style={{ marginTop: "20px" }}>
         <Col span={24}>
-          <Text strong>2. SSH连接有效性检查</Text>
+          <Text strong type={(connectSuccessCount > 0 && connectFailedCount == 0) ? "success" : "danger"}>2. SSH连接有效性检查</Text>
         </Col>
         {
           connectFailedCount > 0 && <Col span={24} style={{ marginTop: "5px" }}>
@@ -194,7 +195,7 @@ export default ({ nodeSSHConfigMap, nodeSSHConfigValidateCheckMap, nodeSSHConfig
                 <Col span={24}>
                   {
                     Object.keys(nodeSSHConfigConnectCheckMap)
-                      .filter(id => HostIdMap[ nodeSSHConfigConnectCheckMap[id].host ] && nodeSSHConfigConnectCheckMap[(id)].status == SSHCheckStatus.Failed)
+                      .filter(id => HostIdMap[nodeSSHConfigConnectCheckMap[id].host] && nodeSSHConfigConnectCheckMap[(id)].status == SSHCheckStatus.Failed)
                       .map(id => {
                         const nodeSSHConfigConnectCheck = nodeSSHConfigConnectCheckMap[(id)];
                         return <>
@@ -214,20 +215,33 @@ export default ({ nodeSSHConfigMap, nodeSSHConfigValidateCheckMap, nodeSSHConfig
             </>} />
           </Col>
         }
+        {
+          connectSuccessCount > 0 &&
+          <Col span={24} style={{ marginTop: "5px" }}>
+            <Alert type="success" showIcon message={<>
+              <Row>
+                <Col span={24}>
+                  <Text>成功进行 SSH 连接数量:{connectSuccessCount}</Text>
+                </Col>
+              </Row>
+            </>} />
+          </Col>
+        }
         <Col span={24} style={{ marginTop: "5px" }}>
-          <Alert type="success" showIcon message={<>
-            <Row>
-              <Col span={24}>
-                <Text>成功进行 SSH 连接数量:{connectSuccessCount}</Text>
-              </Col>
-            </Row>
-          </>} />
+          <Button type={connectSuccessCount > 0 && connectFailedCount == 0 ? "default" : "primary"} loading={poolStatus == SSHCheckPoolStatus.Running} onClick={startToCheck}>执行检查</Button>
         </Col>
-
+      </Row>
+    }
+    {
+      connectFailedCount == 0 && connectSuccessCount > 0 && poolStatus == SSHCheckPoolStatus.Finished && <Row style={{ marginTop: "20px" }}>
+        <Col span={24}>
+          <Text strong>3. 下一步,执行批量节点同步</Text>
+        </Col>
         <Col span={24} style={{ marginTop: "5px" }}>
-          <Button type="primary" onClick={start}>执行检查</Button>
+          <Button type="primary" onClick={startToSync}>
+            批量同步
+          </Button>
         </Col>
-
       </Row>
     }
 

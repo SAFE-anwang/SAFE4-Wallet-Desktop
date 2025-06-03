@@ -470,9 +470,9 @@ export function useTokenBalance(account?: string, token?: Token): TokenAmount | 
  *
  * @param type mn | sn
  */
-export function useActiveAccountChildWallets(type: SupportChildWalletType) {
+export function useActiveAccountChildWallets(type: SupportChildWalletType , initSize ?: number) {
   // 每一批检查多少个子钱包
-  const size = 50;
+  const size = initSize ? initSize : 50;
   const activeAccountKeystore = useWalletsActiveKeystore();
   if (!activeAccountKeystore) {
     return;
@@ -517,7 +517,8 @@ export function useActiveAccountChildWallets(type: SupportChildWalletType) {
             const payloadMap: {
               [address: string]: {
                 exist: boolean,
-                path: string
+                path: string,
+                privateKey: string
               }
             } = {};
             let notExistCount = 0;
@@ -525,7 +526,8 @@ export function useActiveAccountChildWallets(type: SupportChildWalletType) {
               notExistCount += result.map[address].exist || walletUsedAddressed.indexOf(address) >= 0 ? 0 : 1;
               payloadMap[address] = {
                 exist: result.map[address].exist || walletUsedAddressed.indexOf(address) >= 0,
-                path: result.map[address].hdNode.path
+                path: result.map[address].hdNode.path,
+                privateKey: result.map[address].hdNode.privateKey,
               }
             });
             // 判断是否需要继续加载子钱包并验证 loading;
@@ -552,12 +554,12 @@ export function useActiveAccountChildWallets(type: SupportChildWalletType) {
         } else {
           // 判断是否有当前建立的,但是链上还没有更新的exist状态;
           const _map: {
-            [address: string]: { exist: boolean, path: string }
+            [address: string]: { exist: boolean, path: string , privateKey : string }
           } = {}
           Object.keys(childTypeWallets.wallets)
             .filter(childAddress => !childTypeWallets.wallets[childAddress].exist && walletUsedAddressed.indexOf(childAddress) >= 0)
             .forEach(childAddress => {
-              _map[childAddress] = { exist: true, path: childTypeWallets.wallets[childAddress].path }
+              _map[childAddress] = { exist: true, path: childTypeWallets.wallets[childAddress].path , privateKey : childTypeWallets.wallets[childAddress].privateKey }
             })
           if (Object.keys(_map).length > 0) {
             dispatch(walletsUpdateWalletChildWallets({

@@ -95,7 +95,8 @@ const Config = {
     Safescan_Api: "http://127.0.0.1:5005",
   },
   "test": {
-    Default_Web3_Endpoint: "http://47.119.151.64:8545",
+    // Default_Web3_Endpoint: "http://47.119.151.64:8545",
+    Default_Web3_Endpoint: Safe4_Network_Config.Testnet.endpoint,
     Default_Web3_ChainId: Safe4_Network_Config.Testnet.chainId,
     Safescan_URL: Safe4_Network_Config.Testnet.Safescan_URL,
     Safescan_Api: Safe4_Network_Config.Testnet.Safescan_Api,

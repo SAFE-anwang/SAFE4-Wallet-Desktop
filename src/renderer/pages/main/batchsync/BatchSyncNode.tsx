@@ -1,5 +1,5 @@
 import { Avatar, Button, Card, Col, Divider, Input, List, Radio, RadioChangeEvent, Row, Space, Steps, Tabs, Typography } from "antd";
-import { useWalletsActiveAccount } from "../../../state/wallets/hooks"
+import { useActiveAccountChildWallets, useWalletsActiveAccount } from "../../../state/wallets/hooks"
 import { useCallback, useEffect, useState } from "react";
 import SyncNode from "./SyncNode";
 import { CheckCircleFilled, CloseCircleFilled, CloseCircleOutlined, DeleteOutlined, EditOutlined, EditTwoTone, SyncOutlined } from "@ant-design/icons";
@@ -8,9 +8,10 @@ import { RenderNodeState } from "../supernodes/Supernodes";
 import { SSH2ConnectConfig } from "../../../../main/SSH2Ipc";
 import BatchSSHCheck, { NodeSSHConfigValidateCheckResult } from "./BatchSSHCheck";
 import { SSHCheckResult, SSHCheckStatus } from "../../../hooks/useBatchSSHCheck";
-import { Channel } from "../../../../main/ApplicationIpcManager";
 import { IPC_CHANNEL } from "../../../config";
 import { SSHConfigSignal, SSHConfig_Methods } from "../../../../main/handlers/SSHConfigSignalHandler";
+import TabPane from "antd/es/tabs/TabPane";
+import LoadChildWallets from "./LoadChildWallets";
 
 const { Text } = Typography;
 // 并发同步执行数..
@@ -19,7 +20,7 @@ const concurrency = 5;
 export interface SyncNodeTask {
   id: string,
   title: string,
-  node: any
+  node: any,
 }
 
 enum BatchSyncStep {
@@ -30,8 +31,7 @@ enum BatchSyncStep {
 
 export default () => {
 
-  const [step, setStep] = useState<number>(BatchSyncStep.LoadNodes);
-
+  const [step, setStep] = useState<number>(-1);
   const activeAccount = useWalletsActiveAccount();
   const masternodesResult = useMasternodesForCreator({ creator: activeAccount });
 
@@ -53,16 +53,35 @@ export default () => {
   const [nodeSSHConfigConnectCheckMap, setNodeSSHConfigConnectCheckMap] = useState<{
     [id: string]: SSHCheckResult
   }>({});
+  const [hostSSHConfigMap, setHostSSHConfigMap] = useState<{
+    [host: string]: SSH2ConnectConfig
+  }>();
 
-  useEffect( () => {
-    window.electron.ipcRenderer.sendMessage(IPC_CHANNEL, [ SSHConfigSignal, SSHConfig_Methods.getAll, [] ])
+  const [nodeAddressConfigMap, setNodeAddressConfigMap] = useState<{
+    [id: string]: {
+      address: string,
+      privKey?: string
+    }
+  }>();
+
+  useEffect(() => {
+    window.electron.ipcRenderer.sendMessage(IPC_CHANNEL, [SSHConfigSignal, SSHConfig_Methods.getAll, []])
     window.electron.ipcRenderer.once(IPC_CHANNEL, (arg) => {
       if (arg instanceof Array && arg[0] == SSHConfigSignal && arg[1] == SSHConfig_Methods.getAll) {
         const rows = arg[2][0];
-        console.log("SSH-load-rows ==>" , rows)
+        const _hostSSHConfigMap: {
+          [host: string]: SSH2ConnectConfig;
+        } = {};
+        Object.values(rows).forEach((row: any) => {
+          const { host, port, username, password } = row;
+          _hostSSHConfigMap[host] = {
+            host, port, username, password
+          }
+        })
+        setHostSSHConfigMap(_hostSSHConfigMap);
       }
     });
-  } , [] );
+  }, []);
 
   // 加载节点信息,以及默认的服务器配置.
   useEffect(() => {
@@ -71,7 +90,7 @@ export default () => {
       const tasks = masternodes.sort((m0, m1) => m1.id - m0.id).map((masternode) => {
         return {
           id: "MN:" + masternode.id,
-          title: "主节点-" + masternode.id + "123",
+          title: "主节点-" + masternode.id,
           node: masternode
         }
       });
@@ -80,19 +99,45 @@ export default () => {
         executings: [],
         completeds: []
       });
-      if (masternodesResult.finished && masternodesResult.masternodes.length == masternodesResult.num) {
-        setStep(1);
+      if (masternodesResult.finished
+        && hostSSHConfigMap && masternodesResult.masternodes.length == masternodesResult.num) {
+
+        const _nodeAddressConfigMap: {
+          [id: string]: {
+            address: string,
+            privKey?: string
+          }
+        } = {};
         masternodesResult.masternodes.forEach(mn => {
-          nodeSSHConfigMap["MN:" + mn.id] = {
-            host: "",
-            port: 22,
-            username: "root",
-            password: ""
+          const { addr, enode } = mn;
+          const IP_MATCH = enode.match(/@([\d.]+):\d+/);
+          const IP = IP_MATCH ? IP_MATCH[1] : null;
+          const ID = "MN:" + mn.id;
+          if (IP && hostSSHConfigMap[IP]) {
+            const { host, port, username, password } = hostSSHConfigMap[IP];
+            nodeSSHConfigMap[ID] = {
+              host,
+              port,
+              username,
+              password
+            }
+          } else {
+            nodeSSHConfigMap[ID] = {
+              host: "",
+              port: 22,
+              username: "root",
+              password: ""
+            }
+          }
+          _nodeAddressConfigMap[ID] = {
+            address: addr
           }
         })
+        setNodeAddressConfigMap(_nodeAddressConfigMap);
+        setStep(BatchSyncStep.LoadNodes);
       }
     }
-  }, [masternodesResult]);
+  }, [masternodesResult, hostSSHConfigMap]);
 
   useEffect(() => {
     if (step == BatchSyncStep.CheckSSH && pool?.pendings) {
@@ -114,6 +159,7 @@ export default () => {
 
   const startToSync = () => {
     if (pool?.pendings) {
+      setStep(BatchSyncStep.BatchSync);
       const pendings = pool.pendings;
       const executings = pendings.slice(0, concurrency);
       setActiveKey(String(executings[0].id))
@@ -168,7 +214,7 @@ export default () => {
                           {
                             step == BatchSyncStep.CheckSSH &&
                             <Space style={{ marginRight: "10px" }} >
-                              <Button disabled={ Object.keys(nodeSSHConfigMap).length == 1 } size="small" icon={<><DeleteOutlined /></>} onClick={() => {
+                              <Button disabled={Object.keys(nodeSSHConfigMap).length == 1} size="small" icon={<><DeleteOutlined /></>} onClick={() => {
                                 if (step == BatchSyncStep.CheckSSH) {
                                   if (pool?.pendings) {
                                     const _newPending = pool.pendings.filter(task => task.id != item.id)
@@ -273,27 +319,38 @@ export default () => {
         </Row>
 
         {
+          step == BatchSyncStep.LoadNodes && nodeAddressConfigMap && <>
+            <LoadChildWallets nodeAddressConfigMap={nodeAddressConfigMap} setNodeAddressConfigMap={setNodeAddressConfigMap}
+              finishCallback={() => setStep(BatchSyncStep.CheckSSH)} />
+          </>
+        }
+
+        {
           step == BatchSyncStep.CheckSSH && <>
             <Card style={{ marginTop: "20px" }}>
               <BatchSSHCheck nodeSSHConfigMap={nodeSSHConfigMap}
                 nodeSSHConfigValidateCheckMap={nodeSSHConfigValidateCheckMap}
                 nodeSSHConfigConnectCheckMap={nodeSSHConfigConnectCheckMap}
-
+                startToSync={startToSync}
                 setNodeSSHConfigValidateCheckMap={setNodeSSHConfigValidateCheckMap}
-                setNodeSSHConfigConnectCheckMap={setNodeSSHConfigConnectCheckMap} />
+                setNodeSSHConfigConnectCheckMap={setNodeSSHConfigConnectCheckMap}
+              />
             </Card>
           </>
         }
 
-        {/* <Tabs type="card" activeKey={activeKey} onChange={(key) => { setActiveKey(key) }}>
-          {
-            pool?.executings.map((node, i) => {
-              return (
-                <TabPane key={String(node.id)} tab={<><SyncOutlined spin /> {`${pool.executings[i].title}`} </>} />
-              )
-            })
-          }
-        </Tabs> */}
+        {
+          step == BatchSyncStep.BatchSync &&
+          <Tabs type="card" activeKey={activeKey} onChange={(key) => { setActiveKey(key) }}>
+            {
+              pool?.executings.map((node, i) => {
+                return (
+                  <TabPane key={String(node.id)} tab={<><SyncOutlined spin /> {`${pool.executings[i].title}`} </>} />
+                )
+              })
+            }
+          </Tabs>
+        }
 
         {pool?.executings.map((task, i) => {
           return (
@@ -341,6 +398,9 @@ export default () => {
             </div>
           );
         })}
+
+        <Button onClick={startToSync}>StartToSync</Button>
+
       </Col>
       <Col span={4}>
         <Row>

@@ -202,7 +202,7 @@ export default ({
       // 注册 ssh2 数据监听
       removeSSH2Stderr = window.electron.sshs.on((...args: any[]) => {
         const [host , stderr] = args[0];
-        if ( host == inputParams.host){
+        if ( host == inputParams.host ){
           term.write(`\x1b[34m${stderr}\x1b[0m`);
         }
       });
@@ -415,6 +415,7 @@ export default ({
       } catch (err) {
 
       }
+      return;
       let CMD_psSafe4_success = await CMD_psSafe4.execute(term);
       if (CMD_psSafe4_success && forceUpdateNode) {
         const CMD_catSafe4Info_success = await CMD_catSafe4Info.execute(term);

@@ -43,13 +43,13 @@ export interface Wallets {
       sn: {
         loading: boolean,
         wallets: {
-          [address in string]: { path: string, exist: boolean }
+          [address in string]: { path: string, exist: boolean , privateKey : string }
         }
       }
       mn: {
         loading: boolean,
         wallets: {
-          [address in string]: { path: string, exist: boolean }
+          [address in string]: { path: string, exist: boolean , privateKey : string }
         }
       }
     }
@@ -228,12 +228,14 @@ export default createReducer(initialState, (builder) => {
         if (type == SupportChildWalletType.SN) {
           _childWallets.sn.wallets[childAddress] = {
             path: result.map[childAddress].path,
-            exist: result.map[childAddress].exist
+            exist: result.map[childAddress].exist,
+            privateKey:  result.map[childAddress].privateKey,
           }
         } else {
           _childWallets.mn.wallets[childAddress] = {
             path: result.map[childAddress].path,
-            exist: result.map[childAddress].exist
+            exist: result.map[childAddress].exist,
+            privateKey:  result.map[childAddress].privateKey,
           }
         }
       });
