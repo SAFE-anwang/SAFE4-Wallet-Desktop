@@ -10,6 +10,7 @@ import { DateTimeFormat } from "../../utils/DateUtils";
 import { useWeb3React } from "@web3-react/core";
 import { Safe4_Network_Config, Safe4NetworkChainId } from "../../config";
 import { useTranslation } from "react-i18next";
+import { SSH2ConnectConfig } from "../../../main/SSH2Ipc";
 
 const { Text } = Typography;
 
@@ -20,12 +21,12 @@ export class CommandState {
 
   command: string;
 
-  host : string;
+  host: string;
   handle: (data: string) => boolean;
   onSuccess: () => void;
   onFailure: () => void;
 
-  constructor(host : string , command: string, handle: (data: string) => boolean, onSuccess: () => void, onFailure: () => void) {
+  constructor(host: string, command: string, handle: (data: string) => boolean, onSuccess: () => void, onFailure: () => void) {
     this.command = command;
     this.host = host;
     this.handle = handle;
@@ -42,7 +43,7 @@ export class CommandState {
           term.writeln(this.command);
         }
         try {
-          const data = await window.electron.sshs.execute(this.host,this.command);
+          const data = await window.electron.sshs.execute(this.host, this.command);
           resolve(this.handle(data));
         } catch (err: any) {
           reject(err);
@@ -60,14 +61,14 @@ export default ({
   nodeAddressPrivateKey,
   isSupernode,
   nodeAddress,
-  IP,
+  sshConfig,
   onSuccess,
   onError
 }: {
   nodeAddressPrivateKey?: string,
   isSupernode?: boolean,
   nodeAddress: string,
-  IP?: string,
+  sshConfig : SSH2ConnectConfig,
   onSuccess: (enode: string, nodeAddress: string) => void
   onError: () => void
 }) => {
@@ -165,9 +166,9 @@ export default ({
     username: string,
     password: string,
   }>({
-    host: IP ? IP : "",
-    username: "root",
-    password: ""
+    host: sshConfig.host,
+    username: sshConfig.username,
+    password: sshConfig.password,
   });
   const [inputErrors, setInputErrors] = useState<{
     host: string | undefined,
@@ -201,13 +202,16 @@ export default ({
       terminalInstance.current.open(terminalRef.current);
       // 注册 ssh2 数据监听
       removeSSH2Stderr = window.electron.sshs.on((...args: any[]) => {
-        const [host , stderr] = args[0];
-        if ( host == inputParams.host ){
+        const [host, stderr] = args[0];
+        if (host == inputParams.host) {
           term.write(`\x1b[34m${stderr}\x1b[0m`);
         }
       });
       term.write(`${t("ssh2_connect_waiting")}\r\n`);
     }
+
+    doConnect();
+    
     return () => {
       // Cleanup and dispose the terminal instance
       if (terminalInstance.current) {
@@ -216,7 +220,7 @@ export default ({
       if (removeSSH2Stderr) {
         removeSSH2Stderr();
       }
-      console.log("[Render]:Close connect:" , inputParams.host);
+      console.log("[Render]:Close connect:", inputParams.host);
       window.electron.sshs.close(inputParams.host);
     };
   }, []);
@@ -415,7 +419,7 @@ export default ({
       } catch (err) {
 
       }
-      return;
+
       let CMD_psSafe4_success = await CMD_psSafe4.execute(term);
       if (CMD_psSafe4_success && forceUpdateNode) {
         const CMD_catSafe4Info_success = await CMD_catSafe4Info.execute(term);
@@ -679,144 +683,144 @@ export default ({
   }, [terminalInstance, inputParams, wallet, nodeAddress]);
 
   return <>
-      <Row>
-        <Col span={8}>
-          {
-            current < 0 &&
-            <Card title={t("ssh2_connect")} style={{ width: "95%", height: "470px" }}>
-              <Spin spinning={connecting}>
-                <Row>
-                  <Col span={24}>
-                    <Text type="secondary">{t("ssh2_connect_serverip")}</Text>
-                  </Col>
-                  <Col span={24}>
-                    <Input value={inputParams?.host} onChange={(event) => {
-                      const inputValue = event.target.value.trim();
-                      setInputParams({
-                        ...inputParams,
-                        host: inputValue
-                      })
-                      setInputErrors({
-                        ...inputErrors,
-                        host: undefined
-                      })
-                      setConnectError(undefined);
-                    }} />
-                    {
-                      inputErrors?.host && <Alert style={{ marginTop: "5px" }} showIcon type="error" message={inputErrors?.host} />
-                    }
-                  </Col>
-                  <Col span={24} style={{ marginTop: "10px" }}>
-                    <Text type="secondary">{t("ssh2_connect_serveruser")}</Text>
-                  </Col>
-                  <Col span={24}>
-                    <Input value={inputParams.username} onChange={(event) => {
-                      const inputValue = event.target.value.trim();
-                      setInputParams({
-                        ...inputParams,
-                        username: inputValue
-                      })
-                      setInputErrors({
-                        ...inputErrors,
-                        username: undefined
-                      })
-                      setConnectError(undefined);
-                    }} />
-                    {
-                      inputErrors.username && <Alert style={{ marginTop: "5px" }} showIcon type="error" message={inputErrors.username} />
-                    }
-                  </Col>
-                  <Col span={24} style={{ marginTop: "10px" }}>
-                    <Text type="secondary">{t("ssh2_connect_password")}</Text>
-                  </Col>
-                  <Col span={24}>
-                    <Input.Password value={inputParams.password} onChange={(event) => {
-                      const inputValue = event.target.value.trim();
-                      setInputParams({
-                        ...inputParams,
-                        password: inputValue
-                      })
-                      setInputErrors({
-                        ...inputErrors,
-                        password: undefined
-                      })
-                      setConnectError(undefined);
-                    }} />
-                    {
-                      inputErrors.password && <Alert style={{ marginTop: "5px" }} showIcon type="error" message={inputErrors.password} />
-                    }
-                  </Col>
-                </Row>
-                {
-                  connectError && <>
-                    <Divider />
-                    <Row>
-                      <Col span={24}>
-                        <Alert type="error" showIcon message={connectError} />
-                      </Col>
-                    </Row>
-                  </>
-                }
-                <Divider />
-                <Row style={{ marginTop: "20px" }}>
-                  <Col span={24}>
-                    <Button onClick={doConnect} type="primary">{t("ssh2_connect_button")}</Button>
-                    <Button style={{ marginLeft: "20px" }} onClick={() => {
-
-                    }} type="default">{t("close")}</Button>
-                  </Col>
-                </Row>
-              </Spin>
-            </Card>
-          }
-
-          {
-            current >= 0 &&
-            <Card title="进度" style={{ width: "95%", height: "470px" }}>
-              <Steps
-                direction="vertical"
-                size="small"
-                current={current}
-                items={steps}
-              />
-              <Divider style={{ marginTop: "5px", marginBottom: "15px" }} />
+    <Row>
+      <Col span={8}>
+        {
+          current < 0 &&
+          <Card title={t("ssh2_connect")} style={{ width: "95%", height: "470px" }}>
+            <Spin spinning={connecting}>
               <Row>
                 <Col span={24}>
-                  <Text type="secondary">{t("node_addresss")}</Text>
+                  <Text type="secondary">{t("ssh2_connect_serverip")}</Text>
                 </Col>
                 <Col span={24}>
-                  <AddressComponent address={nodeAddress} ellipsis copyable qrcode />
-                </Col>
-                <Col span={24}>
-                  <Text type="secondary">ENODE</Text>
-                </Col>
-                <Col span={24}>
+                  <Input disabled value={inputParams?.host} onChange={(event) => {
+                    const inputValue = event.target.value.trim();
+                    setInputParams({
+                      ...inputParams,
+                      host: inputValue
+                    })
+                    setInputErrors({
+                      ...inputErrors,
+                      host: undefined
+                    })
+                    setConnectError(undefined);
+                  }} />
                   {
-                    enode && <Text ellipsis copyable>{enode}</Text>
+                    inputErrors?.host && <Alert style={{ marginTop: "5px" }} showIcon type="error" message={inputErrors?.host} />
                   }
                 </Col>
-                <Divider style={{ marginTop: "5px", marginBottom: "15px" }} />
+                <Col span={24} style={{ marginTop: "10px" }}>
+                  <Text type="secondary">{t("ssh2_connect_serveruser")}</Text>
+                </Col>
+                <Col span={24}>
+                  <Input disabled value={inputParams.username} onChange={(event) => {
+                    const inputValue = event.target.value.trim();
+                    setInputParams({
+                      ...inputParams,
+                      username: inputValue
+                    })
+                    setInputErrors({
+                      ...inputErrors,
+                      username: undefined
+                    })
+                    setConnectError(undefined);
+                  }} />
+                  {
+                    inputErrors.username && <Alert style={{ marginTop: "5px" }} showIcon type="error" message={inputErrors.username} />
+                  }
+                </Col>
+                <Col span={24} style={{ marginTop: "10px" }}>
+                  <Text type="secondary">{t("ssh2_connect_password")}</Text>
+                </Col>
+                <Col span={24}>
+                  <Input.Password disabled value={inputParams.password} onChange={(event) => {
+                    const inputValue = event.target.value.trim();
+                    setInputParams({
+                      ...inputParams,
+                      password: inputValue
+                    })
+                    setInputErrors({
+                      ...inputErrors,
+                      password: undefined
+                    })
+                    setConnectError(undefined);
+                  }} />
+                  {
+                    inputErrors.password && <Alert style={{ marginTop: "5px" }} showIcon type="error" message={inputErrors.password} />
+                  }
+                </Col>
               </Row>
+              {
+                connectError && <>
+                  <Divider />
+                  <Row>
+                    <Col span={24}>
+                      <Alert type="error" showIcon message={connectError} />
+                    </Col>
+                  </Row>
+                </>
+              }
+              <Divider />
+              <Row style={{ marginTop: "20px" }}>
+                <Col span={24}>
+                  <Button onClick={doConnect} type="primary">{t("ssh2_connect_button")}</Button>
+                  <Button style={{ marginLeft: "20px" }} onClick={() => {
 
-              <Row>
-                <Button type={!scriptError ? "primary" : "default"}
-                  disabled={!scriptError && current < steps.length}
-                  onClick={() => {
-                    if (enode) {
-                      onSuccess(enode, nodeAddress)
-                    }
-
-                  }}>{t("return")}</Button>
+                  }} type="default">{t("close")}</Button>
+                </Col>
               </Row>
-            </Card>
-          }
-        </Col>
-        <Col span={16}>
-          <Card>
-            <div ref={terminalRef} style={{ width: '100%', height: '400px', background: "black", padding: "10px" }} />
+            </Spin>
           </Card>
-        </Col>
-      </Row>
+        }
+
+        {
+          current >= 0 &&
+          <Card title="进度" style={{ width: "95%", height: "470px" }}>
+            <Steps
+              direction="vertical"
+              size="small"
+              current={current}
+              items={steps}
+            />
+            <Divider style={{ marginTop: "5px", marginBottom: "15px" }} />
+            <Row>
+              <Col span={24}>
+                <Text type="secondary">{t("node_addresss")}</Text>
+              </Col>
+              <Col span={24}>
+                <AddressComponent address={nodeAddress} ellipsis copyable qrcode />
+              </Col>
+              <Col span={24}>
+                <Text type="secondary">ENODE</Text>
+              </Col>
+              <Col span={24}>
+                {
+                  enode && <Text ellipsis copyable>{enode}</Text>
+                }
+              </Col>
+              <Divider style={{ marginTop: "5px", marginBottom: "15px" }} />
+            </Row>
+
+            <Row>
+              <Button type={!scriptError ? "primary" : "default"}
+                disabled={!scriptError && current < steps.length}
+                onClick={() => {
+                  if (enode) {
+                    onSuccess(enode, nodeAddress)
+                  }
+
+                }}>{t("return")}</Button>
+            </Row>
+          </Card>
+        }
+      </Col>
+      <Col span={16}>
+        <Card>
+          <div ref={terminalRef} style={{ width: '100%', height: '400px', background: "black", padding: "10px" }} />
+        </Card>
+      </Col>
+    </Row>
 
   </>
 

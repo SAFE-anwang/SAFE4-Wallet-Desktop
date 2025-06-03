@@ -12,6 +12,7 @@ import { IPC_CHANNEL } from "../../../config";
 import { SSHConfigSignal, SSHConfig_Methods } from "../../../../main/handlers/SSHConfigSignalHandler";
 import TabPane from "antd/es/tabs/TabPane";
 import LoadChildWallets from "./LoadChildWallets";
+import { MasternodeInfo } from "../../../structs/Masternode";
 
 const { Text } = Typography;
 // 并发同步执行数..
@@ -59,7 +60,8 @@ export default () => {
 
   const [nodeAddressConfigMap, setNodeAddressConfigMap] = useState<{
     [id: string]: {
-      address: string,
+      addr: string,
+      address?: string,
       privKey?: string
     }
   }>();
@@ -104,7 +106,8 @@ export default () => {
 
         const _nodeAddressConfigMap: {
           [id: string]: {
-            address: string,
+            addr: string,
+            address?: string,
             privKey?: string
           }
         } = {};
@@ -123,14 +126,14 @@ export default () => {
             }
           } else {
             nodeSSHConfigMap[ID] = {
-              host: "",
+              host: IP ? IP : "",
               port: 22,
               username: "root",
               password: ""
             }
           }
           _nodeAddressConfigMap[ID] = {
-            address: addr
+            addr: addr
           }
         })
         setNodeAddressConfigMap(_nodeAddressConfigMap);
@@ -169,6 +172,43 @@ export default () => {
         completeds: []
       })
     }
+  }
+
+  const [nodeNewAddressEnodeMap, setNodeNewAddressEnodeMap] = useState<{
+    [id: string]: {
+      address: string,
+      enode: string
+    }
+  }>({});
+
+  const addNewAddressEnode = (id: string, newAddressEnode: {
+    address: string,
+    enode: string
+  }) => {
+    setNodeNewAddressEnodeMap(prev => {
+      prev[id] = newAddressEnode
+      return prev;
+    });
+  }
+
+  const doTxUpdate = () => {
+    const mnMap = masternodesResult.masternodes.reduce((map, mn) => {
+      map["MN:" + mn.id] = mn;
+      return map;
+    }, {} as {
+      [id: string]: MasternodeInfo
+    });
+    Object.keys(nodeNewAddressEnodeMap).forEach(id => {
+      const nodeNewAddressEncode = nodeNewAddressEnodeMap[id];
+      const nodeOldAddress = mnMap[id].addr;
+      const nodeOldEnode = mnMap[id].enode;
+      if (nodeOldAddress != nodeNewAddressEncode.address) {
+        console.log("Need Update Node Address for :", id)
+      }
+      if (nodeOldEnode != nodeNewAddressEncode.enode) {
+        console.log("Need Update Node Enode for :", id)
+      }
+    });
   }
 
   return <>
@@ -341,65 +381,69 @@ export default () => {
 
         {
           step == BatchSyncStep.BatchSync &&
-          <Tabs type="card" activeKey={activeKey} onChange={(key) => { setActiveKey(key) }}>
-            {
-              pool?.executings.map((node, i) => {
-                return (
-                  <TabPane key={String(node.id)} tab={<><SyncOutlined spin /> {`${pool.executings[i].title}`} </>} />
-                )
-              })
-            }
-          </Tabs>
-        }
+          <>
 
-        {pool?.executings.map((task, i) => {
-          return (
-            <div key={task.id} style={{ display: activeKey == String(task.id) ? 'block' : 'none' }}>
-              <SyncNode
-                task={task}
-                successCallback={(finishedTask) => {
-                  setPool(prevPool => {
-                    if (!prevPool) return prevPool;
-                    const { pendings, executings, completeds } = prevPool;
-                    // 从执行数组中移除
-                    const newExecuting = executings.filter(task => task.id !== finishedTask.id);
-                    // 将已完成数组排序
-                    const newCompleted = [finishedTask, ...completeds.filter(task => task.id != finishedTask.id)]
-                      .sort((taskA, taskB) => Number(taskA.id.split(":")[1]) - Number(taskB.id.split(":")[1]));
-                    if (newCompleted.length == masternodesResult.masternodes.length) {
-                      console.log("Done!!")
-                    }
-                    // 如果还有等待任务
-                    if (pendings.length > 0 && executings.length <= concurrency) {
-                      const [nextTask, ...restPendings] = pendings;
-                      const alreadyExecuting = newExecuting.find(task => task.id === nextTask.id);
-                      if (alreadyExecuting) {
+            <Tabs type="card" activeKey={activeKey} onChange={(key) => { setActiveKey(key) }}>
+              {
+                pool?.executings.map((node, i) => {
+                  return (
+                    <TabPane key={String(node.id)} tab={<><SyncOutlined spin /> {`${pool.executings[i].title}`} </>} />
+                  )
+                })
+              }
+            </Tabs>
+            {nodeAddressConfigMap && pool?.executings.map((task, i) => {
+              return (
+                <div key={task.id} style={{ display: activeKey == String(task.id) ? 'block' : 'none' }}>
+                  <SyncNode
+                    task={task}
+                    sshConfig={nodeSSHConfigMap[task.id]}
+                    addressConfig={nodeAddressConfigMap[task.id]}
+                    successCallback={(finishedTask, enode: string, nodeAddress: string) => {
+                      addNewAddressEnode(task.id, { address: nodeAddress, enode });
+                      setPool(prevPool => {
+                        if (!prevPool) return prevPool;
+                        const { pendings, executings, completeds } = prevPool;
+                        // 从执行数组中移除
+                        const newExecuting = executings.filter(task => task.id !== finishedTask.id);
+                        // 将已完成数组排序
+                        const newCompleted = [finishedTask, ...completeds.filter(task => task.id != finishedTask.id)]
+                          .sort((taskA, taskB) => Number(taskA.id.split(":")[1]) - Number(taskB.id.split(":")[1]));
+                        if (newCompleted.length == Object.keys(nodeSSHConfigMap).length) {
+                          doTxUpdate();
+                          console.log("Done!!")
+                        }
+                        // 如果还有等待任务
+                        if (pendings.length > 0 && executings.length <= concurrency) {
+                          const [nextTask, ...restPendings] = pendings;
+                          const alreadyExecuting = newExecuting.find(task => task.id === nextTask.id);
+                          if (alreadyExecuting) {
+                            return {
+                              pendings: restPendings,
+                              executings: newExecuting,
+                              completeds: newCompleted,
+                            };
+                          }
+                          return {
+                            pendings: restPendings,
+                            executings: [...newExecuting, nextTask],
+                            completeds: newCompleted,
+                          };
+                        }
                         return {
-                          pendings: restPendings,
+                          pendings,
                           executings: newExecuting,
                           completeds: newCompleted,
                         };
-                      }
-                      return {
-                        pendings: restPendings,
-                        executings: [...newExecuting, nextTask],
-                        completeds: newCompleted,
-                      };
-                    }
-                    return {
-                      pendings,
-                      executings: newExecuting,
-                      completeds: newCompleted,
-                    };
-                  });
-                }}
-                failedCallback={(finishedTask) => { }}
-              />
-            </div>
-          );
-        })}
-
-        <Button onClick={startToSync}>StartToSync</Button>
+                      });
+                    }}
+                    failedCallback={(finishedTask) => { }}
+                  />
+                </div>
+              );
+            })}
+          </>
+        }
 
       </Col>
       <Col span={4}>
