@@ -1,8 +1,8 @@
-import { Avatar, Button, Card, Col, Divider, Input, List, Radio, RadioChangeEvent, Row, Space, Steps, Tabs, Typography } from "antd";
+import { Alert, Avatar, Button, Card, Col, Divider, Input, List, Radio, RadioChangeEvent, Row, Space, Spin, Steps, Tabs, Typography } from "antd";
 import { useActiveAccountChildWallets, useWalletsActiveAccount } from "../../../state/wallets/hooks"
 import { useCallback, useEffect, useState } from "react";
 import SyncNode from "./SyncNode";
-import { CheckCircleFilled, CloseCircleFilled, CloseCircleOutlined, DeleteOutlined, EditOutlined, EditTwoTone, SyncOutlined } from "@ant-design/icons";
+import { CheckCircleFilled, CloseCircleFilled, CloseCircleOutlined, CloseCircleTwoTone, DeleteOutlined, EditOutlined, EditTwoTone, SyncOutlined } from "@ant-design/icons";
 import useMasternodesForCreator from "../../../hooks/useMasternodesForCreator";
 import { RenderNodeState } from "../supernodes/Supernodes";
 import { SSH2ConnectConfig } from "../../../../main/SSH2Ipc";
@@ -13,6 +13,12 @@ import { SSHConfigSignal, SSHConfig_Methods } from "../../../../main/handlers/SS
 import TabPane from "antd/es/tabs/TabPane";
 import LoadChildWallets from "./LoadChildWallets";
 import { MasternodeInfo } from "../../../structs/Masternode";
+import { TxExecuteStatus } from "../safe3/Safe3";
+import { useMasternodeLogicContract, useMasternodeStorageContract } from "../../../hooks/useContracts";
+import { useTransactionAdder } from "../../../state/transactions/hooks";
+import { walletsUpdateUsedChildWalletAddress } from "../../../state/wallets/action";
+import { useDispatch } from "react-redux";
+import { useTranslation } from "react-i18next";
 
 const { Text } = Typography;
 // 并发同步执行数..
@@ -35,6 +41,10 @@ export default () => {
   const [step, setStep] = useState<number>(-1);
   const activeAccount = useWalletsActiveAccount();
   const masternodesResult = useMasternodesForCreator({ creator: activeAccount });
+  const masternodeLogicContract = useMasternodeLogicContract(true);
+  const addTransaction = useTransactionAdder();
+  const dispatch = useDispatch();
+  const { t } = useTranslation();
 
   const [activeKey, setActiveKey] = useState<string>();
   const [pool, setPool] = useState<{
@@ -191,6 +201,23 @@ export default () => {
     });
   }
 
+  const [nodeTxUpdates, setNodeTxUpdates] = useState<{
+    [id: string]: {
+      updateAddress?: TxExecuteStatus,
+      updateEnode?: TxExecuteStatus
+    }
+  }>({});
+
+  const addNewTxUpdate = (id: string, newTxUpdate: {
+    updateAddress?: TxExecuteStatus,
+    updateEnode?: TxExecuteStatus
+  }) => {
+    nodeTxUpdates[id] = newTxUpdate;
+    setNodeTxUpdates({ ...nodeTxUpdates });
+  }
+
+  const [txUpdating, setTxUpdating] = useState<boolean>();
+
   const doTxUpdate = () => {
     const mnMap = masternodesResult.masternodes.reduce((map, mn) => {
       map["MN:" + mn.id] = mn;
@@ -198,17 +225,90 @@ export default () => {
     }, {} as {
       [id: string]: MasternodeInfo
     });
-    Object.keys(nodeNewAddressEnodeMap).forEach(id => {
-      const nodeNewAddressEncode = nodeNewAddressEnodeMap[id];
-      const nodeOldAddress = mnMap[id].addr;
-      const nodeOldEnode = mnMap[id].enode;
-      if (nodeOldAddress != nodeNewAddressEncode.address) {
-        console.log("Need Update Node Address for :", id)
+    setTxUpdating(true);
+    const asyncTxUpdate = async () => {
+      if (masternodeLogicContract != null) {
+        const IDS = Object.keys(nodeNewAddressEnodeMap);
+        for (let i = 0; i < IDS.length; i++) {
+          const nodeNewAddressEncode = nodeNewAddressEnodeMap[IDS[i]];
+          const nodeNewAddress = nodeNewAddressEncode.address;
+          const nodeNewEnode = nodeNewAddressEncode.enode;
+          const nodeOldAddress = mnMap[IDS[i]].addr;
+          const nodeOldEnode = mnMap[IDS[i]].enode;
+
+          const UpdateResult: {
+            updateAddress?: TxExecuteStatus,
+            updateEnode?: TxExecuteStatus
+          } = {};
+
+          if (nodeOldAddress != nodeNewAddressEncode.address) {
+            try {
+              const estimateGas = await masternodeLogicContract.estimateGas.changeAddress(
+                nodeOldAddress, nodeNewAddress
+              );
+              const gasLimit = estimateGas.mul(2);
+              const response = await masternodeLogicContract.changeAddress(nodeOldAddress, nodeNewAddress, { gasLimit });
+              const { hash, data } = response;
+              addTransaction({ to: masternodeLogicContract.address }, response, {
+                call: {
+                  from: activeAccount,
+                  to: masternodeLogicContract.address,
+                  input: data,
+                  value: "0"
+                }
+              });
+              dispatch(walletsUpdateUsedChildWalletAddress({
+                address: nodeNewAddress,
+                used: true
+              }));
+              UpdateResult.updateAddress = {
+                txHash: hash,
+                status: 1
+              }
+              addNewTxUpdate(IDS[i], UpdateResult);
+            } catch (err: any) {
+              UpdateResult.updateAddress = {
+                error: err.error.reason,
+                status: 0
+              }
+              addNewTxUpdate(IDS[i], UpdateResult);
+            }
+          }
+          if (nodeOldEnode != nodeNewAddressEncode.enode) {
+            try {
+              const masternodeID = IDS[i].split(":")[1];
+              const estimateGas = await masternodeLogicContract.estimateGas.changeEnodeByID(
+                masternodeID, nodeNewEnode
+              );
+              const gasLimit = estimateGas.mul(2);
+              const response = await masternodeLogicContract.changeEnodeByID(masternodeID, nodeNewEnode, { gasLimit });
+              const { hash, data } = response;
+              addTransaction({ to: masternodeLogicContract.address }, response, {
+                call: {
+                  from: activeAccount,
+                  to: masternodeLogicContract.address,
+                  input: data,
+                  value: "0"
+                }
+              });
+              UpdateResult.updateEnode = {
+                txHash: hash,
+                status: 1
+              }
+              addNewTxUpdate(IDS[i], UpdateResult);
+            } catch (err: any) {
+              UpdateResult.updateEnode = {
+                error: err.error.reason,
+                status: 0
+              }
+              addNewTxUpdate(IDS[i], UpdateResult);
+            }
+          }
+        }
+        setTxUpdating(false);
       }
-      if (nodeOldEnode != nodeNewAddressEncode.enode) {
-        console.log("Need Update Node Enode for :", id)
-      }
-    });
+    }
+    asyncTxUpdate();
   }
 
   return <>
@@ -382,7 +482,6 @@ export default () => {
         {
           step == BatchSyncStep.BatchSync &&
           <>
-
             <Tabs type="card" activeKey={activeKey} onChange={(key) => { setActiveKey(key) }}>
               {
                 pool?.executings.map((node, i) => {
@@ -442,9 +541,76 @@ export default () => {
                 </div>
               );
             })}
+
+            {
+              Object.keys(nodeTxUpdates).length > 0 && <>
+                <Spin spinning={txUpdating}>
+                  <Alert type="success" message={<>
+                    {
+                      Object.keys(nodeTxUpdates).map(ID => {
+                        const id = ID.split(":")[1];
+                        const txUpdates = nodeTxUpdates[ID];
+                        return <>
+                          <Row key={ID}>
+                            <Text strong>主节点:{id}</Text>
+                            <Col span={24}>
+                              {
+                                txUpdates.updateAddress && <>
+                                  {
+                                    txUpdates.updateAddress.status == 1 && <>
+                                      <Text type="secondary">{t("wallet_masternodes_sync_txhash_address")}</Text><br />
+                                      <Text strong>{txUpdates.updateAddress.txHash}</Text> <br />
+                                    </>
+                                  }
+                                  {
+                                    txUpdates.updateAddress.status == 0 && <>
+                                      <Text type="secondary">{t("wallet_masternodes_sync_error_address")}</Text><br />
+                                      <Text strong type="danger">
+                                        <CloseCircleTwoTone twoToneColor="red" style={{ marginRight: "5px" }} />
+                                        {txUpdates.updateAddress.error}
+                                      </Text> <br />
+                                    </>
+                                  }
+                                </>
+                              }
+                              {
+                                txUpdates.updateEnode && <>
+                                  {
+                                    txUpdates.updateEnode.status == 1 && <>
+                                      <Text type="secondary">{t("wallet_masternodes_sync_txhash_enode")}</Text><br />
+                                      <Text strong>{txUpdates.updateEnode.txHash}</Text> <br />
+                                    </>
+                                  }
+                                  {
+                                    txUpdates.updateEnode.status == 0 && <>
+                                      <Text type="secondary">{t("wallet_masternodes_sync_error_enode")}</Text><br />
+                                      <Text strong type="danger">
+                                        <CloseCircleTwoTone twoToneColor="red" style={{ marginRight: "5px" }} />
+                                        {txUpdates.updateEnode.error}
+                                      </Text> <br />
+                                    </>
+                                  }
+                                </>
+                              }
+                            </Col>
+                            <Divider />
+                          </Row>
+                        </>
+                      })
+                    }
+                  </>} />
+                </Spin>
+              </>
+            }
+            {
+              txUpdating == false && <>
+                <Alert type="success" message={<>
+                  已完成
+                </>} />
+              </>
+            }
           </>
         }
-
       </Col>
       <Col span={4}>
         <Row>
@@ -465,8 +631,10 @@ export default () => {
               renderItem={(item, index) => (
                 <List.Item>
                   <List.Item.Meta
-                    title={<a>{item.title}</a>}
-                    description=""
+                    title={<Text>{item.title}</Text>}
+                    description={<>
+                      {nodeSSHConfigMap[item.id].host}
+                    </>}
                   />
                 </List.Item>
               )}
@@ -474,8 +642,7 @@ export default () => {
           </Col>
         </Row>
       </Col>
-    </Row>
-
+    </Row >
   </>
 
 }
