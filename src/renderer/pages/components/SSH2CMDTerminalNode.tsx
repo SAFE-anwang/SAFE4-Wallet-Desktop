@@ -211,7 +211,7 @@ export default ({
     }
 
     doConnect();
-    
+
     return () => {
       // Cleanup and dispose the terminal instance
       if (terminalInstance.current) {
@@ -680,7 +680,14 @@ export default ({
         setScriptError("无法获取 ENODE 值");
       }
     }
-  }, [terminalInstance, inputParams, wallet, nodeAddress]);
+  }, [terminalInstance, inputParams, wallet, nodeAddress , enode]);
+
+  useEffect( () => {
+    if ( enode ){
+      console.log("...finifni")
+      onSuccess(enode, nodeAddress);
+    }
+  } , [enode] );
 
   return <>
     <Row>
