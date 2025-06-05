@@ -26,9 +26,7 @@ export default ({
   }) => void ,
   finishCallback : () => void
 }) => {
-
   const childWalletResult = useActiveAccountChildWallets(SupportChildWalletType.MN, Object.keys(nodeAddressConfigMap).length);
-
   useEffect(() => {
     if (childWalletResult && childWalletResult.loading == false) {
       const unusedAddresses = Object.keys(childWalletResult.wallets).filter(

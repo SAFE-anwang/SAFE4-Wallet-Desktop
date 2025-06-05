@@ -11,7 +11,7 @@ import { ethers } from 'ethers';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { applicationControlAppendMasternode, applicationControlUpdateEditMasternodeId } from '../../../state/application/action';
-import { useWalletsActiveAccount } from '../../../state/wallets/hooks';
+import { useWalletsActiveAccount, useWalletsActiveKeystore } from '../../../state/wallets/hooks';
 import { RenderNodeState } from '../supernodes/Supernodes';
 import AddressComponent from '../../components/AddressComponent';
 import { Safe4_Business_Config } from '../../../config';
@@ -22,6 +22,7 @@ import { useTranslation } from 'react-i18next';
 import { AccountRecord, formatAccountRecord, formatRecordUseInfo } from '../../../structs/AccountManager';
 import { DateTimeFormat } from '../../../utils/DateUtils';
 import { LockOutlined, UnlockOutlined } from '@ant-design/icons';
+import BatchSyncNodeModal from './BatchSyncNodeModal';
 
 const { Text } = Typography;
 const Masternodes_Page_Size = 10;
@@ -368,6 +369,9 @@ export default ({
       }
     }
   }, [masternodeStorageContract, queryKey]);
+  const [openBatchNodeModal, setOpenBatchNodeModal] = useState(false);
+
+  const hasMnemonic = useWalletsActiveKeystore()?.mnemonic != undefined;
 
   return <>
     {
@@ -384,9 +388,15 @@ export default ({
             <Alert type='error' showIcon message={queryKeyError} style={{ marginTop: "5px" }} />
           }
         </Col>
+        <Col span={12} style={{ textAlign: "right" }}>
+          <Space>
+            {
+              queryMyMasternodes && <Button disabled={!hasMnemonic} onClick={() => setOpenBatchNodeModal(true)}>批量同步</Button>
+            }
+          </Space>
+        </Col>
       </Row>
     }
-
     {
       queryMyMasternodes && <Row style={{ marginBottom: "20px" }}>
         <Col span={24}>
@@ -398,7 +408,6 @@ export default ({
         </Col>
       </Row>
     }
-
     <Table loading={loading} onChange={(pagination) => {
       const { current, pageSize, total } = pagination;
       setPagination({
@@ -414,6 +423,8 @@ export default ({
         openMasternodeInfo && <Masternode masternodeInfo={openMasternodeInfo} />
       }
     </Modal>
-
+    {
+      openBatchNodeModal && <BatchSyncNodeModal openBatchNodeModal={openBatchNodeModal} setOpenBatchNodeModal={setOpenBatchNodeModal} />
+    }
   </>
 }

@@ -52,7 +52,7 @@ const MenuComponent: React.FC = () => {
       // getItem(t("wallet_issue"), '/main/issue', <BankOutlined />),
       getItem(t("contract"), '/main/contracts', <FileZipOutlined />),
       getItem(t("getTestCoin"), '/main/gettestcoin', <GiftOutlined />),
-      getItem(t("batchSyncNode"), '/main/batchSyncNode', <GiftOutlined />),
+      // getItem(t("batchSyncNode"), '/main/batchSyncNode', <GiftOutlined />),
     ]
   }, [t]);
 

@@ -5,27 +5,6 @@ import { Alert, Button, Col, Row, Typography } from "antd";
 
 const { Text } = Typography;
 
-const sshconfigs: SSH2ConnectConfig[] = [
-  {
-    host: "47.119.151.64",
-    username: "root",
-    password: "Zy654321!",
-    port: 22
-  },
-  {
-    host: "39.108.69.183",
-    username: "root",
-    password: "Zy654321!",
-    port: 22
-  },
-  {
-    host: "115.29.52.162",
-    username: "root",
-    password: "akrsluhiuY$%#hh6435354",
-    port: 22
-  }
-];
-
 export interface NodeSSHConfigValidateCheckResult {
   isValid: boolean,
   errMsg?: string,
@@ -53,9 +32,16 @@ export default ({ nodeSSHConfigMap, nodeSSHConfigValidateCheckMap, nodeSSHConfig
 }) => {
 
   useEffect(() => {
+
     const nodeSSHConfigValidateCheckMap: {
       [id: string]: NodeSSHConfigValidateCheckResult
     } = {};
+
+    const hostIdMap : {
+      [host : string] : string
+    } = {
+
+    };
 
     Object.keys(nodeSSHConfigMap).forEach(id => {
       const { host, port, username, password } = nodeSSHConfigMap[(id)];
@@ -65,8 +51,17 @@ export default ({ nodeSSHConfigMap, nodeSSHConfigValidateCheckMap, nodeSSHConfig
           errMsg: "SSH 连接配置信息错误"
         }
       } else {
-        nodeSSHConfigValidateCheckMap[(id)] = {
-          isValid: true,
+        if ( ! hostIdMap[ host ]  ){
+          nodeSSHConfigValidateCheckMap[(id)] = {
+            isValid: true,
+          }
+          hostIdMap[ host ] = id;
+        } else {
+          const _id = hostIdMap[ host ];
+          nodeSSHConfigValidateCheckMap[(id)] = {
+            isValid: false,
+            errMsg: `IP错误,与主节点-${_id.split(":")[1]}重复`
+          }
         }
       }
     });

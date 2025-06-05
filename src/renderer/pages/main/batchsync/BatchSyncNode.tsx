@@ -1,4 +1,4 @@
-import { Alert, Avatar, Button, Card, Col, Divider, Input, List, Radio, RadioChangeEvent, Row, Space, Spin, Steps, Tabs, Typography } from "antd";
+import { Alert, Avatar, Button, Card, Col, Divider, Input, List, Radio, RadioChangeEvent, Result, Row, Space, Spin, Steps, Tabs, Typography } from "antd";
 import { useActiveAccountChildWallets, useWalletsActiveAccount } from "../../../state/wallets/hooks"
 import { useCallback, useEffect, useState } from "react";
 import SyncNode from "./SyncNode";
@@ -36,7 +36,11 @@ enum BatchSyncStep {
   BatchSync = 2
 }
 
-export default () => {
+export default ({
+  finishCallback,
+}: {
+  finishCallback: () => void
+}) => {
 
   const [step, setStep] = useState<number>(-1);
   const activeAccount = useWalletsActiveAccount();
@@ -268,7 +272,7 @@ export default () => {
               addNewTxUpdate(IDS[i], UpdateResult);
             } catch (err: any) {
               UpdateResult.updateAddress = {
-                error: err.error.reason,
+                error: err.reason,
                 status: 0
               }
               addNewTxUpdate(IDS[i], UpdateResult);
@@ -298,7 +302,7 @@ export default () => {
               addNewTxUpdate(IDS[i], UpdateResult);
             } catch (err: any) {
               UpdateResult.updateEnode = {
-                error: err.error.reason,
+                error: err.reason,
                 status: 0
               }
               addNewTxUpdate(IDS[i], UpdateResult);
@@ -312,7 +316,7 @@ export default () => {
   }
 
   return <>
-    <Row style={{ marginTop: "100px" }}>
+    <Row>
       <Col span={4}>
         <Row>
           <Col span={18}>
@@ -348,7 +352,7 @@ export default () => {
                     description={<>
                       <Row>
                         <Col span={12}>
-                          {nodeSSHConfigMap[item.id].host}
+                          {nodeSSHConfigMap[item.id]?.host}
                         </Col>
                         <Col span={12} style={{ textAlign: "right" }}>
                           {
@@ -438,7 +442,9 @@ export default () => {
           </Col>
         </Row>
       </Col>
-      <Col span={16}>
+      <Col span={16} style={{
+        maxHeight: "600px", overflowY: "scroll"
+      }}>
         <Row style={{ marginTop: "14px" }}>
           <Col span={24} style={{ textAlign: "center" }}>
             <Steps
@@ -482,15 +488,18 @@ export default () => {
         {
           step == BatchSyncStep.BatchSync &&
           <>
-            <Tabs type="card" activeKey={activeKey} onChange={(key) => { setActiveKey(key) }}>
-              {
-                pool?.executings.map((node, i) => {
-                  return (
-                    <TabPane key={String(node.id)} tab={<><SyncOutlined spin /> {`${pool.executings[i].title}`} </>} />
-                  )
-                })
-              }
-            </Tabs>
+            {
+              pool && pool.executings.length > 0 &&
+              <Tabs type="card" activeKey={activeKey} onChange={(key) => { setActiveKey(key) }}>
+                {
+                  pool?.executings.map((node, i) => {
+                    return (
+                      <TabPane key={String(node.id)} tab={<><SyncOutlined spin /> {`${pool.executings[i].title}`} </>} />
+                    )
+                  })
+                }
+              </Tabs>
+            }
             {nodeAddressConfigMap && pool?.executings.map((task, i) => {
               return (
                 <div key={task.id} style={{ display: activeKey == String(task.id) ? 'block' : 'none' }}>
@@ -541,7 +550,19 @@ export default () => {
                 </div>
               );
             })}
-
+            {
+              txUpdating == false && <>
+                <Result
+                  status="success"
+                  title="已完成节点同步"
+                  extra={[
+                    <Button type="primary" onClick={() => finishCallback()}>
+                      关闭
+                    </Button>,
+                  ]}
+                />
+              </>
+            }
             {
               Object.keys(nodeTxUpdates).length > 0 && <>
                 <Spin spinning={txUpdating}>
@@ -602,13 +623,7 @@ export default () => {
                 </Spin>
               </>
             }
-            {
-              txUpdating == false && <>
-                <Alert type="success" message={<>
-                  已完成
-                </>} />
-              </>
-            }
+
           </>
         }
       </Col>
