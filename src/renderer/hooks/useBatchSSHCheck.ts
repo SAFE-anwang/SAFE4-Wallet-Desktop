@@ -24,7 +24,7 @@ export interface SSHCheckResult {
 
 export const useBatchSSHCheck = (
   sshConfigs: SSH2ConnectConfig[],
-  maxConcurrency: number = 2
+  maxConcurrency: number = 10
 ) => {
   const [results, setResults] = useState<SSHCheckResult[]>([]);
   const [poolStatus, setPoolStatus] = useState<SSHCheckPoolStatus>(SSHCheckPoolStatus.Idle);
