@@ -119,3 +119,9 @@ export function useSNAddresses(){
   })
 }
 
+export function useSSHConfigMap(){
+  return useSelector((state: AppState) => {
+    return state.application.sshConfigMap
+  })
+}
+

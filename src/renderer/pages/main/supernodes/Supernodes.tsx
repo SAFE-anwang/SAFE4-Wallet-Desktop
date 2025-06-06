@@ -10,7 +10,10 @@ import { useMulticallContract, useSupernodeStorageContract } from '../../../hook
 import { useBlockNumber, useSNAddresses } from '../../../state/application/hooks';
 import { useWeb3React } from '@web3-react/core';
 import { useDispatch } from 'react-redux';
-import { applicationUpdateSNAddresses } from '../../../state/application/action';
+import { applicationLoadSSHConfigs, applicationUpdateSNAddresses } from '../../../state/application/action';
+import { IPC_CHANNEL } from '../../../config';
+import { SSHConfig_Methods, SSHConfigSignal } from '../../../../main/handlers/SSHConfigSignalHandler';
+import { SSH2ConnectConfig } from '../../../../main/SSH2Ipc';
 
 const { Title, Text } = Typography;
 
@@ -102,6 +105,25 @@ export default () => {
       fetchSNAddresses();
     }
   }, [supernodeStorageContract, blockNumber, chainId]);
+
+  useEffect(() => {
+    window.electron.ipcRenderer.sendMessage(IPC_CHANNEL, [SSHConfigSignal, SSHConfig_Methods.getAll, []])
+    window.electron.ipcRenderer.once(IPC_CHANNEL, (arg) => {
+      if (arg instanceof Array && arg[0] == SSHConfigSignal && arg[1] == SSHConfig_Methods.getAll) {
+        const rows = arg[2][0];
+        const _hostSSHConfigMap: {
+          [host: string]: SSH2ConnectConfig;
+        } = {};
+        Object.values(rows).forEach((row: any) => {
+          const { host, port, username, password } = row;
+          _hostSSHConfigMap[host] = {
+            host, port, username, password
+          }
+        });
+        dispatch(applicationLoadSSHConfigs(Object.values(_hostSSHConfigMap)));
+      }
+    });
+  }, []);
 
 
   return <>

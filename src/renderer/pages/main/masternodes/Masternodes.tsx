@@ -6,6 +6,12 @@ import { useWalletsActiveAccount } from '../../../state/wallets/hooks';
 import MasternodeList from './MasternodeList';
 import useAddrNodeInfo from '../../../hooks/useAddrIsNode';
 import { useTranslation } from 'react-i18next';
+import { IPC_CHANNEL } from '../../../config';
+import { SSHConfig_Methods, SSHConfigSignal } from '../../../../main/handlers/SSHConfigSignalHandler';
+import { SSH2ConnectConfig } from '../../../../main/SSH2Ipc';
+import { useDispatch } from 'react-redux';
+import { applicationLoadSSHConfigs } from '../../../state/application/action';
+import { useSSHConfigMap } from '../../../state/application/hooks';
 const { Title, Text } = Typography;
 
 export default () => {
@@ -15,6 +21,7 @@ export default () => {
   const activeAccount = useWalletsActiveAccount();
   const activeAccountNodeInfo = useAddrNodeInfo(activeAccount);
   const [activeItemKey, setActiveItemKey] = useState("list");
+  const dispatch = useDispatch();
 
   const items = useMemo<TabsProps['items']>(() => {
     return [
@@ -42,7 +49,27 @@ export default () => {
     if (activeAccountNodeInfo && activeAccountNodeInfo.isNode) {
       setActiveItemKey("list");
     }
-  }, [activeAccount, activeAccountNodeInfo])
+  }, [activeAccount, activeAccountNodeInfo]);
+
+  useEffect(() => {
+    window.electron.ipcRenderer.sendMessage(IPC_CHANNEL, [SSHConfigSignal, SSHConfig_Methods.getAll, []])
+    window.electron.ipcRenderer.once(IPC_CHANNEL, (arg) => {
+      if (arg instanceof Array && arg[0] == SSHConfigSignal && arg[1] == SSHConfig_Methods.getAll) {
+        const rows = arg[2][0];
+        const _hostSSHConfigMap: {
+          [host: string]: SSH2ConnectConfig;
+        } = {};
+        Object.values(rows).forEach((row: any) => {
+          const { host, port, username, password } = row;
+          _hostSSHConfigMap[host] = {
+            host, port, username, password
+          }
+        });
+        dispatch(applicationLoadSSHConfigs(Object.values(_hostSSHConfigMap)));
+      }
+    });
+  }, []);
+
 
   return <>
     <Row style={{ height: "50px" }}>
@@ -51,6 +78,7 @@ export default () => {
           {t("masternode")}
         </Title>
       </Col>
+
     </Row>
     <div style={{ width: "100%", paddingTop: "40px" }}>
       <div style={{ margin: "auto", width: "90%" }}>
@@ -70,8 +98,8 @@ export default () => {
             <Spin spinning={activeAccountNodeInfo == undefined}>
               <Button disabled={activeAccountNodeInfo == undefined || activeAccountNodeInfo?.isNode}
                 style={{ marginBottom: "5px" }} onClick={() => { navigate("/main/masternodes/selectRegisterMode") }}>
-                  {t("wallet_masternodes_create")}
-                </Button>
+                {t("wallet_masternodes_create")}
+              </Button>
               {
                 activeAccountNodeInfo?.isMN && <>
                   <Alert showIcon type='warning' message={<>

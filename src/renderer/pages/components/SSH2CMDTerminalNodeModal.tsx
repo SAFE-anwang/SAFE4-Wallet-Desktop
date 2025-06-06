@@ -3,18 +3,19 @@ import { Terminal } from "@xterm/xterm";
 import { FitAddon } from "@xterm/addon-fit";
 import { Button, Card, Col, Input, Row, Typography, Steps, Alert, Divider, Spin, Modal } from "antd";
 import { ethers } from "ethers";
-import { useApplicationPassword } from "../../state/application/hooks";
+import { useApplicationPassword, useSSHConfigMap } from "../../state/application/hooks";
 import AddressComponent from "./AddressComponent";
 import { CloseCircleTwoTone, LoadingOutlined } from "@ant-design/icons";
 import { DateTimeFormat } from "../../utils/DateUtils";
 import { useWeb3React } from "@web3-react/core";
 import { Safe4_Network_Config, Safe4NetworkChainId } from "../../config";
 import { useTranslation } from "react-i18next";
+import { useDispatch } from "react-redux";
+import { applicationSaveOrUpdateSSHConfigs } from "../../state/application/action";
 
 const { Text } = Typography;
 
 const Fake_Keystore_Template = '{"address":"ea5b0c1bfe412cea673c0db89cfa3809d6de1552","id":"29a2f2be-d6cd-44a1-b24b-ca0fda4e6112","version":3,"crypto":{"cipher":"aes-128-ctr","cipherparams":{"iv":"9c4619d2f9b2fe92713250670520202d"},"ciphertext":"00000000000000000000000000000000000000000000000000","kdf":"scrypt","kdfparams":{"salt":"b4cda799dfe9d778b1908f1d20c4028904771f99370483b763665ff77560914a","n":131072,"dklen":32,"p":1,"r":8},"mac":"31a694660911ac6903934eaa67c05a905340bfebd7209bc01830c44be3545ca8"}}';
-
 
 export class CommandState {
 
@@ -82,6 +83,8 @@ export default ({
   const [scriptError, setScriptError] = useState<string>();
   const wallet = nodeAddressPrivateKey ? new ethers.Wallet(nodeAddressPrivateKey) : undefined;
   const { chainId } = useWeb3React();
+  const sshConfigMap = useSSHConfigMap();
+  const dispatch = useDispatch();
 
   const DEFAULT_CONFIG = useMemo(() => {
     if (chainId == Safe4_Network_Config.Testnet.chainId) {
@@ -169,7 +172,7 @@ export default ({
   }>({
     host: IP ? IP : "",
     username: "root",
-    password: ""
+    password: IP && sshConfigMap[IP] ? sshConfigMap[IP].password : "",
   });
   const [inputErrors, setInputErrors] = useState<{
     host: string | undefined,
@@ -269,6 +272,12 @@ export default ({
       window.electron.ssh2.connect(host, port, username, password)
         .then(async (chunk: any) => {
           console.log(`Connect to ${host} successed,Receive::`, chunk);
+
+          // Update the state.reducer.
+          dispatch(applicationSaveOrUpdateSSHConfigs([{
+            host, port, username, password
+          }]));
+
           setConnecting(false);
           afterConnect();
         })

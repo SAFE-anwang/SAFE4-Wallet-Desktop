@@ -62,7 +62,7 @@ export const useBatchSSHCheck = (
       runNext();
 
       if (runningRef.current === 0 && queueRef.current.length === 0) {
-        setPoolStatus(SSHCheckPoolStatus.Finished); // ✅ 所有任务结束
+        setPoolStatus(SSHCheckPoolStatus.Finished); //
       }
     }
   };
