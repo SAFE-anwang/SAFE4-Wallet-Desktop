@@ -12,7 +12,6 @@ export interface SRC20TokenProp {
   officialUrl: string,
   orgName: string,
   description: string,
-  logoUrl: string
 }
 
 export default (address: string) => {
@@ -54,13 +53,8 @@ export default (address: string) => {
         functionName: "officialUrl",
         params: []
       };
-      const logoUrlCall: CallMulticallAggregateContractCall = {
-        contract: SRC20Contract,
-        functionName: "logoUrl",
-        params: []
-      };
       const calls = [nameCall, symbolCall,
-        descriptionCall, whitePaperUrlCall, orgNameCall, officiaUrlCall , logoUrlCall];
+        descriptionCall, whitePaperUrlCall, orgNameCall, officiaUrlCall];
       setLoading(true);
       CallMulticallAggregate(multicallContract, calls, () => {
         setLoading(false);
@@ -70,12 +64,13 @@ export default (address: string) => {
         const whitePaperUrl = whitePaperUrlCall.result;
         const orgName = orgNameCall.result;
         const officialUrl = officiaUrlCall.result;
-        const logoUrl = logoUrlCall.result;
         const src20Prop: SRC20TokenProp = {
           name, symbol,
-          description, whitePaperUrl, orgName, officialUrl , logoUrl
+          description, whitePaperUrl, orgName, officialUrl
         }
         setSrc20TokenProp(src20Prop);
+      } , ( err : any) => {
+        console.log("Error!! >>" , err)
       })
     }
   }, [address, multicallContract, SRC20Contract]);

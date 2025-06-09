@@ -10,7 +10,7 @@ const electronHandler = {
       // shell.openExternal(url, options)
     },
     openPath(path: string) {
-      return ipcRenderer.invoke("shell-openPath" , path)
+      return ipcRenderer.invoke("shell-openPath", path)
     }
   },
   ipcRenderer: {
@@ -64,7 +64,7 @@ const electronHandler = {
     connect(host: string, port: number, username: string, password: string) {
       return ipcRenderer.invoke('sshs-connect-ssh', { host, username, password });
     },
-    execute(host: string , command: string) {
+    execute(host: string, command: string) {
       return ipcRenderer.invoke('sshs-exec-command', { host, command })
     },
     shell(command: string) {
@@ -79,15 +79,18 @@ const electronHandler = {
         ipcRenderer.removeListener("sshs-ssh2-stderr", subscription);
       };
     },
-    close(host:string) {
-      console.log("sshs close connect :" , host)
-      return ipcRenderer.invoke('sshs-connect-close', {host})
+    close(host: string) {
+      console.log("sshs close connect :", host)
+      return ipcRenderer.invoke('sshs-connect-close', { host })
     }
   },
 
   fileReader: {
     readFile(filePath: string) {
       return ipcRenderer.invoke("file-read", { filePath });
+    },
+    selectFile() {
+      return ipcRenderer.invoke("file-select");
     }
   },
 
