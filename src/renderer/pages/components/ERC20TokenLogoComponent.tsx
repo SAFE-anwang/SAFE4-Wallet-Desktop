@@ -3,10 +3,27 @@ import { ERC20_LOGO, SAFE_LOGO, USDT_LOGO } from "../../assets/logo/AssetsLogo"
 import { Safe4NetworkChainId, USDT, WSAFE } from "../../config"
 import { ethers } from "ethers"
 
-export default ({ chainId, address, style }: {
+const hexToUint8Array = (hex: string): Uint8Array => {
+  if (hex.startsWith('0x')) hex = hex.slice(2);
+  const bytes = new Uint8Array(hex.length / 2);
+  for (let i = 0; i < bytes.length; i++) {
+    bytes[i] = parseInt(hex.substr(i * 2, 2), 16);
+  }
+  return bytes;
+};
+
+const showPngFromHex = (hexData: string) => {
+  const byteArray = hexToUint8Array(hexData);
+  const blob = new Blob([byteArray], { type: 'image/png' });
+  const url = URL.createObjectURL(blob);
+  return url;
+};
+
+export default ({ chainId, address, style, hex }: {
   chainId: number,
   address: string,
-  style?: any
+  style?: any,
+  hex?: string
 }) => {
   let isWSAFE = false;
   let isUSDT = false;
@@ -23,6 +40,10 @@ export default ({ chainId, address, style }: {
   } else if (isUSDT) {
     return <Avatar src={USDT_LOGO} style={style ? { width: "40px", height: "40px", ...style, } : { width: "40px", height: "40px" }} />
   } else {
+    if (hex) {
+      return <Avatar src={showPngFromHex(hex)} style={{ padding: "4px", width: "48px", height: "48px" }} />
+    }
     return <Avatar src={ERC20_LOGO} style={style ? { padding: "8px", width: "48px", height: "48px", background: "#efefef", ...style } : { padding: "8px", width: "48px", height: "48px", background: "#efefef" }} />
   }
+
 }
