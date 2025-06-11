@@ -8,5 +8,6 @@ export const updateAuditTokens = createAction<{
     decimals: number,
     chainId: number,
     creator ?: string,
+    logoURI ?: string
   }[]
 }>("transactions/updateAuditTokens");

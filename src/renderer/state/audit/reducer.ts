@@ -10,7 +10,8 @@ export interface IAuditState {
       symbol?: string,
       decimals : number,
       chainId: number ,
-      creator ?: string
+      creator ?: string ,
+      logoURI ?: string
     }[]
   }
 }

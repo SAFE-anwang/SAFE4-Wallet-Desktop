@@ -6,6 +6,8 @@ import { useState } from "react";
 import PromotionModal from "./PromotionModal";
 import { isLocalWallet } from "../../../hooks/useWalletName";
 import { useWalletsActiveAccount } from "../../../state/wallets/hooks";
+import { useWeb3React } from "@web3-react/core";
+import ERC20TokenLogoComponent from "../../components/ERC20TokenLogoComponent";
 
 const { Text } = Typography;
 
@@ -15,7 +17,7 @@ export default () => {
   const [openPromotionModal, setOpenPromotionModal] = useState(false);
   const [selectAddress, setSelectAddress] = useState<string>();
   const activeAccount = useWalletsActiveAccount();
-
+  const { chainId } = useWeb3React();
   const auditTokens = useAuditTokenList();
   const myAuditTokens = auditTokens && auditTokens.filter(
     auditToken => auditToken.creator && isLocalWallet(auditToken.creator).isLocal);
@@ -35,8 +37,16 @@ export default () => {
       title: '资产符号',
       dataIndex: 'symbol',
       key: 'symbol',
-      render: (symbol: string) => {
-        return <Text strong>{symbol}</Text>
+      render: (symbol: string , data:any) => {
+        return <>
+          { chainId && <ERC20TokenLogoComponent
+                          style={{width:"30px",height:"30px",padding:"4px"}}
+                          chainId={chainId}
+                          address={data.address}
+                          logoURI={ data.logoURI }
+                          /> }
+          <Text style={{marginLeft:"5px"}} strong>{symbol}</Text>
+        </>
       }
     },
     {

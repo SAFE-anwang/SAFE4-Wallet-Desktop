@@ -1,6 +1,6 @@
 import { CurrencyAmount } from "@uniswap/sdk";
 import { useWeb3React } from "@web3-react/core";
-import { Alert, Button, Card, Col, Divider, Flex, Input, Radio, Row, Typography } from "antd";
+import { Alert, Avatar, Button, Card, Col, Divider, Flex, Input, Radio, Row, Typography } from "antd";
 import { CheckboxGroupProps } from "antd/es/checkbox";
 import { ethers } from "ethers";
 import { useEffect, useState } from "react";
@@ -18,6 +18,7 @@ import { useNavigate } from "react-router-dom";
 
 const { Text, Title, Link } = Typography;
 const now = () => new Date().getTime()
+
 
 export default () => {
 
@@ -275,7 +276,6 @@ export default () => {
           onClick={issue} style={{}} type="primary">{t("wallet_issue_asset_doissue")}</Button>
       </Col>
     </Row>
-
   </>
 
 }

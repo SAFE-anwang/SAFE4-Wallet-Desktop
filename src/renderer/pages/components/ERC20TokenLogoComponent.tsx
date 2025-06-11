@@ -2,6 +2,7 @@ import { Avatar } from "antd"
 import { ERC20_LOGO, SAFE_LOGO, USDT_LOGO } from "../../assets/logo/AssetsLogo"
 import { Safe4NetworkChainId, USDT, WSAFE } from "../../config"
 import { ethers } from "ethers"
+import { useAuditTokenList } from "../../state/audit/hooks";
 
 const hexToUint8Array = (hex: string): Uint8Array => {
   if (hex.startsWith('0x')) hex = hex.slice(2);
@@ -19,15 +20,24 @@ const showPngFromHex = (hexData: string) => {
   return url;
 };
 
-export default ({ chainId, address, style, hex }: {
+export default ({ chainId, address, style, hex, logoURI }: {
   chainId: number,
   address: string,
   style?: any,
-  hex?: string
+  hex?: string,
+  logoURI?: string
 }) => {
+
   let isWSAFE = false;
   let isUSDT = false;
+
   const _address = ethers.utils.getAddress(address);
+
+  const auditTokenMap = useAuditTokenList()?.reduce((map, current) => {
+    map[current.address] = current;
+    return map;
+  }, {} as { [address: string]: any });
+  const auditTokenLogoURI = auditTokenMap && auditTokenMap[_address] && auditTokenMap[_address].logoURI;
   if (chainId in Safe4NetworkChainId) {
     isWSAFE = _address == WSAFE[chainId as Safe4NetworkChainId].address;
     isUSDT = _address == USDT[chainId as Safe4NetworkChainId].address;
@@ -40,10 +50,13 @@ export default ({ chainId, address, style, hex }: {
   } else if (isUSDT) {
     return <Avatar src={USDT_LOGO} style={style ? { width: "40px", height: "40px", ...style, } : { width: "40px", height: "40px" }} />
   } else {
-    if (hex) {
-      return <Avatar src={showPngFromHex(hex)} style={{ padding: "4px", width: "48px", height: "48px" }} />
+    if (hex && hex.length > 3) {
+      return <Avatar src={showPngFromHex(hex)} style={style ? { width: "48px", height: "48px", ...style } : { padding: "4px", width: "48px", height: "48px" }} />
+    }
+    if (logoURI || auditTokenLogoURI) {
+      const URI = logoURI ? logoURI : auditTokenLogoURI;
+      return <Avatar src={URI} style={style ? { width: "48px", height: "48px", ...style } : { padding: "4px", width: "48px", height: "48px" }} />
     }
     return <Avatar src={ERC20_LOGO} style={style ? { padding: "8px", width: "48px", height: "48px", background: "#efefef", ...style } : { padding: "8px", width: "48px", height: "48px", background: "#efefef" }} />
   }
-
 }

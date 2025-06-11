@@ -15,7 +15,7 @@ import { ethers } from "ethers";
 
 const { Text } = Typography;
 
-const MAX_LOGO_SIZE = 64 * 1024;
+const MAX_LOGO_SIZE = 256 * 1024;
 
 function formatSizeUnits(bytes: number): string {
   const units = ['B', 'KB', 'MB', 'GB', 'TB'];
@@ -39,7 +39,6 @@ export default ({
   const [logoPayAmount, setLogoPayAmount] = useState<CurrencyAmount>();
   const activeAccount = useWalletsActiveAccount();
   const activeAccountBalance = useETHBalances([activeAccount])[activeAccount];
-
   const addTransaction = useTransactionAdder();
   const {
     render,
@@ -118,7 +117,7 @@ export default ({
         setTxHash(hash);
       } catch (err: any) {
         setErr(err);
-        console.log("setLogo Error =", err)
+        console.log("setLogo Error =", err.error)
       }
       setSending(false);
     }
@@ -186,7 +185,7 @@ export default ({
           {
             err && <>
               <Alert style={{ marginBottom: "10px" }} showIcon type="error" message={<>
-                {err.error.reason}
+                {err.error.reason ?? err.error.toString()}
               </>} />
             </>
           }
