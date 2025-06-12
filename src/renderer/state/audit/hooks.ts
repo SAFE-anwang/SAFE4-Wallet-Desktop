@@ -3,7 +3,7 @@ import { useSelector } from "react-redux";
 import { AppState } from "..";
 
 export function useAuditTokenList(): {
-  address: string, name ?: string, symbol ?: string, decimals: number, chainId: number , creator ?: string
+  address: string, name ?: string, symbol ?: string, decimals: number, chainId: number , creator ?: string , logoURI ?: string
 }[] | undefined {
   const { chainId } = useWeb3React();
   return useSelector((state: AppState) => {

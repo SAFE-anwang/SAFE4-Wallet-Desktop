@@ -130,7 +130,8 @@ export default ({
         }));
         window.electron.ipcRenderer.sendMessage(
           IPC_CHANNEL, [ERC20TokensSignal, ERC20Tokens_Methods.save, [{
-            chainId, address, name, symbol, decimals
+            chainId, address, name, symbol, decimals,
+            props: { hide: false }
           }]]
         );
         cancel();

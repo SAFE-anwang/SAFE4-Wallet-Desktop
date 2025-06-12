@@ -9,6 +9,7 @@ import { ChainId, CurrencyAmount, JSBI, Token } from "@uniswap/sdk";
 import { CrossChainVO, DateTimeNodeRewardVO, TimeNodeRewardVO } from "../../services";
 import { useWeb3React } from "@web3-react/core";
 import { Safe4NetworkChainId, USDT, WSAFE } from "../../config";
+import { useWalletsActiveAccount } from "../wallets/hooks";
 
 export function useTransactionAdder2(): (
   response: {
@@ -184,36 +185,38 @@ export function useCrosschains(): { [srxTxHash: string]: CrossChainVO } {
   return useSelector((state: AppState) => state.transactions.crosschains);
 }
 
-export function useERC20Tokens(chainId: Safe4NetworkChainId): Token[] {
-  return useSelector((state: AppState) => {
-    const defaultTokenAddresses: { [address: string]: Token } = {};
-    defaultTokenAddresses[USDT[chainId as Safe4NetworkChainId].address] = USDT[chainId as Safe4NetworkChainId];
-    defaultTokenAddresses[WSAFE[chainId as Safe4NetworkChainId].address] = WSAFE[chainId as Safe4NetworkChainId];
-    const defaultTokens = Object.keys(defaultTokenAddresses).map(address => defaultTokenAddresses[address]);
-    const walletTokens = Object.keys(state.transactions.tokens)
-      .filter(address => {
-        return state.transactions.tokens[address].chainId == chainId
-          && defaultTokenAddresses[address] == undefined
-      })
-      .map(address => {
-        const { name, symbol, decimals } = state.transactions.tokens[address];
-        const token = new Token(
-          ChainId.MAINNET,
-          address, decimals,
-          symbol, name
-        );
-        return token;
-      });
-    return defaultTokens.concat(walletTokens);
-  });
-}
+// export function useERC20Tokens(chainId: Safe4NetworkChainId): Token[] {
+//   return useSelector((state: AppState) => {
+//     const defaultTokenAddresses: { [address: string]: Token } = {};
+//     defaultTokenAddresses[USDT[chainId as Safe4NetworkChainId].address] = USDT[chainId as Safe4NetworkChainId];
+//     defaultTokenAddresses[WSAFE[chainId as Safe4NetworkChainId].address] = WSAFE[chainId as Safe4NetworkChainId];
+//     const defaultTokens = Object.keys(defaultTokenAddresses).map(address => defaultTokenAddresses[address]);
+//     const walletTokens = Object.keys(state.transactions.tokens)
+//       .filter(address => {
+//         return state.transactions.tokens[address].chainId == chainId
+//           && defaultTokenAddresses[address] == undefined
+//       })
+//       .map(address => {
+//         const { name, symbol, decimals } = state.transactions.tokens[address];
+//         const token = new Token(
+//           ChainId.MAINNET,
+//           address, decimals,
+//           symbol, name
+//         );
+//         return token;
+//       });
+//     return defaultTokens.concat(walletTokens);
+//   });
+// }
 
 export function useWalletTokens(): Token[] | undefined {
   const { chainId } = useWeb3React();
+  const activeAccount = useWalletsActiveAccount();
   const defaultTokens = useMemo(() => {
     if (!chainId) return [];
     return [
-      USDT[chainId as Safe4NetworkChainId],
+      // TODO USDT DISABLE NOW..
+      // USDT[chainId as Safe4NetworkChainId],
       WSAFE[chainId as Safe4NetworkChainId],
     ];
   }, [chainId]);
@@ -225,17 +228,33 @@ export function useWalletTokens(): Token[] | undefined {
     return map;
   }, [defaultTokens]);
   const _walletTokens = useSelector((state: AppState) => state.transactions.tokens);
+  const _auditTokens = useSelector((state: AppState) =>
+    chainId ? state.audit.tokens[chainId] : []
+  );
+  const _auditTokensMap = useMemo(() => {
+    return _auditTokens && _auditTokens.reduce((map, token) => {
+      map[token.address] = token;
+      return map;
+    }, {} as { [address: string]: any });
+  }, [_auditTokens]);
+
   const extraTokens = useMemo(() => {
     if (!chainId || !_walletTokens) return [];
     return Object.keys(_walletTokens)
       .filter(address => {
-        if (_walletTokens[address].chainId === chainId &&
-          defaultTokenMap[address] === undefined) {
+        if (_walletTokens[address].chainId === chainId
+          && defaultTokenMap[address] === undefined) {
           if (_walletTokens[address].props) {
             const props = JSON.parse(_walletTokens[address].props);
             return !props.hide;
           }
-          return true;
+          if (_auditTokensMap && _auditTokensMap[address]) {
+            return (
+              _auditTokensMap[address].logoURI
+              || _auditTokensMap[address].creator == activeAccount
+            )
+          }
+          return false;
         }
         return false;
       })
@@ -243,7 +262,7 @@ export function useWalletTokens(): Token[] | undefined {
         const { name, symbol, decimals, props } = _walletTokens[address];
         return new Token(chainId, address, decimals, symbol, name);
       });
-  }, [_walletTokens, chainId, defaultTokenMap]);
+  }, [_walletTokens, chainId, defaultTokenMap, _auditTokensMap]);
   return [...defaultTokens, ...extraTokens];
 }
 

@@ -1,5 +1,5 @@
 import { Avatar, Button, Card, Col, Divider, Row, Typography } from "antd"
-import { RightOutlined, WalletOutlined, AppstoreAddOutlined, StopOutlined } from "@ant-design/icons";
+import { AppstoreAddOutlined, StopOutlined } from "@ant-design/icons";
 import { useEffect, useMemo, useState } from "react";
 import { ChainId, Token, TokenAmount } from "@uniswap/sdk";
 import { useTokenBalances, useWalletsActiveAccount } from "../../../../../state/wallets/hooks";
@@ -28,19 +28,31 @@ export default () => {
   const [selectedToken, setSelectedToken] = useState<Token>();
 
   const dispatch = useDispatch();
-  const auditTokens = useAuditTokenList();
+  const auditTokens : {
+    address: string, name ?: string, symbol ?: string, decimals: number, chainId: number , creator ?: string , logoURI ?: string
+  }[] | undefined = useAuditTokenList();
+
   const walletTokens = useWalletTokens();
   const tokenAmounts = useTokenBalances(activeAccount, walletTokens);
   const tokens = useMemo(() => {
     const tokens = walletTokens && walletTokens.filter(token => {
       return token.name != 'Safeswap V2'
     });
-    if (auditTokens) {
+    if (auditTokens && tokens) {
       const auditMap = auditTokens.reduce((map, token) => {
         map[token.address] = token;
         return map;
-      }, {} as { [address: string]: any })
-      return tokens?.filter(token => auditMap[token.address] != undefined)
+      }, {} as { [address: string]: any });
+      if ( tokens.length >= 1 ){
+        // 如果存在多个代币,则进行排序
+        const _default = tokens.slice( 0 , 1 );
+        const _left = tokens.slice( 1 );
+        const _second = _left.filter( token => auditMap[ token.address ] && auditMap[ token.address ].logoURI );
+        const _thrid  = _left.filter( token => auditMap[ token.address ] && !auditMap[ token.address ].logoURI );
+        const _forth  = _left.filter( token => !auditMap[ token.address ] );
+        return _default.concat( _second ).concat( _thrid ).concat( _forth );
+      }
+      return tokens;
     }
     return tokens;
   }, [walletTokens, auditTokens]);
