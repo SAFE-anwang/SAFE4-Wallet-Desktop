@@ -5,7 +5,6 @@ import { ChainId, Token, TokenAmount } from "@uniswap/sdk";
 import { useTokenBalances, useWalletsActiveAccount } from "../../../../../state/wallets/hooks";
 import TokenSendModal from "./TokenSendModal";
 import { useWalletTokens } from "../../../../../state/transactions/hooks";
-import TokenAddModal from "./TokenAddModal";
 import AddressComponent from "../../../../components/AddressComponent";
 import { useTranslation } from "react-i18next";
 import ERC20TokenLogoComponent from "../../../../components/ERC20TokenLogoComponent";
@@ -28,8 +27,8 @@ export default () => {
   const [selectedToken, setSelectedToken] = useState<Token>();
 
   const dispatch = useDispatch();
-  const auditTokens : {
-    address: string, name ?: string, symbol ?: string, decimals: number, chainId: number , creator ?: string , logoURI ?: string
+  const auditTokens: {
+    address: string, name?: string, symbol?: string, decimals: number, chainId: number, creator?: string, logoURI?: string
   }[] | undefined = useAuditTokenList();
 
   const walletTokens = useWalletTokens();
@@ -43,14 +42,14 @@ export default () => {
         map[token.address] = token;
         return map;
       }, {} as { [address: string]: any });
-      if ( tokens.length >= 1 ){
+      if (tokens.length >= 1) {
         // 如果存在多个代币,则进行排序
-        const _default = tokens.slice( 0 , 1 );
-        const _left = tokens.slice( 1 );
-        const _second = _left.filter( token => auditMap[ token.address ] && auditMap[ token.address ].logoURI );
-        const _thrid  = _left.filter( token => auditMap[ token.address ] && !auditMap[ token.address ].logoURI );
-        const _forth  = _left.filter( token => !auditMap[ token.address ] );
-        return _default.concat( _second ).concat( _thrid ).concat( _forth );
+        const _default = tokens.slice(0, 1);
+        const _left = tokens.slice(1);
+        const _second = _left.filter(token => auditMap[token.address] && auditMap[token.address].logoURI);
+        const _thrid = _left.filter(token => auditMap[token.address] && !auditMap[token.address].logoURI);
+        const _forth = _left.filter(token => !auditMap[token.address]);
+        return _default.concat(_second).concat(_thrid).concat(_forth);
       }
       return tokens;
     }
@@ -81,6 +80,9 @@ export default () => {
       <Col span={24}>
         <Button onClick={() => { setOpenTokenAddModal(true) }} type="primary" icon={<AppstoreAddOutlined />}>{t("add")}</Button>
       </Col>
+      {/* <Col span={24}>
+        <Text>{JSON.stringify(walletTokens)}</Text>
+      </Col> */}
     </Row>
     {
       tokens && <Card className="menu-item-container" style={{ marginBottom: "20px", marginTop: "20px" }}>

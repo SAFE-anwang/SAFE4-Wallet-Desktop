@@ -306,7 +306,7 @@ export default createReducer(initialState, (builder) => {
     .addCase(updateERC20Token, (state, { payload }) => {
       const { chainId, address, name, symbol, decimals } = payload;
       state.tokens[address] = {
-        name, symbol, decimals, chainId
+        name, symbol, decimals, chainId , props : "{\"hide\":false}"
       }
     })
     .addCase(removeERC20Token,(state, { payload }) => {

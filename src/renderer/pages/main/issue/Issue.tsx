@@ -36,7 +36,6 @@ export default () => {
     { label: t("wallet_issue_template_src20"), value: SRC20_Template_Option.SRC20 },
     { label: t("wallet_issue_template_src20_mintable"), value: SRC20_Template_Option.SRC20_mintable },
     { label: t("wallet_issue_template_src20_burnable"), value: SRC20_Template_Option.SRC20_burnable },
-    { label: t("wallet_issue_template_src20_pausable"), value: SRC20_Template_Option.SRC20_pausable },
   ];
 
   const [inputParams, setInputParams] = useState<{
