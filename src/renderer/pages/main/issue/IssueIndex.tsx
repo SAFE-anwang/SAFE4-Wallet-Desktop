@@ -48,7 +48,7 @@ export default () => {
         </Card>
         <Divider />
         <Card>
-          <Tabs style={{ width: "100%" }} items={tabItems} />
+          <Tabs activeKey="list" style={{ width: "100%" }} items={tabItems} />
         </Card>
       </div>
     </div>

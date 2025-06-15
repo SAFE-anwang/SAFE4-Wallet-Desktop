@@ -10,9 +10,9 @@ import { useWeb3React } from "@web3-react/core";
 import ERC20TokenLogoComponent from "../../components/ERC20TokenLogoComponent";
 import { useContract, useMulticallContract } from "../../../hooks/useContracts";
 import CallMulticallAggregate, { CallMulticallAggregateContractCall } from "../../../state/multicall/CallMulticallAggregate";
-import { SRC20_ABI } from "./SRC20";
 import { SRC20_Template } from "./SRC20_Template_Config";
 import { Contract } from "ethers";
+import MintModal from "./MintModal";
 
 const { Text } = Typography;
 
@@ -20,6 +20,9 @@ export default () => {
 
   const [openEditAssetModal, setOpenEditAssetModal] = useState(false);
   const [openPromotionModal, setOpenPromotionModal] = useState(false);
+  const [openMintAssetModal, setOpenMintAssetModal] = useState(false);
+  const [openBurnAssetModal, setOpenBurnAssetModal] = useState(false);
+
   const [selectAddress, setSelectAddress] = useState<string>();
   const activeAccount = useWalletsActiveAccount();
   const { chainId } = useWeb3React();
@@ -67,6 +70,12 @@ export default () => {
     setSelectAddress(address);
     setOpenPromotionModal(true);
   }
+
+  const clickMint =  (address: string) => {
+    setSelectAddress(address);
+    setOpenMintAssetModal(true);
+  }
+
 
   const couldMint = (address: string) => {
     if (src20TokenVersionMap) {
@@ -140,7 +149,9 @@ export default () => {
           }}>推广</Button>
           {
             isActiveAccount && couldMint(address) && <>
-              <Button>增发</Button>
+              <Button onClick={() => {
+                clickMint(address);
+              }}>增发</Button>
             </>
           }
           {
@@ -162,6 +173,10 @@ export default () => {
     {
       openPromotionModal && selectAddress &&
       <PromotionModal openPromotionModal={openPromotionModal} setOpenPromotionModal={setOpenPromotionModal} address={selectAddress} />
+    }
+    {
+      openMintAssetModal && selectAddress &&
+      <MintModal openMintModal={openMintAssetModal} setOpenMintModal={setOpenMintAssetModal} address={selectAddress} />
     }
   </>
 

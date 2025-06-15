@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { ISRC20_Interface } from "../abis";
 import { useContract, useMulticallContract } from "./useContracts";
 import CallMulticallAggregate, { CallMulticallAggregateContractCall } from "../state/multicall/CallMulticallAggregate";
+import { BigNumber } from "ethers";
 
 
 
@@ -12,6 +13,8 @@ export interface SRC20TokenProp {
   officialUrl: string,
   orgName: string,
   description: string,
+  totalSupply : BigNumber , 
+  decimals : number
 }
 
 export default (address: string) => {
@@ -53,8 +56,19 @@ export default (address: string) => {
         functionName: "officialUrl",
         params: []
       };
+      const totalSupplyCall: CallMulticallAggregateContractCall = {
+        contract: SRC20Contract,
+        functionName: "totalSupply",
+        params: []
+      };
+      const decimalsCall: CallMulticallAggregateContractCall = {
+        contract: SRC20Contract,
+        functionName: "decimals",
+        params: []
+      };
       const calls = [nameCall, symbolCall,
-        descriptionCall, whitePaperUrlCall, orgNameCall, officiaUrlCall];
+        descriptionCall, whitePaperUrlCall, orgNameCall, officiaUrlCall,
+        totalSupplyCall, decimalsCall];
       setLoading(true);
       CallMulticallAggregate(multicallContract, calls, () => {
         setLoading(false);
@@ -64,17 +78,20 @@ export default (address: string) => {
         const whitePaperUrl = whitePaperUrlCall.result;
         const orgName = orgNameCall.result;
         const officialUrl = officiaUrlCall.result;
+        const totalSupply = totalSupplyCall.result;
+        const decimals = decimalsCall.result;
         const src20Prop: SRC20TokenProp = {
           name, symbol,
-          description, whitePaperUrl, orgName, officialUrl
+          description, whitePaperUrl, orgName, officialUrl,
+          totalSupply , decimals
         }
         setSrc20TokenProp(src20Prop);
-      } , ( err : any) => {
-        console.log("Error!! >>" , err)
+      }, (err: any) => {
+        console.log("Error!! >>", err)
       })
     }
   }, [address, multicallContract, SRC20Contract]);
   return {
-    src20TokenProp , loading
+    src20TokenProp, loading
   }
 }
