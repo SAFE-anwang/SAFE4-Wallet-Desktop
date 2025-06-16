@@ -13,10 +13,14 @@ import CallMulticallAggregate, { CallMulticallAggregateContractCall } from "../.
 import { SRC20_Template } from "./SRC20_Template_Config";
 import { Contract } from "ethers";
 import MintModal from "./MintModal";
+import BurnModal from "./BurnModal";
+import { useTranslation } from "react-i18next";
 
 const { Text } = Typography;
 
 export default () => {
+
+  const { t } = useTranslation();
 
   const [openEditAssetModal, setOpenEditAssetModal] = useState(false);
   const [openPromotionModal, setOpenPromotionModal] = useState(false);
@@ -71,11 +75,15 @@ export default () => {
     setOpenPromotionModal(true);
   }
 
-  const clickMint =  (address: string) => {
+  const clickMint = (address: string) => {
     setSelectAddress(address);
     setOpenMintAssetModal(true);
   }
 
+  const clickBurn = (address: string) => {
+    setSelectAddress(address);
+    setOpenBurnAssetModal(true);
+  }
 
   const couldMint = (address: string) => {
     if (src20TokenVersionMap) {
@@ -94,7 +102,7 @@ export default () => {
 
   const columns = [
     {
-      title: '资产符号',
+      title: t("wallet_src20_symbol"),
       dataIndex: 'symbol',
       key: 'symbol',
       render: (symbol: string, data: any) => {
@@ -110,7 +118,7 @@ export default () => {
       }
     },
     {
-      title: '资产名称',
+      title: t("wallet_src20_name"),
       dataIndex: 'name',
       key: 'name',
       render: (name: string) => {
@@ -118,7 +126,7 @@ export default () => {
       }
     },
     {
-      title: '合约地址',
+      title: t("wallet_contracts_address"),
       dataIndex: 'address',
       key: 'address',
       render: (address: string) => {
@@ -134,7 +142,7 @@ export default () => {
       }
     },
     {
-      title: '操作',
+      title: t("wallet_proposals_operation"),
       dataIndex: 'address',
       key: 'address',
       render: (address: string, data: any, index: number) => {
@@ -143,20 +151,30 @@ export default () => {
         return <Space>
           <Button disabled={!isActiveAccount} onClick={() => {
             clickEdit(address);
-          }}>编辑</Button>
+          }}>
+            {t("wallet_issue_asset_manage_edit")}
+          </Button>
           <Button disabled={!isActiveAccount} onClick={() => {
             clickPromotion(address);
-          }}>推广</Button>
+          }}>
+            {t("wallet_issue_asset_manage_promotion")}
+          </Button>
           {
             isActiveAccount && couldMint(address) && <>
               <Button onClick={() => {
                 clickMint(address);
-              }}>增发</Button>
+              }}>
+                {t("wallet_issue_asset_manage_mint")}
+              </Button>
             </>
           }
           {
             isActiveAccount && couldBurn(address) && <>
-              <Button>销毁</Button>
+              <Button onClick={() => {
+                clickBurn(address);
+              }}>
+                {t("wallet_issue_asset_manage_burn")}
+              </Button>
             </>
           }
         </Space >
@@ -177,6 +195,10 @@ export default () => {
     {
       openMintAssetModal && selectAddress &&
       <MintModal openMintModal={openMintAssetModal} setOpenMintModal={setOpenMintAssetModal} address={selectAddress} />
+    }
+    {
+      openBurnAssetModal && selectAddress &&
+      <BurnModal openBurnModal={openBurnAssetModal} setOpenBurnModal={setOpenBurnAssetModal} address={selectAddress} />
     }
   </>
 

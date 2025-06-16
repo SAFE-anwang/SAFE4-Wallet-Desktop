@@ -7,6 +7,7 @@ import { TxExecuteStatus } from "../safe3/Safe3";
 import { useWalletsActiveAccount } from "../../../state/wallets/hooks";
 import { useTransactionAdder } from "../../../state/transactions/hooks";
 import useSRC20Prop from "../../../hooks/useSRC20Prop";
+import { useTranslation } from "react-i18next";
 
 const { Text } = Typography;
 
@@ -33,7 +34,8 @@ export default ({
   const [updateFinish, setUpdateFinish] = useState<boolean>(false);
   const activeAccount = useWalletsActiveAccount();
   const addTransaction = useTransactionAdder();
-  const { src20TokenProp , loading } = useSRC20Prop(address);
+  const { src20TokenProp, loading } = useSRC20Prop(address);
+  const { t } = useTranslation();
 
   const [inputParams, setInputParams] = useState<SRC20TokenProp>({
     name: "",
@@ -55,13 +57,13 @@ export default ({
     setOpenEditAssetModal(false);
   }
 
-  useEffect( () => {
-    if ( src20TokenProp ){
+  useEffect(() => {
+    if (src20TokenProp) {
       setInputParams({
         ...src20TokenProp
       })
     }
-  } , [ src20TokenProp ] )
+  }, [src20TokenProp])
 
   const update = async () => {
     if (src20TokenProp && SRC20Contract && activeAccount) {
@@ -188,22 +190,22 @@ export default ({
   }, [src20TokenProp, inputParams])
 
   return <>
-    <Modal width={800} open={openEditAssetModal} footer={null} title="编辑资产" destroyOnClose onCancel={() => cancel()}>
+    <Modal width={800} open={openEditAssetModal} footer={null} title={t("wallet_issue_edit_asset")} destroyOnClose onCancel={() => cancel()}>
       <Divider />
       <Spin spinning={loading}>
         <Row>
           <Col span={12}>
-            <Text type="secondary">资产名称</Text>
+            <Text type="secondary">{t("wallet_src20_name")}</Text>
             <br />
             <Text strong>{src20TokenProp?.name}</Text>
           </Col>
           <Col span={12}>
-            <Text type="secondary">资产符号</Text>
+            <Text type="secondary">{t("wallet_src20_symbol")}</Text>
             <br />
             <Text strong>{src20TokenProp?.symbol}</Text>
           </Col>
           <Col span={24} style={{ marginTop: "20px" }}>
-            <Text type="secondary">白皮书链接</Text>
+            <Text type="secondary">{t("wallet_src20_whitepaperurl")}</Text>
             <Input value={inputParams.whitePaperUrl} onChange={(event) => {
               const input = event.target.value;
               setInputParams({
@@ -213,7 +215,7 @@ export default ({
             }} />
           </Col>
           <Col span={24} style={{ marginTop: "20px" }}>
-            <Text type="secondary">组织机构</Text>
+            <Text type="secondary">{t("wallet_src20_org")}</Text>
             <Input value={inputParams.orgName} onChange={(event) => {
               const input = event.target.value;
               setInputParams({
@@ -223,7 +225,7 @@ export default ({
             }} />
           </Col>
           <Col span={24} style={{ marginTop: "20px" }}>
-            <Text type="secondary">官方网站</Text>
+            <Text type="secondary">{t("wallet_src20_officialwebsite")}</Text>
             <Input value={inputParams.officialUrl} onChange={(event) => {
               const input = event.target.value;
               setInputParams({
@@ -233,7 +235,7 @@ export default ({
             }} />
           </Col>
           <Col span={24} style={{ marginTop: "20px" }}>
-            <Text type="secondary">资产简介</Text>
+            <Text type="secondary">{t("wallet_src20_description")}</Text>
             <Input.TextArea value={inputParams.description} style={{ maxHeight: "60px", height: "60px" }} onChange={(event) => {
               const input = event.target.value;
               setInputParams({
@@ -250,7 +252,7 @@ export default ({
               {
                 updates.whitePaperUrl && <>
                   <Col span={24}>
-                    <Text type="secondary">更新白皮书</Text><br />
+                    <Text type="secondary">{t("update") + " " + t("wallet_src20_whitepaperurl")}</Text><br />
                     {
                       updates.whitePaperUrl.status == 1 && <>
                         <Text strong type="success">{updates.whitePaperUrl.txHash}</Text>
@@ -267,7 +269,7 @@ export default ({
               {
                 updates.orgName && <>
                   <Col span={24}>
-                    <Text type="secondary">更新组织机构</Text><br />
+                    <Text type="secondary">{t("update") + " " + t("wallet_src20_org")}</Text><br />
                     {
                       updates.orgName.status == 1 && <>
                         <Text strong type="success">{updates.orgName.txHash}</Text>
@@ -284,7 +286,7 @@ export default ({
               {
                 updates.officialUrl && <>
                   <Col span={24}>
-                    <Text type="secondary">更新官方网站</Text><br />
+                    <Text type="secondary">{t("update") + " " + t("wallet_src20_officialwebsite")}</Text><br />
                     {
                       updates.officialUrl.status == 1 && <>
                         <Text strong type="success">{updates.officialUrl.txHash}</Text>
@@ -301,7 +303,7 @@ export default ({
               {
                 updates.description && <>
                   <Col span={24}>
-                    <Text type="secondary">更新资产描述</Text><br />
+                    <Text type="secondary">{t("update") + " " + t("wallet_src20_description")}</Text><br />
                     {
                       updates.description.status == 1 && <>
                         <Text strong type="success">{updates.description.txHash}</Text>

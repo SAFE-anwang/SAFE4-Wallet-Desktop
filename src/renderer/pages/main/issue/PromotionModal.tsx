@@ -15,7 +15,7 @@ import { ethers } from "ethers";
 
 const { Text } = Typography;
 
-const MAX_LOGO_SIZE = 256 * 1024;
+const MAX_LOGO_SIZE = 128 * 1024;
 
 function formatSizeUnits(bytes: number): string {
   const units = ['B', 'KB', 'MB', 'GB', 'TB'];
@@ -124,17 +124,17 @@ export default ({
   }
 
   return <>
-    <Modal open={openPromotionModal} footer={null} title="推广资产" destroyOnClose onCancel={cancel}>
+    <Modal open={openPromotionModal} footer={null} title={t("wallet_issue_promotion_asset")} destroyOnClose onCancel={cancel}>
       <Divider />
       <Spin spinning={loading}>
         <Row>
           <Col span={12}>
-            <Text type="secondary">资产名称</Text>
+            <Text type="secondary">{t("wallet_src20_name")}</Text>
             <br />
             <Text strong>{src20TokenProp?.name}</Text>
           </Col>
           <Col span={12}>
-            <Text type="secondary">资产符号</Text>
+            <Text type="secondary">{t("wallet_src20_symbol")}</Text>
             <br />
             <Text strong>{src20TokenProp?.symbol}</Text>
           </Col>
@@ -144,7 +144,7 @@ export default ({
       <Row>
 
         <Col span={24} style={{ marginTop: "20px" }}>
-          <Text type="secondary">资产LOGO</Text>
+          <Text type="secondary">{t("wallet_src20_logo")}</Text>
 
         </Col>
         <Col span={24} style={{ marginTop: "20px" }}>
@@ -164,14 +164,16 @@ export default ({
               超过图片大小限制,请选择低于{formatSizeUnits(MAX_LOGO_SIZE)} 大小的图片作为 LOGO
             </>} />
           }
-          <Button disabled={txHash || err} onClick={selectLOGOPicture}>选择图片</Button>
+          <Button disabled={txHash || err} onClick={selectLOGOPicture}>{t("wallet_src20_logo_selectpic")}</Button>
         </Col>
       </Row>
       <Divider />
       <Row>
         <Col span={24} style={{ marginBottom: "20px" }}>
           <Alert type="info" message={<>
-            支付 <Text strong>{logoPayAmount?.toSignificant()} SAFE</Text>,为您的资产设置LOGO。
+            {
+              t( "wallet_src20_logo_payamount_tip" , { logoPayAmount : logoPayAmount?.toSignificant() + " SAFE" } )
+            }
           </>} />
         </Col>
         <Col span={24}>

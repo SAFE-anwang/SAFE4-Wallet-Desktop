@@ -13,12 +13,12 @@ export default () => {
   const tabItems: TabsProps['items'] = [
     {
       key: 'issue',
-      label: "发行资产",
+      label: t("wallet_issue"),
       children: <Issue />,
     },
     {
       key: 'list',
-      label: "资产管理",
+      label: t("wallet_issue_asset_manage"),
       children: <AssetList />,
     }
   ];
@@ -38,17 +38,17 @@ export default () => {
             <Row>
               <Col span={24}>
                 {t("wallet_issue_tip0")}
-                <Link style={{ marginLeft: "20px" }} onClick={() => window.open("https://github.com/SAFE-anwang/src20")}>查看代码库</Link>
+                <Link style={{ marginLeft: "20px" }} onClick={() => window.open("https://github.com/SAFE-anwang/src20")}>{t("wallet_issue_view_template_code")}</Link>
               </Col>
               <Col span={24}>
-                您可以在资产管理中设置资产的相关信息，以及推广您的资产.
+                {t("wallet_issue_tip1")}
               </Col>
             </Row>
           </>} />
         </Card>
         <Divider />
         <Card>
-          <Tabs activeKey="list" style={{ width: "100%" }} items={tabItems} />
+          <Tabs style={{ width: "100%" }} items={tabItems} />
         </Card>
       </div>
     </div>

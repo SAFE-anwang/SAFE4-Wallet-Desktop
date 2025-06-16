@@ -1,5 +1,5 @@
-import { Avatar, Button, Card, Col, Divider, Row, Typography } from "antd"
-import { AppstoreAddOutlined, StopOutlined } from "@ant-design/icons";
+import { Avatar, Button, Card, Col, Divider, Row, Space, Typography } from "antd"
+import { AppstoreAddOutlined, FileSearchOutlined, StopOutlined } from "@ant-design/icons";
 import { useEffect, useMemo, useState } from "react";
 import { ChainId, Token, TokenAmount } from "@uniswap/sdk";
 import { useTokenBalances, useWalletsActiveAccount } from "../../../../../state/wallets/hooks";
@@ -16,6 +16,7 @@ import { IPC_CHANNEL, Safe4NetworkChainId, USDT, WSAFE } from "../../../../../co
 import { useDispatch } from "react-redux";
 import { removeERC20Token } from "../../../../../state/transactions/actions";
 import { ERC20Tokens_Methods, ERC20TokensSignal } from "../../../../../../main/handlers/ERC20TokenSignalHandler";
+import VIewTokenModal from "./VIewTokenModal";
 const { Text } = Typography;
 
 export default () => {
@@ -23,6 +24,7 @@ export default () => {
   const { t } = useTranslation();
   const activeAccount = useWalletsActiveAccount();
   const [openTokenSendModal, setOpenTokenSendModal] = useState(false);
+  const [openViewTokenModal, setOpenViewTokenModal] = useState(false);
   const [openTokenAddModal, setOpenTokenAddModal] = useState(false);
   const [selectedToken, setSelectedToken] = useState<Token>();
 
@@ -75,6 +77,10 @@ export default () => {
     );
   }
 
+  const viewToken = (address: string, chainId: number) => {
+
+  }
+
   return <>
     <Row>
       <Col span={24}>
@@ -100,7 +106,7 @@ export default () => {
                   setSelectedToken(erc20Token);
                   setOpenTokenSendModal(true);
                 }} span={2} style={{ textAlign: "center" }}>
-                  <ERC20TokenLogoComponent chainId={chainId} address={address} />
+                  <ERC20TokenLogoComponent style={{ width: "48px", height: "48px" }} chainId={chainId} address={address} />
                 </Col>
                 <Col onClick={() => {
                   setSelectedToken(erc20Token);
@@ -117,7 +123,7 @@ export default () => {
                     </Col>
                   </Row>
                 </Col>
-                <Col span={10} style={{ paddingRight: "30px", paddingTop: "5px" }}>
+                <Col span={8} style={{ paddingRight: "30px", paddingTop: "5px" }}>
                   <Row>
                     <Col span={24} style={{ lineHeight: "35px", marginTop: "5px" }}>
                       <Text style={{ float: "right" }} type="secondary">{t("wallet_tokens_contract")}</Text>
@@ -129,10 +135,21 @@ export default () => {
                     </Col>
                   </Row>
                 </Col>
-                <Col span={2}>
-                  <Button onClick={() => removeToken(address, chainId)} disabled={disalbeHide(address)} icon={<StopOutlined />}>
-                    隐藏
-                  </Button>
+                <Col span={4}>
+                  {
+                    !disalbeHide(address) &&
+                    <Space>
+                      <Button onClick={() => removeToken(address, chainId)} icon={<StopOutlined />}>
+                        隐藏
+                      </Button>
+                      <Button onClick={() => {
+                        setSelectedToken(erc20Token);
+                        setOpenViewTokenModal(true);
+                      }} icon={<FileSearchOutlined />}>
+                        详情
+                      </Button>
+                    </Space>
+                  }
                 </Col>
               </Row>
             </>
@@ -145,6 +162,12 @@ export default () => {
       <TokenSendModal token={selectedToken} openSendModal={openTokenSendModal} setOpenSendModal={setOpenTokenSendModal} />
     }
     <TokenAddModalAndTokenList openTokenAddModal={openTokenAddModal} setOpenTokenAddModal={setOpenTokenAddModal} />
+
+    {
+      selectedToken && openViewTokenModal &&
+      <VIewTokenModal token={selectedToken} openViewTokenModal={openViewTokenModal} setOpenViewTokenModal={setOpenViewTokenModal} />
+    }
+
   </>
 
 }

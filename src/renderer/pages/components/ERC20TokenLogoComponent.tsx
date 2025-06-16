@@ -46,7 +46,7 @@ export default ({ chainId, address, style, hex, logoURI }: {
     isUSDT = (_address == USDT[Safe4NetworkChainId.Mainnet].address) || (_address == USDT[Safe4NetworkChainId.Testnet].address);
   }
   if (isWSAFE) {
-    return <Avatar src={SAFE_LOGO} style={style ? style : { padding: "4px", width: "48px", height: "48px" }} />
+    return <Avatar src={SAFE_LOGO} style={style ? { padding: "4px", width: "48px", height: "48px" , ...style } : { padding: "4px", width: "48px", height: "48px" }} />
   } else if (isUSDT) {
     return <Avatar src={USDT_LOGO} style={style ? { width: "40px", height: "40px", ...style, } : { width: "40px", height: "40px" }} />
   } else {
