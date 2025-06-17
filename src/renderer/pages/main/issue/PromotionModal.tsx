@@ -154,7 +154,7 @@ export default ({
           {
             LOGO && <>
               <ArrowRightOutlined style={{ marginLeft: "10px", marginRight: "10px" }} />
-              <Avatar src={`file://${LOGO.path}`} style={{ padding: "4px", width: "48px", height: "48px" }} />
+              <Avatar src={`file://${LOGO.path}`} style={{ width: "48px", height: "48px" }} />
             </>
           }
         </Col>

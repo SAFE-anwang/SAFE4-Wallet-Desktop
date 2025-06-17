@@ -77,10 +77,6 @@ export default () => {
     );
   }
 
-  const viewToken = (address: string, chainId: number) => {
-
-  }
-
   return <>
     <Row>
       <Col span={24}>

@@ -51,12 +51,12 @@ export default ({ chainId, address, style, hex, logoURI }: {
     return <Avatar src={USDT_LOGO} style={style ? { width: "40px", height: "40px", ...style, } : { width: "40px", height: "40px" }} />
   } else {
     if (hex && hex.length > 3) {
-      return <Avatar src={showPngFromHex(hex)} style={style ? { width: "48px", height: "48px", ...style } : { padding: "4px", width: "48px", height: "48px" }} />
+      return <Avatar src={showPngFromHex(hex)} style={style ? { width: "48px", height: "48px", ...style } : { width: "48px", height: "48px" }} />
     }
     if (logoURI || auditTokenLogoURI) {
       const URI = logoURI ? logoURI : auditTokenLogoURI;
-      return <Avatar src={URI} style={style ? { width: "48px", height: "48px", ...style } : { padding: "4px", width: "48px", height: "48px" }} />
+      return <Avatar src={URI} style={style ? { width: "48px", height: "48px", ...style } : { width: "48px", height: "48px" }} />
     }
-    return <Avatar src={ERC20_LOGO} style={style ? { padding: "8px", width: "48px", height: "48px", background: "#efefef", ...style } : { padding: "8px", width: "48px", height: "48px", background: "#efefef" }} />
+    return <Avatar src={ERC20_LOGO} style={style ? { padding: "4px", width: "48px", height: "48px", background: "#efefef", ...style } : { padding: "8px", width: "48px", height: "48px", background: "#efefef" }} />
   }
 }

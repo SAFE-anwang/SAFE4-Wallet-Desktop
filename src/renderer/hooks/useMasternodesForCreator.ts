@@ -31,7 +31,7 @@ export default ({
         setResult({
           ...result,
           num: num
-        })
+        });
         const addresses: string[] = [];
         const masternodes: MasternodeInfo[] = [];
         const offset = 50;

@@ -29,7 +29,7 @@ export default ({
       return <Button onClick={openSelectModal} style={{ height: "36px", width: "100%" }} size="small" type="text"
         icon={
           <ERC20TokenLogoComponent style={{
-            padding: "2px", width: "36px", height: "36px", marginBottom: "4px"
+            width: "36px", height: "36px", marginBottom: "4px"
           }} address={token.address} chainId={chainId} />
         }>
         <span style={{ display: "inline-block", lineHeight: "0px", height: "30px" }}>

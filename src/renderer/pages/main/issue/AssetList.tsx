@@ -108,7 +108,7 @@ export default () => {
       render: (symbol: string, data: any) => {
         return <>
           {chainId && <ERC20TokenLogoComponent
-            style={{ width: "30px", height: "30px", padding: "4px" }}
+            style={{ width: "30px", height: "30px" }}
             chainId={chainId}
             address={data.address}
             logoURI={data.logoURI}
