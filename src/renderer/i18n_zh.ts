@@ -280,6 +280,8 @@ export default {
   wallet_supernodes_sync_error_name: "名称更新失败",
   wallet_supernodes_sync_txhash_description: "简介更新交易哈希",
   wallet_supernodes_sync_error_description: "简介更新失败",
+  wallet_supernodes_sync_txhash_incentivePlan: "挖矿奖励分配方案更新交易哈希",
+  wallet_supernodes_sync_error_incentivePlan: "挖矿奖励分配方案",
   wallet_supernodes_sync_update_tip: "更新数据交易发出后,等待交易确认,超级节点的信息才会同步更新到 SAFE4 网络",
   wallet_supernodes_sync_update_notneed: "超级节点信息与超级节点服务器数据一致,无需调用合约更新数据",
 
@@ -571,6 +573,7 @@ export default {
   wallet_history_sn_update_name: "更新超级节点名称",
   wallet_history_sn_update_description: "更新超级节点简介",
   wallet_history_sn_update_enode: "更新超级节点 ENODE",
+  wallet_history_sn_update_incentiveplan: "更新超级节点挖矿分配",
   wallet_history_sn_update_address: "更新超级节点地址",
   wallet_history_sn_join: "加入超级节点合伙人",
   wallet_history_sn_vote: "投票超级节点",

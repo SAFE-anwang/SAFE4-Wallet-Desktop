@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
-import { Alert, Button, Card, Col, Divider, Input, Radio, Row, Select, Space, Spin, Typography } from "antd";
+import { Alert, Button, Card, Col, Divider, Input, Radio, Row, Select, Slider, Space, Spin, Typography } from "antd";
 
 import { useDispatch, useSelector } from "react-redux";
 import { ethers } from "ethers";
@@ -50,7 +50,7 @@ export default () => {
     address: string | undefined,
     enode: string | undefined,
     description: string | undefined,
-    name: string | undefined
+    name: string | undefined,
   }>({
     address: undefined,
     enode: undefined,
@@ -67,19 +67,32 @@ export default () => {
     address?: TxExecuteStatus,
     enode?: TxExecuteStatus,
     description?: TxExecuteStatus,
-    name?: TxExecuteStatus
+    name?: TxExecuteStatus,
+    incentivePlan?: TxExecuteStatus
   }>();
 
   const isNodeCreator = useMemo(() => {
     return supernodeInfo?.creator == activeAccount;
   }, [supernodeInfo, activeAccount]);
 
+
+  const [sliderVal, setSliderVal] = useState<number[]>();
   const needUpdate = useMemo(() => {
-    return supernodeInfo?.addr != updateParams.address
-      || supernodeInfo?.enode != updateParams.enode
-      || supernodeInfo?.description != updateParams.description
-      || supernodeInfo?.name != updateParams.name
-  }, [supernodeInfo, updateParams]);
+    if (sliderVal && supernodeInfo) {
+      const partner = sliderVal[0];
+      const creator = sliderVal[1] - sliderVal[0];
+      const voter = 100 - sliderVal[1];
+      const incentivePlanChange = partner != supernodeInfo.incentivePlan.partner
+        || creator != supernodeInfo.incentivePlan.creator
+        || voter != supernodeInfo.incentivePlan.voter;
+      return supernodeInfo?.addr != updateParams.address
+        || supernodeInfo?.enode != updateParams.enode
+        || supernodeInfo?.description != updateParams.description
+        || supernodeInfo?.name != updateParams.name
+        || incentivePlanChange;
+    }
+    return false;
+  }, [supernodeInfo, updateParams, sliderVal]);
 
   const IP = useMemo(() => {
     if (supernodeInfo) {
@@ -107,6 +120,7 @@ export default () => {
     if (editSupernodeId && supernodeStorageContract) {
       supernodeStorageContract.callStatic.getInfoByID(editSupernodeId).then(_supernodeInfo => {
         const supernodeInfo = formatSupernodeInfo(_supernodeInfo);
+        const { partner, creator, voter } = supernodeInfo.incentivePlan;
         setSupernodeInfo(supernodeInfo);
         setUpdateParams({
           address: supernodeInfo.addr,
@@ -114,6 +128,10 @@ export default () => {
           description: supernodeInfo.description,
           name: supernodeInfo.name
         });
+        setSliderVal([
+          partner,
+          creator + partner
+        ])
       });
     }
   }, [editSupernodeId, supernodeStorageContract]);
@@ -332,7 +350,7 @@ export default () => {
             supernodeInfo.id, enode
           );
           const gasLimit = estimateGas.mul(2);
-          const response = await supernodeLogicContract.changeEnodeByID(supernodeInfo.id, enode , {gasLimit});
+          const response = await supernodeLogicContract.changeEnodeByID(supernodeInfo.id, enode, { gasLimit });
           const { hash, data } = response;
           addTransaction({ to: supernodeLogicContract.address }, response, {
             call: {
@@ -363,7 +381,7 @@ export default () => {
             supernodeInfo.id, description
           );
           const gasLimit = estimateGas.mul(2);
-          const response = await supernodeLogicContract.changeDescriptionByID(supernodeInfo.id, description, {gasLimit});
+          const response = await supernodeLogicContract.changeDescriptionByID(supernodeInfo.id, description, { gasLimit });
           const { hash, data } = response;
           addTransaction({ to: supernodeLogicContract.address }, response, {
             call: {
@@ -395,7 +413,7 @@ export default () => {
             supernodeInfo.id, name
           );
           const gasLimit = estimateGas.mul(2);
-          const response = await supernodeLogicContract.changeNameByID(supernodeInfo.id, name , {gasLimit});
+          const response = await supernodeLogicContract.changeNameByID(supernodeInfo.id, name, { gasLimit });
           const { hash, data } = response;
           addTransaction({ to: supernodeLogicContract.address }, response, {
             call: {
@@ -419,11 +437,49 @@ export default () => {
       } else {
         console.log("Name 无变化,不需更新");
       }
+
+      // Do Update IncentivePlan
+      if (sliderVal) {
+        const partner = sliderVal[0];
+        const creator = sliderVal[1] - sliderVal[0];
+        const voter = 100 - sliderVal[1];
+        const incentivePlanChange = partner != supernodeInfo.incentivePlan.partner
+          || creator != supernodeInfo.incentivePlan.creator
+          || voter != supernodeInfo.incentivePlan.voter;
+        if (incentivePlanChange) {
+          try {
+            const response = await supernodeLogicContract.changeIncentivePlan(supernodeInfo.id, creator, partner, voter);
+            const { hash, data } = response;
+            addTransaction({ to: supernodeLogicContract.address }, response, {
+              call: {
+                from: activeAccount,
+                to: supernodeLogicContract.address,
+                input: data,
+                value: "0"
+              }
+            });
+            _updateResult.incentivePlan = {
+              status: 1,
+              txHash: hash
+            }
+          } catch (err: any) {
+            console.log("Error >>", err)
+            _updateResult.incentivePlan = {
+              status: 0,
+              error: err.error.reason
+            }
+          }
+          setUpdateResult({ ..._updateResult });
+        } else {
+          console.log("Incentive 无变化,不需更新");
+        }
+      }
+
       // 执行完毕;
       console.log("执行完毕");
       setUpdating(false);
     }
-  }, [activeAccount, updateParams, masternodeStorageContract, supernodeStorageContract, multicallContract, supernodeLogicContract, supernodeInfo]);
+  }, [activeAccount, updateParams, masternodeStorageContract, supernodeStorageContract, multicallContract, supernodeLogicContract, supernodeInfo, sliderVal]);
 
   const helpToCreate = useCallback(() => {
     if (updateParams.address && activeAccountChildWallets && activeAccountChildWallets.wallets[updateParams.address]
@@ -619,6 +675,41 @@ export default () => {
                     inputErrors?.description && <Alert style={{ marginTop: "5px" }} type="error" showIcon message={inputErrors.description} />
                   }
                 </Col>
+                {
+                  sliderVal && <>
+                    <Divider />
+                    <Col span={24}>
+                      <Text type='secondary'>{t("wallet_supernodes_incentiveplan")}</Text>
+                    </Col>
+                    <Col span={24}>
+                      <Slider style={{ width: "100%" }}
+                        range={{ draggableTrack: true }}
+                        value={sliderVal}
+                        onChange={(result: number[]) => {
+                          const left = result[0];
+                          const right = result[1];
+                          if (left >= 40 && left <= 50 && right >= 50 && right <= 60 && (right - left) <= 10) {
+                            setSliderVal(result)
+                          }
+                        }}
+                      />
+                      <Row style={{ width: "100%" }}>
+                        <Col span={8} style={{ textAlign: "left" }}>
+                          <Text strong>{t("wallet_supernodes_incentiveplan_members")}</Text><br />
+                          <Text>{sliderVal[0]} %</Text>
+                        </Col>
+                        <Col span={8} style={{ textAlign: "center" }}>
+                          <Text strong>{t("wallet_supernodes_incentiveplan_creator")}</Text><br />
+                          <Text>{sliderVal[1] - sliderVal[0]}%</Text>
+                        </Col>
+                        <Col span={8} style={{ textAlign: "right" }}>
+                          <Text strong>{t("wallet_supernodes_incentiveplan_voters")}</Text><br />
+                          <Text>{100 - sliderVal[1]} %</Text>
+                        </Col>
+                      </Row>
+                    </Col>
+                  </>
+                }
               </>
             }
           </Row>
@@ -700,6 +791,25 @@ export default () => {
                             <Text strong type="danger">
                               <CloseCircleTwoTone twoToneColor="red" style={{ marginRight: "5px" }} />
                               {updateResult.description.error}
+                            </Text> <br />
+                          </>
+                        }
+                      </>
+                    }
+                    {
+                      updateResult.incentivePlan && <>
+                        {
+                          updateResult.incentivePlan.status == 1 && <>
+                            <Text type="secondary">{t("wallet_supernodes_sync_txhash_incentivePlan")}</Text><br />
+                            <Text strong>{updateResult.incentivePlan.txHash}</Text> <br />
+                          </>
+                        }
+                        {
+                          updateResult.incentivePlan.status == 0 && <>
+                            <Text type="secondary">{t("wallet_supernodes_sync_error_incentivePlan")}</Text><br />
+                            <Text strong type="danger">
+                              <CloseCircleTwoTone twoToneColor="red" style={{ marginRight: "5px" }} />
+                              {updateResult.incentivePlan.error}
                             </Text> <br />
                           </>
                         }

@@ -24,6 +24,7 @@ export enum SupportSupernodeLogicFunctions {
   ChangeNameByID = "changeNameByID",      // function changeName(address _addr, address _name)
   ChangeEncodeByID = "changeEnodeByID",
   ChangeDescriptionByID = "changeDescriptionByID",
+  ChangeIncentivePlan = "changeIncentivePlan"
 }
 export enum SupportSupernodeVoteFunctions {
   VoteOrApproval = "voteOrApproval", // function voteOrApproval(bool _isVote, address _dstAddr, uint[] memory _recordIDs)
@@ -242,6 +243,11 @@ function decodeSupernodeLogicFunctionData(IContract: Interface, fragment: Functi
         _id: changeDescriptionByID[0],
       }
       break;
+    case SupportSupernodeLogicFunctions.ChangeIncentivePlan:
+      let changeIncentivePlan = IContract.decodeFunctionData(fragment, input);
+      formatDecodeResult = {
+        _id: changeIncentivePlan[0],
+      }
     default:
       break;
   }

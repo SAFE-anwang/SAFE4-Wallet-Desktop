@@ -50,7 +50,7 @@ export default ({ tokenTransfer, status }: {
     <TransactionElementTemplate
       icon={ERC20_LOGO}
       iconOutput={(isWSAFE || isUSDT) ? () => <ERC20TokenLogoComponent style={{ width: "34px", height: "34px", marginTop: "4px" }} address={token.address} chainId={1} />
-        : () => <ERC20TokenLogoComponent style={{ width: "32px", height: "32px", padding: "2px", background: "#efefef", marginTop: "4px" }} address={token.address} chainId={1} />}
+        : () => <ERC20TokenLogoComponent style={{ width: "32px", height: "32px", background: "#efefef", marginTop: "4px" }} address={token.address} chainId={1} />}
       title={txType == TX_TYPE_SEND ? t("wallet_history_send") : t("wallet_history_received")}
       status={status}
       description={txType == TX_TYPE_SEND ? to : from}

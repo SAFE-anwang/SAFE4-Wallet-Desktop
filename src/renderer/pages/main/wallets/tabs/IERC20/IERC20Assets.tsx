@@ -119,7 +119,7 @@ export default () => {
                     </Col>
                   </Row>
                 </Col>
-                <Col span={8} style={{ paddingRight: "30px", paddingTop: "5px" }}>
+                <Col span={9} style={{ paddingRight: "30px", paddingTop: "5px" }}>
                   <Row>
                     <Col span={24} style={{ lineHeight: "35px", marginTop: "5px" }}>
                       <Text style={{ float: "right" }} type="secondary">{t("wallet_tokens_contract")}</Text>
@@ -131,14 +131,14 @@ export default () => {
                     </Col>
                   </Row>
                 </Col>
-                <Col span={4}>
+                <Col span={3}>
                   {
                     !disalbeHide(address) &&
                     <Space>
-                      <Button onClick={() => removeToken(address, chainId)} icon={<StopOutlined />}>
+                      <Button size="small" onClick={() => removeToken(address, chainId)} icon={<StopOutlined />}>
                         隐藏
                       </Button>
-                      <Button onClick={() => {
+                      <Button size="small" onClick={() => {
                         setSelectedToken(erc20Token);
                         setOpenViewTokenModal(true);
                       }} icon={<FileSearchOutlined />}>

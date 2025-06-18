@@ -209,6 +209,9 @@ export default ({ transaction, setClickTransaction, support }: {
       case SupportSupernodeLogicFunctions.ChangeEncodeByID:
         title = t("wallet_history_sn_update_enode");
         break;
+      case SupportSupernodeLogicFunctions.ChangeIncentivePlan:
+        title = t("wallet_history_sn_update_incentiveplan");
+        break;
       default:
         return <></>
     }

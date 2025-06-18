@@ -2,12 +2,8 @@
 import { Col, Row, Avatar, List, Typography, Modal, Button } from "antd";
 import { useMemo } from "react";
 import { TransactionDetails } from "../../../../../state/transactions/reducer";
-import { DB_AddressActivity_Actions } from "../../../../../../main/handlers/DBAddressActivitySingalHandler";
-import AccountManagerSafeDeposit from "./AccountManagerSafeDeposit";
-import CallSupernodeRegister from "./CallSupernodeRegister";
-import CallSupernodeAppend from "./CallSupernodeAppend";
 import TransactionElementTemplate from "./TransactionElementTemplate";
-import { ApartmentOutlined, ClusterOutlined, LockOutlined } from "@ant-design/icons";
+import { ClusterOutlined } from "@ant-design/icons";
 import EtherAmount from "../../../../../utils/EtherAmount";
 
 const { Text } = Typography;

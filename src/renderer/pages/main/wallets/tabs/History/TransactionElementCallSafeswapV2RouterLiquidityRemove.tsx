@@ -145,17 +145,17 @@ export default ({ transaction, setClickTransaction, support }: {
   const RenderTokensForTokens = () => {
     return <>
       {
-        tokenA && chainId && <ERC20TokenLogoComponent style={{ marginTop: "8px", padding: "2px", width: "34px", height: "34px" }}
+        tokenA && chainId && <ERC20TokenLogoComponent style={{ marginTop: "8px", width: "34px", height: "34px" }}
           address={tokenA.address} chainId={chainId} />
       }
       {
-        !tokenA && <Avatar style={{ marginTop: "8px", }} src={SAFE_LOGO} />
+        !tokenA && <Avatar style={{ marginTop: "8px", padding: "2px", width: "36px", height: "36px" }} src={SAFE_LOGO} />
       }
       {
-        !tokenB && <Avatar style={{ marginTop: "8px", marginLeft: "-10px" }} src={SAFE_LOGO} />
+        !tokenB && <Avatar style={{ marginTop: "8px", marginLeft: "-10px", padding: "2px", width: "36px", height: "36px" }} src={SAFE_LOGO} />
       }
       {
-        tokenB && chainId && <ERC20TokenLogoComponent style={{ marginTop: "8px", padding: "2px", width: "34px", height: "34px", marginLeft: "-10px" }}
+        tokenB && chainId && <ERC20TokenLogoComponent style={{ marginTop: "8px", width: "34px", height: "34px", marginLeft: "-10px" }}
           address={tokenB.address} chainId={chainId} />
       }
     </>

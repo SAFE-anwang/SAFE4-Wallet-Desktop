@@ -16,9 +16,9 @@ const { Text } = Typography;
 const TX_TYPE_SEND = "1";
 const TX_TYPE_RECEIVE = "2";
 
-export default ({ transaction , setClickTransaction }: {
-  transaction: TransactionDetails ,
-  setClickTransaction : (transaction : TransactionDetails) => void
+export default ({ transaction, setClickTransaction }: {
+  transaction: TransactionDetails,
+  setClickTransaction: (transaction: TransactionDetails) => void
 }) => {
   const { t } = useTranslation();
   const {
@@ -40,18 +40,18 @@ export default ({ transaction , setClickTransaction }: {
   }, [activeAccount, transfer])
 
   return <>
-    <List.Item onClick={()=>{setClickTransaction(transaction)}} key={transaction.hash} className="history-element" style={{ paddingLeft: "15px", paddingRight: "15px" }}>
+    <List.Item onClick={() => { setClickTransaction(transaction) }} key={transaction.hash} className="history-element" style={{ paddingLeft: "15px", paddingRight: "15px" }}>
       <List.Item.Meta
         avatar={
           <>
             <span>
               {
                 !status && <Spin indicator={<LoadingOutlined style={{ fontSize: "34px", marginLeft: "-17px", marginTop: "-14px" }} />} >
-                  <Avatar style={{marginTop:"8px"}} src={SAFE_LOGO} />
+                  <Avatar style={{ marginTop: "8px", padding: "1px" }} src={SAFE_LOGO} />
                 </Spin>
               }
               {
-                status && <Avatar style={{ marginTop:"8px" }} src={SAFE_LOGO} />
+                status && <Avatar style={{ marginTop: "8px", padding: "1px" }} src={SAFE_LOGO} />
               }
             </span>
           </>

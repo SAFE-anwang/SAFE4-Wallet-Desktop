@@ -280,6 +280,8 @@ export default {
   wallet_supernodes_sync_error_name: "Name Update Failed",
   wallet_supernodes_sync_txhash_description: "Description Update Transaction Hash",
   wallet_supernodes_sync_error_description: "Description Update Failed",
+  wallet_supernodes_sync_txhash_incentivePlan: "Incentive Plan Update Transaction Hash",
+  wallet_supernodes_sync_error_incentivePlan: "Incentive Plan Update Failed",
   wallet_supernodes_sync_update_tip: "After the transaction to update data is sent, wait for transaction confirmation before the supernode information syncs to the SAFE4 network",
   wallet_supernodes_sync_update_notneed: "Supernode information matches the data on the supernode server; no contract update needed",
 
@@ -571,6 +573,7 @@ export default {
   wallet_history_sn_update_name: "Update Supernode Name",
   wallet_history_sn_update_description: "Update Supernode Description",
   wallet_history_sn_update_enode: "Update Supernode ENODE",
+  wallet_history_sn_update_incentiveplan: "Update Supernode Incentive Plan",
   wallet_history_sn_update_address: "Update Supernode Address",
   wallet_history_sn_join: "Join Supernode Partnership",
   wallet_history_sn_vote: "Supernode Vote",
