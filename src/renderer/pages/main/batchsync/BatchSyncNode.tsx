@@ -36,6 +36,11 @@ enum BatchSyncStep {
   BatchSync = 2
 }
 
+enum PendingFilterType {
+  ALL = "all",
+  Only_Error = "only_error"
+}
+
 export default ({
   finishCallback,
 }: {
@@ -80,6 +85,8 @@ export default ({
     }
   }>();
 
+  const [pendingFilterType, setPendingFilterType] = useState<PendingFilterType>(PendingFilterType.Only_Error);
+
   useEffect(() => {
     window.electron.ipcRenderer.sendMessage(IPC_CHANNEL, [SSHConfigSignal, SSHConfig_Methods.getAll, []])
     window.electron.ipcRenderer.once(IPC_CHANNEL, (arg) => {
@@ -103,7 +110,15 @@ export default ({
   useEffect(() => {
     if (masternodesResult) {
       const { loading, finished, num, masternodes } = masternodesResult;
-      const tasks = masternodes.sort((m0, m1) => m1.id - m0.id).map((masternode) => {
+      const tasks = masternodes.filter((m) => {
+        if (pendingFilterType == PendingFilterType.ALL) {
+          return true;
+        }
+        if (pendingFilterType == PendingFilterType.Only_Error) {
+          return m.state == 2;
+        }
+        return false;
+      }).sort((m0, m1) => m1.id - m0.id).map((masternode) => {
         return {
           id: "MN:" + masternode.id,
           title: "主节点-" + masternode.id,
@@ -154,7 +169,7 @@ export default ({
         setStep(BatchSyncStep.LoadNodes);
       }
     }
-  }, [masternodesResult, hostSSHConfigMap]);
+  }, [masternodesResult, hostSSHConfigMap, pendingFilterType]);
 
   useEffect(() => {
     if (step == BatchSyncStep.CheckSSH && pool?.pendings) {
@@ -474,6 +489,19 @@ export default ({
         {
           step == BatchSyncStep.CheckSSH && <>
             <Card style={{ marginTop: "20px" }}>
+
+              <Radio.Group
+                value={pendingFilterType}
+                options={[
+                  { value: PendingFilterType.ALL, label: '全部节点' },
+                  { value: PendingFilterType.Only_Error, label: '只处理异常节点' },
+                ]}
+                onChange={(event) => {
+                  setPendingFilterType(event.target.value)
+                }}
+              />
+              <Divider />
+
               <BatchSSHCheck nodeSSHConfigMap={nodeSSHConfigMap}
                 nodeSSHConfigValidateCheckMap={nodeSSHConfigValidateCheckMap}
                 nodeSSHConfigConnectCheckMap={nodeSSHConfigConnectCheckMap}
