@@ -391,7 +391,7 @@ export default ({
         <Col span={12} style={{ textAlign: "right" }}>
           <Space>
             {
-              queryMyMasternodes && <Button disabled={!hasMnemonic} onClick={() => setOpenBatchNodeModal(true)}>批量同步</Button>
+              queryMyMasternodes && <Button disabled={!((masternodes && masternodes.length > 0) && hasMnemonic)} onClick={() => setOpenBatchNodeModal(true)}>批量同步</Button>
             }
           </Space>
         </Col>
