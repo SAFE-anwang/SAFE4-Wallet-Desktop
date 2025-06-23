@@ -101,7 +101,7 @@ export default ({
       setSending(true);
       const logoPayAmountRaw = ethers.BigNumber.from(logoPayAmount.raw.toString());
       try {
-        const response = await SRC20Contract.setLogoUrl(LOGO.hex, {
+        const response = await SRC20Contract.setLogo(LOGO.hex, {
           value: logoPayAmountRaw
         });
         const { hash, data } = response;
