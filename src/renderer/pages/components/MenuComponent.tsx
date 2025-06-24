@@ -74,7 +74,7 @@ const MenuComponent: React.FC = () => {
   }, [API, platform, blockNumber]);
 
   const walletUpdate = useApplicationWalletUpdate();
-  const isLatestWalletVersion = walletUpdate.latestWallet ? walletUpdate.latestWallet.version == walletUpdate.currentVersion : true ;
+  const isLatestWalletVersion = walletUpdate.latestWallet ? (walletUpdate.latestWallet.version == walletUpdate.currentVersion || walletUpdate.latestWallet.versionCode <= walletUpdate.currentVersionCode) : true;
 
   const bottom_items = useMemo<MenuItem[]>(() => {
     return [

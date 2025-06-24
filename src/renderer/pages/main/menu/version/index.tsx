@@ -12,7 +12,7 @@ export default () => {
   const [openVersionModal, setOpenVersionModal] = useState(false);
   const platform = useApplicationPlatform();
   const walletUpdate = useApplicationWalletUpdate();
-  const isLatestWalletVersion = walletUpdate.latestWallet ? walletUpdate.latestWallet.version == walletUpdate.currentVersion : true;
+  const isLatestWalletVersion = walletUpdate.latestWallet ? (walletUpdate.latestWallet.version == walletUpdate.currentVersion || walletUpdate.latestWallet.versionCode <= walletUpdate.currentVersionCode) : true;
 
   return <>
     <Row className='menu-item' onClick={() => {
