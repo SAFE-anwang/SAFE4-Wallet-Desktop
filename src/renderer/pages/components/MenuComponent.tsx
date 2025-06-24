@@ -85,7 +85,9 @@ const MenuComponent: React.FC = () => {
 
   useEffect(() => {
     if (walletUpdate && walletUpdate.latestWallet) {
-      if (walletUpdate.currentVersion != walletUpdate.latestWallet.version && !walletUpdate.ignore) {
+      if (walletUpdate.currentVersion != walletUpdate.latestWallet.version
+        && walletUpdate.currentVersionCode < walletUpdate.latestWallet.versionCode
+        && !walletUpdate.ignore) {
         setOpenVersionModal(true);
       }
     }
