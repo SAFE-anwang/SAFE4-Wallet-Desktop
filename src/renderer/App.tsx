@@ -332,7 +332,6 @@ export default function App() {
                     <Route path="/main/crosschain" element={<Crosschain />} />
                     <Route path="/main/swap" element={<SafeswapV2 />} />
                     <Route path="/main/issue" element={<IssueIndex />} />
-                    <Route path="/main/batchSyncNode" element={<BatchSyncNode />} />
                   </Routes>
                 </Col>
               </Row>

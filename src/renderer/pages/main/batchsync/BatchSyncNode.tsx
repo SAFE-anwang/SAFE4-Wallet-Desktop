@@ -1,6 +1,6 @@
 import { Alert, Avatar, Button, Card, Col, Divider, Input, List, Radio, RadioChangeEvent, Result, Row, Space, Spin, Steps, Tabs, Typography } from "antd";
 import { useActiveAccountChildWallets, useWalletsActiveAccount } from "../../../state/wallets/hooks"
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import SyncNode from "./SyncNode";
 import { CheckCircleFilled, CloseCircleFilled, CloseCircleOutlined, CloseCircleTwoTone, DeleteOutlined, EditOutlined, EditTwoTone, SyncOutlined } from "@ant-design/icons";
 import useMasternodesForCreator from "../../../hooks/useMasternodesForCreator";
@@ -38,7 +38,8 @@ enum BatchSyncStep {
 
 enum PendingFilterType {
   ALL = "all",
-  Only_Error = "only_error"
+  Only_Error = "only_error",
+  Only_Normal = "only_normal"
 }
 
 export default ({
@@ -85,7 +86,7 @@ export default ({
     }
   }>();
 
-  const [pendingFilterType, setPendingFilterType] = useState<PendingFilterType>(PendingFilterType.Only_Error);
+  const [pendingFilterType, setPendingFilterType] = useState<PendingFilterType>(PendingFilterType.ALL);
 
   useEffect(() => {
     window.electron.ipcRenderer.sendMessage(IPC_CHANNEL, [SSHConfigSignal, SSHConfig_Methods.getAll, []])
@@ -117,6 +118,9 @@ export default ({
         if (pendingFilterType == PendingFilterType.Only_Error) {
           return m.state == 2;
         }
+        if (pendingFilterType == PendingFilterType.Only_Normal) {
+          return m.state == 1;
+        }
         return false;
       }).sort((m0, m1) => m1.id - m0.id).map((masternode) => {
         return {
@@ -125,11 +129,13 @@ export default ({
           node: masternode
         }
       });
+
       setPool({
         pendings: [...tasks],
         executings: [],
         completeds: []
       });
+
       if (masternodesResult.finished
         && hostSSHConfigMap && masternodesResult.masternodes.length == masternodesResult.num) {
 
@@ -167,9 +173,22 @@ export default ({
         })
         setNodeAddressConfigMap(_nodeAddressConfigMap);
         setStep(BatchSyncStep.LoadNodes);
+        setCommonPWD(undefined);
       }
     }
   }, [masternodesResult, hostSSHConfigMap, pendingFilterType]);
+
+  const pendingFilterTypeOptions = useMemo(() => {
+    if (masternodesResult.finished) {
+      const hasErrorStateMN = masternodesResult.masternodes.filter(m => m.state == 2).length > 0;
+      const hasNormalStateMN = masternodesResult.masternodes.filter(m => m.state == 1).length > 0;
+      return [
+        { value: PendingFilterType.ALL, label: '全部节点' },
+        { value: PendingFilterType.Only_Error, label: '只处理异常节点', disabled: !hasErrorStateMN },
+        { value: PendingFilterType.Only_Normal, label: '只处理正常节点', disabled: !hasNormalStateMN },
+      ]
+    }
+  }, [masternodesResult]);
 
   useEffect(() => {
     if (step == BatchSyncStep.CheckSSH && pool?.pendings) {
@@ -330,6 +349,19 @@ export default ({
     asyncTxUpdate();
   }
 
+  const [commonPWD, setCommonPWD] = useState<string>();
+  const applyCommonPWDForAll = useCallback(() => {
+    if ( commonPWD ){
+      const _nodeSSHConfigMap = {
+        ... nodeSSHConfigMap
+      };
+      Object.keys( _nodeSSHConfigMap ).forEach( ID => {
+        _nodeSSHConfigMap[ ID ].password = commonPWD;
+      } )
+      setNodeSSHConfigMap( _nodeSSHConfigMap )
+    }
+  }, [commonPWD, nodeSSHConfigMap]);
+
   return <>
     <Row>
       <Col span={4}>
@@ -366,10 +398,10 @@ export default ({
                     </>}
                     description={<>
                       <Row>
-                        <Col span={12}>
+                        <Col span={16}>
                           {nodeSSHConfigMap[item.id]?.host}
                         </Col>
-                        <Col span={12} style={{ textAlign: "right" }}>
+                        <Col span={8} style={{ textAlign: "right" }}>
                           {
                             step == BatchSyncStep.CheckSSH &&
                             <Space style={{ marginRight: "10px" }} >
@@ -478,30 +510,34 @@ export default ({
             />
           </Col>
         </Row>
-
         {
           step == BatchSyncStep.LoadNodes && nodeAddressConfigMap && <>
             <LoadChildWallets nodeAddressConfigMap={nodeAddressConfigMap} setNodeAddressConfigMap={setNodeAddressConfigMap}
               finishCallback={() => setStep(BatchSyncStep.CheckSSH)} />
           </>
         }
-
         {
-          step == BatchSyncStep.CheckSSH && <>
+          (step == BatchSyncStep.CheckSSH) && <>
             <Card style={{ marginTop: "20px" }}>
-
               <Radio.Group
                 value={pendingFilterType}
-                options={[
-                  { value: PendingFilterType.ALL, label: '全部节点' },
-                  { value: PendingFilterType.Only_Error, label: '只处理异常节点' },
-                ]}
+                options={pendingFilterTypeOptions}
                 onChange={(event) => {
                   setPendingFilterType(event.target.value)
                 }}
               />
+              <br />
+              <Row style={{ marginTop: "10px" }}>
+                <Col span={8}>
+                  <Input.Password value={commonPWD} placeholder="为所有节点设置相同密码" onChange={(event) => {
+                    setCommonPWD(event.target.value)
+                  }} />
+                </Col>
+                <Col span={2} style={{ marginLeft: "5px" }}>
+                  <Button onClick={ applyCommonPWDForAll }>确认</Button>
+                </Col>
+              </Row>
               <Divider />
-
               <BatchSSHCheck nodeSSHConfigMap={nodeSSHConfigMap}
                 nodeSSHConfigValidateCheckMap={nodeSSHConfigValidateCheckMap}
                 nodeSSHConfigConnectCheckMap={nodeSSHConfigConnectCheckMap}
