@@ -83,7 +83,7 @@ export class SSH2Ipc {
         }).on('error', (err: any) => {
           console.log("[ssh2] connect error:", err);
           reject(err);
-        }).connect({ host, username, password , readyTimeout:10000 });
+        }).connect({ host, username, password , readyTimeout:120000 });
 
       });
     });
