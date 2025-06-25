@@ -351,16 +351,29 @@ export default ({
 
   const [commonPWD, setCommonPWD] = useState<string>();
   const applyCommonPWDForAll = useCallback(() => {
-    if ( commonPWD ){
+    if (commonPWD) {
       const _nodeSSHConfigMap = {
-        ... nodeSSHConfigMap
+        ...nodeSSHConfigMap
       };
-      Object.keys( _nodeSSHConfigMap ).forEach( ID => {
-        _nodeSSHConfigMap[ ID ].password = commonPWD;
-      } )
-      setNodeSSHConfigMap( _nodeSSHConfigMap )
+      Object.keys(_nodeSSHConfigMap).forEach(ID => {
+        _nodeSSHConfigMap[ID].password = commonPWD;
+      })
+      setNodeSSHConfigMap(_nodeSSHConfigMap)
     }
   }, [commonPWD, nodeSSHConfigMap]);
+
+  const [commonUsername, setCommonUsername] = useState<string>();
+  const applyCommonUsernameForAll = useCallback(() => {
+    if (commonUsername) {
+      const _nodeSSHConfigMap = {
+        ...nodeSSHConfigMap
+      };
+      Object.keys(_nodeSSHConfigMap).forEach(ID => {
+        _nodeSSHConfigMap[ID].username = commonUsername;
+      })
+      setNodeSSHConfigMap(_nodeSSHConfigMap)
+    }
+  }, [commonUsername, nodeSSHConfigMap])
 
   return <>
     <Row>
@@ -529,14 +542,25 @@ export default ({
               <br />
               <Row style={{ marginTop: "10px" }}>
                 <Col span={8}>
+                  <Input value={commonUsername} placeholder="为所有节点设置相同用户名" onChange={(event) => {
+                    setCommonUsername(event.target.value)
+                  }} />
+                </Col>
+                <Col span={2} style={{ marginLeft: "5px" }}>
+                  <Button onClick={applyCommonUsernameForAll}>确认</Button>
+                </Col>
+              </Row>
+              <Row style={{ marginTop: "10px" }}>
+                <Col span={8}>
                   <Input.Password value={commonPWD} placeholder="为所有节点设置相同密码" onChange={(event) => {
                     setCommonPWD(event.target.value)
                   }} />
                 </Col>
                 <Col span={2} style={{ marginLeft: "5px" }}>
-                  <Button onClick={ applyCommonPWDForAll }>确认</Button>
+                  <Button onClick={applyCommonPWDForAll}>确认</Button>
                 </Col>
               </Row>
+
               <Divider />
               <BatchSSHCheck nodeSSHConfigMap={nodeSSHConfigMap}
                 nodeSSHConfigValidateCheckMap={nodeSSHConfigValidateCheckMap}

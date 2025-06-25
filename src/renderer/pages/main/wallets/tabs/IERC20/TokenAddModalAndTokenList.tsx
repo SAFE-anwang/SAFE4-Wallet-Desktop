@@ -249,7 +249,13 @@ export default ({
           <Divider />
           <Col span={24}>
             {
-              auditTokens && auditTokens.map(auditToken => {
+              auditTokens && auditTokens.filter(token => {
+                if (address && ethers.utils.isAddress(address)) {
+                  const _addr = ethers.utils.getAddress(address);
+                  return token.address == _addr;
+                }
+                return true;
+              }).map(auditToken => {
                 const { chainId, address, name, symbol, decimals } = auditToken;
                 const token = new Token(chainId, address, decimals, symbol, name);
                 return <>
