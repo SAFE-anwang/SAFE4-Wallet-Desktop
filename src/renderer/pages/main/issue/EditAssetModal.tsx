@@ -45,6 +45,11 @@ export default ({
     orgName: "",
     description: "",
   });
+  const [inputErrors, setInputErrors] = useState<{
+    description: string | undefined
+  }>({
+    description: undefined
+  });
 
   const [updates, setUpdates] = useState<{
     whitePaperUrl?: TxExecuteStatus,
@@ -68,6 +73,20 @@ export default ({
   const update = async () => {
     if (src20TokenProp && SRC20Contract && activeAccount) {
       const { whitePaperUrl, orgName, officialUrl, description } = inputParams;
+
+      const _inputErrors: {
+        description: string | undefined
+      } = {
+        description: undefined
+      };
+      if (description.length > 2000) {
+        _inputErrors.description = "输入内容不能超过2000字符的长度限制.";
+      }
+      if (_inputErrors.description) {
+        setInputErrors(_inputErrors);
+        return;
+      }
+
       setUpdating(true);
       let _updates = updates ?? {};
       if (whitePaperUrl != src20TokenProp.whitePaperUrl) {
@@ -241,8 +260,18 @@ export default ({
               setInputParams({
                 ...inputParams,
                 description: input
+              });
+              setInputErrors({
+                ...inputErrors,
+                description: undefined
               })
             }} />
+            {
+              inputErrors.description && <Alert style={{ marginTop: "5px" }} showIcon type="error" message={<>
+                {inputErrors.description}
+              </>} />
+            }
+
           </Col>
         </Row>
         <Divider />
