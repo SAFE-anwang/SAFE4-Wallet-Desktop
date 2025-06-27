@@ -48,10 +48,13 @@ export default ({
     if (!amount) {
       inputErrors.amount = t("enter") + t("wallet_send_amount");
     }
-    if (amount) {
+    if (amount && activeAccountTokenAmount) {
       try {
         let _amount = new TokenAmount(token, ethers.utils.parseUnits(amount, token.decimals).toBigInt());
         if (!_amount.greaterThan(ZERO)) {
+          inputErrors.amount = t("enter_correct") + t("wallet_send_amount");
+        }
+        if (_amount.greaterThan(activeAccountTokenAmount)) {
           inputErrors.amount = t("enter_correct") + t("wallet_send_amount");
         }
       } catch (error) {

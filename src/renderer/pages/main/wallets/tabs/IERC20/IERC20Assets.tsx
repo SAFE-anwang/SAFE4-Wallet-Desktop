@@ -107,7 +107,7 @@ export default () => {
                 <Col onClick={() => {
                   setSelectedToken(erc20Token);
                   setOpenTokenSendModal(true);
-                }} span={9}>
+                }} span={8}>
                   <Row>
                     <Col span={24} style={{ lineHeight: "35px", marginTop: "5px" }}>
                       <Text strong>{TokenName(erc20Token)}</Text>
@@ -119,7 +119,7 @@ export default () => {
                     </Col>
                   </Row>
                 </Col>
-                <Col span={9} style={{ paddingRight: "30px", paddingTop: "5px" }}>
+                <Col span={10} style={{ paddingRight: "30px", paddingTop: "5px" }}>
                   <Row>
                     <Col span={24} style={{ lineHeight: "35px", marginTop: "5px" }}>
                       <Text style={{ float: "right" }} type="secondary">{t("wallet_tokens_contract")}</Text>
