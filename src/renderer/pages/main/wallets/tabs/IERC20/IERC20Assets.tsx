@@ -107,7 +107,7 @@ export default () => {
                 <Col onClick={() => {
                   setSelectedToken(erc20Token);
                   setOpenTokenSendModal(true);
-                }} span={10}>
+                }} span={9}>
                   <Row>
                     <Col span={24} style={{ lineHeight: "35px", marginTop: "5px" }}>
                       <Text strong>{TokenName(erc20Token)}</Text>
@@ -131,7 +131,7 @@ export default () => {
                     </Col>
                   </Row>
                 </Col>
-                <Col span={3}>
+                <Col span={4} style={{textAlign:"center"}}>
                   {
                     !disalbeHide(address) &&
                     <Space>
