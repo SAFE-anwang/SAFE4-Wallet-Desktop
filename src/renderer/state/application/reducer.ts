@@ -164,7 +164,7 @@ const initialState: IApplicationState = {
   platform: "",
   WalletUpdate: {
     currentVersion: "2.0.5",
-    currentVersionCode: 101,
+    currentVersionCode: 102,
     ignore: false
   },
   sshConfigMap: {}
