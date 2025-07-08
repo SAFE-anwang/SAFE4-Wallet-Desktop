@@ -73,6 +73,9 @@ export async function scryptDecryptWallets(encrypt: any, password: string): Prom
   );
   const text = decrypted.toString(CryptoJS.enc.Utf8);
   const walletKeystores = JSON.parse(text);
+
+  console.log("Decrypt Text:" , walletKeystores);
+
   return walletKeystores;
 }
 
