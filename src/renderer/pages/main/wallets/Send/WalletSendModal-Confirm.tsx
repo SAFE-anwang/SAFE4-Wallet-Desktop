@@ -10,6 +10,7 @@ import useTransactionResponseRender from "../../../components/useTransactionResp
 import { useAccountManagerContract } from "../../../../hooks/useContracts";
 import { useTranslation } from "react-i18next";
 import AddressComponent from "../../../components/AddressComponent";
+import { useWeb3React } from "@web3-react/core";
 
 const { Text } = Typography;
 
@@ -26,6 +27,7 @@ export default ({
 
   const { t } = useTranslation();
   const signer = useWalletsActiveSigner();
+  const { provider, chainId } = useWeb3React();
   const activeAccount = useWalletsActiveAccount();
   const addTransaction = useTransactionAdder();
   const accountManaggerContract = useAccountManagerContract(true);
@@ -43,7 +45,7 @@ export default ({
   const [sending, setSending] = useState<boolean>(false);
 
   const doSendTransaction = useCallback(({ to, amount, lockDay }: { to: string, amount: string, lockDay: number | undefined }) => {
-    if (signer && accountManaggerContract) {
+    if (signer && accountManaggerContract && chainId && provider) {
       const value = ethers.utils.parseEther(amount);
       if (lockDay && lockDay > 0) {
         setSending(true);
@@ -70,25 +72,30 @@ export default ({
         const tx = {
           to,
           value,
+          chainId
         }
         setSending(true);
-        signer.sendTransaction(tx).then(response => {
-          setSending(false);
-          const {
-            hash
-          } = response;
-          setTxHash(hash);
-          setTransactionResponse(response);
-          addTransaction(tx, response, {
-            transfer: {
-              from: activeAccount,
-              to: tx.to,
-              value: tx.value.toString()
-            }
-          });
-        }).catch(err => {
-          setSending(false);
-          setErr(err)
+        window.electron.wallet.signTransaction(
+          activeAccount,
+          provider.connection.url,
+          tx
+        ).then(signedTx => {
+          provider.sendTransaction(signedTx).then(response => {
+            setSending(false);
+            const { hash } = response;
+            setTxHash(hash);
+            setTransactionResponse(response);
+            addTransaction(tx, response, {
+              transfer: {
+                from: activeAccount,
+                to: tx.to,
+                value: tx.value.toString()
+              }
+            });
+          }).catch(err => {
+            setSending(false);
+            setErr(err)
+          })
         })
       }
     }

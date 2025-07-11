@@ -1,4 +1,5 @@
 import path from 'path';
+import { WalletKeystore } from '../WalletIpc';
 const fs = require("fs");
 
 export class Context {
@@ -15,8 +16,8 @@ export class Context {
       kys: "safe4.wallet.kys"
     };
 
-  osLocale : string = "zh";
-  os : string = "";
+  osLocale: string = "zh";
+  os: string = "";
 
   constructor(resourcePath: string, appIsPackaged: boolean) {
     this.path.resource = resourcePath;
@@ -43,7 +44,7 @@ export class Context {
     this.path.kys = path.join(this.path.data, this.path.kys);
   }
 
-  public updateOSLocale( locale : string , os : string ){
+  public updateOSLocale(locale: string, os: string) {
     this.osLocale = locale;
     this.os = os;
   }

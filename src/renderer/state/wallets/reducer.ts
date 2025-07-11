@@ -1,5 +1,5 @@
 import { createReducer } from '@reduxjs/toolkit';
-import { walletsClearWalletChildWallets, walletsInitList, walletsLoadKeystores, walletsLoadWalletNames, walletsUpdateActiveWallet, walletsUpdateUsedChildWalletAddress, walletsUpdateWalletChildWallets, walletsUpdateWalletName } from './action';
+import { walletsClearWalletChildWallets, walletsInitList, walletsLoadEncryptWalletKeystores, walletsLoadKeystores, walletsLoadWalletNames, walletsUpdateActiveWallet, walletsUpdateUsedChildWalletAddress, walletsUpdateWalletChildWallets, walletsUpdateWalletName } from './action';
 import { SupportChildWalletType } from '../../utils/GenerateChildWallet';
 
 export interface ERC20Token {
@@ -56,6 +56,13 @@ export interface Wallets {
   },
   walletUsedAddress: string[],
 
+  /** */
+  encryptWalletKeystores : WalletKeystore[],
+
+  _iv : string | undefined ,
+  _aesKey : string | undefined,
+  /** */
+
 }
 
 const initialState: Wallets = {
@@ -65,7 +72,10 @@ const initialState: Wallets = {
   list: [],
   walletNames: {},
   walletChildWallets: {},
-  walletUsedAddress: []
+  walletUsedAddress: [] ,
+  encryptWalletKeystores : [] ,
+  _iv : undefined,
+  _aesKey : undefined
 }
 
 
@@ -252,6 +262,13 @@ export default createReducer(initialState, (builder) => {
 
   builder.addCase(walletsClearWalletChildWallets, (state, _) => {
     state.walletChildWallets = {};
+  })
+
+  builder.addCase(walletsLoadEncryptWalletKeystores , ( state , { payload } ) => {
+    const { encryptWalletKeystores , _iv , _aesKey } = payload;
+    state._aesKey = _aesKey;
+    state._iv = _iv;
+    state.encryptWalletKeystores = encryptWalletKeystores;
   })
 
 });

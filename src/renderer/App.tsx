@@ -9,7 +9,7 @@ import { useDispatch } from 'react-redux';
 import { IndexSingal, Index_Methods } from '../main/handlers/IndexSingalHandler';
 import config, { IPC_CHANNEL } from './config';
 import { applicationDataLoaded, applicationSetPassword, applicationUpdateWeb3Rpc } from './state/application/action';
-import { walletsLoadKeystores, walletsLoadWalletNames } from './state/wallets/action';
+import { walletsLoadEncryptWalletKeystores, walletsLoadKeystores, walletsLoadWalletNames } from './state/wallets/action';
 import { MemoryRouter as Router, Routes, Route } from 'react-router-dom';
 import MenuComponent from './pages/components/MenuComponent';
 import Index from './pages/index';
@@ -62,6 +62,10 @@ import SafeswapV2 from './pages/main/safeswap/SafeswapV2';
 import Issue from './pages/main/issue/Issue';
 import IssueIndex from './pages/main/issue/IssueIndex';
 import BatchSyncNode from './pages/main/batchsync/BatchSyncNode';
+import { WalletKeystore } from './state/wallets/reducer';
+
+const CryptoJS = require('crypto-js');
+
 const { Text } = Typography;
 
 export default function App() {
@@ -191,8 +195,29 @@ export default function App() {
     if (password && encrypt) {
       try {
         setDecrypting(true);
-        const walletsKeystores = await window.electron.crypto.decrypt({ encrypt, password });
-        dispatch(walletsLoadKeystores(walletsKeystores));
+        const [walletsKeystores, encryptWalletKeystores, { _iv, _aesKey }] = await window.electron.crypto.decrypt({ encrypt, password });
+
+        console.log("_iv =>", _iv);
+        console.log("_aesKey =>", _aesKey);
+        console.log("Encrypt Wallet Keystores =>", encryptWalletKeystores);
+
+        // Object.values(encryptWalletKeystores).forEach((walletKeystore) => {
+        //   const _w = walletKeystore as WalletKeystore;
+        //   if (_w.mnemonic) {
+        //     const decrypted = CryptoJS.AES.decrypt(
+        //       { ciphertext: CryptoJS.enc.Hex.parse(_w.mnemonic) },
+        //       CryptoJS.enc.Hex.parse(_aesKey),
+        //       { iv: CryptoJS.enc.Hex.parse(_iv), mode: CryptoJS.mode.CBC, padding: CryptoJS.pad.Pkcs7 }
+        //     );
+        //     const result = decrypted.toString(CryptoJS.enc.Utf8);
+        //     console.log(result);
+        //   }
+        // })
+        dispatch( walletsLoadEncryptWalletKeystores({
+          encryptWalletKeystores , _iv , _aesKey
+        }));
+
+        dispatch(walletsLoadKeystores(encryptWalletKeystores));
         dispatch(applicationSetPassword(password));
         setLocked(false);
       } catch (err) {

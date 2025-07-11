@@ -15,6 +15,7 @@ import { IERC20_Interface } from '../../abis';
 import { generateChildWalletsCheckResult, SupportChildWalletType } from '../../utils/GenerateChildWallet';
 import { walletsUpdateWalletChildWallets } from './action';
 import { Safe4NetworkChainId } from '../../config';
+const CryptoJS = require('crypto-js');
 
 export function useWalletsList(): Wallet[] {
   return useSelector((state: AppState) => {
@@ -49,11 +50,28 @@ export function useWalletsActiveAccount(): string {
 export function useWalletsActivePrivateKey(): string | undefined {
   return useSelector((state: AppState) => {
     if (state.wallets.activeWallet) {
-      return state.wallets.keystores.filter(
+      // 直接返回明文私钥
+      // return state.wallets.keystores.filter(
+      //   walletKetstore => {
+      //     return walletKetstore.publicKey == state.wallets.activeWallet?.publicKey
+      //   }
+      // )[0].privateKey
+
+      // 对加密私钥进行AES解密
+      const encryptPrivateKey = state.wallets.keystores.filter(
         walletKetstore => {
           return walletKetstore.publicKey == state.wallets.activeWallet?.publicKey
         }
-      )[0].privateKey
+      )[0].privateKey;
+      const ciphertext = CryptoJS.enc.Hex.parse(encryptPrivateKey);
+      const aesKey = CryptoJS.enc.Hex.parse(state.wallets._aesKey);
+      const iv = CryptoJS.enc.Hex.parse(state.wallets._iv);
+      const decrypted = CryptoJS.AES.decrypt(
+        { ciphertext },
+        aesKey,
+        { iv, mode: CryptoJS.mode.CBC, padding: CryptoJS.pad.Pkcs7 }
+      );
+      return decrypted.toString(CryptoJS.enc.Utf8);
     }
     return undefined;
   });
@@ -470,7 +488,7 @@ export function useTokenBalance(account?: string, token?: Token): TokenAmount | 
  *
  * @param type mn | sn
  */
-export function useActiveAccountChildWallets(type: SupportChildWalletType , initSize ?: number) {
+export function useActiveAccountChildWallets(type: SupportChildWalletType, initSize?: number) {
   // 每一批检查多少个子钱包
   const size = initSize ? initSize : 50;
   const activeAccountKeystore = useWalletsActiveKeystore();
@@ -554,12 +572,12 @@ export function useActiveAccountChildWallets(type: SupportChildWalletType , init
         } else {
           // 判断是否有当前建立的,但是链上还没有更新的exist状态;
           const _map: {
-            [address: string]: { exist: boolean, path: string , privateKey : string }
+            [address: string]: { exist: boolean, path: string, privateKey: string }
           } = {}
           Object.keys(childTypeWallets.wallets)
             .filter(childAddress => !childTypeWallets.wallets[childAddress].exist && walletUsedAddressed.indexOf(childAddress) >= 0)
             .forEach(childAddress => {
-              _map[childAddress] = { exist: true, path: childTypeWallets.wallets[childAddress].path , privateKey : childTypeWallets.wallets[childAddress].privateKey }
+              _map[childAddress] = { exist: true, path: childTypeWallets.wallets[childAddress].path, privateKey: childTypeWallets.wallets[childAddress].privateKey }
             })
           if (Object.keys(_map).length > 0) {
             dispatch(walletsUpdateWalletChildWallets({
@@ -576,4 +594,14 @@ export function useActiveAccountChildWallets(type: SupportChildWalletType , init
   return childTypeWallets;
 }
 
+
+export function useEncryptWalletKeystores() {
+  return useSelector((state: AppState) => {
+    return {
+      _aesKey: state.wallets._aesKey,
+      _iv: state.wallets._iv,
+      encryptWalletKetstores: state.wallets.encryptWalletKeystores
+    }
+  });
+}
 

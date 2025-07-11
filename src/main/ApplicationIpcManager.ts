@@ -16,6 +16,7 @@ import { AppPropSignalHandler } from "./handlers/AppPropSignalHandler";
 import { CrosschainSignalHandler } from "./handlers/CrosschainSignalHandler";
 import { SSHSIpc } from "./SSHSIpc";
 import { SSHConfigSignalHandler } from "./handlers/SSHConfigSignalHandler";
+import { WalletIpc } from "./WalletIpc";
 
 export const Channel : Channels = "ipc-example";
 
@@ -67,8 +68,8 @@ export class ApplicationIpcManager {
     new SSH2Ipc(ipcMain);
     new SSHSIpc(ipcMain);
     new LocalFileReader(ipcMain);
-    new CryptoIpc(ipcMain);
+    const walletIpc = new WalletIpc(ipcMain);
+    new CryptoIpc(ipcMain , walletIpc);
     return this;
   }
-
 }

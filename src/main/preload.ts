@@ -1,6 +1,9 @@
+import { Provider } from 'react-redux';
 // Disable no-unused-vars, broken for spread args
 /* eslint no-unused-vars: off */
 import { contextBridge, ipcRenderer, IpcRendererEvent, OpenExternalOptions } from 'electron';
+import { ethers } from 'ethers';
+import { TransactionRequest, Web3Provider } from '@ethersproject/providers';
 
 export type Channels = 'ipc-example';
 
@@ -98,7 +101,14 @@ const electronHandler = {
     decrypt(params: any) {
       return ipcRenderer.invoke("crypto-scrypt-decrypt", params)
     }
+  },
+
+  wallet: {
+    signTransaction(activeAccount: string, providerUrl: string, tx : TransactionRequest ): Promise<string> {
+      return ipcRenderer.invoke("wallet-signTransaction", [activeAccount, providerUrl, tx]);
+    }
   }
+
 
 };
 

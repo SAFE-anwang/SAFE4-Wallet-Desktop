@@ -45,4 +45,10 @@ export const walletsClearWalletChildWallets = createAction(
   "wallets/clearWalletChildWallets"
 )
 
+export const walletsLoadEncryptWalletKeystores = createAction<{
+  encryptWalletKeystores : WalletKeystore [] ,
+  _iv : string ,
+  _aesKey : string
+}>("wallets/loadEncryptWalletKeystores")
+
 
