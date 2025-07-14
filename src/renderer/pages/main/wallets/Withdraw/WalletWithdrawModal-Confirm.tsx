@@ -50,11 +50,19 @@ export default ({
           data,
           chainId
         };
+
         const { signedTx, error } = await window.electron.wallet.signTransaction(
           activeAccount,
           provider.connection.url,
           tx
         );
+
+        if (error) {
+          setSending(false);
+          setErr(error);
+          return;
+        }
+
         if (signedTx) {
           try {
             const response = await provider.sendTransaction(signedTx);
@@ -76,10 +84,7 @@ export default ({
             setSending(false);
           }
         }
-        if (error) {
-          setSending(false);
-          setErr(error)
-        }
+
       } else {
         const data = accountManaggerContract.interface.encodeFunctionData("withdraw", []);
         const tx: ethers.providers.TransactionRequest = {
