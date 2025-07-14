@@ -11,6 +11,7 @@ import { CurrencyAmount, JSBI } from "@uniswap/sdk";
 import { GetDiffInDays } from "../../../../utils/DateUtils";
 import AddressComponent from "../../../components/AddressComponent";
 import { useTranslation } from "react-i18next";
+import { useWeb3React } from "@web3-react/core";
 const { Text, Link } = Typography;
 
 export default ({
@@ -24,6 +25,7 @@ export default ({
 
   const { t } = useTranslation();
   const activeAccount = useWalletsActiveAccount();
+  const { chainId, provider } = useWeb3React();
   const addTransaction = useTransactionAdder();
   const accountManaggerContract = useAccountManagerContract(true);
   const [sending, setSending] = useState<boolean>(false);
@@ -41,8 +43,8 @@ export default ({
     return CurrencyAmount.ether(JSBI_TotalLockAmount).toExact();
   }, [batchLockParams])
 
-  const doBatchLockTransaction = useCallback(() => {
-    if (accountManaggerContract) {
+  const doBatchLockTransaction = useCallback(async () => {
+    if (accountManaggerContract && chainId && provider) {
       const { startLockMonth, periodMonth, lockTimes, perLockAmount, toAddress } = batchLockParams;
       const _startDay = GetDiffInDays(new Date(`${startLockMonth}-01`));
       const _spaceDay = periodMonth * 30;
@@ -53,27 +55,46 @@ export default ({
        * batchDeposit4One(address _to, uint _times, uint _spaceDay, uint _startDay)
        */
       setSending(true);
-      accountManaggerContract.batchDeposit4One(toAddress, _times, _spaceDay, _startDay, {
-        value: JSBI_TotalLockAmount.toString(),
-      }).then((response: any) => {
-        const { hash, data } = response;
-        setTransactionResponse(response);
-        addTransaction({ to: accountManaggerContract.address }, response, {
-          call: {
-            from: activeAccount,
-            to: accountManaggerContract.address,
-            input: data,
-            value: JSBI_TotalLockAmount.toString()
-          }
-        });
-        setTxHash(hash);
+
+      const value = JSBI_TotalLockAmount.toString();
+      const data = accountManaggerContract.interface.encodeFunctionData("batchDeposit4One", [toAddress, _times, _spaceDay, _startDay]);
+      const tx: ethers.providers.TransactionRequest = {
+        to: accountManaggerContract.address,
+        data,
+        value,
+        chainId
+      };
+      const { signedTx, error } = await window.electron.wallet.signTransaction(
+        activeAccount,
+        provider.connection.url,
+        tx
+      );
+      if (signedTx) {
+        try {
+          const response = await provider.sendTransaction(signedTx);
+          const { hash, data } = response;
+          setTransactionResponse(response);
+          addTransaction({ to: accountManaggerContract.address }, response, {
+            call: {
+              from: activeAccount,
+              to: accountManaggerContract.address,
+              input: data,
+              value: value.toString()
+            }
+          });
+          setTxHash(hash);
+        } catch (err) {
+          setErr(err)
+        } finally {
+          setSending(false);
+        }
+      }
+      if (error) {
         setSending(false);
-      }).catch((err: any) => {
-        setSending(false);
-        setErr(err)
-      })
+        setErr(error)
+      }
     }
-  }, [activeAccount, accountManaggerContract, batchLockParams]);
+  }, [activeAccount, accountManaggerContract, chainId, provider, batchLockParams]);
 
   return <>
     <div style={{ minHeight: "300px" }}>
@@ -139,12 +160,12 @@ export default ({
           }
           {
             sending && !render && <Button loading disabled type="primary" style={{ float: "right" }}>
-             {t("wallet_send_status_sending")}
+              {t("wallet_send_status_sending")}
             </Button>
           }
           {
             render && <Button onClick={close} type="primary" style={{ float: "right" }}>
-            {t("wallet_send_status_close")}
+              {t("wallet_send_status_close")}
             </Button>
           }
         </Col>

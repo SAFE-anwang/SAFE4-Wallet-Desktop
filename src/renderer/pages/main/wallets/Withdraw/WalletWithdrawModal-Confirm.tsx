@@ -8,6 +8,7 @@ import { AccountRecord } from "../../../../structs/AccountManager";
 import { RetweetOutlined } from '@ant-design/icons';
 import useTransactionResponseRender from "../../../components/useTransactionResponseRender";
 import { useTranslation } from "react-i18next";
+import { useWeb3React } from "@web3-react/core";
 const { Text } = Typography;
 
 export default ({
@@ -21,7 +22,7 @@ export default ({
   const { t } = useTranslation();
   const activeAccount = useWalletsActiveAccount();
   const addTransaction = useTransactionAdder();
-  const accountManaggerContract = useAccountManagerContract(true);
+  const accountManaggerContract = useAccountManagerContract();
   const [sending, setSending] = useState<boolean>(false);
   const safe4balance = useSafe4Balance([activeAccount])[activeAccount];
   const {
@@ -29,6 +30,7 @@ export default ({
     setTransactionResponse,
     setErr
   } = useTransactionResponseRender();
+  const { chainId, provider } = useWeb3React();
 
   const withdrawAmount = useMemo(() => {
     if (accountRecord) {
@@ -38,15 +40,24 @@ export default ({
     }
   }, [accountRecord, safe4balance]);
 
-  const doWithdrawTransaction = useCallback(() => {
-    if (activeAccount && accountManaggerContract) {
+  const doWithdrawTransaction = useCallback(async () => {
+    if (activeAccount && accountManaggerContract && chainId && provider) {
       setSending(true);
       if (accountRecord) {
-        accountManaggerContract.withdrawByID([accountRecord.id], {
-          // gasLimit : 300000
-        })
-          .then((response: any) => {
-            setSending(false);
+        const data = accountManaggerContract.interface.encodeFunctionData("withdrawByID", [[accountRecord.id]]);
+        const tx: ethers.providers.TransactionRequest = {
+          to: accountManaggerContract.address,
+          data,
+          chainId
+        };
+        const { signedTx, error } = await window.electron.wallet.signTransaction(
+          activeAccount,
+          provider.connection.url,
+          tx
+        );
+        if (signedTx) {
+          try {
+            const response = await provider.sendTransaction(signedTx);
             const { hash, data } = response;
             setTransactionResponse(response);
             addTransaction({ to: accountManaggerContract.address }, response, {
@@ -59,14 +70,31 @@ export default ({
               withdrawAmount: withdrawAmount && ethers.utils.parseEther(withdrawAmount).toString()
             });
             setTxHash(hash);
-          }).catch((err: any) => {
-            setSending(false);
+          } catch (err) {
             setErr(err)
-          })
-      } else {
-        accountManaggerContract.withdraw()
-          .then((response: any) => {
+          } finally {
             setSending(false);
+          }
+        }
+        if (error) {
+          setSending(false);
+          setErr(error)
+        }
+      } else {
+        const data = accountManaggerContract.interface.encodeFunctionData("withdraw", []);
+        const tx: ethers.providers.TransactionRequest = {
+          to: accountManaggerContract.address,
+          data,
+          chainId
+        };
+        const { signedTx, error } = await window.electron.wallet.signTransaction(
+          activeAccount,
+          provider.connection.url,
+          tx
+        );
+        if (signedTx) {
+          try {
+            const response = await provider.sendTransaction(signedTx);
             const { hash, data } = response;
             setTransactionResponse(response);
             addTransaction({ to: accountManaggerContract.address }, response, {
@@ -78,14 +106,20 @@ export default ({
               },
               withdrawAmount: withdrawAmount && ethers.utils.parseEther(withdrawAmount).toString()
             });
-            setTxHash(hash)
-          }).catch((err: any) => {
-            setSending(false);
+            setTxHash(hash);
+          } catch (err) {
             setErr(err)
-          })
+          } finally {
+            setSending(false);
+          }
+        }
+        if (error) {
+          setSending(false);
+          setErr(error)
+        }
       }
     }
-  }, [activeAccount, accountManaggerContract, withdrawAmount]);
+  }, [activeAccount, accountManaggerContract, withdrawAmount, chainId, provider]);
 
   return <>
     <div style={{ minHeight: "300px" }}>

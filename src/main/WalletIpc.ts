@@ -1,5 +1,5 @@
 import { JsonRpcProvider, TransactionRequest } from "@ethersproject/providers";
-import { ethers } from "ethers";
+import { ethers, Wallet } from "ethers";
 
 const CryptoJS = require('crypto-js');
 
@@ -9,6 +9,28 @@ export interface WalletKeystore {
   privateKey: string,
   publicKey: string,
   address: string
+}
+
+export interface EtherStructuredError {
+  name: string;
+  message: string;
+  reason?: string;
+  code?: string;
+  stack?: string;
+
+  // ethers-specific
+  method?: string;
+  transaction?: any;
+  version?: string;
+
+  // JSON-RPC context
+  url?: string;
+  requestMethod?: string;
+  requestBody?: string;
+  responseBody?: string;
+
+  // inner JSON-RPC error object
+  error?: any;
 }
 
 export class WalletIpc {
@@ -44,31 +66,58 @@ export class WalletIpc {
     });
   }
 
-  private async signTransaction(activeAccount: string, providerUrl: string, tx: TransactionRequest) {
-
-    const privateKey = this.getActiveAccountPrivateKey(activeAccount);
+  private async signTransaction(
+    activeAccount: string,
+    providerUrl: string,
+    tx: TransactionRequest
+  ): Promise<{ signedTx?: string; error?: EtherStructuredError }> {
     const provider = new JsonRpcProvider(providerUrl);
-    const signer = new ethers.Wallet(privateKey, provider);
     const { value } = tx;
-
-    const transaction = {
+    const transaction: TransactionRequest = {
       ...tx,
       value: value !== undefined ? ethers.BigNumber.from(value) : ethers.constants.Zero,
     };
 
-    return signer.signTransaction({
-      ...transaction,
-      nonce: await provider.getTransactionCount(signer.address),
-      gasLimit: transaction.gasLimit ? ethers.BigNumber.from(transaction.gasLimit) : await provider.estimateGas(transaction),
-      gasPrice: transaction.gasPrice ? ethers.BigNumber.from(transaction.gasPrice) : await provider.getGasPrice(),
-      chainId: transaction.chainId ?? (await provider.getNetwork()).chainId
-    });
+    try {
 
+      let nonce: number;
+      let gasPrice: ethers.BigNumber;
+      let gasLimit: ethers.BigNumber;
+      let chainId: number;
+
+      [nonce, gasPrice, chainId, gasLimit] = await Promise.all([
+        provider.getTransactionCount(activeAccount, "pending"),
+        transaction.gasPrice ? Promise.resolve(ethers.BigNumber.from(transaction.gasPrice)) : provider.getGasPrice(),
+        transaction.chainId ? Promise.resolve(transaction.chainId) : provider.getNetwork().then((net) => net.chainId),
+        transaction.gasLimit ? Promise.resolve(ethers.BigNumber.from(transaction.gasLimit)) : provider.estimateGas({
+          ...transaction,
+          from: activeAccount
+        })
+      ]);
+
+      // 用块作用域控制私钥生命周期
+      let signedTx: string;
+      {
+        let decrypted = this.getActiveAccountPrivateKey(activeAccount);
+        const signer = new ethers.Wallet(decrypted, provider);
+        // 主动释放
+        decrypted = "";
+        signedTx = await signer.signTransaction({
+          ...transaction,
+          nonce,
+          gasPrice,
+          gasLimit,
+          chainId,
+        });
+      }
+
+      return { signedTx };
+    } catch (err) {
+      return { error: wrapEthersError(err) };
+    }
   }
 
   private getActiveAccountPrivateKey(activeAccount: string) {
-    console.log(activeAccount);
-    console.log(this.encryptWalletKeystoreMap);
     const encrypt = this.encryptWalletKeystoreMap[activeAccount].privateKey;
     return this.decrypt(encrypt);
   }
@@ -85,4 +134,24 @@ export class WalletIpc {
     return decrypted.toString(CryptoJS.enc.Utf8);
   }
 
+}
+
+export function wrapEthersError(err: any): EtherStructuredError {
+  return {
+    name: err?.name || "Error",
+    message: err?.message || "Unknown error",
+    reason: err?.reason,
+    code: err?.code,
+    stack: err?.stack,
+
+    method: err?.method,
+    transaction: err?.transaction,
+    version: err?.version,
+
+    url: err?.url,
+    requestMethod: err?.requestMethod,
+    requestBody: err?.requestBody,
+    responseBody: err?.body,
+    error: err?.error,
+  };
 }

@@ -4,6 +4,7 @@ import { Provider } from 'react-redux';
 import { contextBridge, ipcRenderer, IpcRendererEvent, OpenExternalOptions } from 'electron';
 import { ethers } from 'ethers';
 import { TransactionRequest, Web3Provider } from '@ethersproject/providers';
+import { EtherStructuredError } from './WalletIpc';
 
 export type Channels = 'ipc-example';
 
@@ -104,7 +105,7 @@ const electronHandler = {
   },
 
   wallet: {
-    signTransaction(activeAccount: string, providerUrl: string, tx : TransactionRequest ): Promise<string> {
+    signTransaction(activeAccount: string, providerUrl: string, tx : TransactionRequest ): Promise< { signedTx ?: string , error ?: EtherStructuredError }> {
       return ipcRenderer.invoke("wallet-signTransaction", [activeAccount, providerUrl, tx]);
     }
   }
