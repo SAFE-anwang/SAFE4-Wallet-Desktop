@@ -105,8 +105,17 @@ const electronHandler = {
   },
 
   wallet: {
-    signTransaction(activeAccount: string, providerUrl: string, tx : TransactionRequest ): Promise< { signedTx ?: string , error ?: EtherStructuredError }> {
+    signTransaction(activeAccount: string, providerUrl: string, tx: TransactionRequest): Promise<{ signedTx?: string, error?: EtherStructuredError }> {
       return ipcRenderer.invoke("wallet-signTransaction", [activeAccount, providerUrl, tx]);
+    },
+    viewMnemonic(walletAddress: string, password: string): Promise<[string, string | undefined, string] | undefined> {
+      return ipcRenderer.invoke("wallet-viewMnemonic", [walletAddress, password]);
+    },
+    viewPrivateKey(walletAddress: string, password: string): Promise<string | undefined> {
+      return ipcRenderer.invoke("wallet-viewPrivateKey", [walletAddress, password]);
+    },
+    viewKeystore(walletAddress: string, password: string): Promise<string | undefined> {
+      return ipcRenderer.invoke("wallet-viewKeystore", [walletAddress, password]);
     }
   }
 

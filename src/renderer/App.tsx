@@ -59,12 +59,8 @@ import { useWalletsKeystores } from './state/wallets/hooks';
 import { useTranslation } from 'react-i18next';
 import Crosschain from './pages/main/wallets/crosschain/Crosschain';
 import SafeswapV2 from './pages/main/safeswap/SafeswapV2';
-import Issue from './pages/main/issue/Issue';
 import IssueIndex from './pages/main/issue/IssueIndex';
-import BatchSyncNode from './pages/main/batchsync/BatchSyncNode';
-import { WalletKeystore } from './state/wallets/reducer';
-
-const CryptoJS = require('crypto-js');
+import { useUserInactivityTracker } from './hooks/useUserInactivityTracker';
 
 const { Text } = Typography;
 
@@ -74,7 +70,6 @@ export default function App() {
   const [loading, setLoading] = useState<boolean>(true);
   const walletsKeystores = useWalletsKeystores();
   const [locked, setLocked] = useState(true);
-
 
   const [encrypt, setEncrypt] = useState<{
     salt: string,
@@ -159,7 +154,6 @@ export default function App() {
             active: walletName.active == 1
           }
         });
-
         const appProps: any = {};
         if (app_props.length > 0) {
           Object.keys(app_props)
@@ -186,6 +180,11 @@ export default function App() {
     });
   }, []);
 
+  useUserInactivityTracker(() => {
+    console.log("10分钟未操作，自动锁钱包");
+    setLocked(true);
+  }, 10 * 60 * 1000, 200);
+
   useEffect(() => {
     const method = ContractCompile_Methods.syncSolcLibrary;
     window.electron.ipcRenderer.sendMessage(IPC_CHANNEL, [ContractCompileSignal, method, []]);
@@ -200,7 +199,6 @@ export default function App() {
         console.log("_iv =>", _iv);
         console.log("_aesKey =>", _aesKey);
         console.log("Encrypt Wallet Keystores =>", encryptWalletKeystores);
-
         // Object.values(encryptWalletKeystores).forEach((walletKeystore) => {
         //   const _w = walletKeystore as WalletKeystore;
         //   if (_w.mnemonic) {
@@ -213,10 +211,9 @@ export default function App() {
         //     console.log(result);
         //   }
         // })
-        dispatch( walletsLoadEncryptWalletKeystores({
-          encryptWalletKeystores , _iv , _aesKey
+        dispatch(walletsLoadEncryptWalletKeystores({
+          encryptWalletKeystores, _iv, _aesKey
         }));
-
         dispatch(walletsLoadKeystores(encryptWalletKeystores));
         dispatch(applicationSetPassword(password));
         setLocked(false);

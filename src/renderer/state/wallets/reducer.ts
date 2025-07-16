@@ -11,6 +11,11 @@ export interface ERC20Token {
 }
 
 export interface WalletKeystore {
+
+  _aes : string,
+  _iv : string,
+  _salt : string,
+
   mnemonic: string | undefined,
   password: string | undefined,
   path: string | undefined,

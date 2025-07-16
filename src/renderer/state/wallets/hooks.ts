@@ -56,16 +56,15 @@ export function useWalletsActivePrivateKey(): string | undefined {
       //     return walletKetstore.publicKey == state.wallets.activeWallet?.publicKey
       //   }
       // )[0].privateKey
-
       // 对加密私钥进行AES解密
-      const encryptPrivateKey = state.wallets.keystores.filter(
+      const {privateKey , _aes , _iv } = state.wallets.keystores.filter(
         walletKetstore => {
           return walletKetstore.publicKey == state.wallets.activeWallet?.publicKey
         }
-      )[0].privateKey;
-      const ciphertext = CryptoJS.enc.Hex.parse(encryptPrivateKey);
-      const aesKey = CryptoJS.enc.Hex.parse(state.wallets._aesKey);
-      const iv = CryptoJS.enc.Hex.parse(state.wallets._iv);
+      )[0];
+      const ciphertext = CryptoJS.enc.Hex.parse(privateKey);
+      const aesKey = CryptoJS.enc.Hex.parse(_aes);
+      const iv = CryptoJS.enc.Hex.parse(_iv);
       const decrypted = CryptoJS.AES.decrypt(
         { ciphertext },
         aesKey,
