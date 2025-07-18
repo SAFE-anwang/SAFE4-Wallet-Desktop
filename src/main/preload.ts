@@ -5,6 +5,7 @@ import { contextBridge, ipcRenderer, IpcRendererEvent, OpenExternalOptions } fro
 import { ethers } from 'ethers';
 import { TransactionRequest, Web3Provider } from '@ethersproject/providers';
 import { EtherStructuredError } from './WalletIpc';
+import { Wallet } from '../renderer/state/wallets/reducer';
 
 export type Channels = 'ipc-example';
 
@@ -105,6 +106,22 @@ const electronHandler = {
   },
 
   wallet: {
+
+    decrypt(password: string): Promise<Wallet[]> {
+      return ipcRenderer.invoke("wallet-decrypt", [password]);
+    },
+
+    importWallet({
+      mnemonic, password, path, privateKey
+    }: {
+      mnemonic?: string,
+      password?: string,
+      path?: string,
+      privateKey?: string
+    }, initWalletPassword?: string): Promise<boolean> {
+      return ipcRenderer.invoke("wallet-importWallet", [{ mnemonic, password, path, privateKey }, initWalletPassword]);
+    },
+
     signTransaction(activeAccount: string, providerUrl: string, tx: TransactionRequest): Promise<{ signedTx?: string, error?: EtherStructuredError }> {
       return ipcRenderer.invoke("wallet-signTransaction", [activeAccount, providerUrl, tx]);
     },
@@ -116,7 +133,12 @@ const electronHandler = {
     },
     viewKeystore(walletAddress: string, password: string): Promise<string | undefined> {
       return ipcRenderer.invoke("wallet-viewKeystore", [walletAddress, password]);
+    },
+
+    updatePassword(oldPassword: string, newPassword: string): Promise<string | undefined> {
+      return ipcRenderer.invoke("wallet-updatePassword", [oldPassword, newPassword]);
     }
+
   }
 
 

@@ -1,5 +1,5 @@
 import { createReducer } from '@reduxjs/toolkit';
-import { walletsClearWalletChildWallets, walletsInitList, walletsLoadEncryptWalletKeystores, walletsLoadKeystores, walletsLoadWalletNames, walletsUpdateActiveWallet, walletsUpdateUsedChildWalletAddress, walletsUpdateWalletChildWallets, walletsUpdateWalletName } from './action';
+import { walletsClearWalletChildWallets, walletsLoadEncryptWalletKeystores, walletsLoadKeystores, walletsLoadWalletNames, walletsLoadWallets, walletsUpdateActiveWallet, walletsUpdateLocked, walletsUpdateUsedChildWalletAddress, walletsUpdateWalletChildWallets, walletsUpdateWalletName } from './action';
 import { SupportChildWalletType } from '../../utils/GenerateChildWallet';
 
 export interface ERC20Token {
@@ -12,9 +12,9 @@ export interface ERC20Token {
 
 export interface WalletKeystore {
 
-  _aes : string,
-  _iv : string,
-  _salt : string,
+  _aes: string,
+  _iv: string,
+  _salt: string,
 
   mnemonic: string | undefined,
   password: string | undefined,
@@ -28,6 +28,7 @@ export interface Wallet {
   publicKey: string,
   address: string,
   name: string,
+  path?: string
 }
 
 export interface Wallets {
@@ -35,6 +36,7 @@ export interface Wallets {
   activeWallet: Wallet | null,
   keystores: WalletKeystore[],
   list: Wallet[],
+  locked: boolean,
 
   walletNames: {
     [address in string]: {
@@ -48,13 +50,13 @@ export interface Wallets {
       sn: {
         loading: boolean,
         wallets: {
-          [address in string]: { path: string, exist: boolean , privateKey : string }
+          [address in string]: { path: string, exist: boolean, privateKey: string }
         }
       }
       mn: {
         loading: boolean,
         wallets: {
-          [address in string]: { path: string, exist: boolean , privateKey : string }
+          [address in string]: { path: string, exist: boolean, privateKey: string }
         }
       }
     }
@@ -62,10 +64,10 @@ export interface Wallets {
   walletUsedAddress: string[],
 
   /** */
-  encryptWalletKeystores : WalletKeystore[],
+  encryptWalletKeystores: WalletKeystore[],
 
-  _iv : string | undefined ,
-  _aesKey : string | undefined,
+  _iv: string | undefined,
+  _aesKey: string | undefined,
   /** */
 
 }
@@ -75,12 +77,13 @@ const initialState: Wallets = {
   activeWallet: null,
   keystores: [],
   list: [],
+  locked: true,
   walletNames: {},
   walletChildWallets: {},
-  walletUsedAddress: [] ,
-  encryptWalletKeystores : [] ,
-  _iv : undefined,
-  _aesKey : undefined
+  walletUsedAddress: [],
+  encryptWalletKeystores: [],
+  _iv: undefined,
+  _aesKey: undefined
 }
 
 
@@ -175,18 +178,71 @@ export default createReducer(initialState, (builder) => {
 
   });
 
-  builder.addCase(walletsInitList, (state, { payload }) => {
-    const keystores = state.keystores;
+  builder.addCase(walletsLoadWallets, (state, { payload }) => {
+
+    // 保持原有顺序的基础上去掉可能重复的数据.
+    const _exists = new Set<string>();
+    const _wallets = payload.filter(({ address }) => {
+      if (_exists.has(address)) return false;
+      _exists.add(address);
+      return true;
+    });
+
     const list: Wallet[] = [];
-    for (let i in keystores) {
-      const keystore = keystores[i];
+    let walletNames = { ...state.walletNames };
+    for (let i in _wallets) {
+      const defaultNameTag = Number(i) + 1;
+      const { address, publicKey, path } = _wallets[i];
       list.push({
-        publicKey: keystore.publicKey,
-        address: keystore.address,
-        name: "Wallet - " + (i + 1)
+        publicKey,
+        address,
+        path,
+        // 默认以顺序作为钱包名称
+        name: "Wallet-" + defaultNameTag,
       });
+      if (!state.walletNames[address]) {
+        walletNames[address] = {
+          name: "Wallet-" + defaultNameTag,
+          active: false
+        }
+      }
     }
-    state.list = list;
+
+    // 表示为新建钱包,则将新建的钱包作为活动钱包
+    let activeWallet = state.activeWallet;
+    if (payload.length == 1) {
+      const publicKey = payload[0].publicKey;
+      for (let i in list) {
+        if (list[i].publicKey == publicKey) {
+          activeWallet = list[i];
+        }
+      }
+    } else if (!activeWallet && list.length > 0) {
+      let activeAddressInNames = undefined;
+      Object.keys(walletNames).forEach(address => {
+        if (walletNames[address].active) {
+          activeAddressInNames = address;
+        }
+      });
+      if (activeAddressInNames) {
+        for (let i in list) {
+          if (list[i].address == activeAddressInNames) {
+            activeWallet = list[i];
+          }
+        }
+      } else {
+        // 如果没有设置默认钱包,则将导入钱包的最后一个设为默认钱包.
+        activeWallet = list[list.length - 1];
+      }
+    }
+
+    return {
+      ...state,
+      list,
+      locked : !(list.length > 0),
+      activeWallet,
+      walletNames
+    }
   });
 
   builder.addCase(walletsUpdateActiveWallet, (state, { payload }) => {
@@ -244,13 +300,13 @@ export default createReducer(initialState, (builder) => {
           _childWallets.sn.wallets[childAddress] = {
             path: result.map[childAddress].path,
             exist: result.map[childAddress].exist,
-            privateKey:  result.map[childAddress].privateKey,
+            privateKey: result.map[childAddress].privateKey,
           }
         } else {
           _childWallets.mn.wallets[childAddress] = {
             path: result.map[childAddress].path,
             exist: result.map[childAddress].exist,
-            privateKey:  result.map[childAddress].privateKey,
+            privateKey: result.map[childAddress].privateKey,
           }
         }
       });
@@ -269,12 +325,16 @@ export default createReducer(initialState, (builder) => {
     state.walletChildWallets = {};
   })
 
-  builder.addCase(walletsLoadEncryptWalletKeystores , ( state , { payload } ) => {
-    const { encryptWalletKeystores , _iv , _aesKey } = payload;
+  builder.addCase(walletsLoadEncryptWalletKeystores, (state, { payload }) => {
+    const { encryptWalletKeystores, _iv, _aesKey } = payload;
     state._aesKey = _aesKey;
     state._iv = _iv;
     state.encryptWalletKeystores = encryptWalletKeystores;
-  })
+  });
+
+  builder.addCase(walletsUpdateLocked, (state, { payload }) => {
+    state.locked = payload;
+  });
 
 });
 

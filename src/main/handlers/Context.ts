@@ -1,5 +1,4 @@
 import path from 'path';
-import { WalletKeystore } from '../WalletIpc';
 const fs = require("fs");
 
 export class Context {

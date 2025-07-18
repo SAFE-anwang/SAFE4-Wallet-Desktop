@@ -6,10 +6,13 @@ import { SupportChildWalletType } from "../../utils/GenerateChildWallet";
 export const walletsLoadKeystores = createAction<WalletKeystore[]>(
   "wallets/loadKeystores"
 );
-
-export const walletsInitList = createAction<Wallet[]>(
-  "wallets/initList"
-);
+export const walletsLoadWallets = createAction<{
+  publicKey : string ,
+  address : string ,
+  path ?: string
+}[]>(
+  "wallets/loadWallets"
+)
 
 export const walletsUpdateActiveWallet = createAction<string>(
   "wallets/updateActiveWallet"
@@ -51,4 +54,4 @@ export const walletsLoadEncryptWalletKeystores = createAction<{
   _aesKey : string
 }>("wallets/loadEncryptWalletKeystores")
 
-
+export const walletsUpdateLocked = createAction<boolean>("walletsUpdateLocked");

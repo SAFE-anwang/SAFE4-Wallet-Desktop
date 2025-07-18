@@ -102,7 +102,24 @@ export default () => {
   useEffect(() => {
     if (newMnemonic) {
       renderStempItems();
-      window.electron.ipcRenderer.sendMessage(IPC_CHANNEL, [WalletSignal, Wallet_Methods.generateWallet, [newMnemonic, ""]]);
+      const importWallet = async () => {
+        console.log("Import Wallet For =>", newMnemonic)
+        const importResult = await window.electron.wallet.importWallet({
+          mnemonic: newMnemonic
+        });
+        console.log("Import Result >>", importResult);
+        // 让新导入的钱包变成当前活动钱包..
+        //  dispatch(walletsLoadKeystores([result]));
+        if (importResult) {
+          setTimeout(() => {
+            setStepCurrent(3);
+            dispatch(applicationActionUpdateAtCreateWallet(false));
+            navigate("/main/wallet");
+          }, 1500);
+        }
+      }
+      importWallet();
+      // window.electron.ipcRenderer.sendMessage(IPC_CHANNEL, [WalletSignal, Wallet_Methods.generateWallet, [newMnemonic, ""]]);
     }
   }, [newMnemonic]);
 

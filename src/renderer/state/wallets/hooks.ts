@@ -14,7 +14,6 @@ import { useWeb3React } from '@web3-react/core';
 import { IERC20_Interface } from '../../abis';
 import { generateChildWalletsCheckResult, SupportChildWalletType } from '../../utils/GenerateChildWallet';
 import { walletsUpdateWalletChildWallets } from './action';
-import { Safe4NetworkChainId } from '../../config';
 const CryptoJS = require('crypto-js');
 
 export function useWalletsList(): Wallet[] {
@@ -48,32 +47,33 @@ export function useWalletsActiveAccount(): string {
 }
 
 export function useWalletsActivePrivateKey(): string | undefined {
-  return useSelector((state: AppState) => {
-    if (state.wallets.activeWallet) {
-      // 直接返回明文私钥
-      // return state.wallets.keystores.filter(
-      //   walletKetstore => {
-      //     return walletKetstore.publicKey == state.wallets.activeWallet?.publicKey
-      //   }
-      // )[0].privateKey
-      // 对加密私钥进行AES解密
-      const {privateKey , _aes , _iv } = state.wallets.keystores.filter(
-        walletKetstore => {
-          return walletKetstore.publicKey == state.wallets.activeWallet?.publicKey
-        }
-      )[0];
-      const ciphertext = CryptoJS.enc.Hex.parse(privateKey);
-      const aesKey = CryptoJS.enc.Hex.parse(_aes);
-      const iv = CryptoJS.enc.Hex.parse(_iv);
-      const decrypted = CryptoJS.AES.decrypt(
-        { ciphertext },
-        aesKey,
-        { iv, mode: CryptoJS.mode.CBC, padding: CryptoJS.pad.Pkcs7 }
-      );
-      return decrypted.toString(CryptoJS.enc.Utf8);
-    }
-    return undefined;
-  });
+  // return useSelector((state: AppState) => {
+  //   if (state.wallets.activeWallet) {
+  //     // 直接返回明文私钥
+  //     // return state.wallets.keystores.filter(
+  //     //   walletKetstore => {
+  //     //     return walletKetstore.publicKey == state.wallets.activeWallet?.publicKey
+  //     //   }
+  //     // )[0].privateKey
+  //     // 对加密私钥进行AES解密
+  //     const {privateKey , _aes , _iv } = state.wallets.keystores.filter(
+  //       walletKetstore => {
+  //         return walletKetstore.publicKey == state.wallets.activeWallet?.publicKey
+  //       }
+  //     )[0];
+  //     const ciphertext = CryptoJS.enc.Hex.parse(privateKey);
+  //     const aesKey = CryptoJS.enc.Hex.parse(_aes);
+  //     const iv = CryptoJS.enc.Hex.parse(_iv);
+  //     const decrypted = CryptoJS.AES.decrypt(
+  //       { ciphertext },
+  //       aesKey,
+  //       { iv, mode: CryptoJS.mode.CBC, padding: CryptoJS.pad.Pkcs7 }
+  //     );
+  //     return decrypted.toString(CryptoJS.enc.Utf8);
+  //   }
+  //   return undefined;
+  // });
+  return undefined;
 }
 
 export function useWalletsActiveKeystore(): WalletKeystore | undefined {
@@ -602,5 +602,11 @@ export function useEncryptWalletKeystores() {
       encryptWalletKetstores: state.wallets.encryptWalletKeystores
     }
   });
+}
+
+export function useWalletsLocked() {
+  return useSelector((state: AppState) => {
+    return state.wallets.locked;
+  })
 }
 

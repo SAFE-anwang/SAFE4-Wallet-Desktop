@@ -2,8 +2,7 @@
 
 import { Typography, Button, Divider, Statistic, Row, Col, Modal, Tabs, TabsProps, QRCode, Badge, Dropdown, Input, Spin, Alert } from 'antd';
 import { useCallback, useEffect, useState } from 'react';
-import { useWalletsActiveAccount, useWalletsActiveKeystore } from '../../../state/wallets/hooks';
-import { useApplicationPassword, useBlockNumber, useTimestamp } from '../../../state/application/hooks';
+import { useWalletsActiveAccount, useWalletsActiveKeystore, useWalletsActiveWallet } from '../../../state/wallets/hooks';
 import { useTranslation } from 'react-i18next';
 
 const { Text } = Typography;
@@ -21,7 +20,7 @@ export default ({
 
   const { t } = useTranslation();
   const activeAccount = useWalletsActiveAccount();
-  const walletKeystore = useWalletsActiveKeystore();
+  const activeWallet = useWalletsActiveWallet();
   const [currentStep, setCurrentStep] = useState<number>(STEP_0_WARNING);
   const [inputPWD, setInputPWD] = useState<string>();
   const [PWDError, setPWDError] = useState<string>();
@@ -42,7 +41,7 @@ export default ({
 
   return (<>
     {
-      walletKeystore?.mnemonic &&
+      activeWallet?.path &&
       <Modal title={t("wallet_mnemonic")} destroyOnClose open={openMnemonicModal} width={"400px"} footer={null} closable onCancel={() => {
         setCurrentStep(STEP_0_WARNING);
         setOpenMnemonicModal(false);

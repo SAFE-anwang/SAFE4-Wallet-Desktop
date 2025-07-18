@@ -18,32 +18,35 @@ import { SSHSIpc } from "./SSHSIpc";
 import { SSHConfigSignalHandler } from "./handlers/SSHConfigSignalHandler";
 import { WalletIpc } from "./WalletIpc";
 
-export const Channel : Channels = "ipc-example";
+export const Channel: Channels = "ipc-example";
 
 export class ApplicationIpcManager {
 
   listenSignalHandlers: ListenSignalHandler[] = [];
 
-  public ctx : Context;
+  public ctx: Context;
 
-  constructor( resoucePath : string , appIsPackaged : boolean ) {
-    const ctx = new Context(resoucePath,appIsPackaged);
+  private indexSignalHandler: IndexSingalHandler;
+
+  constructor(resoucePath: string, appIsPackaged: boolean) {
+    const ctx = new Context(resoucePath, appIsPackaged);
     this.ctx = ctx;
-    const indexSignalHandler = new IndexSingalHandler( ctx , () => {
-      this.listenSignalHandlers.push( new WalletSignalHandler(ctx , indexSignalHandler.getSqliteKys()) );
-      this.listenSignalHandlers.push( new DBAddressActivitySingalHandler(indexSignalHandler.getSqlite3DB()));
-      this.listenSignalHandlers.push( new RpcConfigSingalHandler(indexSignalHandler.getSqlite3DB()));
-      this.listenSignalHandlers.push( new ContractCompileHandler(ctx ,indexSignalHandler.getSqlite3DB()));
-      this.listenSignalHandlers.push( new TimeNodeRewardHandler(ctx ,indexSignalHandler.getSqlite3DB()));
-      this.listenSignalHandlers.push( new WalletNameHandler(ctx ,indexSignalHandler.getSqlite3DB()));
-      this.listenSignalHandlers.push( new ERC20TokenSignalHandler( ctx, indexSignalHandler.getSqlite3DB()));
-      this.listenSignalHandlers.push( new AppPropSignalHandler( ctx, indexSignalHandler.getSqlite3DB()));
-      this.listenSignalHandlers.push( new CrosschainSignalHandler( ctx, indexSignalHandler.getSqlite3DB()));
-      this.listenSignalHandlers.push( new SSHConfigSignalHandler( ctx, indexSignalHandler.getSqlite3DB()));
+    this.indexSignalHandler = new IndexSingalHandler(ctx, () => {
+      this.listenSignalHandlers.push(new WalletSignalHandler(ctx, this.indexSignalHandler.getSqliteKys()));
+      this.listenSignalHandlers.push(new DBAddressActivitySingalHandler(this.indexSignalHandler.getSqlite3DB()));
+      this.listenSignalHandlers.push(new RpcConfigSingalHandler(this.indexSignalHandler.getSqlite3DB()));
+      this.listenSignalHandlers.push(new ContractCompileHandler(ctx, this.indexSignalHandler.getSqlite3DB()));
+      this.listenSignalHandlers.push(new TimeNodeRewardHandler(ctx, this.indexSignalHandler.getSqlite3DB()));
+      this.listenSignalHandlers.push(new WalletNameHandler(ctx, this.indexSignalHandler.getSqlite3DB()));
+      this.listenSignalHandlers.push(new ERC20TokenSignalHandler(ctx, this.indexSignalHandler.getSqlite3DB()));
+      this.listenSignalHandlers.push(new AppPropSignalHandler(ctx, this.indexSignalHandler.getSqlite3DB()));
+      this.listenSignalHandlers.push(new CrosschainSignalHandler(ctx, this.indexSignalHandler.getSqlite3DB()));
+      this.listenSignalHandlers.push(new SSHConfigSignalHandler(ctx, this.indexSignalHandler.getSqlite3DB()));
     });
-    this.listenSignalHandlers.push(indexSignalHandler);
+    this.listenSignalHandlers.push(this.indexSignalHandler);
   }
-  public register(ipcMain : Electron.IpcMain) : ApplicationIpcManager{
+
+  public register(ipcMain: Electron.IpcMain): ApplicationIpcManager {
     ipcMain.on(Channel, async (event, arg) => {
       if (arg instanceof Array) {
         const signal = arg[0];
@@ -68,8 +71,8 @@ export class ApplicationIpcManager {
     new SSH2Ipc(ipcMain);
     new SSHSIpc(ipcMain);
     new LocalFileReader(ipcMain);
-    const walletIpc = new WalletIpc(ipcMain);
-    new CryptoIpc(ipcMain , walletIpc);
+    const walletIpc = new WalletIpc(ipcMain , this.indexSignalHandler.getSqliteKys());
+    new CryptoIpc(ipcMain, walletIpc);
     return this;
   }
 }

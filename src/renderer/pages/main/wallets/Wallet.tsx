@@ -96,7 +96,7 @@ export default () => {
 
   const items: MenuProps['items'] = useMemo(() => {
     const items: MenuProps['items'] = [];
-    if (walletKeystore?.mnemonic) {
+    if (activeWallet?.path) {
       items.push({
         key: 'mnemonic',
         label: (
@@ -129,7 +129,7 @@ export default () => {
       ),
     })
     return items;
-  }, [walletKeystore]);
+  }, [activeWallet]);
 
   useEffect(() => {
     if (chainId) {
@@ -144,14 +144,14 @@ export default () => {
               name: string,
               symbol: string,
               decimals: number,
-              chainId: number ,
-              props ?: any
+              chainId: number,
+              props?: any
             }
           } = {}
           data.forEach((erc20Token: any) => {
-            const { address, name, symbol, decims, chain_id , props } = erc20Token;
+            const { address, name, symbol, decims, chain_id, props } = erc20Token;
             tokens[ethers.utils.getAddress(address)] = {
-              name, symbol, decimals: decims, chainId: chain_id , props
+              name, symbol, decimals: decims, chainId: chain_id, props
             }
           });
           if (Object.keys(tokens).length > 0) {
@@ -277,13 +277,11 @@ export default () => {
       </Row>
     </Modal>
 
+
+    <WalletPrivateKeyModal openPrivateKeyModal={openPrivateKeyModal} setOpenPrivateKeyModal={setOpenPrivateKeyModal} />
+
     {
-      walletKeystore?.privateKey && <>
-        <WalletPrivateKeyModal openPrivateKeyModal={openPrivateKeyModal} setOpenPrivateKeyModal={setOpenPrivateKeyModal} />
-      </>
-    }
-    {
-      walletKeystore?.mnemonic && <>
+      activeWallet?.path && <>
         <WalletMnemonicModal openMnemonicModal={openMnemonicModal} setOpenMnemonicModal={setOpenMnemonicModal} />
       </>
     }

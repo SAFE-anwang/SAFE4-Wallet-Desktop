@@ -9,7 +9,7 @@ import { useDispatch } from 'react-redux';
 import { IndexSingal, Index_Methods } from '../main/handlers/IndexSingalHandler';
 import config, { IPC_CHANNEL } from './config';
 import { applicationDataLoaded, applicationSetPassword, applicationUpdateWeb3Rpc } from './state/application/action';
-import { walletsLoadEncryptWalletKeystores, walletsLoadKeystores, walletsLoadWalletNames } from './state/wallets/action';
+import { walletsLoadWalletNames, walletsLoadWallets, walletsUpdateLocked } from './state/wallets/action';
 import { MemoryRouter as Router, Routes, Route } from 'react-router-dom';
 import MenuComponent from './pages/components/MenuComponent';
 import Index from './pages/index';
@@ -55,7 +55,7 @@ import SelectSupernodeSyncMode from './pages/main/supernodes/Sync/SelectSupernod
 import MasternodeSync from './pages/main/masternodes/Sync/MasternodeSync';
 import SupernodeSync from './pages/main/supernodes/Sync/SupernodeSync';
 import TestSSH2CMD from './pages/main/tools/ssh2/TestSSH2CMD';
-import { useWalletsKeystores } from './state/wallets/hooks';
+import { useWalletsList, useWalletsLocked } from './state/wallets/hooks';
 import { useTranslation } from 'react-i18next';
 import Crosschain from './pages/main/wallets/crosschain/Crosschain';
 import SafeswapV2 from './pages/main/safeswap/SafeswapV2';
@@ -68,8 +68,9 @@ export default function App() {
 
   const dispatch = useDispatch();
   const [loading, setLoading] = useState<boolean>(true);
-  const walletsKeystores = useWalletsKeystores();
-  const [locked, setLocked] = useState(true);
+
+  const wallets = useWalletsList();
+  const locked = useWalletsLocked();
 
   const [encrypt, setEncrypt] = useState<{
     salt: string,
@@ -173,7 +174,7 @@ export default function App() {
         if (encrypt) {
           setEncrypt(encrypt);
         } else {
-          setLocked(false);
+          dispatch(walletsUpdateLocked(false));
         }
         setLoading(false);
       }
@@ -181,8 +182,8 @@ export default function App() {
   }, []);
 
   useUserInactivityTracker(() => {
-    console.log("10分钟未操作，自动锁钱包");
-    setLocked(true);
+    console.log("10分钟未操作,自动锁钱包");
+    dispatch(walletsUpdateLocked(true));
   }, 10 * 60 * 1000, 200);
 
   useEffect(() => {
@@ -194,29 +195,9 @@ export default function App() {
     if (password && encrypt) {
       try {
         setDecrypting(true);
-        const [walletsKeystores, encryptWalletKeystores, { _iv, _aesKey }] = await window.electron.crypto.decrypt({ encrypt, password });
-
-        console.log("_iv =>", _iv);
-        console.log("_aesKey =>", _aesKey);
-        console.log("Encrypt Wallet Keystores =>", encryptWalletKeystores);
-        // Object.values(encryptWalletKeystores).forEach((walletKeystore) => {
-        //   const _w = walletKeystore as WalletKeystore;
-        //   if (_w.mnemonic) {
-        //     const decrypted = CryptoJS.AES.decrypt(
-        //       { ciphertext: CryptoJS.enc.Hex.parse(_w.mnemonic) },
-        //       CryptoJS.enc.Hex.parse(_aesKey),
-        //       { iv: CryptoJS.enc.Hex.parse(_iv), mode: CryptoJS.mode.CBC, padding: CryptoJS.pad.Pkcs7 }
-        //     );
-        //     const result = decrypted.toString(CryptoJS.enc.Utf8);
-        //     console.log(result);
-        //   }
-        // })
-        dispatch(walletsLoadEncryptWalletKeystores({
-          encryptWalletKeystores, _iv, _aesKey
-        }));
-        dispatch(walletsLoadKeystores(encryptWalletKeystores));
+        const wallets = await window.electron.wallet.decrypt( password );
+        dispatch(walletsLoadWallets(wallets));
         dispatch(applicationSetPassword(password));
-        setLocked(false);
       } catch (err) {
         console.log("decrypt error:", err);
         setPasswordError(t("enterWalletPasswordError"));
@@ -224,12 +205,6 @@ export default function App() {
       setDecrypting(false);
     }
   }, [password, encrypt]);
-
-  useEffect(() => {
-    if (walletsKeystores && walletsKeystores.length > 0) {
-      setLocked(false);
-    }
-  }, [walletsKeystores])
 
   const atCreateWallet = useApplicationActionAtCreateWallet();
   const applicationLanguage = useApplicationLanguage();
@@ -244,7 +219,6 @@ export default function App() {
       {
         loading && <Spin fullscreen spinning={loading} />
       }
-
       {
         !loading && encrypt && locked && <>
           <Row style={{ marginTop: "10%" }}>
@@ -284,7 +258,7 @@ export default function App() {
       }
 
       {
-        !loading && !locked && walletsKeystores && connectors && <>
+        !loading && !locked && wallets && connectors && <>
           <Web3ReactProvider key={activeWeb3Rpc?.endpoint} connectors={connectors}>
             <LoopUpdate />
             <Router>

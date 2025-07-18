@@ -1,4 +1,3 @@
-import { Context } from './handlers/Context';
 const CryptoJS = require('crypto-js');
 import { ethers } from "ethers";
 import { base58 } from "ethers/lib/utils";
@@ -15,105 +14,88 @@ const iterations = TargetN / N;   // 计算循环迭代的次数
 
 export class CryptoIpc {
 
-  walletIpc: WalletIpc;
 
-  constructor(ipcMain: any, walletIpc: WalletIpc) {
-    ipcMain.handle("crypto-scrypt-decrypt", async (event: any, params: any) => {
-      const { encrypt, password } = params;
-      const result = await this.scryptDecryptWallets(encrypt, password);
-      return result;
-    })
-    this.walletIpc = walletIpc;
+  constructor(ipcMain: any) {
+
   }
 
-  private async scryptDecryptWallets(encrypt: any, password: string): Promise<any[]> {
-    const crypto = require('crypto');
-    const salt = encrypt.salt;
-    const ciphertext = CryptoJS.enc.Hex.parse(encrypt.ciphertext);
-    const iv = CryptoJS.enc.Hex.parse(encrypt.iv);
-    let derivedKey = Buffer.from(password);
+}
 
-    for (let i = 0; i < iterations; i++) {
-      derivedKey = await new Promise((resolve, reject) => {
-        crypto.scrypt(derivedKey, salt, dkLen, { N, r, p }, (err: any, _derivedKey: any) => {
-          if (err) reject(err);
-          else resolve(_derivedKey);
-        });
-      });
-    }
+export async function scryptDecryptWalletKys(Base58Encode: string , password : string) {
 
-    const aesKey = bufferToWordArray(derivedKey);
-    const decrypted = CryptoJS.AES.decrypt(
-      { ciphertext },
-      aesKey,
-      { iv: iv, mode: CryptoJS.mode.CBC, padding: CryptoJS.pad.Pkcs7 }
-    );
-    const text = decrypted.toString(CryptoJS.enc.Utf8);
-    const walletKeystores = JSON.parse(text);
-
-    /////////
-    const encryptWalletKeystores = Object.values(walletKeystores).map((walletKeystore: any) => {
-
-      const salt = crypto.randomBytes(32);
-      const aes = CryptoJS.PBKDF2(password, CryptoJS.enc.Hex.parse(salt.toString("hex")), {
-        keySize: 256 / 32,
-        iterations: 10000
-      });
-      const iv = CryptoJS.lib.WordArray.random(32);
-
-      const _w = {
-        ...walletKeystore,
-        _salt: salt.toString("hex"),
-        _aes: aes.toString(CryptoJS.enc.Hex),
-        _iv: CryptoJS.enc.Hex.stringify(iv)
-      } as WalletKeystore;
-
-      Object.keys(_w).forEach(prop => {
-        switch (prop) {
-          case 'mnemonic':
-            const ciphertext_mnemonic = CryptoJS.AES.encrypt(
-              _w.mnemonic, aes,
-              { iv: iv, mode: CryptoJS.mode.CBC, padding: CryptoJS.pad.Pkcs7 }
-            ).ciphertext.toString(CryptoJS.enc.Hex);
-            _w.mnemonic = ciphertext_mnemonic;
-            break;
-          case 'privateKey':
-            const ciphertext_privateKey = CryptoJS.AES.encrypt(
-              _w.privateKey, aes,
-              { iv: iv, mode: CryptoJS.mode.CBC, padding: CryptoJS.pad.Pkcs7 }
-            ).ciphertext.toString(CryptoJS.enc.Hex);
-            _w.privateKey = ciphertext_privateKey;
-            break;
-          case 'password':
-            const ciphertext_password = CryptoJS.AES.encrypt(
-              _w.password, aes,
-              { iv: iv, mode: CryptoJS.mode.CBC, padding: CryptoJS.pad.Pkcs7 }
-            ).ciphertext.toString(CryptoJS.enc.Hex);
-            _w.password = ciphertext_password;
-            break;
-        }
-      });
-      return _w;
-    });
-
-    const _iv = CryptoJS.enc.Hex.stringify(iv);
-    const _aesKey = CryptoJS.enc.Hex.stringify(iv);
-
-    this.walletIpc.loadEncryptWalletKeystores(
-      encryptWalletKeystores,
+  const encrypt = JSON.parse(
+    ethers.utils.toUtf8String(
+      ethers.utils.base58.decode(Base58Encode)
     )
-    return [
-      walletKeystores,
-      encryptWalletKeystores,
-      {
-        _iv, _aesKey
-      }
-    ]
+  );
+  const salt = encrypt.salt;
+  const ciphertext = CryptoJS.enc.Hex.parse(encrypt.ciphertext);
+  const iv = CryptoJS.enc.Hex.parse(encrypt.iv);
 
-    /** */
-    return walletKeystores;
+  const aes = await scryptDrive(password, salt);
+  const decrypted = CryptoJS.AES.decrypt(
+    { ciphertext },
+    aes,
+    { iv: iv, mode: CryptoJS.mode.CBC, padding: CryptoJS.pad.Pkcs7 }
+  );
+  let text = decrypted.toString(CryptoJS.enc.Utf8);
+  let walletKeystores = JSON.parse(text);
+  return {
+    walletKeystores ,
+    _aes : CryptoJS.enc.Hex.stringify(aes),
+    salt
+  }
+}
+
+export async function scryptEncryWalletKeystores(
+  walletKeystores: WalletKeystore[],
+  { _aes, salt }: {
+    _aes: string | undefined,
+    salt: string | undefined
+  },
+  password?: string
+) {
+  const crypto = require('crypto');
+
+  let _walletKeystores = walletKeystores.map(walletKeystore => {
+    const { mnemonic, password, path, privateKey, publicKey, address } = walletKeystore;
+    return {
+      mnemonic, password, path, privateKey, publicKey, address
+    }
+  });
+  let text = JSON.stringify(_walletKeystores);
+  _walletKeystores = [];
+
+  let aes = undefined;
+  // Always new IV by secret with random-iv(32 byte length);
+  const iv = CryptoJS.lib.WordArray.random(32);
+  if (password) {
+    salt = crypto.randomBytes(32).toString("hex");
+    if (!salt) return;
+    aes = await scryptDrive(password, salt);
+    console.log("Use New Password To Drived A New Aes-Key For AES-Encrypt");
+  } else {
+    aes = CryptoJS.enc.Hex.parse(_aes);
+    console.log("Use Cached Aes-Key For AES-Encrypt");
   }
 
+  // AES-Encrypt & Saved as JSON Constructure In BASE58
+  const encrypt = CryptoJS.AES.encrypt(
+    text, aes,
+    { iv: iv, mode: CryptoJS.mode.CBC, padding: CryptoJS.pad.Pkcs7 }
+  );
+  text = '';
+  const json = JSON.stringify({
+    salt: salt,
+    iv: CryptoJS.enc.Hex.stringify(iv),
+    ciphertext: encrypt.ciphertext.toString(CryptoJS.enc.Hex)
+  });
+  const Base58Encode = base58.encode(ethers.utils.toUtf8Bytes(json));
+  return {
+    Base58Encode,
+    _aes: CryptoJS.enc.Hex.stringify(aes),
+    salt
+  }
 }
 
 export async function scryptEncryptWallets({ walletList, applicationPassword }: { walletList: any, applicationPassword: string }): Promise<string> {
@@ -145,6 +127,23 @@ export async function scryptEncryptWallets({ walletList, applicationPassword }: 
   const base58Encode = base58.encode(ethers.utils.toUtf8Bytes(json));
   return base58Encode;
 }
+
+
+export async function scryptDrive(password: string, salt: string): Promise<any> {
+  const crypto = require('crypto');
+  let derivedKey = Buffer.from(password);
+  for (let i = 0; i < iterations; i++) {
+    derivedKey = await new Promise((resolve, reject) => {
+      /** No Salt Buffer */
+      crypto.scrypt(derivedKey, salt, dkLen, { N, r, p }, (err: any, _derivedKey: any) => {
+        if (err) reject(err);
+        else resolve(_derivedKey);
+      });
+    });
+  }
+  return bufferToWordArray(derivedKey);
+}
+
 
 function bufferToWordArray(buffer: Buffer) {
   const words = [];

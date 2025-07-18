@@ -1,20 +1,22 @@
-import { Typography, Card, Divider, Row, Col, Badge } from 'antd';
+import { Typography, Card, Divider, Row, Col } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import {
-  DatabaseOutlined, DownOutlined, GlobalOutlined, NumberOutlined, RightOutlined, WalletOutlined, WifiOutlined
+  DatabaseOutlined, LockOutlined, RightOutlined, WalletOutlined, WifiOutlined
 } from '@ant-design/icons';
 import "./index.css"
 import { useTranslation } from 'react-i18next';
 import LanguageSelector from './language/LanguageSelector';
 import Version from './version';
+import { walletsUpdateLocked } from '../../../state/wallets/action';
 
-const { Title, Text } = Typography;
+const { Title } = Typography;
 
 export default () => {
 
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const dispatch = useDispatch();
 
   return (<>
     <Row style={{ height: "50px" }}>
@@ -76,6 +78,17 @@ export default () => {
             </Col>
           </Row>
 
+          <Divider style={{ margin: "0px 0px" }} />
+          <Row className='menu-item' onClick={() => {
+            dispatch(walletsUpdateLocked(true));
+          }}>
+            <Col span={2} style={{ textAlign: "center" }}>
+              <LockOutlined />
+            </Col>
+            <Col span={20}>
+              立即锁定
+            </Col>
+          </Row>
         </Card>
 
         <Card className="menu-item-container" style={{ marginBottom: "20px" }}>
