@@ -5,8 +5,8 @@ import { useApplicationAfterSetPasswordTODO } from "../../state/application/hook
 import { useCallback, useMemo, useState } from "react";
 import { AfterSetPasswordTODO } from "../../state/application/reducer";
 import { useDispatch } from "react-redux";
-import { applicationSetPassword } from "../../state/application/action";
 import { useTranslation } from "react-i18next";
+import { applicationSetInitWalletPassword } from "../../state/application/action";
 
 const { Text } = Typography;
 
@@ -14,6 +14,7 @@ const { Text } = Typography;
 export const PasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&*(),.?":{}|<>]).{8,}$/;
 
 export default () => {
+
   const { t } = useTranslation();
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -34,7 +35,7 @@ export default () => {
 
   const goNextClick = () => {
     if (passwordCheck() && password?.passwordInput) {
-      dispatch(applicationSetPassword(password.passwordInput))
+      dispatch(applicationSetInitWalletPassword(password.passwordInput));
       if (afterSetPasswordTODO == AfterSetPasswordTODO.CREATE) {
         navigate("/wallet/createMnemonic")
       } else if (afterSetPasswordTODO == AfterSetPasswordTODO.IMPORT) {

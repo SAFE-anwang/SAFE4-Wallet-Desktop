@@ -1,11 +1,7 @@
 import { createAction } from "@reduxjs/toolkit";
 import { WalletKeystore } from "./reducer";
-import Wallet from "ethereumjs-wallet";
 import { SupportChildWalletType } from "../../utils/GenerateChildWallet";
 
-export const walletsLoadKeystores = createAction<WalletKeystore[]>(
-  "wallets/loadKeystores"
-);
 export const walletsLoadWallets = createAction<{
   publicKey : string ,
   address : string ,
@@ -47,11 +43,5 @@ export const walletsUpdateUsedChildWalletAddress = createAction<{ address: strin
 export const walletsClearWalletChildWallets = createAction(
   "wallets/clearWalletChildWallets"
 )
-
-export const walletsLoadEncryptWalletKeystores = createAction<{
-  encryptWalletKeystores : WalletKeystore [] ,
-  _iv : string ,
-  _aesKey : string
-}>("wallets/loadEncryptWalletKeystores")
 
 export const walletsUpdateLocked = createAction<boolean>("walletsUpdateLocked");

@@ -1,28 +1,23 @@
-import { Alert, Spin, Steps, StepProps, Card, Divider } from "antd"
+import { Alert, Spin, Steps, StepProps } from "antd"
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useApplicationPassword, useNewMnemonic } from "../../state/application/hooks";
-import { IPC_CHANNEL } from "../../config";
-import { WalletSignal, Wallet_Methods } from "../../../main/handlers/WalletSignalHandler";
+import { useApplicationInitWalletPassword, useNewMnemonic } from "../../state/application/hooks";
 import { useDispatch } from "react-redux";
-import { useWalletsKeystores, useWalletsList } from "../../state/wallets/hooks";
-import { WalletKeystore } from "../../state/wallets/reducer";
-import { walletsLoadKeystores } from "../../state/wallets/action";
+import { walletsLoadWallets } from "../../state/wallets/action";
 import { applicationActionUpdateAtCreateWallet } from "../../state/application/action";
 import { useTranslation } from "react-i18next";
+import { useWalletsList } from "../../state/wallets/hooks";
 
 export default () => {
 
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const { t } = useTranslation();
-  const password = useApplicationPassword();
   const newMnemonic = useNewMnemonic();
-  const walletsKeystores = useWalletsKeystores();
-
-  const [newWalletKeystore, setNewWalletKeystore] = useState<WalletKeystore>();
+  const wallets = useWalletsList();
   const [stepItems, setStepItems] = useState<StepProps[]>([]);
   const [stepCurrent, setStepCurrent] = useState<number>(0);
+  const initWalletPassword = useApplicationInitWalletPassword();
 
   const renderStempItems = () => {
     setTimeout(() => {
@@ -73,61 +68,30 @@ export default () => {
   };
 
   useEffect(() => {
-    const remove = window.electron.ipcRenderer.on(IPC_CHANNEL, (arg) => {
-      if (arg instanceof Array && arg[0] == WalletSignal) {
-        const method = arg[1];
-        const result = arg[2][0];
-        if (method == Wallet_Methods.generateWallet) {
-          setNewWalletKeystore(result);
-          dispatch(walletsLoadKeystores([result]));
-        } else if (method == Wallet_Methods.storeWallet) {
-          const {
-            success, path, error
-          } = result;
-          if (success) {
-            setTimeout(() => {
-              setStepCurrent(3);
-              dispatch(applicationActionUpdateAtCreateWallet(false));
-              navigate("/main/wallet");
-            }, 1500);
-          }
-        }
-      }
-    });
-    return () => {
-      remove();
-    }
-  }, []);
-
-  useEffect(() => {
     if (newMnemonic) {
       renderStempItems();
       const importWallet = async () => {
-        console.log("Import Wallet For =>", newMnemonic)
         const importResult = await window.electron.wallet.importWallet({
           mnemonic: newMnemonic
+        }, initWalletPassword);
+        if (!importResult) return;
+        const _wallets = wallets.map(wallet => {
+          return { ...wallet }
+        })
+        _wallets.push({
+          ...importResult, name: ""
         });
-        console.log("Import Result >>", importResult);
-        // 让新导入的钱包变成当前活动钱包..
-        //  dispatch(walletsLoadKeystores([result]));
-        if (importResult) {
-          setTimeout(() => {
-            setStepCurrent(3);
-            dispatch(applicationActionUpdateAtCreateWallet(false));
-            navigate("/main/wallet");
-          }, 1500);
-        }
+        dispatch(walletsLoadWallets(_wallets));
+        setTimeout(() => {
+          setStepCurrent(3);
+          dispatch(applicationActionUpdateAtCreateWallet(false));
+          navigate("/main/wallet");
+        }, 1500);
       }
       importWallet();
-      // window.electron.ipcRenderer.sendMessage(IPC_CHANNEL, [WalletSignal, Wallet_Methods.generateWallet, [newMnemonic, ""]]);
     }
   }, [newMnemonic]);
 
-  useEffect(() => {
-    if (newWalletKeystore?.address && password) {
-      window.electron.ipcRenderer.sendMessage(IPC_CHANNEL, [WalletSignal, Wallet_Methods.storeWallet, [walletsKeystores, password]]);
-    }
-  }, [newWalletKeystore])
 
   return (
     <>

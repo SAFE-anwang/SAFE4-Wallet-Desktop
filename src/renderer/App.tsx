@@ -1,5 +1,5 @@
 import { Alert, Button, Card, Col, Form, Image, Input, Row, Spin, Typography } from 'antd';
-import { useApplicationActionAtCreateWallet, useApplicationBlockchainWeb3Rpc, useApplicationLanguage } from './state/application/hooks';
+import { useApplicationActionAtCreateWallet, useApplicationBlockchainWeb3Rpc, useApplicationLanguage, useImportWalletParams, useNewMnemonic } from './state/application/hooks';
 import { useCallback, useEffect, useState } from 'react';
 import { Web3ReactHooks, Web3ReactProvider } from '@web3-react/core'
 import { initializeConnect } from './connectors/network';
@@ -8,7 +8,7 @@ import { Network } from '@web3-react/network';
 import { useDispatch } from 'react-redux';
 import { IndexSingal, Index_Methods } from '../main/handlers/IndexSingalHandler';
 import config, { IPC_CHANNEL } from './config';
-import { applicationDataLoaded, applicationSetPassword, applicationUpdateWeb3Rpc } from './state/application/action';
+import { applicationDataLoaded, applicationUpdateWeb3Rpc } from './state/application/action';
 import { walletsLoadWalletNames, walletsLoadWallets, walletsUpdateLocked } from './state/wallets/action';
 import { MemoryRouter as Router, Routes, Route } from 'react-router-dom';
 import MenuComponent from './pages/components/MenuComponent';
@@ -68,7 +68,6 @@ export default function App() {
 
   const dispatch = useDispatch();
   const [loading, setLoading] = useState<boolean>(true);
-
   const wallets = useWalletsList();
   const locked = useWalletsLocked();
 
@@ -192,23 +191,23 @@ export default function App() {
   }, []);
 
   const decrypt = useCallback(async () => {
-    if (password && encrypt) {
+    if (password) {
       try {
         setDecrypting(true);
-        const wallets = await window.electron.wallet.decrypt( password );
+        const wallets = await window.electron.wallet.decrypt(password);
         dispatch(walletsLoadWallets(wallets));
-        dispatch(applicationSetPassword(password));
+        setPassword(undefined);
       } catch (err) {
-        console.log("decrypt error:", err);
         setPasswordError(t("enterWalletPasswordError"));
       }
       setDecrypting(false);
     }
-  }, [password, encrypt]);
+  }, [password]);
 
   const atCreateWallet = useApplicationActionAtCreateWallet();
   const applicationLanguage = useApplicationLanguage();
   const { t, i18n } = useTranslation();
+
 
   useEffect(() => {
     i18n.changeLanguage(applicationLanguage);
@@ -220,7 +219,7 @@ export default function App() {
         loading && <Spin fullscreen spinning={loading} />
       }
       {
-        !loading && encrypt && locked && <>
+        !loading && (encrypt || wallets.length > 0) && locked && <>
           <Row style={{ marginTop: "10%" }}>
             <Card style={{ width: "400px", margin: "auto", boxShadow: "5px 5px 10px #888888" }}>
               <Row>

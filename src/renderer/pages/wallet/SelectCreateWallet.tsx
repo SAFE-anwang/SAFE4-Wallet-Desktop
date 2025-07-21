@@ -5,7 +5,6 @@ import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { applicationActionUpdateAtCreateWallet, applicationUpdateAfterSetPasswordTODO } from "../../state/application/action";
 import { useWalletsList } from "../../state/wallets/hooks";
-import { hasApplicationPasswordSetted } from "../../state/application/hooks";
 import { AfterSetPasswordTODO } from "../../state/application/reducer";
 import { useTranslation } from "react-i18next";
 
@@ -17,21 +16,20 @@ export default () => {
   const dispatch = useDispatch();
   const { t } = useTranslation();
   const walletsList = useWalletsList();
-  const applicationPasswordSetted = hasApplicationPasswordSetted();
 
   const createWalletClick = () => {
-    if ( applicationPasswordSetted ){
+    if (walletsList.length > 0) {
       navigate("/wallet/createMnemonic")
-    }else{
-      dispatch(applicationUpdateAfterSetPasswordTODO( AfterSetPasswordTODO.CREATE ))
+    } else {
+      dispatch(applicationUpdateAfterSetPasswordTODO(AfterSetPasswordTODO.CREATE))
       navigate("/setPassword");
     }
   }
   const importWalletClick = () => {
-    if ( applicationPasswordSetted ){
+    if (walletsList.length > 0) {
       navigate("/wallet/importWallet")
-    }else{
-      dispatch(applicationUpdateAfterSetPasswordTODO( AfterSetPasswordTODO.IMPORT ))
+    } else {
+      dispatch(applicationUpdateAfterSetPasswordTODO(AfterSetPasswordTODO.IMPORT))
       navigate("/setPassword");
     }
   }

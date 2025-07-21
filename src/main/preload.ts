@@ -118,7 +118,9 @@ const electronHandler = {
       password?: string,
       path?: string,
       privateKey?: string
-    }, initWalletPassword?: string): Promise<boolean> {
+    }, initWalletPassword?: string): Promise<{
+      address: string, publicKey: string, path?: string
+    } | undefined> {
       return ipcRenderer.invoke("wallet-importWallet", [{ mnemonic, password, path, privateKey }, initWalletPassword]);
     },
 
@@ -137,8 +139,10 @@ const electronHandler = {
 
     updatePassword(oldPassword: string, newPassword: string): Promise<string | undefined> {
       return ipcRenderer.invoke("wallet-updatePassword", [oldPassword, newPassword]);
+    },
+    clean(): Promise<any> {
+      return ipcRenderer.invoke("wallet-clean", []);
     }
-
   }
 
 

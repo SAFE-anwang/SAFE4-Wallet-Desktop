@@ -12,7 +12,6 @@ import {
   applicationActionConfirmedImport,
   applicationUpdateWeb3Rpc,
   applicationUpdateAfterSetPasswordTODO,
-  applicationSetPassword,
   applicationAddRpcConfig,
   applicationControlContractVO,
   applicationControlCompile,
@@ -28,6 +27,7 @@ import {
   applicationRemoveRpcConfig,
   applicationLoadSSHConfigs,
   applicationSaveOrUpdateSSHConfigs,
+  applicationSetInitWalletPassword,
 } from './action';
 
 import { ContractVO, WalletVersionVO } from '../../services';
@@ -105,6 +105,7 @@ export interface IApplicationState {
     endpoint: string
   }[],
 
+  initWalletPassword?: string,
   encrypt?: {
     password?: string,
     salt?: string,
@@ -218,9 +219,12 @@ export default createReducer(initialState, (builder) => {
     .addCase(applicationActionUpdateAtCreateWallet, (state, { payload }) => {
       return {
         ...state,
+        initWalletPassword: (state.initWalletPassword && !payload) ? undefined : state.initWalletPassword,
         action: {
           ...state.action,
-          atCreateWallet: payload
+          atCreateWallet: payload,
+          // newMnemonic: (state.action.newMnemonic && !payload) ? undefined : state.action.newMnemonic,
+          importWallet: (state.action.importWallet && !payload) ? undefined : state.action.importWallet,
         }
       }
     })
@@ -235,13 +239,10 @@ export default createReducer(initialState, (builder) => {
       }
     })
 
-    .addCase(applicationSetPassword, (state, { payload }) => {
+    .addCase(applicationSetInitWalletPassword, (state, { payload }) => {
       return {
         ...state,
-        encrypt: {
-          ...state.encrypt,
-          password: payload
-        }
+        initWalletPassword: payload
       }
     })
 
@@ -400,7 +401,7 @@ export default createReducer(initialState, (builder) => {
       needUpdates.forEach(config => {
         _sshConfigMap[config.host] = config;
       });
-      window.electron.ipcRenderer.sendMessage( IPC_CHANNEL , [ SSHConfigSignal , SSHConfig_Methods.saveOrUpdate , [ needUpdates ] ] );
+      window.electron.ipcRenderer.sendMessage(IPC_CHANNEL, [SSHConfigSignal, SSHConfig_Methods.saveOrUpdate, [needUpdates]]);
       state.sshConfigMap = {
         ...state.sshConfigMap,
         ..._sshConfigMap

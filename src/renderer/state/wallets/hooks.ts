@@ -7,14 +7,13 @@ import { useAccountManagerContract, useIERC20Contract, useMasternodeStorageContr
 import { isAddress } from '../../utils';
 import { AppState } from '../index';
 import { useMultipleContractSingleData, useSingleContractMultipleData } from '../multicall/hooks';
-import { ERC20Token, Wallet, WalletKeystore } from './reducer';
+import { Wallet, WalletKeystore } from './reducer';
 import { useBlockNumber } from '../application/hooks';
 import { AccountRecord, IdPageQuery, formatAccountRecord, formatRecordUseInfo } from '../../structs/AccountManager';
 import { useWeb3React } from '@web3-react/core';
 import { IERC20_Interface } from '../../abis';
 import { generateChildWalletsCheckResult, SupportChildWalletType } from '../../utils/GenerateChildWallet';
 import { walletsUpdateWalletChildWallets } from './action';
-const CryptoJS = require('crypto-js');
 
 export function useWalletsList(): Wallet[] {
   return useSelector((state: AppState) => {
@@ -591,17 +590,6 @@ export function useActiveAccountChildWallets(type: SupportChildWalletType, initS
     }
   }, [childTypeWallets, multicall, nodeStorageContract, activeAccountKeystore, walletUsedAddressed, chainId])
   return childTypeWallets;
-}
-
-
-export function useEncryptWalletKeystores() {
-  return useSelector((state: AppState) => {
-    return {
-      _aesKey: state.wallets._aesKey,
-      _iv: state.wallets._iv,
-      encryptWalletKetstores: state.wallets.encryptWalletKeystores
-    }
-  });
 }
 
 export function useWalletsLocked() {

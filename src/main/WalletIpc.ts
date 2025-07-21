@@ -5,6 +5,11 @@ import { scryptDecryptWalletKys, scryptDrive, scryptEncryWalletKeystores } from 
 
 const CryptoJS = require('crypto-js');
 
+const PBKDF2_Config = {
+  keySize: 256 / 32,
+  iterations: 10000
+}
+
 export class WalletIpc {
 
   salt: string | undefined;
@@ -42,7 +47,6 @@ export class WalletIpc {
       return this.decryptKys(password);
     })
     ipcMain.handle("wallet-importWallet", async (event: any, _params: any) => {
-
       const [{
         mnemonic,
         password,
@@ -51,6 +55,11 @@ export class WalletIpc {
       }, initWalletPassword] = _params;
       return this.importWallet(mnemonic, password, path, privateKey, initWalletPassword);
     })
+
+    ipcMain.handle("wallet-clean", async (event: any, _params: any) => {
+      return this.clean();
+    })
+
     this.kysDB = kysDB;
   }
 
@@ -81,10 +90,7 @@ export class WalletIpc {
     // 为每一个钱包生成随机盐,通过PBKDF2 派生密码密钥,并通过随机IV进行AES加密敏感数据.
     const encryptWalletKeystores = Object.values(walletKeystores).map((walletKeystore: any) => {
       const salt = CryptoJS.lib.WordArray.create(crypto.randomBytes(32));
-      const aes = CryptoJS.PBKDF2(password, salt, {
-        keySize: 256 / 32,
-        iterations: 10000
-      });
+      const aes = CryptoJS.PBKDF2(password, salt, PBKDF2_Config);
       const iv = CryptoJS.lib.WordArray.random(16);
       const _encryptWalletKeystore = {
         ...walletKeystore,
@@ -169,7 +175,6 @@ export class WalletIpc {
 
   private async regenerateKys(password?: string) {
     if (Object.keys(this.encryptWalletKeystoreMap).length == 0) return;
-    console.log(this.encryptWalletKeystoreMap)
     // 遍历 encryptWalletKeystoreMap,将钱包数据全部解密为明文;
     const walletKeystores = Object.values(this.encryptWalletKeystoreMap).map(encryptWalletKeystore => {
       return this.decryptWalletKeystore(encryptWalletKeystore);
@@ -206,19 +211,18 @@ export class WalletIpc {
     const iv = CryptoJS.lib.WordArray.random(16);
     // 未创建钱包加密文件情况下的第一次创建/导入钱包..
     if (initWalletPassword && Object.keys(this.encryptWalletKeystoreMap).length == 0) {
+      console.log("Init Wallet By A New Password...");
       const crypto = require('crypto');
       salt = CryptoJS.lib.WordArray.create(crypto.randomBytes(32));
-      aes = CryptoJS.PBKDF2(initWalletPassword, salt, {
-        keySize: 256 / 32,
-        iterations: 10000
-      });
+      aes = CryptoJS.PBKDF2(initWalletPassword, salt, PBKDF2_Config);
     } else if (Object.keys(this.encryptWalletKeystoreMap).length > 0) {
       // 已创建钱包加密文件的情况下创建/导入钱包..
-      // 使用上一个钱包中的生成的加密参数,下一次重新解锁钱包后,再为每个钱包分配不同的 _salt,_aes,_iv
+      // 使用上一个钱包中的生成的加密参数,下一次重新解锁钱包后,再为每个钱包分配不同的 _salt,_aes
       const walletAddresses = Object.keys(this.encryptWalletKeystoreMap);
-      const { _aes, _iv, _salt } = this.encryptWalletKeystoreMap[walletAddresses[walletAddresses.length - 1]];
+      const { _aes, _salt } = this.encryptWalletKeystoreMap[walletAddresses[walletAddresses.length - 1]];
       salt = CryptoJS.enc.Hex.parse(_salt);
       aes = CryptoJS.enc.Hex.parse(_aes);
+      console.log("Import Wallet Using prev [Encrypt-salt/aes]");
     }
     let _walletKeystore = undefined;
     if (mnemonic) {
@@ -236,8 +240,7 @@ export class WalletIpc {
         _aes: CryptoJS.enc.Hex.stringify(aes),
         _iv: CryptoJS.enc.Hex.stringify(iv)
       } as WalletKeystore;
-    }
-    if (privateKey) {
+    } else if (privateKey) {
       const wallet = new ethers.Wallet(privateKey);
       _walletKeystore = {
         privateKey,
@@ -248,12 +251,18 @@ export class WalletIpc {
         _iv: CryptoJS.enc.Hex.stringify(iv)
       } as WalletKeystore;
     }
-    if (_walletKeystore) {
-      this.encryptWalletKeystore(_walletKeystore);
-      const encryptWalletKeystore = _walletKeystore;
-      this.encryptWalletKeystoreMap[encryptWalletKeystore.address] = encryptWalletKeystore;
+    if (!_walletKeystore) return;
+    this.encryptWalletKeystore(_walletKeystore);
+    const encryptWalletKeystore = _walletKeystore;
+    this.encryptWalletKeystoreMap[encryptWalletKeystore.address] = encryptWalletKeystore;
+
+    if (await this.regenerateKys(initWalletPassword)) {
+      return {
+        address: _walletKeystore.address,
+        publicKey: _walletKeystore.publicKey,
+        path: _walletKeystore.path
+      }
     }
-    return await this.regenerateKys(initWalletPassword);
   }
 
   private decrypt(cipher: string, _aes: string, _iv: string) {
@@ -322,6 +331,51 @@ export class WalletIpc {
     return _walletKeystore;
   }
 
+
+
+  private getActiveAccountPrivateKey(activeAccount: string) {
+    const { privateKey, _aes, _iv } = this.encryptWalletKeystoreMap[activeAccount];
+    return this.decrypt(privateKey, _aes, _iv);
+  }
+
+  private validatePassword(walletAddress: string, password: string) {
+    const { _aes, _salt } = this.encryptWalletKeystoreMap[walletAddress];
+    const derivedKey = CryptoJS.PBKDF2(password, CryptoJS.enc.Hex.parse(_salt), PBKDF2_Config);
+    return derivedKey.toString(CryptoJS.enc.Hex) === _aes;
+  }
+
+  private viewMnemonic(walletAddress: string, pwd: string) {
+    if (!this.validatePassword(walletAddress, pwd)) return undefined;
+    const { _aes, _iv, mnemonic, password, path } = this.encryptWalletKeystoreMap[walletAddress];
+    return [
+      mnemonic ? this.decrypt(mnemonic, _aes, _iv) : undefined,
+      password ? this.decrypt(password, _aes, _iv) : undefined,
+      path
+    ];
+  }
+
+  private viewPrivateKey(walletAddress: string, pwd: string) {
+    if (!this.validatePassword(walletAddress, pwd)) return undefined;
+    return this.getActiveAccountPrivateKey(walletAddress);
+  }
+
+  private async viewKeystore(walletAddress: string, pwd: string) {
+    if (!this.validatePassword(walletAddress, pwd)) return undefined;
+    let privateKey = this.getActiveAccountPrivateKey(walletAddress);
+    const ethersWallet = new ethers.Wallet(privateKey);
+    privateKey = '';
+    const keystore = await ethersWallet.encrypt(pwd);
+    return keystore;
+  }
+
+  private async clean() {
+    console.log("Clean Wallets...")
+    this._aes = undefined;
+    this.salt = undefined;
+    this.encryptWalletKeystoreMap = {};
+  }
+
+  // **** DB **** //
   private async loadKysFromDB() {
     const queryPromise = new Promise<any>((resolve, reject) => {
       this.kysDB.all("SELECT * from wallet_kys limit 1", [],
@@ -336,7 +390,7 @@ export class WalletIpc {
     }
     return undefined;
   }
-
+  // **** DB **** //
   private async saveOrUpdateBase58Encode(Base58Encode: string) {
     const dbUpdatePromise = new Promise((resolve, reject) => {
       this.kysDB.all("SELECT * FROM wallet_kys", [], (err: any, rows: any[]) => {
@@ -368,44 +422,6 @@ export class WalletIpc {
       console.log("saveOrUpdate Base58Encode Error :", err)
       return false;
     }
-  }
-
-  private getActiveAccountPrivateKey(activeAccount: string) {
-    const { privateKey, _aes, _iv } = this.encryptWalletKeystoreMap[activeAccount];
-    return this.decrypt(privateKey, _aes, _iv);
-  }
-
-  private validatePassword(walletAddress: string, password: string) {
-    const { _aes, _salt } = this.encryptWalletKeystoreMap[walletAddress];
-    const derivedKey = CryptoJS.PBKDF2(password, CryptoJS.enc.Hex.parse(_salt), {
-      keySize: 256 / 32,
-      iterations: 10000
-    });
-    return derivedKey.toString(CryptoJS.enc.Hex) === _aes;
-  }
-
-  private viewMnemonic(walletAddress: string, pwd: string) {
-    if (!this.validatePassword(walletAddress, pwd)) return undefined;
-    const { _aes, _iv, mnemonic, password, path } = this.encryptWalletKeystoreMap[walletAddress];
-    return [
-      mnemonic ? this.decrypt(mnemonic, _aes, _iv) : undefined,
-      password ? this.decrypt(password, _aes, _iv) : undefined,
-      path
-    ];
-  }
-
-  private viewPrivateKey(walletAddress: string, pwd: string) {
-    if (!this.validatePassword(walletAddress, pwd)) return undefined;
-    return this.getActiveAccountPrivateKey(walletAddress);
-  }
-
-  private async viewKeystore(walletAddress: string, pwd: string) {
-    if (!this.validatePassword(walletAddress, pwd)) return undefined;
-    let privateKey = this.getActiveAccountPrivateKey(walletAddress);
-    const ethersWallet = new ethers.Wallet(privateKey);
-    privateKey = '';
-    const keystore = await ethersWallet.encrypt(pwd);
-    return keystore;
   }
 
 }
