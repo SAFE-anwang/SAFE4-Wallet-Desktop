@@ -9,14 +9,14 @@ import { AppState } from "../../../../state";
 import { formatMasternode, MasternodeInfo } from "../../../../structs/Masternode";
 import { useMasternodeLogicContract, useMasternodeStorageContract, useMulticallContract, useSupernodeStorageContract } from "../../../../hooks/useContracts";
 import { useTransactionAdder } from "../../../../state/transactions/hooks";
-import { NodeAddressSelectType } from "../../../../utils/GenerateChildWallet";
-import { useWalletsActiveAccount, useWalletsActiveKeystore } from "../../../../state/wallets/hooks";
+import { useWalletsActiveAccount } from "../../../../state/wallets/hooks";
 import { TxExecuteStatus } from "../../safe3/Safe3";
 import { CallMulticallAggregateContractCall, SyncCallMulticallAggregate } from "../../../../state/multicall/CallMulticallAggregate";
 import { enodeRegex } from "../../supernodes/Register/SupernodeRegister";
 import { InputRules } from "../Register/MasternodeRegister";
 import AddressComponent from "../../../components/AddressComponent";
 import { useTranslation } from "react-i18next";
+import { useWeb3React } from "@web3-react/core";
 
 const { Text, Title } = Typography
 
@@ -32,6 +32,7 @@ export default () => {
   const addTransaction = useTransactionAdder();
   const multicallContract = useMulticallContract();
   const activeAccount = useWalletsActiveAccount();
+  const { chainId, provider } = useWeb3React();
 
   const [updating, setUpdating] = useState<boolean>(false);
   const [updateParams, setUpdateParams] = useState<{
@@ -79,7 +80,7 @@ export default () => {
   }, [editMasternodeId, masternodeStorageContract]);
 
   const doUpdate = useCallback(async () => {
-    if (masternodeStorageContract && supernodeStorageContract && multicallContract && masternodeLogicContract && masternodeInfo) {
+    if (masternodeStorageContract && supernodeStorageContract && multicallContract && masternodeLogicContract && masternodeInfo && chainId && provider) {
       const { address, enode, description } = updateParams;
       const inputErrors: {
         address?: string, enode?: string, description?: string
@@ -180,59 +181,106 @@ export default () => {
       // DO update address
       if (masternodeInfo.addr != address) {
         try {
-          const estimateGas = await masternodeLogicContract.estimateGas.changeAddress(
+          const data = masternodeLogicContract.interface.encodeFunctionData("changeAddress", [
             masternodeInfo.addr, address
-          );
+          ]);
+          const tx: ethers.providers.TransactionRequest = {
+            to: masternodeLogicContract.address,
+            data,
+            chainId
+          };
+          const estimateGas = await provider.estimateGas({
+            ...tx,
+            from: activeAccount
+          })
           const gasLimit = estimateGas.mul(2);
-          const response = await masternodeLogicContract.changeAddress(masternodeInfo.addr, address , {gasLimit});
-          const { hash, data } = response;
-          addTransaction({ to: masternodeLogicContract.address }, response, {
-            call: {
-              from: activeAccount,
-              to: masternodeLogicContract.address,
-              input: data,
-              value: "0"
+          tx.gasLimit = gasLimit;
+          const { signedTx, error } = await window.electron.wallet.signTransaction(
+            activeAccount,
+            provider.connection.url,
+            tx
+          );
+          if (signedTx) {
+            const response = await provider.sendTransaction(signedTx);
+            const { hash, data } = response;
+            addTransaction({ to: masternodeLogicContract.address }, response, {
+              call: {
+                from: activeAccount,
+                to: masternodeLogicContract.address,
+                input: data,
+                value: "0"
+              }
+            });
+            _updateResult.address = {
+              txHash: hash,
+              status: 1,
             }
-          });
-          _updateResult.address = {
-            txHash: hash,
-            status: 1,
+          }
+          if (error) {
+            _updateResult.address = {
+              status: 0,
+              error: error
+            }
           }
         } catch (err: any) {
           _updateResult.address = {
             status: 0,
-            error: JSON.stringify(err)
+            error: err
           }
         }
         setUpdateResult({ ..._updateResult });
       } else {
         console.log("Address 无变化,不需更新");
       }
+
       // DO Update Enode
       if (masternodeInfo.enode != enode) {
         try {
-          const estimateGas = await masternodeLogicContract.estimateGas.changeEnodeByID(
+          const data = masternodeLogicContract.interface.encodeFunctionData("changeEnodeByID", [
             masternodeInfo.id, enode
-          );
+          ]);
+          const tx: ethers.providers.TransactionRequest = {
+            to: masternodeLogicContract.address,
+            data,
+            chainId
+          };
+          const estimateGas = await provider.estimateGas({
+            ...tx,
+            from: activeAccount
+          })
           const gasLimit = estimateGas.mul(2);
-          const response = await masternodeLogicContract.changeEnodeByID(masternodeInfo.id, enode , {gasLimit});
-          const { hash, data } = response;
-          addTransaction({ to: masternodeLogicContract.address }, response, {
-            call: {
-              from: activeAccount,
-              to: masternodeLogicContract.address,
-              input: data,
-              value: "0"
+          tx.gasLimit = gasLimit;
+          const { signedTx, error } = await window.electron.wallet.signTransaction(
+            activeAccount,
+            provider.connection.url,
+            tx
+          );
+          if (signedTx) {
+            const response = await provider.sendTransaction(signedTx);
+            const { hash, data } = response;
+            addTransaction({ to: masternodeLogicContract.address }, response, {
+              call: {
+                from: activeAccount,
+                to: masternodeLogicContract.address,
+                input: data,
+                value: "0"
+              }
+            });
+            _updateResult.enode = {
+              txHash: hash,
+              status: 1,
             }
-          });
-          _updateResult.enode = {
-            txHash: hash,
-            status: 1,
+          }
+          if (error) {
+            _updateResult.enode = {
+              status: 0,
+              error: error
+            }
           }
         } catch (err: any) {
           _updateResult.enode = {
             status: 0,
-            error: err.error.reason
+            error: err
           }
         }
         setUpdateResult({ ..._updateResult });
@@ -242,28 +290,51 @@ export default () => {
       // DO Update description
       if (description != masternodeInfo.description) {
         try {
-          const estimateGas = await masternodeLogicContract.estimateGas.changeDescriptionByID(
+          const data = masternodeLogicContract.interface.encodeFunctionData("changeDescriptionByID", [
             masternodeInfo.id, description
-          );
+          ]);
+          const tx: ethers.providers.TransactionRequest = {
+            to: masternodeLogicContract.address,
+            data,
+            chainId
+          };
+          const estimateGas = await provider.estimateGas({
+            ...tx,
+            from: activeAccount
+          })
           const gasLimit = estimateGas.mul(2);
-          const response = await masternodeLogicContract.changeDescriptionByID(masternodeInfo.id, description , {gasLimit});
-          const { hash, data } = response;
-          addTransaction({ to: masternodeLogicContract.address }, response, {
-            call: {
-              from: activeAccount,
-              to: masternodeLogicContract.address,
-              input: data,
-              value: "0"
+          tx.gasLimit = gasLimit;
+          const { signedTx, error } = await window.electron.wallet.signTransaction(
+            activeAccount,
+            provider.connection.url,
+            tx
+          );
+          if (signedTx) {
+            const response = await provider.sendTransaction(signedTx);
+            const { hash, data } = response;
+            addTransaction({ to: masternodeLogicContract.address }, response, {
+              call: {
+                from: activeAccount,
+                to: masternodeLogicContract.address,
+                input: data,
+                value: "0"
+              }
+            });
+            _updateResult.description = {
+              txHash: hash,
+              status: 1,
             }
-          });
-          _updateResult.description = {
-            status: 1,
-            txHash: hash
+          }
+          if (error) {
+            _updateResult.description = {
+              status: 0,
+              error: error
+            }
           }
         } catch (err: any) {
           _updateResult.description = {
             status: 0,
-            error: err.error.reason
+            error: err
           }
         }
         setUpdateResult({ ..._updateResult });
@@ -314,7 +385,7 @@ export default () => {
                   <Text type="secondary">{t("wallet_masternodes_address")}</Text>
                 </Col>
                 <Col span={24}>
-                  <Input style={{ marginTop: "5px" }} value={updateParams?.address} placeholder={t("please_enter")+t("wallet_masternodes_address")}
+                  <Input style={{ marginTop: "5px" }} value={updateParams?.address} placeholder={t("please_enter") + t("wallet_masternodes_address")}
                     onChange={(event) => {
                       const input = event.target.value.trim();
                       setUpdateParams({
@@ -396,7 +467,7 @@ export default () => {
                             <Text type="secondary">{t("wallet_masternodes_sync_error_address")}</Text><br />
                             <Text strong type="danger">
                               <CloseCircleTwoTone twoToneColor="red" style={{ marginRight: "5px" }} />
-                              {updateResult.address.error}
+                              {updateResult.address.error.reason}
                             </Text> <br />
                           </>
                         }
@@ -415,7 +486,7 @@ export default () => {
                             <Text type="secondary">{t("wallet_masternodes_sync_error_enode")}</Text><br />
                             <Text strong type="danger">
                               <CloseCircleTwoTone twoToneColor="red" style={{ marginRight: "5px" }} />
-                              {updateResult.enode.error}
+                              {updateResult.enode.error.reason}
                             </Text> <br />
                           </>
                         }
@@ -434,7 +505,7 @@ export default () => {
                             <Text type="secondary">{t("wallet_masternodes_sync_error_description")}</Text><br />
                             <Text strong type="danger">
                               <CloseCircleTwoTone twoToneColor="red" style={{ marginRight: "5px" }} />
-                              {updateResult.description.error}
+                              {updateResult.description.error.reason}
                             </Text> <br />
                           </>
                         }

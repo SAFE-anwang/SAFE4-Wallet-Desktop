@@ -6,7 +6,6 @@ import useTransactionResponseRender from "../../../components/useTransactionResp
 import { useWalletsActiveAccount } from "../../../../state/wallets/hooks";
 import { useMasternodeLogicContract, useSupernodeLogicContract } from "../../../../hooks/useContracts";
 import { ethers } from "ethers";
-import { TransactionResponse } from "@ethersproject/providers";
 import AddressView from "../../../components/AddressView";
 import { MasternodeInfo } from "../../../../structs/Masternode";
 import { useDispatch } from "react-redux";
@@ -14,6 +13,7 @@ import { useNavigate } from "react-router-dom";
 import { applicationUpdateWalletTab } from "../../../../state/application/action";
 import { useTranslation } from "react-i18next";
 import config, { Safe4_Business_Config } from "../../../../config";
+import { useWeb3React } from "@web3-react/core";
 
 const { Text } = Typography;
 
@@ -41,38 +41,57 @@ export default ({
   const addTransaction = useTransactionAdder();
   const activeAccount = useWalletsActiveAccount();
   const masternodeLogicContract = useMasternodeLogicContract(true);
+  const { chainId, provider } = useWeb3React();
 
-  const doAppendMasternode = useCallback(() => {
-    if (activeAccount && masternodeLogicContract) {
+  const doAppendMasternode = useCallback(async () => {
+    if (activeAccount && masternodeLogicContract && chainId && provider) {
       setSending(true);
       /**
        *  function appendRegister(address _addr, uint _lockDay) external payable;
        */
       const value = ethers.utils.parseEther(valueAmount + "");
-      masternodeLogicContract.appendRegister(
+      const data = masternodeLogicContract.interface.encodeFunctionData("appendRegister", [
         masternodeInfo.addr,
         Safe4_Business_Config.Masternode.Create.LockDays,
         {
           value: value,
         }
-      ).then((response: TransactionResponse) => {
-        const { hash, data } = response;
-        addTransaction({ to: masternodeLogicContract.address }, response, {
-          call: {
-            from: activeAccount,
-            to: masternodeLogicContract.address,
-            input: data,
-            value: value.toString()
-          }
-        });
-        setTxHash(hash);
-        setTransactionResponse(response);
+      ]);
+      const tx: ethers.providers.TransactionRequest = {
+        to: masternodeLogicContract.address,
+        data,
+        value,
+        chainId
+      };
+      const { signedTx, error } = await window.electron.wallet.signTransaction(
+        activeAccount,
+        provider.connection.url,
+        tx
+      );
+      if (signedTx) {
+        try {
+          const response = await provider.sendTransaction(signedTx);
+          const { hash, data } = response;
+          setTransactionResponse(response);
+          addTransaction({ to: masternodeLogicContract.address }, response, {
+            call: {
+              from: activeAccount,
+              to: masternodeLogicContract.address,
+              input: data,
+              value: value.toString()
+            }
+          });
+          setTxHash(hash);
+        } catch (err) {
+          setErr(err)
+        } finally {
+          setSending(false);
+        }
+      }
+      if (error) {
         setSending(false);
-      }).catch((err: any) => {
-        setSending(false);
-        setErr(err)
-      });
-
+        setErr(error)
+      }
     }
   }, [activeAccount, masternodeLogicContract, valueAmount]);
 

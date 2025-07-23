@@ -11,7 +11,7 @@ import { ethers } from 'ethers';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { applicationControlAppendMasternode, applicationControlUpdateEditMasternodeId } from '../../../state/application/action';
-import { useWalletsActiveAccount, useWalletsActiveKeystore } from '../../../state/wallets/hooks';
+import { useWalletsActiveAccount, useWalletsActiveWallet } from '../../../state/wallets/hooks';
 import { RenderNodeState } from '../supernodes/Supernodes';
 import AddressComponent from '../../components/AddressComponent';
 import { Safe4_Business_Config } from '../../../config';
@@ -371,7 +371,7 @@ export default ({
   }, [masternodeStorageContract, queryKey]);
   const [openBatchNodeModal, setOpenBatchNodeModal] = useState(false);
 
-  const hasMnemonic = useWalletsActiveKeystore()?.mnemonic != undefined;
+  const hasMnemonic = useWalletsActiveWallet()?.path != undefined;
 
   return <>
     {

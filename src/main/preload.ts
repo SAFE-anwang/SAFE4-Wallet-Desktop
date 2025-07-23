@@ -6,6 +6,7 @@ import { ethers } from 'ethers';
 import { TransactionRequest, Web3Provider } from '@ethersproject/providers';
 import { EtherStructuredError } from './WalletIpc';
 import { Wallet } from '../renderer/state/wallets/reducer';
+import { SupportChildWalletType } from './WalletNodeGenerator';
 
 export type Channels = 'ipc-example';
 
@@ -136,9 +137,11 @@ const electronHandler = {
     viewKeystore(walletAddress: string, password: string): Promise<string | undefined> {
       return ipcRenderer.invoke("wallet-viewKeystore", [walletAddress, password]);
     },
-
     updatePassword(oldPassword: string, newPassword: string): Promise<string | undefined> {
       return ipcRenderer.invoke("wallet-updatePassword", [oldPassword, newPassword]);
+    },
+    generateNodeChildWallets(activeAccount: string, supportChildWalletType: SupportChildWalletType, _startAddressIndex: number, size: number): Promise<{address : string , path : string , privateKey : string}[]> {
+      return ipcRenderer.invoke("wallet-generate-nodechildwallets", [activeAccount, supportChildWalletType, _startAddressIndex, size]);
     },
     clean(): Promise<any> {
       return ipcRenderer.invoke("wallet-clean", []);

@@ -2,6 +2,8 @@ import { JsonRpcProvider, TransactionRequest } from "@ethersproject/providers";
 import { ethers } from "ethers";
 import { HDNode } from "ethers/lib/utils";
 import { scryptDecryptWalletKys, scryptDrive, scryptEncryWalletKeystores } from "./CryptoIpc";
+import { generateNodeChildWallets } from "./WalletNodeGenerator";
+import { SupportChildWalletType } from "../renderer/utils/GenerateChildWallet";
 
 const CryptoJS = require('crypto-js');
 
@@ -9,6 +11,8 @@ const PBKDF2_Config = {
   keySize: 256 / 32,
   iterations: 10000
 }
+
+
 
 export class WalletIpc {
 
@@ -60,7 +64,26 @@ export class WalletIpc {
       return this.clean();
     })
 
+    ipcMain.handle("wallet-generate-nodechildwallets", async (event: any, _params: any) => {
+      const [activeAccount, supportChildWalletType, _startAddressIndex, size] = _params;
+      return this.generateNodeChildWallets(activeAccount, supportChildWalletType, _startAddressIndex, size);
+    })
     this.kysDB = kysDB;
+  }
+
+  private generateNodeChildWallets(activeAccount: string, supportChildWalletType: SupportChildWalletType, _startAddressIndex: number, size: number) {
+    const encryptWalletKeystore = this.encryptWalletKeystoreMap[activeAccount];
+    if (!encryptWalletKeystore.mnemonic) return;
+    const {
+      _aes, _iv,
+      mnemonic, password
+    } = encryptWalletKeystore;
+    return generateNodeChildWallets(
+      this.decrypt(mnemonic, _aes, _iv),
+      password ? this.decrypt(password, _aes, _iv) : "",
+      supportChildWalletType,
+      _startAddressIndex, size
+    );
   }
 
   private async decryptKys(password: string) {
@@ -330,8 +353,6 @@ export class WalletIpc {
     });
     return _walletKeystore;
   }
-
-
 
   private getActiveAccountPrivateKey(activeAccount: string) {
     const { privateKey, _aes, _iv } = this.encryptWalletKeystoreMap[activeAccount];

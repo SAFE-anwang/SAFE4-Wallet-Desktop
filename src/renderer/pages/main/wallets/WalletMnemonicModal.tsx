@@ -2,7 +2,7 @@
 
 import { Typography, Button, Divider, Statistic, Row, Col, Modal, Tabs, TabsProps, QRCode, Badge, Dropdown, Input, Spin, Alert } from 'antd';
 import { useCallback, useEffect, useState } from 'react';
-import { useWalletsActiveAccount, useWalletsActiveKeystore, useWalletsActiveWallet } from '../../../state/wallets/hooks';
+import { useWalletsActiveAccount, useWalletsActiveWallet } from '../../../state/wallets/hooks';
 import { useTranslation } from 'react-i18next';
 
 const { Text } = Typography;

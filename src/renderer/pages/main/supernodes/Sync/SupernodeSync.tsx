@@ -8,7 +8,7 @@ import { useNavigate } from "react-router-dom";
 import { AppState } from "../../../../state";
 import { useMasternodeLogicContract, useMasternodeStorageContract, useMulticallContract, useSupernodeLogicContract, useSupernodeStorageContract } from "../../../../hooks/useContracts";
 import { useTransactionAdder } from "../../../../state/transactions/hooks";
-import { useWalletsActiveAccount, useWalletsActiveKeystore } from "../../../../state/wallets/hooks";
+import { useWalletsActiveAccount } from "../../../../state/wallets/hooks";
 import { TxExecuteStatus } from "../../safe3/Safe3";
 import { CallMulticallAggregateContractCall, SyncCallMulticallAggregate } from "../../../../state/multicall/CallMulticallAggregate";
 import { enodeRegex, InputRules } from "../Register/SupernodeRegister";
@@ -16,6 +16,7 @@ import AddressComponent from "../../../components/AddressComponent";
 import { formatSupernodeInfo, SupernodeInfo } from "../../../../structs/Supernode";
 import { SuperNodeLogicABI } from "../../../../constants/SystemContractAbiConfig";
 import { useTranslation } from "react-i18next";
+import { useWeb3React } from "@web3-react/core";
 
 const { Text, Title } = Typography
 
@@ -32,6 +33,7 @@ export default () => {
   const multicallContract = useMulticallContract();
   const activeAccount = useWalletsActiveAccount();
   const [updating, setUpdating] = useState<boolean>(false);
+  const { provider, chainId } = useWeb3React();
   const [updateParams, setUpdateParams] = useState<{
     address: string | undefined,
     enode: string | undefined,
@@ -102,7 +104,7 @@ export default () => {
 
 
   const doUpdate = useCallback(async () => {
-    if (masternodeStorageContract && supernodeStorageContract && multicallContract && supernodeLoginContract && supernodeInfo) {
+    if (masternodeStorageContract && supernodeStorageContract && multicallContract && supernodeLoginContract && supernodeInfo && provider && chainId) {
       const { address, enode, description, name } = updateParams;
       const inputErrors: {
         address?: string, enode?: string, description?: string, name?: string
@@ -209,28 +211,51 @@ export default () => {
       // DO update address
       if (supernodeInfo.addr != address) {
         try {
-          const estimateGas = await supernodeLoginContract.estimateGas.changeAddress(
+          const data = supernodeLoginContract.interface.encodeFunctionData("changeAddress", [
             supernodeInfo.addr, address
-          );
+          ]);
+          const tx: ethers.providers.TransactionRequest = {
+            to: supernodeLoginContract.address,
+            data,
+            chainId
+          };
+          const estimateGas = await provider.estimateGas({
+            ...tx,
+            from: activeAccount
+          })
           const gasLimit = estimateGas.mul(2);
-          const response = await supernodeLoginContract.changeAddress(supernodeInfo.addr, address, { gasLimit });
-          const { hash, data } = response;
-          addTransaction({ to: supernodeLoginContract.address }, response, {
-            call: {
-              from: activeAccount,
-              to: supernodeLoginContract.address,
-              input: data,
-              value: "0"
+          tx.gasLimit = gasLimit;
+          const { signedTx, error } = await window.electron.wallet.signTransaction(
+            activeAccount,
+            provider.connection.url,
+            tx
+          );
+          if (signedTx) {
+            const response = await provider.sendTransaction(signedTx);
+            const { hash, data } = response;
+            addTransaction({ to: supernodeLoginContract.address }, response, {
+              call: {
+                from: activeAccount,
+                to: supernodeLoginContract.address,
+                input: data,
+                value: "0"
+              }
+            });
+            _updateResult.address = {
+              txHash: hash,
+              status: 1,
             }
-          });
-          _updateResult.address = {
-            txHash: hash,
-            status: 1,
+          }
+          if (error) {
+            _updateResult.address = {
+              status: 0,
+              error: error
+            }
           }
         } catch (err: any) {
           _updateResult.address = {
             status: 0,
-            error: err.error.reason
+            error: err
           }
         }
         setUpdateResult({ ..._updateResult });
@@ -240,28 +265,51 @@ export default () => {
       // DO Update Enode
       if (supernodeInfo.enode != enode) {
         try {
-          const estimateGas = await supernodeLoginContract.estimateGas.changeEnodeByID(
+          const data = supernodeLoginContract.interface.encodeFunctionData("changeEnodeByID", [
             supernodeInfo.id, enode
-          );
+          ]);
+          const tx: ethers.providers.TransactionRequest = {
+            to: supernodeLoginContract.address,
+            data,
+            chainId
+          };
+          const estimateGas = await provider.estimateGas({
+            ...tx,
+            from: activeAccount
+          })
           const gasLimit = estimateGas.mul(2);
-          const response = await supernodeLoginContract.changeEnodeByID(supernodeInfo.id, enode, { gasLimit });
-          const { hash, data } = response;
-          addTransaction({ to: supernodeLoginContract.address }, response, {
-            call: {
-              from: activeAccount,
-              to: supernodeLoginContract.address,
-              input: data,
-              value: "0"
+          tx.gasLimit = gasLimit;
+          const { signedTx, error } = await window.electron.wallet.signTransaction(
+            activeAccount,
+            provider.connection.url,
+            tx
+          );
+          if (signedTx) {
+            const response = await provider.sendTransaction(signedTx);
+            const { hash, data } = response;
+            addTransaction({ to: supernodeLoginContract.address }, response, {
+              call: {
+                from: activeAccount,
+                to: supernodeLoginContract.address,
+                input: data,
+                value: "0"
+              }
+            });
+            _updateResult.enode = {
+              txHash: hash,
+              status: 1,
             }
-          });
-          _updateResult.enode = {
-            txHash: hash,
-            status: 1,
+          }
+          if (error) {
+            _updateResult.enode = {
+              status: 0,
+              error: error
+            }
           }
         } catch (err: any) {
           _updateResult.enode = {
             status: 0,
-            error: err.error.reason
+            error: err
           }
         }
         setUpdateResult({ ..._updateResult });
@@ -271,28 +319,51 @@ export default () => {
       // DO Update description
       if (description != supernodeInfo.description) {
         try {
-          const estimateGas = await supernodeLoginContract.estimateGas.changeDescriptionByID(
+          const data = supernodeLoginContract.interface.encodeFunctionData("changeDescriptionByID", [
             supernodeInfo.id, description
-          );
+          ]);
+          const tx: ethers.providers.TransactionRequest = {
+            to: supernodeLoginContract.address,
+            data,
+            chainId
+          };
+          const estimateGas = await provider.estimateGas({
+            ...tx,
+            from: activeAccount
+          })
           const gasLimit = estimateGas.mul(2);
-          const response = await supernodeLoginContract.changeDescriptionByID(supernodeInfo.id, description, { gasLimit });
-          const { hash, data } = response;
-          addTransaction({ to: supernodeLoginContract.address }, response, {
-            call: {
-              from: activeAccount,
-              to: supernodeLoginContract.address,
-              input: data,
-              value: "0"
+          tx.gasLimit = gasLimit;
+          const { signedTx, error } = await window.electron.wallet.signTransaction(
+            activeAccount,
+            provider.connection.url,
+            tx
+          );
+          if (signedTx) {
+            const response = await provider.sendTransaction(signedTx);
+            const { hash, data } = response;
+            addTransaction({ to: supernodeLoginContract.address }, response, {
+              call: {
+                from: activeAccount,
+                to: supernodeLoginContract.address,
+                input: data,
+                value: "0"
+              }
+            });
+            _updateResult.description = {
+              txHash: hash,
+              status: 1,
             }
-          });
-          _updateResult.description = {
-            status: 1,
-            txHash: hash
+          }
+          if (error) {
+            _updateResult.description = {
+              status: 0,
+              error: error
+            }
           }
         } catch (err: any) {
           _updateResult.description = {
-            status: 1,
-            error: err.error.reason
+            status: 0,
+            error: err
           }
         }
         setUpdateResult({ ..._updateResult });
@@ -302,30 +373,52 @@ export default () => {
       // DO Update name
       if (name != supernodeInfo.name) {
         try {
-
-          const estimateGas = await supernodeLoginContract.estimateGas.changeDescriptionByID(
+          const data = supernodeLoginContract.interface.encodeFunctionData("changeNameByID", [
             supernodeInfo.id, name
-          );
+          ]);
+          const tx: ethers.providers.TransactionRequest = {
+            to: supernodeLoginContract.address,
+            data,
+            chainId
+          };
+          const estimateGas = await provider.estimateGas({
+            ...tx,
+            from: activeAccount
+          })
           const gasLimit = estimateGas.mul(2);
-          const response = await supernodeLoginContract.changeNameByID(supernodeInfo.id, name, { gasLimit });
-          const { hash, data } = response;
-          addTransaction({ to: supernodeLoginContract.address }, response, {
-            call: {
-              from: activeAccount,
-              to: supernodeLoginContract.address,
-              input: data,
-              value: "0"
+          tx.gasLimit = gasLimit;
+          const { signedTx, error } = await window.electron.wallet.signTransaction(
+            activeAccount,
+            provider.connection.url,
+            tx
+          );
+          if (signedTx) {
+            const response = await provider.sendTransaction(signedTx);
+            const { hash, data } = response;
+            addTransaction({ to: supernodeLoginContract.address }, response, {
+              call: {
+                from: activeAccount,
+                to: supernodeLoginContract.address,
+                input: data,
+                value: "0"
+              }
+            });
+            _updateResult.name = {
+              txHash: hash,
+              status: 1,
             }
-          });
-          _updateResult.name = {
-            status: 1,
-            txHash: hash
+          }
+          if (error) {
+            _updateResult.name = {
+              status: 0,
+              error: error
+            }
           }
         } catch (err: any) {
           console.log("Error >>", err)
           _updateResult.name = {
             status: 0,
-            error: err.error.reason
+            error: err
           }
         }
         setUpdateResult({ ..._updateResult });
@@ -343,25 +436,46 @@ export default () => {
           || voter != supernodeInfo.incentivePlan.voter;
         if (incentivePlanChange) {
           try {
-            const response = await supernodeLoginContract.changeIncentivePlan(supernodeInfo.id, creator, partner, voter);
-            const { hash, data } = response;
-            addTransaction({ to: supernodeLoginContract.address }, response, {
-              call: {
-                from: activeAccount,
-                to: supernodeLoginContract.address,
-                input: data,
-                value: "0"
+            const data = supernodeLoginContract.interface.encodeFunctionData("changeIncentivePlan", [
+              supernodeInfo.id, creator, partner, voter
+            ]);
+            const tx: ethers.providers.TransactionRequest = {
+              to: supernodeLoginContract.address,
+              data,
+              chainId
+            };
+            const { signedTx, error } = await window.electron.wallet.signTransaction(
+              activeAccount,
+              provider.connection.url,
+              tx
+            );
+            if (signedTx) {
+              const response = await provider.sendTransaction(signedTx);
+              const { hash, data } = response;
+              addTransaction({ to: supernodeLoginContract.address }, response, {
+                call: {
+                  from: activeAccount,
+                  to: supernodeLoginContract.address,
+                  input: data,
+                  value: "0"
+                }
+              });
+              _updateResult.incentivePlan = {
+                txHash: hash,
+                status: 1,
               }
-            });
-            _updateResult.incentivePlan = {
-              status: 1,
-              txHash: hash
+            }
+            if (error) {
+              _updateResult.incentivePlan = {
+                status: 0,
+                error: error
+              }
             }
           } catch (err: any) {
             console.log("Error >>", err)
             _updateResult.incentivePlan = {
               status: 0,
-              error: err.error.reason
+              error: err
             }
           }
           setUpdateResult({ ..._updateResult });
@@ -551,7 +665,7 @@ export default () => {
                             <Text type="secondary">{t("wallet_supernodes_sync_error_address")}</Text><br />
                             <Text strong type="danger">
                               <CloseCircleTwoTone twoToneColor="red" style={{ marginRight: "5px" }} />
-                              {updateResult.address.error}
+                              {updateResult.address.error.reason}
                             </Text> <br />
                           </>
                         }
@@ -570,7 +684,7 @@ export default () => {
                             <Text type="secondary">{t("wallet_supernodes_sync_error_enode")}</Text><br />
                             <Text strong type="danger">
                               <CloseCircleTwoTone twoToneColor="red" style={{ marginRight: "5px" }} />
-                              {updateResult.enode.error}
+                              {updateResult.enode.error.reason}
                             </Text> <br />
                           </>
                         }
@@ -589,7 +703,7 @@ export default () => {
                             <Text type="secondary">{t("wallet_supernodes_sync_error_name")}</Text><br />
                             <Text strong type="danger">
                               <CloseCircleTwoTone twoToneColor="red" style={{ marginRight: "5px" }} />
-                              {updateResult.name.error}
+                              {updateResult.name.error.reason}
                             </Text> <br />
                           </>
                         }
@@ -608,7 +722,7 @@ export default () => {
                             <Text type="secondary">{t("wallet_supernodes_sync_error_description")}</Text><br />
                             <Text strong type="danger">
                               <CloseCircleTwoTone twoToneColor="red" style={{ marginRight: "5px" }} />
-                              {updateResult.description.error}
+                              {updateResult.description.error.reason}
                             </Text> <br />
                           </>
                         }
@@ -627,7 +741,7 @@ export default () => {
                             <Text type="secondary">{t("wallet_supernodes_sync_error_incentivePlan")}</Text><br />
                             <Text strong type="danger">
                               <CloseCircleTwoTone twoToneColor="red" style={{ marginRight: "5px" }} />
-                              {updateResult.incentivePlan.error}
+                              {updateResult.incentivePlan.error.reason}
                             </Text> <br />
                           </>
                         }

@@ -55,7 +55,7 @@ import SelectSupernodeSyncMode from './pages/main/supernodes/Sync/SelectSupernod
 import MasternodeSync from './pages/main/masternodes/Sync/MasternodeSync';
 import SupernodeSync from './pages/main/supernodes/Sync/SupernodeSync';
 import TestSSH2CMD from './pages/main/tools/ssh2/TestSSH2CMD';
-import { useWalletsList, useWalletsLocked } from './state/wallets/hooks';
+import { useWalletsActiveAccount, useWalletsList, useWalletsLocked } from './state/wallets/hooks';
 import { useTranslation } from 'react-i18next';
 import Crosschain from './pages/main/wallets/crosschain/Crosschain';
 import SafeswapV2 from './pages/main/safeswap/SafeswapV2';
@@ -183,7 +183,7 @@ export default function App() {
   useUserInactivityTracker(() => {
     console.log("10分钟未操作,自动锁钱包");
     dispatch(walletsUpdateLocked(true));
-  }, 10 * 60 * 1000, 200);
+  }, 30 * 60 * 1000, 200);
 
   useEffect(() => {
     const method = ContractCompile_Methods.syncSolcLibrary;
@@ -207,7 +207,6 @@ export default function App() {
   const atCreateWallet = useApplicationActionAtCreateWallet();
   const applicationLanguage = useApplicationLanguage();
   const { t, i18n } = useTranslation();
-
 
   useEffect(() => {
     i18n.changeLanguage(applicationLanguage);

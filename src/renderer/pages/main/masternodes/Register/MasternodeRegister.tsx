@@ -4,7 +4,7 @@ import { LeftOutlined, QuestionCircleOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { CurrencyAmount, JSBI } from '@uniswap/sdk';
 import { ethers } from 'ethers';
-import { useETHBalances, useWalletsActiveAccount, useWalletsActiveKeystore } from '../../../../state/wallets/hooks';
+import { useETHBalances, useWalletsActiveAccount,useWalletsActiveWallet } from '../../../../state/wallets/hooks';
 import { useMasternodeStorageContract, useMulticallContract, useSupernodeStorageContract } from '../../../../hooks/useContracts';
 import RegisterModalConfirm from './RegisterModal-Confirm';
 import NumberFormat from '../../../../utils/NumberFormat';
@@ -35,7 +35,7 @@ export default () => {
   const multicallContract = useMulticallContract();
   const [openRegisterModal, setOpenRegsterModal] = useState<boolean>(false);
   const [enodeTips, setEnodeTips] = useState<boolean>(false);
-  const walletsActiveKeystore = useWalletsActiveKeystore();
+  const wallet = useWalletsActiveWallet();
   const [registerParams, setRegisterParams] = useState<{
     registerType: number | 1,
     address: string | undefined,
@@ -199,7 +199,7 @@ export default () => {
       balance: undefined,
       address: undefined
     });
-  }, [walletsActiveKeystore]);
+  }, [wallet]);
 
   return <>
     <Row style={{ height: "50px" }}>

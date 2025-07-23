@@ -137,7 +137,9 @@ export default createReducer(initialState, (builder) => {
         activeWallet = list[list.length - 1];
       }
     } else {
-      activeWallet = list[list.length - 1];
+      if (state.list.length != list.length) {
+        activeWallet = list[list.length - 1];
+      }
     }
     return {
       ...state,

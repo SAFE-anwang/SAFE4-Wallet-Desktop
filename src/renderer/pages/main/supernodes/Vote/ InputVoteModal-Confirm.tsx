@@ -16,6 +16,7 @@ import { applicationUpdateWalletTab } from "../../../../state/application/action
 import useTransactionResponseRender from "../../../components/useTransactionResponseRender";
 import { ethers } from "ethers";
 import { useTranslation } from "react-i18next";
+import { useWeb3React } from "@web3-react/core";
 
 const { Text, Link } = Typography;
 
@@ -34,6 +35,8 @@ export default ({
   const navigate = useNavigate();
   const [sending, setSending] = useState<boolean>(false);
   const [txHash, setTxHash] = useState<string>();
+  const { provider, chainId } = useWeb3React();
+
   const cancel = useCallback(() => {
     setOpenVoteModal(false);
     if (txHash) {
@@ -48,15 +51,27 @@ export default ({
   const addTransaction = useTransactionAdder();
   const supernodeVoteContract = useSupernodeVoteContract(true);
   const activeAccount = useWalletsActiveAccount();
-  const doVoteSupernode = useCallback(() => {
-    if (supernodeVoteContract) {
+  const doVoteSupernode = useCallback(async () => {
+    if (supernodeVoteContract && chainId && provider) {
       const value = ethers.utils.parseEther(amount);
       setSending(true);
-      // function voteOrApprovalWithAmount(bool _isVote, address _dstAddr) external
-      supernodeVoteContract.voteOrApprovalWithAmount( true, supernodeInfo.addr, {
-        value
-      })
-        .then((response: any) => {
+      const data = supernodeVoteContract.interface.encodeFunctionData("voteOrApprovalWithAmount", [
+        true, supernodeInfo.addr
+      ]);
+      const tx: ethers.providers.TransactionRequest = {
+        to: supernodeVoteContract.address,
+        data,
+        value,
+        chainId
+      };
+      const { signedTx, error } = await window.electron.wallet.signTransaction(
+        activeAccount,
+        provider.connection.url,
+        tx
+      );
+      if (signedTx) {
+        try {
+          const response = await provider.sendTransaction(signedTx);
           const { hash, data } = response;
           setTransactionResponse(response);
           addTransaction({ to: supernodeVoteContract.address }, response, {
@@ -68,13 +83,18 @@ export default ({
             }
           });
           setTxHash(hash);
+        } catch (err) {
+          setErr(err)
+        } finally {
           setSending(false);
-        }).catch((err: any) => {
-          setErr(err);
-          setSending(false);
-        })
+        }
+      }
+      if (error) {
+        setSending(false);
+        setErr(error)
+      }
     }
-  }, [supernodeInfo, supernodeVoteContract, activeAccount,amount]);
+  }, [supernodeInfo, supernodeVoteContract, activeAccount, amount]);
 
   return <>
     <Modal footer={null} destroyOnClose title={t("wallet_supernodes_votes")} width="600px" open={openVoteModal} onCancel={cancel}>
@@ -97,7 +117,7 @@ export default ({
         </Col>
         <Divider style={{ margin: "8px 0px" }} />
         <Col span={24}>
-          <Card size="small" style={{marginTop:"20px"}}>
+          <Card size="small" style={{ marginTop: "20px" }}>
             <Row>
               <Col span={24}>
                 <Text type="secondary">{t("wallet_supernodes_id")}</Text>

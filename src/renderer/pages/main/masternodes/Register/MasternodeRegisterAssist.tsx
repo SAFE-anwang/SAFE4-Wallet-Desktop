@@ -4,7 +4,7 @@ import { LeftOutlined, QuestionCircleOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { CurrencyAmount, JSBI } from '@uniswap/sdk';
 import { ethers } from 'ethers';
-import { useActiveAccountChildWallets, useETHBalances, useWalletsActiveAccount, useWalletsActiveKeystore, useWalletsActivePrivateKey, useWalletsKeystores, useWalletsList } from '../../../../state/wallets/hooks';
+import { useActiveAccountChildWallets, useETHBalances, useWalletsActiveAccount, useWalletsActiveWallet} from '../../../../state/wallets/hooks';
 import { useMasternodeStorageContract, useMulticallContract, useSupernodeStorageContract } from '../../../../hooks/useContracts';
 import RegisterModalConfirm from './RegisterModal-Confirm';
 import NumberFormat from '../../../../utils/NumberFormat';
@@ -39,7 +39,7 @@ export default () => {
   const [openRegisterModal, setOpenRegsterModal] = useState<boolean>(false);
   const [enodeTips, setEnodeTips] = useState<boolean>(false);
   const [openSSH2CMDTerminalNodeModal, setOpenSSH2CMDTerminalNodeModal] = useState<boolean>(false);
-  const walletsActiveKeystore = useWalletsActiveKeystore();
+  const wallet = useWalletsActiveWallet();
   const activeAccountChildWallets = useActiveAccountChildWallets(SupportChildWalletType.MN);
   const [nodeAddressPrivateKey, setNodeAddressPrivateKey] = useState<string>();
   const [nodeAddress, setNodeAddress] = useState<string>();
@@ -85,12 +85,12 @@ export default () => {
   const activeAccountNodeInfo = useAddrNodeInfo(activeAccount);
 
   useEffect(() => {
-    if (walletsActiveKeystore?.mnemonic) {
+    if (wallet?.path) {
       setNodeAddressSelectType(NodeAddressSelectType.GEN)
     } else {
       setNodeAddressSelectType(NodeAddressSelectType.INPUT)
     }
-  }, [walletsActiveKeystore]);
+  }, [wallet]);
 
   const nextClick = async () => {
     const { enode, description, incentivePlan, address } = registerParams;
@@ -225,7 +225,7 @@ export default () => {
     setNodeAddress(undefined);
     setNodeAddressPrivateKey(undefined);
     setHelpResult(undefined);
-  }, [walletsActiveKeystore]);
+  }, [wallet]);
 
   const selectChildWalletOptions = useMemo(() => {
     if (activeAccountChildWallets && nodeAddressSelectType) {
@@ -288,19 +288,15 @@ export default () => {
 
   const helpToCreate = useCallback(() => {
     if (registerParams.address && activeAccountChildWallets && activeAccountChildWallets.wallets[registerParams.address]
-      && walletsActiveKeystore?.mnemonic
+      && wallet?.path
     ) {
-      const path = activeAccountChildWallets.wallets[registerParams.address].path;
-      const hdNode = generateChildWallet(
-        walletsActiveKeystore.mnemonic,
-        walletsActiveKeystore.password ? walletsActiveKeystore.password : "",
-        path
-      );
-      setNodeAddress(hdNode.address);
-      setNodeAddressPrivateKey(hdNode.privateKey);
+      const nodeAddress = registerParams.address;
+      const { path, privateKey } = activeAccountChildWallets.wallets[nodeAddress];
+      setNodeAddress(nodeAddress);
+      setNodeAddressPrivateKey(privateKey);
       setOpenSSH2CMDTerminalNodeModal(true);
     }
-  }, [registerParams, walletsActiveKeystore, activeAccountChildWallets]);
+  }, [registerParams, wallet, activeAccountChildWallets]);
 
   return <>
     <Row style={{ height: "50px" }}>
