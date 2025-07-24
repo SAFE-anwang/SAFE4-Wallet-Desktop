@@ -2,12 +2,13 @@ import { Alert, Button, Col, Divider, Input, Modal, Row, Spin, Typography } from
 import { useEffect, useMemo, useState } from "react";
 import { useContract, useMulticallContract } from "../../../hooks/useContracts";
 import { ISRC20_Interface } from "../../../abis";
-import CallMulticallAggregate, { CallMulticallAggregateContractCall } from "../../../state/multicall/CallMulticallAggregate";
 import { TxExecuteStatus } from "../safe3/Safe3";
 import { useWalletsActiveAccount } from "../../../state/wallets/hooks";
 import { useTransactionAdder } from "../../../state/transactions/hooks";
 import useSRC20Prop from "../../../hooks/useSRC20Prop";
 import { useTranslation } from "react-i18next";
+import { useWeb3React } from "@web3-react/core";
+import { ethers } from "ethers";
 
 const { Text } = Typography;
 
@@ -36,6 +37,7 @@ export default ({
   const addTransaction = useTransactionAdder();
   const { src20TokenProp, loading } = useSRC20Prop(address);
   const { t } = useTranslation();
+  const { chainId, provider } = useWeb3React();
 
   const [inputParams, setInputParams] = useState<SRC20TokenProp>({
     name: "",
@@ -71,7 +73,7 @@ export default ({
   }, [src20TokenProp])
 
   const update = async () => {
-    if (src20TokenProp && SRC20Contract && activeAccount) {
+    if (src20TokenProp && SRC20Contract && activeAccount && provider && chainId) {
       const { whitePaperUrl, orgName, officialUrl, description } = inputParams;
 
       const _inputErrors: {
@@ -90,103 +92,185 @@ export default ({
       setUpdating(true);
       let _updates = updates ?? {};
       if (whitePaperUrl != src20TokenProp.whitePaperUrl) {
-        try {
-          const response = await SRC20Contract.setWhitePaperUrl(whitePaperUrl);
-          _updates.whitePaperUrl = {
-            status: 1,
-            txHash: response.hash
-          }
-          setUpdates({ ..._updates });
-          const { hash, data } = response;
-          addTransaction({ to: SRC20Contract.address }, response, {
-            call: {
-              from: activeAccount,
-              to: SRC20Contract.address,
-              input: data,
-              value: "0"
-            }
-          });
-        } catch (err: any) {
+        const data = SRC20Contract.interface.encodeFunctionData("setWhitePaperUrl", [whitePaperUrl]);
+        const tx: ethers.providers.TransactionRequest = {
+          to: SRC20Contract.address,
+          data,
+          chainId
+        };
+        const { signedTx, error } = await window.electron.wallet.signTransaction(
+          activeAccount,
+          provider.connection.url,
+          tx
+        );
+        if (error) {
           _updates.whitePaperUrl = {
             status: 0,
-            error: err.error.reason
+            error
           }
           setUpdates({ ..._updates });
+        }
+        if (signedTx) {
+          try {
+            const response = await provider.sendTransaction(signedTx);
+            const { hash, data, from } = response;
+            _updates.whitePaperUrl = {
+              status: 1,
+              txHash: response.hash
+            }
+            setUpdates({ ..._updates });
+            addTransaction({ to: SRC20Contract.address }, response, {
+              call: {
+                from: activeAccount,
+                to: SRC20Contract.address,
+                input: data,
+                value: "0"
+              }
+            });
+          } catch (err) {
+            _updates.whitePaperUrl = {
+              status: 0,
+              error: err
+            }
+            setUpdates({ ..._updates });
+          }
         }
       }
       if (orgName != src20TokenProp.orgName) {
-        try {
-          const response = await SRC20Contract.setOrgName(orgName);
-          _updates.orgName = {
-            status: 1,
-            txHash: response.hash
-          }
-          setUpdates({ ..._updates });
-          const { hash, data } = response;
-          addTransaction({ to: SRC20Contract.address }, response, {
-            call: {
-              from: activeAccount,
-              to: SRC20Contract.address,
-              input: data,
-              value: "0"
-            }
-          });
-        } catch (err: any) {
+        const data = SRC20Contract.interface.encodeFunctionData("setOrgName", [orgName]);
+        const tx: ethers.providers.TransactionRequest = {
+          to: SRC20Contract.address,
+          data,
+          chainId
+        };
+        const { signedTx, error } = await window.electron.wallet.signTransaction(
+          activeAccount,
+          provider.connection.url,
+          tx
+        );
+        if (error) {
           _updates.orgName = {
             status: 0,
-            error: err.error.reason
+            error
           }
           setUpdates({ ..._updates });
+        }
+        if (signedTx) {
+          try {
+            const response = await provider.sendTransaction(signedTx);
+            const { hash, data, from } = response;
+            _updates.orgName = {
+              status: 1,
+              txHash: response.hash
+            }
+            setUpdates({ ..._updates });
+            addTransaction({ to: SRC20Contract.address }, response, {
+              call: {
+                from: activeAccount,
+                to: SRC20Contract.address,
+                input: data,
+                value: "0"
+              }
+            });
+          } catch (err) {
+            _updates.orgName = {
+              status: 0,
+              error: err
+            }
+            setUpdates({ ..._updates });
+          }
         }
       }
       if (officialUrl != src20TokenProp.officialUrl) {
-        try {
-          const response = await SRC20Contract.setOfficialUrl(officialUrl);
-          _updates.officialUrl = {
-            status: 1,
-            txHash: response.hash
-          }
-          setUpdates({ ..._updates });
-          const { hash, data } = response;
-          addTransaction({ to: SRC20Contract.address }, response, {
-            call: {
-              from: activeAccount,
-              to: SRC20Contract.address,
-              input: data,
-              value: "0"
-            }
-          });
-        } catch (err: any) {
+
+        const data = SRC20Contract.interface.encodeFunctionData("setOfficialUrl", [officialUrl]);
+        const tx: ethers.providers.TransactionRequest = {
+          to: SRC20Contract.address,
+          data,
+          chainId
+        };
+        const { signedTx, error } = await window.electron.wallet.signTransaction(
+          activeAccount,
+          provider.connection.url,
+          tx
+        );
+        if (error) {
           _updates.officialUrl = {
             status: 0,
-            error: err.error.reason
+            error
           }
           setUpdates({ ..._updates });
         }
+        if (signedTx) {
+          try {
+            const response = await provider.sendTransaction(signedTx);
+            const { hash, data, from } = response;
+            _updates.officialUrl = {
+              status: 1,
+              txHash: response.hash
+            }
+            setUpdates({ ..._updates });
+            addTransaction({ to: SRC20Contract.address }, response, {
+              call: {
+                from: activeAccount,
+                to: SRC20Contract.address,
+                input: data,
+                value: "0"
+              }
+            });
+          } catch (err) {
+            _updates.officialUrl = {
+              status: 0,
+              error: err
+            }
+            setUpdates({ ..._updates });
+          }
+        }
       }
       if (description != src20TokenProp.description) {
-        try {
-          const response = await SRC20Contract.setDescription(description);
-          _updates.description = {
-            status: 1,
-            txHash: response.hash
-          }
-          setUpdates({ ..._updates });
-          const { hash, data } = response;
-          addTransaction({ to: SRC20Contract.address }, response, {
-            call: {
-              from: activeAccount,
-              to: SRC20Contract.address,
-              input: data,
-              value: "0"
-            }
-          });
-        } catch (err: any) {
+
+        const data = SRC20Contract.interface.encodeFunctionData("setDescription", [description]);
+        const tx: ethers.providers.TransactionRequest = {
+          to: SRC20Contract.address,
+          data,
+          chainId
+        };
+        const { signedTx, error } = await window.electron.wallet.signTransaction(
+          activeAccount,
+          provider.connection.url,
+          tx
+        );
+        if (error) {
           _updates.description = {
             status: 0,
-            error: err.error.reason
+            error
           }
           setUpdates({ ..._updates });
+        }
+        if (signedTx) {
+          try {
+            const response = await provider.sendTransaction(signedTx);
+            const { hash, data, from } = response;
+            _updates.description = {
+              status: 1,
+              txHash: response.hash
+            }
+            setUpdates({ ..._updates });
+            addTransaction({ to: SRC20Contract.address }, response, {
+              call: {
+                from: activeAccount,
+                to: SRC20Contract.address,
+                input: data,
+                value: "0"
+              }
+            });
+          } catch (err) {
+            _updates.description = {
+              status: 0,
+              error: err
+            }
+            setUpdates({ ..._updates });
+          }
         }
       }
       setUpdating(false);
@@ -289,7 +373,7 @@ export default ({
                     }
                     {
                       updates.whitePaperUrl.status == 0 && <>
-                        <Text strong type="danger">错误:{updates.whitePaperUrl.error}</Text>
+                        <Text strong type="danger">错误:{updates.whitePaperUrl.error.reason}</Text>
                       </>
                     }
                   </Col>
@@ -306,7 +390,7 @@ export default ({
                     }
                     {
                       updates.orgName.status == 0 && <>
-                        <Text strong type="danger">错误:{updates.orgName.error}</Text>
+                        <Text strong type="danger">错误:{updates.orgName.error.reason}</Text>
                       </>
                     }
                   </Col>
@@ -323,7 +407,7 @@ export default ({
                     }
                     {
                       updates.officialUrl.status == 0 && <>
-                        <Text strong type="danger">错误:{updates.officialUrl.error}</Text>
+                        <Text strong type="danger">错误:{updates.officialUrl.error.reason}</Text>
                       </>
                     }
                   </Col>
@@ -340,7 +424,7 @@ export default ({
                     }
                     {
                       updates.description.status == 0 && <>
-                        <Text strong type="danger">错误:{updates.description.error}</Text>
+                        <Text strong type="danger">错误:{updates.description.error.reason}</Text>
                       </>
                     }
                   </Col>

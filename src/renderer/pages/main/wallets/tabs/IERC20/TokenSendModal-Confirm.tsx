@@ -3,7 +3,7 @@ import { Button, Col, Divider, Row, Typography } from "antd"
 import { useCallback, useState } from "react";
 import { ethers } from "ethers";
 import { SendOutlined } from '@ant-design/icons';
-import { useWalletsActiveAccount, useWalletsActiveSigner } from "../../../../../state/wallets/hooks";
+import { useWalletsActiveAccount } from "../../../../../state/wallets/hooks";
 import { useTransactionAdder } from "../../../../../state/transactions/hooks";
 import { useIERC20Contract } from "../../../../../hooks/useContracts";
 import useTransactionResponseRender from "../../../../components/useTransactionResponseRender";
@@ -11,6 +11,7 @@ import AddressView from "../../../../components/AddressView";
 import { Token, TokenAmount } from "@uniswap/sdk";
 import { useTranslation } from "react-i18next";
 import AddressComponent from "../../../../components/AddressComponent";
+import { useWeb3React } from "@web3-react/core";
 
 const { Text } = Typography;
 
@@ -27,7 +28,7 @@ export default ({
 }) => {
 
   const { t } = useTranslation();
-  const signer = useWalletsActiveSigner();
+  const { provider, chainId } = useWeb3React();
   const activeAccount = useWalletsActiveAccount();
   const addTransaction = useTransactionAdder();
   const IERC20Contract = useIERC20Contract(token.address, true);
@@ -40,44 +41,61 @@ export default ({
   } = useTransactionResponseRender();
   const [sending, setSending] = useState<boolean>(false);
 
-  const doSendTransaction = useCallback(({ to, amount }: { to: string, amount: string }) => {
-    if (signer && IERC20Contract) {
+  const doSendTransaction = useCallback(async ({ to, amount }: { to: string, amount: string }) => {
+    if (provider && chainId && IERC20Contract) {
       const { address, name, symbol, decimals } = token;
-      const value = ethers.utils.parseUnits(amount, decimals).toString();
+      const transferAmount = ethers.utils.parseUnits(amount, decimals);
       setSending(true);
-      IERC20Contract.transfer(to, value).then((response: any) => {
-        setSending(false);
-        const {
-          data,
-          hash
-        } = response;
-        setTxHash(hash);
-        setTransactionResponse(response);
-        addTransaction({ to: token.address }, response, {
-          call: {
-            from: activeAccount,
-            to: address,
-            input: data,
-            value: "0",
-            tokenTransfer: {
+      const data = IERC20Contract.interface.encodeFunctionData("transfer", [
+        to, transferAmount
+      ]);
+      const tx: ethers.providers.TransactionRequest = {
+        to: IERC20Contract.address,
+        data,
+        chainId,
+      };
+      const { signedTx, error } = await window.electron.wallet.signTransaction(
+        activeAccount,
+        provider.connection.url,
+        tx
+      );
+      console.log("Sign Transaction:", signedTx)
+      console.log("Sign Error:", error)
+      if (error) {
+        setErr(error);
+      }
+      if (signedTx) {
+        try {
+          const response = await provider.sendTransaction(signedTx);
+          const { hash, data } = response;
+          setTxHash(hash);
+          setTransactionResponse(response);
+          addTransaction({ to: token.address }, response, {
+            call: {
               from: activeAccount,
-              to,
-              value,
-              token: {
-                address,
-                name: name ?? "",
-                symbol: symbol ?? "",
-                decimals
+              to: address,
+              input: data,
+              value: "0",
+              tokenTransfer: {
+                from: activeAccount,
+                to,
+                value: transferAmount.toString(),
+                token: {
+                  address,
+                  name: name ?? "",
+                  symbol: symbol ?? "",
+                  decimals
+                }
               }
             }
-          }
-        });
-      }).catch((err: any) => {
-        setSending(false);
-        setErr(err)
-      })
+          });
+        } catch (err: any) {
+          setErr(err)
+        }
+      }
+      setSending(false);
     }
-  }, [signer, IERC20Contract]);
+  }, [provider, IERC20Contract]);
 
   return (<>
     <div style={{ minHeight: "300px" }}>

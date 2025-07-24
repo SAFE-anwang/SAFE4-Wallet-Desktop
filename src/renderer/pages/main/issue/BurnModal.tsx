@@ -25,7 +25,7 @@ export default ({ openBurnModal, setOpenBurnModal, address }: {
     setOpenBurnModal(false);
   }
   const { src20TokenProp, loading } = useSRC20Prop(address);
-  const { chainId } = useWeb3React();
+  const { chainId, provider } = useWeb3React();
   const activeAccount = useWalletsActiveAccount();
   const addTransaction = useTransactionAdder();
   const {
@@ -61,7 +61,7 @@ export default ({ openBurnModal, setOpenBurnModal, address }: {
   }, [chainId, src20TokenProp]);
   const tokenBalance = useTokenBalance(activeAccount, token);
 
-  const doBurn = () => {
+  const doBurn = async () => {
     if (!token || !tokenBalance) {
       return;
     }
@@ -94,28 +94,43 @@ export default ({ openBurnModal, setOpenBurnModal, address }: {
       })
       return;
     }
-    if (SRC20Contract && tokenBurnAmount) {
+    if (SRC20Contract && tokenBurnAmount && chainId && provider) {
       setSending(true);
-      SRC20Contract.burn(
+      const data = SRC20Contract.interface.encodeFunctionData("burn", [
         ethers.BigNumber.from(tokenBurnAmount.raw.toString())
-      ).then((response: any) => {
-        const { hash, data } = response;
-        addTransaction({ to: SRC20Contract.address }, response, {
-          call: {
-            from: activeAccount,
-            to: SRC20Contract.address,
-            input: data,
-            value: "0"
-          }
-        });
-        setTransactionResponse(response);
-        setTxHash(hash);
-        setSending(false);
-      }).catch((err: any) => {
-        console.log("mint Error =", err.error)
-        setErr(err);
-        setSending(false);
-      })
+      ]);
+      const tx: ethers.providers.TransactionRequest = {
+        to: SRC20Contract.address,
+        data,
+        chainId,
+      };
+      const { signedTx, error } = await window.electron.wallet.signTransaction(
+        activeAccount,
+        provider.connection.url,
+        tx
+      );
+      if (signedTx) {
+        try {
+          const response = await provider.sendTransaction(signedTx);
+          const { hash, data } = response;
+          addTransaction({ to: SRC20Contract.address }, response, {
+            call: {
+              from: activeAccount,
+              to: SRC20Contract.address,
+              input: data,
+              value: "0"
+            }
+          });
+          setTransactionResponse(response);
+          setTxHash(hash);
+        } catch (err) {
+          setErr(err);
+        }
+      }
+      if (error) {
+        setErr(error);
+      }
+      setSending(false);
     }
   }
 

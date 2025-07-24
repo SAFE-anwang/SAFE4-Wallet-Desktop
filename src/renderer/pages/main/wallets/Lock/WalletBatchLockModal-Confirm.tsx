@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from "react";
 import { Button, Col, Divider, Input, Modal, Row, Typography, Space, Alert } from "antd"
-import { useETHBalances, useWalletsActiveAccount, useWalletsActiveSigner } from "../../../../state/wallets/hooks";
+import { useETHBalances, useWalletsActiveAccount } from "../../../../state/wallets/hooks";
 import { useTransactionAdder } from "../../../../state/transactions/hooks";
 import { SearchOutlined, SendOutlined, QrcodeOutlined, LockOutlined } from '@ant-design/icons';
 import { ethers } from "ethers";

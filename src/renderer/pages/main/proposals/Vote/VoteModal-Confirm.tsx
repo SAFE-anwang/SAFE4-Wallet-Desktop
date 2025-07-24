@@ -8,9 +8,11 @@ import { useTransactionAdder } from "../../../../state/transactions/hooks";
 import { useWalletsActiveAccount } from "../../../../state/wallets/hooks";
 import { applicationUpdateWalletTab } from "../../../../state/application/action";
 import { TransactionResponse } from "@ethersproject/providers";
-import { Button, Card, Col, Divider, Modal, Row , Typography } from "antd";
+import { Button, Card, Col, Divider, Modal, Row, Typography } from "antd";
 import { DateTimeFormat } from "../../../../utils/DateUtils";
 import { RenderVoteResult } from "./ProposalVoteInfos";
+import { useWeb3React } from "@web3-react/core";
+import { ethers } from "ethers";
 
 const { Text } = Typography;
 
@@ -35,7 +37,7 @@ export default ({
   } = useTransactionResponseRender();
   const addTransaction = useTransactionAdder();
   const activeAccount = useWalletsActiveAccount();
-
+  const { provider, chainId } = useWeb3React();
   const [txHash, setTxHash] = useState<string>();
   const cancel = useCallback(() => {
     setOpenVoteModal(false);
@@ -48,14 +50,28 @@ export default ({
     setErr(undefined);
   }, [txHash]);
 
-  const doVoteProposal = useCallback(() => {
-    if (activeAccount && proposalContract) {
+  const doVoteProposal = useCallback(async () => {
+    if (activeAccount && proposalContract && chainId && provider) {
       setSending(true);
       // function vote(uint _id, uint _voteResult) external;
-      proposalContract.vote(proposalInfo.id, voteResult , {
-      })
-        .then((response: TransactionResponse) => {
+      const data = proposalContract.interface.encodeFunctionData("vote", [
+        proposalInfo.id, voteResult
+      ]);
+      const tx: ethers.providers.TransactionRequest = {
+        to: proposalContract.address,
+        data,
+        chainId
+      };
+      const { signedTx, error } = await window.electron.wallet.signTransaction(
+        activeAccount,
+        provider.connection.url,
+        tx
+      );
+      if (signedTx) {
+        try {
+          const response = await provider.sendTransaction(signedTx);
           const { hash, data } = response;
+          setTransactionResponse(response);
           addTransaction({ to: proposalContract.address }, response, {
             call: {
               from: activeAccount,
@@ -65,12 +81,18 @@ export default ({
             }
           });
           setTxHash(hash);
-          setSending(false);
-          setTransactionResponse(response);
-        }).catch((err: any) => {
-          setSending(false);
+        } catch (err) {
           setErr(err)
-        });
+        } finally {
+          setSending(false);
+        }
+      }
+      if (error) {
+        setSending(false);
+        setErr(error)
+      }
+
+
     }
   }, [activeAccount, proposalInfo, voteResult, proposalContract]);
 
@@ -133,7 +155,7 @@ export default ({
               {
                 <>
                   <Text>在</Text><Text strong style={{ marginLeft: "5px", marginRight: "5px" }}>{DateTimeFormat(proposalInfo.startPayTime * 1000)}</Text>
-                  <Text>到</Text><Text strong style={{ marginLeft: "5px" }}>{DateTimeFormat(proposalInfo.endPayTime * 1000 )}</Text><br />
+                  <Text>到</Text><Text strong style={{ marginLeft: "5px" }}>{DateTimeFormat(proposalInfo.endPayTime * 1000)}</Text><br />
                   <Text><Text strong>分期{proposalInfo.payTimes}次</Text> 合计发放 </Text><Text strong style={{ marginLeft: "5px" }}>{proposalInfo.payAmount.toFixed(6)} SAFE</Text>
                 </>
               }

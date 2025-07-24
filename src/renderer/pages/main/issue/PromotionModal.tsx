@@ -33,7 +33,7 @@ export default ({
 }) => {
 
   const { t } = useTranslation();
-  const { chainId } = useWeb3React();
+  const { chainId, provider } = useWeb3React();
   const { src20TokenProp, loading } = useSRC20Prop(address);
   const SRC20Contract = useContract(address, ISRC20_Interface, true);
   const [logoPayAmount, setLogoPayAmount] = useState<CurrencyAmount>();
@@ -97,29 +97,46 @@ export default ({
   }, [LOGO, activeAccount, activeAccountBalance, logoPayAmount, LOGO_SIZE_GATHERTHAN_MAX]);
 
   const doSetLogo = async () => {
-    if (SRC20Contract && LOGO && logoPayAmount) {
+    if (SRC20Contract && LOGO && logoPayAmount && chainId && provider) {
       setSending(true);
       const logoPayAmountRaw = ethers.BigNumber.from(logoPayAmount.raw.toString());
-      try {
-        const response = await SRC20Contract.setLogo(LOGO.hex, {
-          value: logoPayAmountRaw
-        });
-        const { hash, data } = response;
-        addTransaction({ to: SRC20Contract.address }, response, {
-          call: {
-            from: activeAccount,
-            to: SRC20Contract.address,
-            input: data,
-            value: logoPayAmountRaw.toString()
-          }
-        });
-        setTransactionResponse(hash);
-        setTxHash(hash);
-      } catch (err: any) {
-        setErr(err);
-        console.log("setLogo Error =", err.error)
+
+      const data = SRC20Contract.interface.encodeFunctionData("setLogo", [LOGO.hex]);
+      const tx: ethers.providers.TransactionRequest = {
+        to: SRC20Contract.address,
+        data,
+        chainId,
+        value: logoPayAmountRaw
+      };
+      const { signedTx, error } = await window.electron.wallet.signTransaction(
+        activeAccount,
+        provider.connection.url,
+        tx
+      );
+
+      if (signedTx) {
+        try {
+          const response = await provider.sendTransaction(signedTx);
+          const { hash, data } = response;
+          addTransaction({ to: SRC20Contract.address }, response, {
+            call: {
+              from: activeAccount,
+              to: SRC20Contract.address,
+              input: data,
+              value: logoPayAmountRaw.toString()
+            }
+          });
+          setTransactionResponse(response);
+          setTxHash(hash);
+        } catch (err) {
+          setErr(err);
+        }
+      }
+      if (error) {
+        setErr(error);
       }
       setSending(false);
+
     }
   }
 
@@ -172,7 +189,7 @@ export default ({
         <Col span={24} style={{ marginBottom: "20px" }}>
           <Alert type="info" message={<>
             {
-              t( "wallet_src20_logo_payamount_tip" , { logoPayAmount : logoPayAmount?.toSignificant() + " SAFE" } )
+              t("wallet_src20_logo_payamount_tip", { logoPayAmount: logoPayAmount?.toSignificant() + " SAFE" })
             }
           </>} />
         </Col>

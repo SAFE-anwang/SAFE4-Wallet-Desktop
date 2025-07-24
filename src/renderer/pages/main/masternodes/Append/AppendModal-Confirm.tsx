@@ -52,10 +52,7 @@ export default ({
       const value = ethers.utils.parseEther(valueAmount + "");
       const data = masternodeLogicContract.interface.encodeFunctionData("appendRegister", [
         masternodeInfo.addr,
-        Safe4_Business_Config.Masternode.Create.LockDays,
-        {
-          value: value,
-        }
+        Safe4_Business_Config.Masternode.Create.LockDays
       ]);
       const tx: ethers.providers.TransactionRequest = {
         to: masternodeLogicContract.address,

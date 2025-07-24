@@ -6,7 +6,7 @@ import { RefObject, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ContractConstructor from './ContractConstructor';
 import { ethers } from 'ethers';
-import { useWalletsActiveSigner } from '../../../state/wallets/hooks';
+import { useWalletsActiveAccount } from '../../../state/wallets/hooks';
 import { TransactionResponse } from '@ethersproject/providers';
 import config, { IPC_CHANNEL } from '../../../config';
 import { useSelector } from 'react-redux';
@@ -25,10 +25,10 @@ const now = () => new Date().getTime()
 export default () => {
 
   const { t } = useTranslation();
-  const { chainId } = useWeb3React();
+  const { chainId, provider } = useWeb3React();
   const addTransaction = useTransactionAdder();
   const navigate = useNavigate();
-  const signer = useWalletsActiveSigner();
+  const activeAccount = useWalletsActiveAccount();
   const directDeploy = useSelector<AppState, boolean | undefined>(state => state.application.control.directDeploy);
 
   const compile = useSelector<AppState, {
@@ -100,7 +100,7 @@ export default () => {
     console.log("deploy page constructor values>>", constructorValues)
   }, [constructorValues]);
 
-  const deployContract = () => {
+  const deployContract = async () => {
 
     setDeployHash(undefined);
     setDeployError(undefined);
@@ -120,46 +120,63 @@ export default () => {
 
     //
     const { abi, bytecode } = params;
-    if (signer?.address && abi && bytecode) {
-      const contractFactory = new ethers.ContractFactory(abi, bytecode, signer);
+    if (abi && bytecode && provider && chainId) {
+
       setDeploying(true);
-      contractFactory.deploy(...constructorValues).then((contract) => {
-        const transactionHash = contract.deployTransaction.hash;
-        console.log("deploy transaction :", contract.deployTransaction)
-        addTransaction({ to: contract.address }, contract.deployTransaction, {
-          call: {
-            from: signer.address,
-            to: contract.address,
-            input: contract.deployTransaction.data,
-            value: "0",
-            type: DB_AddressActivity_Actions.Create
-          }
-        });
 
-        // 合约部署成功后,将交易哈希以及相关信息存储到 Contracts 表中.
-        const method = ContractCompile_Methods.save;
-        window.electron.ipcRenderer.sendMessage(IPC_CHANNEL, [ContractCompileSignal, method, [
-          {
-            address: contract.address,
-            creator: signer?.address,
-            chainId: chainId,
-            name,
-            bytecode,
-            abi,
-            sourceCode,
-            compileOption: JSON.stringify(compileOption),
-            transactionHash,
-            addedTime: now()
-          }
-        ]]);
+      try {
 
-        setDeploying(false);
-        setDeployHash(transactionHash);
+        const contractFactory = new ethers.ContractFactory(abi, bytecode);
+        const encodeConstructorData = contractFactory.interface.encodeDeploy(constructorValues);
+        const data = contractFactory.bytecode + encodeConstructorData.slice(2);
 
-      }).catch((err: any) => {
-        setDeploying(false);
-        setDeployError(err.toString());
-      })
+        const tx: ethers.providers.TransactionRequest = {
+          data,
+          chainId
+        };
+        const { signedTx, error } = await window.electron.wallet.signTransaction(
+          activeAccount,
+          provider.connection.url,
+          tx
+        );
+        if (error) {
+          setDeployError(error.reason);
+        }
+        if (signedTx) {
+          const response = await provider.sendTransaction(signedTx);
+          const { hash, data, from } = response;
+          const contractAddress = ethers.utils.getContractAddress(response);
+          addTransaction({ to: contractAddress }, response, {
+            call: {
+              from: activeAccount,
+              to: contractAddress,
+              input: data,
+              value: "0",
+              type: DB_AddressActivity_Actions.Create
+            }
+          });
+          // 合约部署成功后,将交易哈希以及相关信息存储到 Contracts 表中.
+          const method = ContractCompile_Methods.save;
+          window.electron.ipcRenderer.sendMessage(IPC_CHANNEL, [ContractCompileSignal, method, [
+            {
+              address: contractAddress,
+              creator: activeAccount,
+              chainId: chainId,
+              name,
+              bytecode,
+              abi,
+              sourceCode,
+              compileOption: JSON.stringify(compileOption),
+              hash,
+              addedTime: now()
+            }
+          ]]);
+          setDeployHash(hash);
+        }
+      } catch (err: any) {
+        setDeployError(err.reason);
+      }
+      setDeploying(false);
     }
   }
 
@@ -249,8 +266,8 @@ export default () => {
                         <Text style={{ float: "right" }} >
                           <Safescan url={`/tx/${deployHash}`} type={SafescanComponentType.Link} />
                         </Text>
-                    </Col>
-                  </Row>
+                      </Col>
+                    </Row>
                   </>} />
                 }
                 <Button onClick={deployContract} type='primary'>{t("wallet_contracts_deploy_button")}</Button>

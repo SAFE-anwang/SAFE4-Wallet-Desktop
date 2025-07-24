@@ -2,7 +2,7 @@ import { Provider } from 'react-redux';
 // Disable no-unused-vars, broken for spread args
 /* eslint no-unused-vars: off */
 import { contextBridge, ipcRenderer, IpcRendererEvent, OpenExternalOptions } from 'electron';
-import { ethers } from 'ethers';
+import { ethers, TypedDataDomain } from 'ethers';
 import { TransactionRequest, Web3Provider } from '@ethersproject/providers';
 import { EtherStructuredError } from './WalletIpc';
 import { Wallet } from '../renderer/state/wallets/reducer';
@@ -140,11 +140,14 @@ const electronHandler = {
     updatePassword(oldPassword: string, newPassword: string): Promise<string | undefined> {
       return ipcRenderer.invoke("wallet-updatePassword", [oldPassword, newPassword]);
     },
-    generateNodeChildWallets(activeAccount: string, supportChildWalletType: SupportChildWalletType, _startAddressIndex: number, size: number): Promise<{address : string , path : string , privateKey : string}[]> {
+    generateNodeChildWallets(activeAccount: string, supportChildWalletType: SupportChildWalletType, _startAddressIndex: number, size: number): Promise<{ address: string, path: string, privateKey: string }[]> {
       return ipcRenderer.invoke("wallet-generate-nodechildwallets", [activeAccount, supportChildWalletType, _startAddressIndex, size]);
     },
     clean(): Promise<any> {
       return ipcRenderer.invoke("wallet-clean", []);
+    },
+    signTypedData(activeAccount: string, domain: TypedDataDomain, types: any, message: any): Promise<string> {
+      return ipcRenderer.invoke("wallet-sign-typedData", [activeAccount, domain, types, message]);
     }
   }
 

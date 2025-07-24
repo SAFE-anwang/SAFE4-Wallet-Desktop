@@ -1,5 +1,5 @@
 import { JsonRpcProvider, TransactionRequest } from "@ethersproject/providers";
-import { ethers } from "ethers";
+import { ethers, TypedDataDomain } from "ethers";
 import { HDNode } from "ethers/lib/utils";
 import { scryptDecryptWalletKys, scryptDrive, scryptEncryWalletKeystores } from "./CryptoIpc";
 import { generateNodeChildWallets } from "./WalletNodeGenerator";
@@ -68,6 +68,12 @@ export class WalletIpc {
       const [activeAccount, supportChildWalletType, _startAddressIndex, size] = _params;
       return this.generateNodeChildWallets(activeAccount, supportChildWalletType, _startAddressIndex, size);
     })
+
+    ipcMain.handle("wallet-sign-typedData", async (event: any, _params: any) => {
+      const [activeAccount, domain, types, message] = _params;
+      return this.signTypedData(activeAccount, domain, types, message);
+    })
+
     this.kysDB = kysDB;
   }
 
@@ -185,6 +191,12 @@ export class WalletIpc {
     } catch (err) {
       return { error: wrapEthersError(err) };
     }
+  }
+
+  private async signTypedData(activeAccount: string, domain: TypedDataDomain, types: any, message: any) {
+    let decrypted = this.getActiveAccountPrivateKey(activeAccount);
+    const signer = new ethers.Wallet(decrypted, undefined);
+    return await signer._signTypedData(domain, types, message);
   }
 
   private async updatePassword(oldPassword: string, newPassword: string) {
