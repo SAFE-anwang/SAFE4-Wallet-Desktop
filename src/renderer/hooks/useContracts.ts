@@ -1,28 +1,24 @@
-import { JsonRpcSigner, Web3Provider } from "@ethersproject/providers"
 import { useMemo } from "react";
-import { useWeb3Hooks } from "../connectors/hooks";
-import MulticallABI from "../abis/Multicall.json";
 import { Contract } from '@ethersproject/contracts'
-import { useWalletsActivePrivateKey, useWalletsActiveSigner, useWalletsActiveWallet } from "../state/wallets/hooks";
+import { useWalletsActiveWallet } from "../state/wallets/hooks";
 import { SysContractABI, SystemContract } from "../constants/SystemContracts";
 import { useWeb3React } from "@web3-react/core";
 import { IERC20_Interface } from "../abis";
 import { Application_Crosschain, Safe4NetworkChainId, SafeswapV2FactoryAddreess, SafeswapV2RouterAddress, WSAFE } from "../config";
-import ApplicationContractAbiConfig, { CrosschainABI } from "../constants/ApplicationContractAbiConfig";
+import ApplicationContractAbiConfig from "../constants/ApplicationContractAbiConfig";
 import { SwapV2FactoryABI, SwapV2RouterABI } from "../constants/SafeswapAbiConfig";
-import SystemContractAbiConfig from "../constants/SystemContractAbiConfig";
 
 
 export function useContract(address: string | undefined, ABI: any, withSignerIfPossible = true): Contract | null {
   const { provider } = useWeb3React();
   const activeWallet = useWalletsActiveWallet();
-  const signer = useWalletsActiveSigner()
   return useMemo(() => {
     if (!address || !ABI || !provider || !activeWallet) return null
     try {
       return new Contract(
         address, ABI,
-        withSignerIfPossible && signer ? signer : provider
+        // withSignerIfPossible && signer ? signer : provider
+        provider
       )
     } catch (error) {
       console.error('Failed to get contract', error)

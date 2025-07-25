@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { Alert, Button, Card, Col, Divider, Input, Radio, Row, Select, Space, Spin, Typography } from "antd";
-import { useWalletsKeystores } from "../../../state/wallets/hooks";
 import { useApplicationPassword } from "../../../state/application/hooks";
 import { ethers } from "ethers";
 

@@ -28,11 +28,11 @@ export function useWalletsWalletNames(): { [address in string]: { name: string, 
   })
 }
 
-export function useWalletsKeystores(): WalletKeystore[] {
-  return useSelector((state: AppState) => {
-    return state.wallets.keystores;
-  });
-}
+// export function useWalletsKeystores(): WalletKeystore[] {
+//   return useSelector((state: AppState) => {
+//     return state.wallets.keystores;
+//   });
+// }
 
 export function useWalletsActiveWallet(): Wallet | null {
   return useSelector((state: AppState) => {
@@ -89,11 +89,11 @@ export function useWalletsActivePrivateKey(): string | undefined {
 //   });
 // }
 
-export function useWalletsActiveSigner(): ethers.Wallet | undefined {
-  const { provider } = useWeb3React();
-  const activePrivateKey = useWalletsActivePrivateKey();
-  return activePrivateKey ? new ethers.Wallet(activePrivateKey, provider) : undefined;
-}
+// export function useWalletsActiveSigner(): ethers.Wallet | undefined {
+//   const { provider } = useWeb3React();
+//   const activePrivateKey = useWalletsActivePrivateKey();
+//   return activePrivateKey ? new ethers.Wallet(activePrivateKey, provider) : undefined;
+// }
 
 /**
  * Returns a map of the given addresses to their eventually consistent ETH balances.
