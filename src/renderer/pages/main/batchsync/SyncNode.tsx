@@ -1,6 +1,8 @@
 import { SyncNodeTask } from "./BatchSyncNode";
 import SSH2CMDTerminalNode from "../../components/SSH2CMDTerminalNode";
 import { SSH2ConnectConfig } from "../../../../main/SSH2Ipc";
+import { useEffect, useState } from "react";
+import { useWalletsActiveAccount } from "../../../state/wallets/hooks";
 
 
 export default ({
@@ -15,18 +17,34 @@ export default ({
     privKey?: string
   }
 }) => {
+  const [privateKey, setPrivateKey] = useState<string | undefined>();
+  const activeAccount = useWalletsActiveAccount();
+  useEffect(() => {
+    const getPrivateKey = async () => {
+      if (addressConfig.privKey) {
+        const pk = await window.electron.wallet.drivePkByPath(activeAccount, addressConfig.privKey);
+        setPrivateKey(pk);
+      }
+    }
+    getPrivateKey();
+  }, [activeAccount])
 
   return <>
-    <SSH2CMDTerminalNode
-      nodeAddress={addressConfig.address ? addressConfig.address : ""}
-      nodeAddressPrivateKey={addressConfig.privKey}
-      isSupernode={false}
-      sshConfig={sshConfig}
-      onSuccess={(enode: string, nodeAddress) => {
-        successCallback(task, enode, nodeAddress);
-      }}
-      onError={() => { }}
-    />
+    {
+      privateKey &&
+      <SSH2CMDTerminalNode
+        nodeAddress={addressConfig.address ? addressConfig.address : ""}
+        nodeAddressPrivateKey={privateKey}
+        isSupernode={false}
+        sshConfig={sshConfig}
+        onSuccess={(enode: string, nodeAddress) => {
+          successCallback(task, enode, nodeAddress);
+        }}
+        onError={() => { }}
+      />
+    }
+
+
   </>
 
 }

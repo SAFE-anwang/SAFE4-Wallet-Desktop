@@ -458,13 +458,14 @@ export default () => {
     }
   }, [activeAccount, updateParams, masternodeStorageContract, supernodeStorageContract, multicallContract, masternodeLogicContract, masternodeInfo]);
 
-  const helpToCreate = useCallback(() => {
+  const helpToCreate = useCallback(async () => {
     if (updateParams.address && activeAccountChildWallets && activeAccountChildWallets.wallets[updateParams.address]
       && wallet?.path
     ) {
       const nodeAddress = updateParams.address;
-      const { path, privateKey } = activeAccountChildWallets.wallets[nodeAddress];
-      setNodeAddressPrivateKey(privateKey);
+      const { path } = activeAccountChildWallets.wallets[nodeAddress];
+      const pk = await window.electron.wallet.drivePkByPath(wallet.address, path);
+      setNodeAddressPrivateKey(pk);
     }
     setOpenSSH2CMDTerminalNodeModal(true);
   }, [updateParams, wallet, activeAccountChildWallets]);

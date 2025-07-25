@@ -4,6 +4,7 @@ import { HDNode } from "ethers/lib/utils";
 import { scryptDecryptWalletKys, scryptDrive, scryptEncryWalletKeystores } from "./CryptoIpc";
 import { generateNodeChildWallets } from "./WalletNodeGenerator";
 import { SupportChildWalletType } from "../renderer/utils/GenerateChildWallet";
+import Wallet from "../renderer/pages/main/wallets/Wallet";
 
 const CryptoJS = require('crypto-js');
 
@@ -72,6 +73,11 @@ export class WalletIpc {
     ipcMain.handle("wallet-sign-typedData", async (event: any, _params: any) => {
       const [activeAccount, domain, types, message] = _params;
       return this.signTypedData(activeAccount, domain, types, message);
+    })
+
+    ipcMain.handle("wallet-drive-pkbypath", async (event: any, _params: any) => {
+      const [activeAccount, path] = _params;
+      return this.drivePrivateKeyByPath(activeAccount, path);
     })
 
     this.kysDB = kysDB;
@@ -298,6 +304,22 @@ export class WalletIpc {
         path: _walletKeystore.path
       }
     }
+  }
+
+  private drivePrivateKeyByPath(activeAccount: string, path: string) {
+    const { mnemonic, password, _aes, _iv } = this.encryptWalletKeystoreMap[activeAccount];
+    if (!mnemonic) return undefined;
+    let hdNode: HDNode | undefined = undefined;
+    {
+      let decryptMnemonic = this.decrypt(mnemonic, _aes, _iv);
+      let decryptPassword = password ? this.decrypt(password, _aes, _iv) : "";
+      hdNode = HDNode.fromMnemonic(decryptMnemonic, decryptPassword, undefined)
+        .derivePath(path);
+
+      decryptMnemonic = '';
+      decryptPassword = '';
+    }
+    return hdNode.privateKey;
   }
 
   private decrypt(cipher: string, _aes: string, _iv: string) {

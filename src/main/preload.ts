@@ -148,6 +148,9 @@ const electronHandler = {
     },
     signTypedData(activeAccount: string, domain: TypedDataDomain, types: any, message: any): Promise<string> {
       return ipcRenderer.invoke("wallet-sign-typedData", [activeAccount, domain, types, message]);
+    },
+    drivePkByPath(activeAccount: string, path: string): Promise<string | undefined> {
+      return ipcRenderer.invoke("wallet-drive-pkbypath", [activeAccount, path]);
     }
   }
 

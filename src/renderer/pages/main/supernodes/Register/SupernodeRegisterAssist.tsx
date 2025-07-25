@@ -304,12 +304,13 @@ export default () => {
     }
   }, [createParams, selectChildWalletOptions, nodeAddressSelectType])
 
-  const helpToCreate = useCallback(() => {
+  const helpToCreate = useCallback(async () => {
     if (createParams.address && activeAccountChildWallets && activeAccountChildWallets.wallets[createParams.address]
       && wallet?.path
     ) {
       const nodeAddress = createParams.address;
-      const { privateKey } = activeAccountChildWallets.wallets[nodeAddress];
+      const { path } = activeAccountChildWallets.wallets[nodeAddress];
+      const privateKey = await window.electron.wallet.drivePkByPath(wallet.address, path);
       setNodeAddress(nodeAddress);
       setNodeAddressPrivateKey(privateKey);
       setOpenSSH2CMDTerminalNodeModal(true);

@@ -533,7 +533,6 @@ export function useActiveAccountChildWallets(type: SupportChildWalletType, initS
             [address: string]: {
               exist: boolean,
               path: string,
-              privateKey: string
             }
           });
           const addrExistCalls: CallMulticallAggregateContractCall[] = wallets.map((wallet) => {
@@ -577,12 +576,15 @@ export function useActiveAccountChildWallets(type: SupportChildWalletType, initS
         } else {
           // 判断是否有当前建立的,但是链上还没有更新的exist状态;
           const _map: {
-            [address: string]: { exist: boolean, path: string, privateKey: string }
+            [address: string]: { exist: boolean, path: string }
           } = {}
           Object.keys(childTypeWallets.wallets)
             .filter(childAddress => !childTypeWallets.wallets[childAddress].exist && walletUsedAddressed.indexOf(childAddress) >= 0)
             .forEach(childAddress => {
-              _map[childAddress] = { exist: true, path: childTypeWallets.wallets[childAddress].path, privateKey: childTypeWallets.wallets[childAddress].privateKey }
+              _map[childAddress] = {
+                exist: true,
+                path: childTypeWallets.wallets[childAddress].path,
+              }
             })
           if (Object.keys(_map).length > 0) {
             dispatch(walletsUpdateWalletChildWallets({
