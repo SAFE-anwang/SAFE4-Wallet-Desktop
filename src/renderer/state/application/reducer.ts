@@ -223,7 +223,7 @@ export default createReducer(initialState, (builder) => {
         action: {
           ...state.action,
           atCreateWallet: payload,
-          // newMnemonic: (state.action.newMnemonic && !payload) ? undefined : state.action.newMnemonic,
+          newMnemonic: (state.action.newMnemonic && !payload) ? undefined : state.action.newMnemonic,
           importWallet: (state.action.importWallet && !payload) ? undefined : state.action.importWallet,
         }
       }

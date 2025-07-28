@@ -8,7 +8,7 @@ import "./index.css"
 import { useTranslation } from 'react-i18next';
 import LanguageSelector from './language/LanguageSelector';
 import Version from './version';
-import { walletsUpdateLocked } from '../../../state/wallets/action';
+import { walletsForceLock, walletsUpdateLocked } from '../../../state/wallets/action';
 
 const { Title } = Typography;
 
@@ -80,7 +80,7 @@ export default () => {
 
           <Divider style={{ margin: "0px 0px" }} />
           <Row className='menu-item' onClick={() => {
-            dispatch(walletsUpdateLocked(true));
+            dispatch(walletsForceLock());
           }}>
             <Col span={2} style={{ textAlign: "center" }}>
               <LockOutlined />

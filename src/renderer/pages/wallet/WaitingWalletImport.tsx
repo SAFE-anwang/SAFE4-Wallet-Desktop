@@ -1,8 +1,6 @@
 import { Alert, Spin, Steps, StepProps, Card, Divider, Button } from "antd"
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { IPC_CHANNEL } from "../../config";
-import { WalletSignal, Wallet_Methods } from "../../../main/handlers/WalletSignalHandler";
 import { useDispatch } from "react-redux";
 import { walletsLoadWallets } from "../../state/wallets/action";
 import { applicationActionUpdateAtCreateWallet } from "../../state/application/action";
@@ -157,7 +155,6 @@ export default () => {
           _wallets.push({
             ...wallet, name: ""
           });
-          console.log("Push Wallets ::", _wallets)
           dispatch(walletsLoadWallets(_wallets));
           setTimeout(() => {
             setStepCurrent(3);

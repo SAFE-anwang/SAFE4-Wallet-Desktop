@@ -1,11 +1,10 @@
 import { createAction } from "@reduxjs/toolkit";
-import { WalletKeystore } from "./reducer";
 import { SupportChildWalletType } from "../../utils/GenerateChildWallet";
 
 export const walletsLoadWallets = createAction<{
-  publicKey : string ,
-  address : string ,
-  path ?: string
+  publicKey: string,
+  address: string,
+  path?: string
 }[]>(
   "wallets/loadWallets"
 )
@@ -35,7 +34,7 @@ export const walletsUpdateWalletChildWallets = createAction<{
   "wallets/updateWalletChildWallets"
 )
 
-export const walletsUpdateUsedChildWalletAddress = createAction<{ address: string | undefined , used : boolean }>(
+export const walletsUpdateUsedChildWalletAddress = createAction<{ address: string | undefined, used: boolean }>(
   "wallets/updateUsedChildWalletAddress"
 )
 
@@ -44,3 +43,7 @@ export const walletsClearWalletChildWallets = createAction(
 )
 
 export const walletsUpdateLocked = createAction<boolean>("walletsUpdateLocked");
+
+export const walletsUpdateForceOpen = createAction<boolean>("walletsUpdateForce");
+
+export const walletsForceLock = createAction("walletsForceClose");

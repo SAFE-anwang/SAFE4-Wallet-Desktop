@@ -1,5 +1,5 @@
 import { createReducer } from '@reduxjs/toolkit';
-import { walletsClearWalletChildWallets, walletsLoadWalletNames, walletsLoadWallets, walletsUpdateActiveWallet, walletsUpdateLocked, walletsUpdateUsedChildWalletAddress, walletsUpdateWalletChildWallets, walletsUpdateWalletName } from './action';
+import { walletsClearWalletChildWallets, walletsForceLock, walletsLoadWalletNames, walletsLoadWallets, walletsUpdateActiveWallet, walletsUpdateForceOpen, walletsUpdateLocked, walletsUpdateUsedChildWalletAddress, walletsUpdateWalletChildWallets, walletsUpdateWalletName } from './action';
 import { SupportChildWalletType } from '../../utils/GenerateChildWallet';
 
 export interface ERC20Token {
@@ -8,20 +8,6 @@ export interface ERC20Token {
   name: string,
   symbol: string,
   decimals: number
-}
-
-export interface WalletKeystore {
-
-  _aes: string,
-  _iv: string,
-  _salt: string,
-
-  mnemonic: string | undefined,
-  password: string | undefined,
-  path: string | undefined,
-  privateKey: string,
-  publicKey: string,
-  address: string
 }
 
 export interface Wallet {
@@ -34,9 +20,9 @@ export interface Wallet {
 export interface Wallets {
   networkId: "SAFE4",
   activeWallet: Wallet | null,
-  keystores: WalletKeystore[],
   list: Wallet[],
   locked: boolean,
+  forceOpen: boolean,
 
   walletNames: {
     [address in string]: {
@@ -67,23 +53,12 @@ export interface Wallets {
 const initialState: Wallets = {
   networkId: "SAFE4",
   activeWallet: null,
-  keystores: [],
   list: [],
   locked: true,
+  forceOpen: false,
   walletNames: {},
   walletChildWallets: {},
   walletUsedAddress: [],
-}
-
-
-const privateKeyContainsIn = (privateKey: string, keystores: WalletKeystore[]): boolean => {
-  for (let i in keystores) {
-    let _privateKey = keystores[i].privateKey;
-    if (privateKey == _privateKey) {
-      return true;
-    }
-  }
-  return false;
 }
 
 export default createReducer(initialState, (builder) => {
@@ -229,10 +204,20 @@ export default createReducer(initialState, (builder) => {
   })
 
   builder.addCase(walletsUpdateLocked, (state, { payload }) => {
+    if (state.forceOpen) return;
     state.locked = payload;
     if (payload == true) {
       window.electron.wallet.clean();
     }
+  });
+
+  builder.addCase(walletsUpdateForceOpen, (state, { payload }) => {
+    state.forceOpen = payload;
+  });
+
+  builder.addCase(walletsForceLock, (state, { payload }) => {
+    state.forceOpen = false;
+    state.locked = true;
   });
 
 });

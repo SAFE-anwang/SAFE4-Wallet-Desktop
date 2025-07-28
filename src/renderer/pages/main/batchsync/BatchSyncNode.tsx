@@ -16,7 +16,7 @@ import { MasternodeInfo } from "../../../structs/Masternode";
 import { TxExecuteStatus } from "../safe3/Safe3";
 import { useMasternodeLogicContract, useMasternodeStorageContract } from "../../../hooks/useContracts";
 import { useTransactionAdder } from "../../../state/transactions/hooks";
-import { walletsUpdateUsedChildWalletAddress } from "../../../state/wallets/action";
+import { walletsUpdateForceOpen, walletsUpdateUsedChildWalletAddress } from "../../../state/wallets/action";
 import { useDispatch } from "react-redux";
 import { useTranslation } from "react-i18next";
 import { useWeb3React } from "@web3-react/core";
@@ -216,6 +216,7 @@ export default ({
       setStep(BatchSyncStep.BatchSync);
       const pendings = pool.pendings;
       const executings = pendings.slice(0, concurrency);
+      dispatch(walletsUpdateForceOpen(true));
       setActiveKey(String(executings[0].id))
       setPool({
         pendings: pendings.slice(concurrency),
@@ -396,8 +397,8 @@ export default ({
           }
         }
         setTxUpdating(false);
-
         // 完成全部节点同步...
+        dispatch(walletsUpdateForceOpen(false));
         console.log("完成节点同步任务....")
 
       }

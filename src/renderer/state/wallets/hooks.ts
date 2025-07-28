@@ -7,7 +7,7 @@ import { useAccountManagerContract, useIERC20Contract, useMasternodeStorageContr
 import { isAddress } from '../../utils';
 import { AppState } from '../index';
 import { useMultipleContractSingleData, useSingleContractMultipleData } from '../multicall/hooks';
-import { Wallet, WalletKeystore } from './reducer';
+import { Wallet } from './reducer';
 import { useBlockNumber } from '../application/hooks';
 import { AccountRecord, IdPageQuery, formatAccountRecord, formatRecordUseInfo } from '../../structs/AccountManager';
 import { useWeb3React } from '@web3-react/core';
@@ -28,12 +28,6 @@ export function useWalletsWalletNames(): { [address in string]: { name: string, 
   })
 }
 
-// export function useWalletsKeystores(): WalletKeystore[] {
-//   return useSelector((state: AppState) => {
-//     return state.wallets.keystores;
-//   });
-// }
-
 export function useWalletsActiveWallet(): Wallet | null {
   return useSelector((state: AppState) => {
     return state.wallets.activeWallet;
@@ -45,55 +39,6 @@ export function useWalletsActiveAccount(): string {
     return state.wallets.activeWallet ? state.wallets.activeWallet.address : "";
   });
 }
-
-export function useWalletsActivePrivateKey(): string | undefined {
-  // return useSelector((state: AppState) => {
-  //   if (state.wallets.activeWallet) {
-  //     // 直接返回明文私钥
-  //     // return state.wallets.keystores.filter(
-  //     //   walletKetstore => {
-  //     //     return walletKetstore.publicKey == state.wallets.activeWallet?.publicKey
-  //     //   }
-  //     // )[0].privateKey
-  //     // 对加密私钥进行AES解密
-  //     const {privateKey , _aes , _iv } = state.wallets.keystores.filter(
-  //       walletKetstore => {
-  //         return walletKetstore.publicKey == state.wallets.activeWallet?.publicKey
-  //       }
-  //     )[0];
-  //     const ciphertext = CryptoJS.enc.Hex.parse(privateKey);
-  //     const aesKey = CryptoJS.enc.Hex.parse(_aes);
-  //     const iv = CryptoJS.enc.Hex.parse(_iv);
-  //     const decrypted = CryptoJS.AES.decrypt(
-  //       { ciphertext },
-  //       aesKey,
-  //       { iv, mode: CryptoJS.mode.CBC, padding: CryptoJS.pad.Pkcs7 }
-  //     );
-  //     return decrypted.toString(CryptoJS.enc.Utf8);
-  //   }
-  //   return undefined;
-  // });
-  return undefined;
-}
-
-// export function useWalletsActiveKeystore(): WalletKeystore | undefined {
-//   return useSelector((state: AppState) => {
-//     if (state.wallets.activeWallet) {
-//       return state.wallets.keystores.filter(
-//         walletKetstore => {
-//           return walletKetstore.publicKey == state.wallets.activeWallet?.publicKey
-//         }
-//       )[0];
-//     }
-//     return undefined;
-//   });
-// }
-
-// export function useWalletsActiveSigner(): ethers.Wallet | undefined {
-//   const { provider } = useWeb3React();
-//   const activePrivateKey = useWalletsActivePrivateKey();
-//   return activePrivateKey ? new ethers.Wallet(activePrivateKey, provider) : undefined;
-// }
 
 /**
  * Returns a map of the given addresses to their eventually consistent ETH balances.
@@ -607,3 +552,8 @@ export function useWalletsLocked() {
   })
 }
 
+export function useWalletsForceOpen() {
+  return useSelector((state: AppState) => {
+    return state.wallets.forceOpen;
+  })
+}
