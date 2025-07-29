@@ -11,6 +11,7 @@ import { Redeem_Locked_MAX, redeemNeedAmount, TxExecuteStatus } from "../safe3/S
 import { CloseCircleTwoTone } from "@ant-design/icons";
 import { useTransactionAdder } from "../../../state/transactions/hooks";
 import { useTranslation } from "react-i18next";
+import { useWeb3React } from "@web3-react/core";
 
 const { Text } = Typography;
 
@@ -53,8 +54,10 @@ export default ({
     setSafe4TargetAddress(activeAccount)
   }, [activeAccount])
 
+  const { chainId, provider } = useWeb3React();
+
   const executeRedeem = useCallback(async () => {
-    if (safe3Contract) {
+    if (safe3Contract && chainId && provider) {
       const safe3QueryResultMap = safe3RedeemList.reduce((map, queryResult) => {
         map[queryResult.address] = queryResult;
         return map;
@@ -98,34 +101,54 @@ export default ({
         const slicePublickKeyArr = publicKeyArr.slice(i, i + BatchMax);
         const sliceSignMsgKArr = signMsgArr.slice(i, i + BatchMax);
         try {
-          let response = await safe3Contract.batchRedeemAvailable(
+          const data = safe3Contract.interface.encodeFunctionData("batchRedeemAvailable", [
             slicePublickKeyArr,
             sliceSignMsgKArr,
             safe4TargetAddress
+          ]);
+          const tx: ethers.providers.TransactionRequest = {
+            to: safe3Contract.address,
+            data,
+            chainId
+          };
+          const { signedTx, error } = await window.electron.wallet.signTransaction(
+            activeAccount,
+            provider.connection.url,
+            tx
           );
-          _redeemTxHashs.avaiables.push({
-            status: 1,
-            txHash: response.hash
-          })
-          setRedeemTxHashs({ ..._redeemTxHashs });
-          console.log("执行迁移可用资产Hash:", response.hash);
-          const { data } = response;
-          addTransaction({ to: safe3Contract.address }, response, {
-            call: {
-              from: activeAccount,
-              to: safe3Contract.address,
-              input: data,
-              value: "0"
-            }
-          });
+          if (error) {
+            _redeemTxHashs.avaiables.push({
+              status: 0,
+              error: error
+            })
+            setRedeemTxHashs({ ..._redeemTxHashs })
+            console.log("执行迁移可用资产错误,Error:", error);
+          }
+          if (signedTx) {
+            const response = await provider.sendTransaction(signedTx);
+            _redeemTxHashs.avaiables.push({
+              status: 1,
+              txHash: response.hash
+            })
+            setRedeemTxHashs({ ..._redeemTxHashs });
+            addTransaction({ to: safe3Contract.address }, response, {
+              call: {
+                from: activeAccount,
+                to: safe3Contract.address,
+                input: response.data,
+                value: "0"
+              }
+            });
+            console.log("执行迁移可用资产Hash:", response.hash);
+          }
         } catch (error: any) {
           _redeemTxHashs.avaiables.push({
             status: 0,
-            error: error.error.reason
+            error: error
           })
           setRedeemTxHashs({ ..._redeemTxHashs })
           console.log("error", error)
-          console.log("执行迁移可用资产错误,Error:", error.error.reason);
+          console.log("执行迁移可用资产错误,Error:", error.reason);
           return;
         }
       }
@@ -146,37 +169,58 @@ export default ({
         console.log("Need Redeem Time :", needRedeemTime);
         for (let i = 0; i < needRedeemTime; i++) {
           try {
-            const estimateGas = await safe3Contract.estimateGas.batchRedeemLocked(
+
+            const data = safe3Contract.interface.encodeFunctionData("batchRedeemLocked", [
               slicePublickKeyArr,
               sliceSignMsgKArr,
               safe4TargetAddress
-            );
+            ]);
+            const tx: ethers.providers.TransactionRequest = {
+              to: safe3Contract.address,
+              data,
+              chainId
+            };
+            const estimateGas = await provider.estimateGas({
+              ...tx,
+              from: activeAccount
+            })
             const gasLimit = estimateGas.mul(2);
-            let response = await safe3Contract.batchRedeemLocked(
-              slicePublickKeyArr,
-              sliceSignMsgKArr,
-              safe4TargetAddress,
-              { gasLimit }
+            tx.gasLimit = gasLimit;
+            const { signedTx, error } = await window.electron.wallet.signTransaction(
+              activeAccount,
+              provider.connection.url,
+              tx
             );
-            _redeemTxHashs.lockeds.push({
-              status: 1,
-              txHash: response.hash
-            });
-            setRedeemTxHashs({ ..._redeemTxHashs });
-            console.log("执行迁移锁定资产Hash:", response.hash);
-            const { data } = response;
-            addTransaction({ to: safe3Contract.address }, response, {
-              call: {
-                from: activeAccount,
-                to: safe3Contract.address,
-                input: data,
-                value: "0"
-              }
-            });
+            if (error) {
+              _redeemTxHashs.lockeds.push({
+                status: 0,
+                error: error
+              });
+              setRedeemTxHashs({ ..._redeemTxHashs })
+              console.log("执行迁移锁定资产错误,Error:", error);
+              return;
+            }
+            if (signedTx) {
+              const response = await provider.sendTransaction(signedTx);
+              _redeemTxHashs.lockeds.push({
+                status: 1,
+                txHash: response.hash
+              });
+              setRedeemTxHashs({ ..._redeemTxHashs });
+              console.log("执行迁移锁定资产Hash:", response.hash);
+              addTransaction({ to: safe3Contract.address }, response, {
+                call: {
+                  from: activeAccount,
+                  to: safe3Contract.address,
+                  input: response.data,
+                  value: "0"
+                }
+              });
+            }
           } catch (error: any) {
             _redeemTxHashs.lockeds.push({
               status: 0,
-              error: error.error.reason
+              error: error
             });
             setRedeemTxHashs({ ..._redeemTxHashs })
             console.log("执行迁移锁定资产错误,Error:", error);
@@ -189,32 +233,55 @@ export default ({
         const slicePublickKeyArr = publicKeyArr.slice(i, i + BatchMax);
         const sliceSignMsgKArr = signMsgArr.slice(i, i + BatchMax);
         try {
-          let response = await safe3Contract.batchRedeemMasterNode(
+
+          const data = safe3Contract.interface.encodeFunctionData("batchRedeemMasterNode", [
             slicePublickKeyArr,
             sliceSignMsgKArr,
             // 做一个等长的空值enode数组;
             slicePublickKeyArr.map(uint8array => ""),
             safe4TargetAddress
+          ]);
+          const tx: ethers.providers.TransactionRequest = {
+            to: safe3Contract.address,
+            data,
+            chainId
+          };
+          const { signedTx, error } = await window.electron.wallet.signTransaction(
+            activeAccount,
+            provider.connection.url,
+            tx
           );
-          _redeemTxHashs.masternodes.push({
-            status: 1,
-            txHash: response.hash
-          });
-          setRedeemTxHashs({ ..._redeemTxHashs });
-          console.log("执行迁移主节点Hash:", response.hash);
-          const { data } = response;
-          addTransaction({ to: safe3Contract.address }, response, {
-            call: {
-              from: activeAccount,
-              to: safe3Contract.address,
-              input: data,
-              value: "0"
-            }
-          });
+          if (error) {
+            _redeemTxHashs.masternodes.push({
+              status: 0,
+              error: error
+            })
+            setRedeemTxHashs({ ..._redeemTxHashs })
+            console.log("执行迁移主节点错误,Error:", error)
+            return;
+          }
+          if (signedTx) {
+            const response = await provider.sendTransaction(signedTx);
+            _redeemTxHashs.masternodes.push({
+              status: 1,
+              txHash: response.hash
+            });
+            setRedeemTxHashs({ ..._redeemTxHashs });
+            console.log("执行迁移主节点Hash:", response.hash);
+            const { data } = response;
+            addTransaction({ to: safe3Contract.address }, response, {
+              call: {
+                from: activeAccount,
+                to: safe3Contract.address,
+                input: data,
+                value: "0"
+              }
+            });
+          }
         } catch (error: any) {
           _redeemTxHashs.masternodes.push({
             status: 0,
-            error: error.error.reason
+            error: error
           })
           setRedeemTxHashs({ ..._redeemTxHashs })
           console.log("执行迁移主节点错误,Error:", error)
@@ -320,7 +387,7 @@ export default ({
                       <Text type="secondary">{t("wallet_redeems_available_error")}</Text><br />
                       <Text strong type="danger">
                         <CloseCircleTwoTone twoToneColor="red" style={{ marginRight: "5px" }} />
-                        {avaiable.error}
+                        {avaiable.error.reason}
                       </Text> <br />
                     </Col>
                   </>
@@ -346,7 +413,7 @@ export default ({
                       <Text type="secondary">{t("wallet_redeems_locked_error")}</Text><br />
                       <Text strong type="danger">
                         <CloseCircleTwoTone twoToneColor="red" style={{ marginRight: "5px" }} />
-                        {locked.error}
+                        {locked.error.reason}
                       </Text> <br />
                     </Col>
                   </>
@@ -372,7 +439,7 @@ export default ({
                       <Text type="secondary">{t("wallet_redeems_masternode_error")}</Text><br />
                       <Text strong type="danger">
                         <CloseCircleTwoTone twoToneColor="red" style={{ marginRight: "5px" }} />
-                        {masternode.error}
+                        {masternode.error.reason}
                       </Text> <br />
                     </Col>
                   </>

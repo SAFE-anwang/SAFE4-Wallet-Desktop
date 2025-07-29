@@ -14,6 +14,7 @@ import { applicationUpdateWalletTab } from "../../../../state/application/action
 import { Safe4_Business_Config } from "../../../../config";
 import { walletsUpdateUsedChildWalletAddress, walletsUpdateWalletChildWallets } from "../../../../state/wallets/action";
 import { useTranslation } from "react-i18next";
+import { useWeb3React } from "@web3-react/core";
 
 const { Text } = Typography;
 
@@ -46,9 +47,10 @@ export default ({
   const addTransaction = useTransactionAdder();
   const activeAccount = useWalletsActiveAccount();
   const masternodeLogicContract = useMasternodeLogicContract(true);
+  const { chainId, provider } = useWeb3React();
 
-  const doRegisterMasternode = useCallback(() => {
-    if (activeAccount && masternodeLogicContract) {
+  const doRegisterMasternode = useCallback(async () => {
+    if (activeAccount && masternodeLogicContract && chainId && provider) {
       const { registerType, enode, description, incentivePlan, address } = registerParams;
       // function register(bool _isUnion, address _addr, uint _lockDay, string memory _enode, string memory _description,
       //  uint _creatorIncentive, uint _partnerIncentive) external payable;
@@ -62,36 +64,53 @@ export default ({
         incentivePlan.partner = 0;
       }
       setSending(true);
-      masternodeLogicContract.register(
+
+      const data = masternodeLogicContract.interface.encodeFunctionData("register", [
         Masternode_create_type_Union == registerType,
         address,
         Safe4_Business_Config.Masternode.Create.LockDays,
         enode, description,
-        incentivePlan.creator, incentivePlan.partner,
-        {
-          value,
+        incentivePlan.creator, incentivePlan.partner
+      ]);
+      const tx: ethers.providers.TransactionRequest = {
+        to: masternodeLogicContract.address,
+        data,
+        value,
+        chainId
+      };
+      const { signedTx, error } = await window.electron.wallet.signTransaction(
+        activeAccount,
+        provider.connection.url,
+        tx
+      );
+      if (signedTx) {
+        try {
+          const response = await provider.sendTransaction(signedTx);
+          const { hash, data } = response;
+          setTransactionResponse(response);
+          addTransaction({ to: masternodeLogicContract.address }, response, {
+            call: {
+              from: activeAccount,
+              to: masternodeLogicContract.address,
+              input: data,
+              value: value.toString()
+            }
+          });
+          dispatch(walletsUpdateUsedChildWalletAddress({
+            address,
+            used: true
+          }));
+          setTxHash(hash);
+        } catch (err) {
+          setErr(err)
+        } finally {
+          setSending(false);
         }
-      ).then((response: TransactionResponse) => {
-        const { hash, data } = response;
-        addTransaction({ to: masternodeLogicContract.address }, response, {
-          call: {
-            from: activeAccount,
-            to: masternodeLogicContract.address,
-            input: data,
-            value: value.toString()
-          }
-        });
-        setTxHash(hash);
+      }
+      if (error) {
         setSending(false);
-        setTransactionResponse(response);
-        dispatch(walletsUpdateUsedChildWalletAddress({
-          address,
-          used: true
-        }));
-      }).catch((err: any) => {
-        setSending(false);
-        setErr(err)
-      });
+        setErr(error)
+      }
     }
   }, [activeAccount, masternodeLogicContract, registerParams]);
 

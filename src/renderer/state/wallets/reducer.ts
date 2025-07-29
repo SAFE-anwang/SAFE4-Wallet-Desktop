@@ -1,5 +1,5 @@
 import { createReducer } from '@reduxjs/toolkit';
-import { walletsClearWalletChildWallets, walletsInitList, walletsLoadKeystores, walletsLoadWalletNames, walletsUpdateActiveWallet, walletsUpdateUsedChildWalletAddress, walletsUpdateWalletChildWallets, walletsUpdateWalletName } from './action';
+import { walletsClearWalletChildWallets, walletsForceLock, walletsLoadWalletNames, walletsLoadWallets, walletsUpdateActiveWallet, walletsUpdateForceOpen, walletsUpdateLocked, walletsUpdateUsedChildWalletAddress, walletsUpdateWalletChildWallets, walletsUpdateWalletName } from './action';
 import { SupportChildWalletType } from '../../utils/GenerateChildWallet';
 
 export interface ERC20Token {
@@ -10,26 +10,19 @@ export interface ERC20Token {
   decimals: number
 }
 
-export interface WalletKeystore {
-  mnemonic: string | undefined,
-  password: string | undefined,
-  path: string | undefined,
-  privateKey: string,
-  publicKey: string,
-  address: string
-}
-
 export interface Wallet {
   publicKey: string,
   address: string,
   name: string,
+  path?: string
 }
 
 export interface Wallets {
   networkId: "SAFE4",
   activeWallet: Wallet | null,
-  keystores: WalletKeystore[],
   list: Wallet[],
+  locked: boolean,
+  forceOpen: boolean,
 
   walletNames: {
     [address in string]: {
@@ -43,75 +36,52 @@ export interface Wallets {
       sn: {
         loading: boolean,
         wallets: {
-          [address in string]: { path: string, exist: boolean , privateKey : string }
+          [address in string]: { path: string, exist: boolean }
         }
       }
       mn: {
         loading: boolean,
         wallets: {
-          [address in string]: { path: string, exist: boolean , privateKey : string }
+          [address in string]: { path: string, exist: boolean }
         }
       }
     }
   },
   walletUsedAddress: string[],
-
 }
 
 const initialState: Wallets = {
   networkId: "SAFE4",
   activeWallet: null,
-  keystores: [],
   list: [],
+  locked: true,
+  forceOpen: false,
   walletNames: {},
   walletChildWallets: {},
-  walletUsedAddress: []
-}
-
-
-const privateKeyContainsIn = (privateKey: string, keystores: WalletKeystore[]): boolean => {
-  for (let i in keystores) {
-    let _privateKey = keystores[i].privateKey;
-    if (privateKey == _privateKey) {
-      return true;
-    }
-  }
-  return false;
+  walletUsedAddress: [],
 }
 
 export default createReducer(initialState, (builder) => {
 
-  builder.addCase(walletsLoadKeystores, (state, { payload }) => {
-    const _keystores = [];
-    for (let i in payload) {
-      let privateKey = payload[i].privateKey;
-      if (!privateKeyContainsIn(privateKey, _keystores)) {
-        _keystores.push(payload[i]);
-      }
-    }
-    let keystores = [];
-    for (let i in state.keystores) {
-      keystores.push(state.keystores[i]);
-    }
-    if (keystores.length == 0) {
-      keystores = payload;
-    } else {
-      for (let i in _keystores) {
-        let privateKey = _keystores[i].privateKey;
-        if (!privateKeyContainsIn(privateKey, state.keystores)) {
-          keystores.push(_keystores[i]);
-        }
-      }
-    }
+  builder.addCase(walletsLoadWallets, (state, { payload }) => {
+
+    // 保持原有顺序的基础上去掉可能重复的数据.
+    const _exists = new Set<string>();
+    const _wallets = payload.filter(({ address }) => {
+      if (_exists.has(address)) return false;
+      _exists.add(address);
+      return true;
+    });
+
     const list: Wallet[] = [];
     let walletNames = { ...state.walletNames };
-    for (let i in keystores) {
-      const keystore = keystores[i];
+    for (let i in _wallets) {
       const defaultNameTag = Number(i) + 1;
-      const { address, publicKey } = keystore;
+      const { address, publicKey, path } = _wallets[i];
       list.push({
-        publicKey: keystore.publicKey,
-        address: keystore.address,
+        publicKey,
+        address,
+        path,
         // 默认以顺序作为钱包名称
         name: "Wallet-" + defaultNameTag,
       });
@@ -122,16 +92,9 @@ export default createReducer(initialState, (builder) => {
         }
       }
     }
-    // 表示为新建钱包,则将新建的钱包作为活动钱包
+
     let activeWallet = state.activeWallet;
-    if (payload.length == 1) {
-      const publicKey = payload[0].publicKey;
-      for (let i in list) {
-        if (list[i].publicKey == publicKey) {
-          activeWallet = list[i];
-        }
-      }
-    } else if (!activeWallet && list.length > 0) {
+    if (!activeWallet && list.length > 0) {
       let activeAddressInNames = undefined;
       Object.keys(walletNames).forEach(address => {
         if (walletNames[address].active) {
@@ -144,34 +107,22 @@ export default createReducer(initialState, (builder) => {
             activeWallet = list[i];
           }
         }
-      } else {
-        // 如果没有设置默认钱包,则将导入钱包的最后一个设为默认钱包.
+      }
+      if (!activeWallet) {
+        activeWallet = list[list.length - 1];
+      }
+    } else {
+      if (state.list.length != list.length) {
         activeWallet = list[list.length - 1];
       }
     }
-
     return {
       ...state,
-      keystores,
       list,
+      locked: !(list.length > 0),
       activeWallet,
       walletNames
     }
-
-  });
-
-  builder.addCase(walletsInitList, (state, { payload }) => {
-    const keystores = state.keystores;
-    const list: Wallet[] = [];
-    for (let i in keystores) {
-      const keystore = keystores[i];
-      list.push({
-        publicKey: keystore.publicKey,
-        address: keystore.address,
-        name: "Wallet - " + (i + 1)
-      });
-    }
-    state.list = list;
   });
 
   builder.addCase(walletsUpdateActiveWallet, (state, { payload }) => {
@@ -229,13 +180,11 @@ export default createReducer(initialState, (builder) => {
           _childWallets.sn.wallets[childAddress] = {
             path: result.map[childAddress].path,
             exist: result.map[childAddress].exist,
-            privateKey:  result.map[childAddress].privateKey,
           }
         } else {
           _childWallets.mn.wallets[childAddress] = {
             path: result.map[childAddress].path,
             exist: result.map[childAddress].exist,
-            privateKey:  result.map[childAddress].privateKey,
           }
         }
       });
@@ -253,6 +202,23 @@ export default createReducer(initialState, (builder) => {
   builder.addCase(walletsClearWalletChildWallets, (state, _) => {
     state.walletChildWallets = {};
   })
+
+  builder.addCase(walletsUpdateLocked, (state, { payload }) => {
+    if (state.forceOpen) return;
+    state.locked = payload;
+    if (payload == true) {
+      window.electron.wallet.clean();
+    }
+  });
+
+  builder.addCase(walletsUpdateForceOpen, (state, { payload }) => {
+    state.forceOpen = payload;
+  });
+
+  builder.addCase(walletsForceLock, (state, { payload }) => {
+    state.forceOpen = false;
+    state.locked = true;
+  });
 
 });
 

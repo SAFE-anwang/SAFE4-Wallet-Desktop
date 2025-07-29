@@ -3,7 +3,6 @@ import { Channel } from "../ApplicationIpcManager";
 import { Context } from "./Context";
 import { ListenSignalHandler } from "./ListenSignalHandler";
 import * as bip39 from 'bip39';
-import { base58 } from "ethers/lib/utils";
 import { scryptEncryptWallets } from "../CryptoIpc";
 const fs = require('fs');
 const CryptoJS = require('crypto-js');
@@ -72,7 +71,7 @@ export class WalletSignalHandler implements ListenSignalHandler {
     const walletList = params[0];
     const applicationPassword = params[1];
     try {
-      const base58Encode = await scryptEncryptWallets( { walletList , applicationPassword } );
+      const base58Encode = await scryptEncryptWallets({ walletList, applicationPassword });
       const dbUpdatePromise = new Promise((resolve, reject) => {
         this.kysDB.all("SELECT * FROM wallet_kys", [], (err: any, rows: any[]) => {
           if (err) {

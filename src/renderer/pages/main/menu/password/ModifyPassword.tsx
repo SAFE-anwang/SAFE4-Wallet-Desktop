@@ -1,16 +1,11 @@
-import { Typography, Button, Card, Divider, Statistic, Row, Col, Modal, Flex, Tooltip, Tabs, TabsProps, QRCode, Badge, Space, Alert, Input, Result, Spin } from 'antd';
+import { Typography, Button, Card, Row, Col, Alert, Input, Result, Spin } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import {
   LeftOutlined
 } from '@ant-design/icons';
-import { useCallback, useEffect, useState } from 'react';
-import { useApplicationPassword } from '../../../../state/application/hooks';
+import { useCallback, useState } from 'react';
 import { PasswordRegex } from '../../../wallet/SetPassword';
-import { useWalletsKeystores } from '../../../../state/wallets/hooks';
-import { IPC_CHANNEL } from '../../../../config';
-import { Wallet_Methods, WalletSignal } from '../../../../../main/handlers/WalletSignalHandler';
 import { useDispatch } from 'react-redux';
-import { applicationSetPassword } from '../../../../state/application/action';
 import { useTranslation } from 'react-i18next';
 
 const { Title, Text } = Typography;
@@ -19,8 +14,6 @@ export default () => {
 
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const password = useApplicationPassword();
-  const walletsKeystores = useWalletsKeystores();
   const dispatch = useDispatch();
 
   const [inputParams, setInputParams] = useState<{
@@ -41,20 +34,16 @@ export default () => {
   const [modifing, setModifing] = useState<boolean>(false);
   const [modifyResult, setModifyResult] = useState<{
     success?: boolean,
-    path?: string,
-    reason?: string
   }>();
 
-  const modifyPassword = useCallback(() => {
+  const modifyPassword = useCallback(async () => {
     const { inputPwd, inputNewPwd, confirmNewPwd } = inputParams;
     const inputErrors: {
       inputPwd?: string,
       inputNewPwd?: string,
       confirmNewPwd?: string
     } = {};
-    if (password != inputPwd) {
-      inputErrors.inputPwd = t("wallet_modifypwd_pwderror");
-    }
+
     if (!PasswordRegex.test(inputNewPwd)) {
       inputErrors.inputNewPwd = t("wallet_modifypwd_pwdnotmatch");
     }
@@ -68,21 +57,23 @@ export default () => {
       return;
     }
     setModifing(true);
-    const method = Wallet_Methods.storeWallet;
-    window.electron.ipcRenderer.sendMessage(IPC_CHANNEL, [WalletSignal, method, [walletsKeystores, inputNewPwd]]);
-    window.electron.ipcRenderer.once(IPC_CHANNEL, (arg) => {
-      if (arg instanceof Array && arg[0] == WalletSignal && arg[1] == method) {
-        const data = arg[2][0];
-        const { success, path, reason } = data;
-        setModifyResult(data);
-        setModifing(false);
-        if (success) {
-          dispatch(applicationSetPassword(inputNewPwd));
-        }
-      }
-    });
+    const result = await window.electron.wallet.updatePassword(
+      inputPwd, confirmNewPwd
+    );
+    console.log("Result ==>", result)
+    if (result) {
+      setModifing(false);
+      setModifyResult({
+        success: true
+      });
+    } else {
+      setModifing(false);
+      setInputErrors({
+        inputPwd: t("wallet_modifypwd_pwderror")
+      })
+    }
 
-  }, [inputParams, password, walletsKeystores, dispatch]);
+  }, [inputParams, dispatch]);
 
   return <>
 

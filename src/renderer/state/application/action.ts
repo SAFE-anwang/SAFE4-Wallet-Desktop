@@ -41,8 +41,9 @@ export const applicationActionUpdateAtCreateWallet = createAction<boolean>(
 export const applicationUpdateAfterSetPasswordTODO = createAction<AfterSetPasswordTODO>(
   "application/updateAfterSetPasswordTODO"
 )
-export const applicationSetPassword = createAction<string>(
-  "application/setPassword"
+
+export const applicationSetInitWalletPassword = createAction<string>(
+  "application/setInitWalletPassword"
 )
 
 export const applicationControlVoteSupernode = createAction<string | undefined>(

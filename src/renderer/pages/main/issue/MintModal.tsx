@@ -25,7 +25,7 @@ export default ({ openMintModal, setOpenMintModal, address }: {
     setOpenMintModal(false);
   }
   const { src20TokenProp, loading } = useSRC20Prop(address);
-  const { chainId } = useWeb3React();
+  const { chainId, provider } = useWeb3React();
   const activeAccount = useWalletsActiveAccount();
   const addTransaction = useTransactionAdder();
   const {
@@ -37,6 +37,7 @@ export default ({ openMintModal, setOpenMintModal, address }: {
   } = useTransactionResponseRender();
   const [sending, setSending] = useState<boolean>(false);
   const [txHash, setTxHash] = useState<string>();
+
   const SRC20Contract = useContract(address, SRC20_Template.SRC20_mintable.abi, true);
 
   const [inputParams, setInputParams] = useState<{
@@ -66,7 +67,7 @@ export default ({ openMintModal, setOpenMintModal, address }: {
     return {};
   }, [chainId, src20TokenProp]);
 
-  const doMint = () => {
+  const doMint = async () => {
     if (!token) {
       return;
     }
@@ -85,7 +86,6 @@ export default ({ openMintModal, setOpenMintModal, address }: {
         _inputErrors.toAddress = t("enter_correct") + t("wallet_address");
       }
     }
-
     let tokenMintAmount = undefined;
     if (!amount) {
       _inputErrors.amount = t("please_enter") + t("wallet_issue_mint_amount");
@@ -106,30 +106,44 @@ export default ({ openMintModal, setOpenMintModal, address }: {
       })
       return;
     }
-    if (SRC20Contract && tokenMintAmount) {
+    if (SRC20Contract && tokenMintAmount && provider && chainId) {
       setSending(true);
-      SRC20Contract.mint(
+      const data = SRC20Contract.interface.encodeFunctionData("mint", [
         toAddress,
         ethers.BigNumber.from(tokenMintAmount.raw.toString())
-      ).then((response: any) => {
-        const { hash, data } = response;
-        addTransaction({ to: SRC20Contract.address }, response, {
-          call: {
-            from: activeAccount,
-            to: SRC20Contract.address,
-            input: data,
-            value: "0"
-          }
-        });
-        setTransactionResponse(response);
-        setTxHash(hash);
-        setSending(false);
-      }).catch((err: any) => {
-        console.log("mint Error =", err.error)
-        setErr(err);
-        setSending(false);
-      })
-
+      ]);
+      const tx: ethers.providers.TransactionRequest = {
+        to: SRC20Contract.address,
+        data,
+        chainId,
+      };
+      const { signedTx, error } = await window.electron.wallet.signTransaction(
+        activeAccount,
+        provider.connection.url,
+        tx
+      );
+      if (signedTx) {
+        try {
+          const response = await provider.sendTransaction(signedTx);
+          const { hash, data } = response;
+          addTransaction({ to: SRC20Contract.address }, response, {
+            call: {
+              from: activeAccount,
+              to: SRC20Contract.address,
+              input: data,
+              value: "0"
+            }
+          });
+          setTransactionResponse(response);
+          setTxHash(hash);
+        } catch (err) {
+          setErr(err);
+        }
+      }
+      if (error) {
+        setErr(error);
+      }
+      setSending(false);
     }
   }
 
@@ -165,7 +179,7 @@ export default ({ openMintModal, setOpenMintModal, address }: {
           <Text type="secondary">{t("wallet_issue_mint_address")}</Text>
         </Col>
         <Col span={16}>
-          <Input  size="large" value={inputParams.toAddress} onChange={(event) => {
+          <Input size="large" value={inputParams.toAddress} onChange={(event) => {
             const inputValue = event.target.value;
             setInputParams({
               ...inputParams,
@@ -182,7 +196,7 @@ export default ({ openMintModal, setOpenMintModal, address }: {
             </>} />
           }
         </Col>
-        <Col span={24} style={{marginTop:"5px"}}>
+        <Col span={24} style={{ marginTop: "5px" }}>
           <Text type="secondary">{t("wallet_issue_mint_amount")}</Text>
         </Col>
         <Col span={16}>
@@ -217,7 +231,7 @@ export default ({ openMintModal, setOpenMintModal, address }: {
           {
             err && <>
               <Alert style={{ marginBottom: "10px" }} showIcon type="error" message={<>
-                {err.error.reason ?? err.error.toString()}
+                {err.reason ?? err.toString()}
               </>} />
             </>
           }

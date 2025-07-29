@@ -1,13 +1,11 @@
 
 
-import { Typography, Button, Divider, Statistic, Row, Col, Modal, Tabs, TabsProps, QRCode, Badge, Dropdown, Input, Spin, Alert } from 'antd';
-import { useETHBalances, useWalletsActiveAccount, useWalletsActiveKeystore, useWalletsActivePrivateKey, useWalletsActiveSigner, useWalletsActiveWallet } from '../../../state/wallets/hooks';
+import { Typography, Button, Divider, Row, Col, Modal, Input, Alert } from 'antd';
+import { useWalletsActiveAccount } from '../../../state/wallets/hooks';
 import { useTranslation } from 'react-i18next';
 import { useCallback, useState } from 'react';
-import { useApplicationPassword } from '../../../state/application/hooks';
 
-
-const { Title, Text, Paragraph } = Typography;
+const { Text } = Typography;
 
 const STEP_0_WARNING = 0;
 const STEP_1_CONFIRMPWD = 1;
@@ -21,29 +19,35 @@ export default ({
 }) => {
 
   const { t } = useTranslation();
-  const privateKey = useWalletsActivePrivateKey();
+  const activeAccount = useWalletsActiveAccount();
 
   const [currentStep, setCurrentStep] = useState<number>(STEP_0_WARNING);
-  const walletPassword = useApplicationPassword();
   const [inputPWD, setInputPWD] = useState<string>();
   const [PWDError, setPWDError] = useState<string>();
 
-  const validateWalletPassword = useCallback(() => {
-    if (inputPWD == walletPassword) {
-      setPWDError(undefined);
-      setCurrentStep(STEP_2_SHOW);
-    } else {
+  const [result, setResult] = useState<string>();
+
+  const validateWalletPassword = useCallback(async () => {
+
+    if (!inputPWD) return;
+    const result = await window.electron.wallet.viewPrivateKey(activeAccount, inputPWD);
+    if (!result) {
       setPWDError(t("wallet_password_error"));
+      return;
     }
-  }, [walletPassword, inputPWD]);
+    setResult(result);
+    setPWDError(undefined);
+    setCurrentStep(STEP_2_SHOW);
+  }, [activeAccount, inputPWD]);
 
   return (<>
     <Modal title={t("wallet_privateKey")} open={openPrivateKeyModal} width={"400px"} footer={null} closable onCancel={() => {
       setCurrentStep(STEP_0_WARNING);
       setOpenPrivateKeyModal(false);
+      setResult(undefined);
+      setInputPWD(undefined);
     }}>
       <Divider />
-
       {
         currentStep == STEP_0_WARNING && <>
           <Row>
@@ -62,7 +66,6 @@ export default ({
           </Row>
         </>
       }
-
       {
         currentStep == STEP_1_CONFIRMPWD && <>
           <Row>
@@ -100,7 +103,7 @@ export default ({
           </Row>
           <Row style={{ width: "300px", textAlign: "center", margin: "auto" }}>
             <Text style={{ margin: "auto", marginTop: "20px", marginBottom: "20px" }} strong>
-              {privateKey && privateKey.replace("0x", "")}
+              {result && result.replace("0x", "")}
             </Text>
             <br />
           </Row>

@@ -1,9 +1,8 @@
 
 
 import { Typography, Button, Divider, Statistic, Row, Col, Modal, Tabs, TabsProps, QRCode, Badge, Dropdown, Input, Spin, Alert } from 'antd';
-import { useCallback, useState } from 'react';
-import { useWalletsActiveKeystore } from '../../../state/wallets/hooks';
-import { useApplicationPassword, useBlockNumber, useTimestamp } from '../../../state/application/hooks';
+import { useCallback, useEffect, useState } from 'react';
+import { useWalletsActiveAccount, useWalletsActiveWallet } from '../../../state/wallets/hooks';
 import { useTranslation } from 'react-i18next';
 
 const { Text } = Typography;
@@ -20,28 +19,34 @@ export default ({
 }) => {
 
   const { t } = useTranslation();
-  const walletKeystore = useWalletsActiveKeystore();
-
+  const activeAccount = useWalletsActiveAccount();
+  const activeWallet = useWalletsActiveWallet();
   const [currentStep, setCurrentStep] = useState<number>(STEP_0_WARNING);
-  const walletPassword = useApplicationPassword();
   const [inputPWD, setInputPWD] = useState<string>();
   const [PWDError, setPWDError] = useState<string>();
 
-  const validateWalletPassword = useCallback(() => {
-    if (inputPWD == walletPassword) {
-      setPWDError(undefined);
-      setCurrentStep(STEP_2_SHOW);
-    } else {
+  const [result, setResult] = useState<[string, string | undefined, string]>();
+
+  const validateWalletPassword = useCallback(async () => {
+    if (!inputPWD) return;
+    const result = await window.electron.wallet.viewMnemonic(activeAccount, inputPWD);
+    if (!result) {
       setPWDError(t("wallet_password_error"));
+      return;
     }
-  }, [walletPassword, inputPWD]);
+    setPWDError(undefined);
+    setCurrentStep(STEP_2_SHOW);
+    setResult(result);
+  }, [activeAccount, inputPWD]);
 
   return (<>
     {
-      walletKeystore?.mnemonic &&
-      <Modal title={t("wallet_mnemonic")} open={openMnemonicModal} width={"400px"} footer={null} closable onCancel={() => {
+      activeWallet?.path &&
+      <Modal title={t("wallet_mnemonic")} destroyOnClose open={openMnemonicModal} width={"400px"} footer={null} closable onCancel={() => {
         setCurrentStep(STEP_0_WARNING);
-        setOpenMnemonicModal(false)
+        setOpenMnemonicModal(false);
+        setResult(undefined);
+        setInputPWD(undefined);
       }}>
         <Divider />
         {
@@ -91,10 +96,10 @@ export default ({
           </>
         }
         {
-          currentStep == STEP_2_SHOW && <>
+          currentStep == STEP_2_SHOW && result && <>
             <Row style={{ width: "300px", textAlign: "left", margin: "auto" }}>
               {
-                walletKeystore.mnemonic.split(" ")
+                result[0].split(" ")
                   .map((word, index) => {
                     return <>
                       <Col key={word} span={12}>
@@ -113,14 +118,14 @@ export default ({
             </Row>
             <Divider />
             {
-              walletKeystore.password && <>
+              result[1] && <>
                 <Row style={{ width: "300px", textAlign: "left", margin: "auto", marginTop: "20px" }}>
                   <Col span={24}>
                     <Text type='secondary' style={{ marginRight: "10px" }}>{t("wallet_mnemonic_password")}</Text>
                   </Col>
                   <Col span={24}>
                     <Text strong>
-                      {walletKeystore.password}
+                      {result[1]}
                     </Text>
                   </Col>
                 </Row>
@@ -132,7 +137,7 @@ export default ({
               </Col>
               <Col span={24}>
                 <Text strong>
-                  {walletKeystore.path}
+                  {result[2]}
                 </Text>
               </Col>
             </Row>

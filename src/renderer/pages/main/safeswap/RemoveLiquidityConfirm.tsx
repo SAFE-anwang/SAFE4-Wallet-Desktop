@@ -8,7 +8,7 @@ import { useWeb3React } from "@web3-react/core";
 import { useSafeswapV2Router } from "../../../hooks/useContracts";
 import { useSafeswapSlippageTolerance, useTimestamp } from "../../../state/application/hooks";
 import { ethers, TypedDataDomain } from "ethers";
-import { useWalletsActiveAccount, useWalletsActiveSigner } from "../../../state/wallets/hooks";
+import { useWalletsActiveAccount } from "../../../state/wallets/hooks";
 import { useTransactionAdder } from "../../../state/transactions/hooks";
 import useTransactionResponseRender from "../../components/useTransactionResponseRender";
 import { useCallback, useState } from "react";
@@ -41,13 +41,13 @@ export default ({
 }) => {
 
   const timestamp = useTimestamp();
-  const { chainId } = useWeb3React();
+  const { chainId, provider } = useWeb3React();
   const navigate = useNavigate();
   const { t } = useTranslation();
   const dispatch = useDispatch();
   const activeAccount = useWalletsActiveAccount();
   const addTransaction = useTransactionAdder();
-  const signer = useWalletsActiveSigner();
+
   const {
     render,
     setTransactionResponse,
@@ -70,7 +70,7 @@ export default ({
   const safeswapV2Router = useSafeswapV2Router();
   const slippageTolerance = useSafeswapSlippageTolerance();
   const remove = async () => {
-    if (pairAddress && chainId && signer && safeswapV2Router) {
+    if (pairAddress && chainId && provider && safeswapV2Router) {
       const domain: TypedDataDomain = {
         name: "Safeswap V2",
         version: "1",
@@ -94,7 +94,7 @@ export default ({
         nonce,
         deadline: timestamp + 300
       };
-      const signature = await signer._signTypedData(domain, types, message);
+      const signature = await window.electron.wallet.signTypedData(activeAccount, domain, types, message);
       const { v, r, s } = splitSignature(signature);
       if (token0 && token1) {
         const amount0Desire = ethers.utils.parseUnits(token0Amount, token0?.decimals);
@@ -106,7 +106,8 @@ export default ({
           getSlippageToleranceBigInteger(slippageTolerance)
         ).div(10000);
         setSending(true);
-        safeswapV2Router.removeLiquidityWithPermit(
+
+        const data = safeswapV2Router.interface.encodeFunctionData("removeLiquidityWithPermit", [
           token0?.address,
           token1?.address,
           removeLpAmount,
@@ -118,23 +119,41 @@ export default ({
           v,
           r,
           s
-        ).then((response: any) => {
-          const { hash, data } = response;
-          setTransactionResponse(response);
-          addTransaction({ to: safeswapV2Router.address }, response, {
-            call: {
-              from: activeAccount,
-              to: safeswapV2Router.address,
-              input: data,
-              value: "0",
-            }
-          });
-          setTxHash(hash);
+        ]);
+        const tx: ethers.providers.TransactionRequest = {
+          to: safeswapV2Router.address,
+          data,
+          chainId
+        };
+        const { signedTx, error } = await window.electron.wallet.signTransaction(
+          activeAccount,
+          provider.connection.url,
+          tx
+        );
+        if (signedTx) {
+          try {
+            const response = await provider.sendTransaction(signedTx);
+            const { hash, data } = response;
+            setTransactionResponse(response);
+            addTransaction({ to: safeswapV2Router.address }, response, {
+              call: {
+                from: activeAccount,
+                to: safeswapV2Router.address,
+                input: data,
+                value: "0",
+              }
+            });
+            setTxHash(hash);
+          } catch (err) {
+            setErr(err)
+          } finally {
+            setSending(false);
+          }
+        }
+        if (error) {
+          setErr(error);
           setSending(false);
-        }).catch((err: any) => {
-          setErr(err);
-          setSending(false);
-        })
+        }
       } else if (token0 == undefined || token1 == undefined) {
         const token = token0 ? token0.address : token1?.address;
         const liquidity = removeLpAmount;
@@ -149,7 +168,8 @@ export default ({
         const amountTokenMin = token0 ? amount0Min : amount1Min;
         const amountETHMin = token0 ? amount1Min : amount0Min;
         setSending(true);
-        safeswapV2Router.removeLiquidityETHWithPermit(
+
+        const data = safeswapV2Router.interface.encodeFunctionData("removeLiquidityETHWithPermit", [
           token, liquidity, amountTokenMin, amountETHMin,
           message.owner,
           message.deadline,
@@ -157,23 +177,41 @@ export default ({
           v,
           r,
           s
-        ).then((response: any) => {
-          const { hash, data } = response;
-          setTransactionResponse(response);
-          addTransaction({ to: safeswapV2Router.address }, response, {
-            call: {
-              from: activeAccount,
-              to: safeswapV2Router.address,
-              input: data,
-              value: "0",
-            }
-          });
-          setTxHash(hash);
+        ]);
+        const tx: ethers.providers.TransactionRequest = {
+          to: safeswapV2Router.address,
+          data,
+          chainId
+        };
+        const { signedTx, error } = await window.electron.wallet.signTransaction(
+          activeAccount,
+          provider.connection.url,
+          tx
+        );
+        if (signedTx) {
+          try {
+            const response = await provider.sendTransaction(signedTx);
+            const { hash, data } = response;
+            setTransactionResponse(response);
+            addTransaction({ to: safeswapV2Router.address }, response, {
+              call: {
+                from: activeAccount,
+                to: safeswapV2Router.address,
+                input: data,
+                value: "0",
+              }
+            });
+            setTxHash(hash);
+          } catch (err) {
+            setErr(err)
+          } finally {
+            setSending(false);
+          }
+        }
+        if (error) {
+          setErr(error);
           setSending(false);
-        }).catch((err: any) => {
-          setErr(err);
-          setSending(false);
-        })
+        }
       }
     }
   }

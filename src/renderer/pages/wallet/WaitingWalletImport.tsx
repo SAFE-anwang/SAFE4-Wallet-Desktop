@@ -1,31 +1,27 @@
 import { Alert, Spin, Steps, StepProps, Card, Divider, Button } from "antd"
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { IPC_CHANNEL } from "../../config";
-import { WalletSignal, Wallet_Methods } from "../../../main/handlers/WalletSignalHandler";
 import { useDispatch } from "react-redux";
-import { useWalletsKeystores, useWalletsList } from "../../state/wallets/hooks";
-import { WalletKeystore } from "../../state/wallets/reducer";
-import { walletsLoadKeystores } from "../../state/wallets/action";
+import { walletsLoadWallets } from "../../state/wallets/action";
 import { applicationActionUpdateAtCreateWallet } from "../../state/application/action";
-import { LeftOutlined, LockOutlined } from '@ant-design/icons';
-import { useApplicationPassword, useImportWalletParams } from "../../state/application/hooks";
+import { LeftOutlined } from '@ant-design/icons';
+import { useApplicationInitWalletPassword, useImportWalletParams } from "../../state/application/hooks";
 import { Import_Type_Mnemonic, Import_Type_PrivateKey } from "./import/ImportWallet";
 import { HDNode } from "ethers/lib/utils";
 import { ethers } from "ethers";
 import { useTranslation } from "react-i18next";
+import { useWalletsList } from "../../state/wallets/hooks";
 
 export default () => {
 
   const { t } = useTranslation();
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const password = useApplicationPassword();
   const importWalletParams = useImportWalletParams();
-  const walletsKeystores = useWalletsKeystores();
-  const [newWalletKeystore, setNewWalletKeystore] = useState<WalletKeystore>();
+  const wallets = useWalletsList();
   const [stepItems, setStepItems] = useState<StepProps[]>([]);
   const [stepCurrent, setStepCurrent] = useState<number>(0);
+  const initWalletPassword = useApplicationInitWalletPassword();
 
   const goBackClick = () => {
     navigate("/wallet/importWallet")
@@ -117,70 +113,59 @@ export default () => {
   };
 
   useEffect(() => {
-    const remove = window.electron.ipcRenderer.on(IPC_CHANNEL, (arg) => {
-      if (arg instanceof Array && arg[0] == WalletSignal) {
-        const method = arg[1];
-        const result = arg[2][0];
-        if (method == Wallet_Methods.storeWallet) {
-          const {
-            success, path, error
-          } = result;
-          if (success) {
-            setTimeout(() => {
-              setStepCurrent(3);
-              dispatch(applicationActionUpdateAtCreateWallet(false));
-              navigate("/main/wallet");
-            }, 1500);
-          }
-        }
-      }
-    });
-    return () => {
-      remove();
-    }
-  }, []);
-
-  useEffect(() => {
     if (importWalletParams) {
-      const { importType, address, mnemonic, password, path, privateKey } = importWalletParams;
-      renderStempItems(importType);
-      let wallet: any;
-      if (importType == Import_Type_PrivateKey && privateKey) {
-        const _wallet = new ethers.Wallet(privateKey);
-        wallet = {
-          mnemonic: undefined,
-          path: undefined,
-          password: undefined,
-          privateKey: _wallet.privateKey,
-          publicKey: _wallet.publicKey,
-          address: _wallet.address
-        }
-      } else if (importType == Import_Type_Mnemonic) {
-        if (mnemonic && path) {
-          const _wallet = HDNode.fromMnemonic(mnemonic, password)
-            .derivePath(path)
+      const importWallet = async () => {
+        const { importType, address, mnemonic, password, path, privateKey } = importWalletParams;
+        renderStempItems(importType);
+        let wallet: {
+          publicKey: string,
+          address: string,
+          path?: string
+        } | undefined = undefined;
+        if (importType == Import_Type_PrivateKey && privateKey) {
+          const _wallet = new ethers.Wallet(privateKey);
           wallet = {
-            mnemonic: mnemonic,
-            path,
-            password,
-            privateKey: _wallet.privateKey,
             publicKey: _wallet.publicKey,
             address: _wallet.address
           }
+        } else if (importType == Import_Type_Mnemonic) {
+          if (mnemonic && path) {
+            const _wallet = HDNode.fromMnemonic(mnemonic, password)
+              .derivePath(path)
+            wallet = {
+              path,
+              publicKey: _wallet.publicKey,
+              address: _wallet.address
+            }
+          }
+        }
+        if (wallet != undefined && address == wallet.address) {
+          if (importType == Import_Type_PrivateKey && privateKey) {
+            const importResult = await window.electron.wallet.importWallet({
+              privateKey
+            }, initWalletPassword);
+          } else if (importType == Import_Type_Mnemonic) {
+            const importResult = await window.electron.wallet.importWallet({
+              mnemonic, password, path
+            }, initWalletPassword);
+          }
+          const _wallets = wallets.map(wallet => {
+            return { ...wallet }
+          })
+          _wallets.push({
+            ...wallet, name: ""
+          });
+          dispatch(walletsLoadWallets(_wallets));
+          setTimeout(() => {
+            setStepCurrent(3);
+            dispatch(applicationActionUpdateAtCreateWallet(false));
+            navigate("/main/wallet");
+          }, 1500);
         }
       }
-      if (wallet != undefined && address == wallet.address) {
-        setNewWalletKeystore(wallet);
-        dispatch(walletsLoadKeystores([wallet]));
-      }
+      importWallet();
     }
   }, [importWalletParams])
-
-  useEffect(() => {
-    if (newWalletKeystore?.address && password) {
-      window.electron.ipcRenderer.sendMessage(IPC_CHANNEL, [WalletSignal, Wallet_Methods.storeWallet, [walletsKeystores, password]]);
-    }
-  }, [newWalletKeystore, password])
 
   return (
     <>

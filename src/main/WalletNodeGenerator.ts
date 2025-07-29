@@ -1,8 +1,4 @@
-import { Contract, Wallet } from "ethers";
 import { HDNode } from "ethers/lib/utils";
-import { SystemContract } from "../constants/SystemContracts";
-import CallMulticallAggregate, { CallMulticallAggregateContractCall, SyncCallMulticallAggregate } from "../state/multicall/CallMulticallAggregate";
-
 
 //////////////////////////////////////////////////
 export enum SupportNodeAddressSelectType {
@@ -10,8 +6,8 @@ export enum SupportNodeAddressSelectType {
   GEN = 2
 }
 export const NodeAddressSelectType = {
-  INPUT : SupportNodeAddressSelectType.INPUT,
-  GEN : SupportNodeAddressSelectType.GEN
+  INPUT: SupportNodeAddressSelectType.INPUT,
+  GEN: SupportNodeAddressSelectType.GEN
 }
 ///////////////////////////////////////////////////
 
@@ -28,29 +24,16 @@ export function getPath(account: SupportChildWalletType, change: number, address
   return `m/44'/60'/${account}'/${change}/${addressIndex}`;
 }
 
-export function generateChildWalletsCheckResult(
-  mnemonic : string, password : string,
+export function generateNodeChildWallets(
+  mnemonic: string, password: string,
+  childWalletType: SupportChildWalletType,
   addressIndex: number, size: number,
-  nodeStorage: Contract, multicallContract: Contract,
-  callback: (err: any, result: {
-    list: { address: string, hdNode: HDNode, exist: boolean }[],
-    map: {
-      [address: string]: { hdNode: HDNode, exist: boolean }
-    }
-  }) => void
 ) {
-  const addressHDNodeMap: {
-    [address: string]: {
-      hdNode: HDNode,
-      exist: boolean
-    }
-  } = {};
-  const list: {
+  let list: {
     address: string,
-    hdNode: HDNode,
-    exist: boolean
+    path: string,
   }[] = [];
-  const HDNodes = nodeStorage.address == SystemContract.SuperNodeStorage
+  const HDNodes = childWalletType == SupportChildWalletType.SN
     ? generateSupernodeTypeChildWallets(
       mnemonic,
       password,
@@ -63,37 +46,14 @@ export function generateChildWalletsCheckResult(
       addressIndex,
       size
     );
-  HDNodes.forEach(hdNode => {
-    addressHDNodeMap[hdNode.address] = { hdNode, exist: true };
-    list.push({
-      address: hdNode.address,
-      exist: true,
-      hdNode
-    });
-  });
-  const addrExistCalls: CallMulticallAggregateContractCall[] = HDNodes.map(({ address }) => {
+  list = HDNodes.map(hdNode => {
     return {
-      contract: nodeStorage,
-      functionName: "exist",
-      params: [address]
+      address: hdNode.address,
+      path: hdNode.path,
+      privateKey: hdNode.privateKey
     }
-  });
-  CallMulticallAggregate(multicallContract, addrExistCalls, () => {
-    addrExistCalls.forEach(call => {
-      const address = call.params[0];
-      addressHDNodeMap[address].exist = call.result;
-      list[addrExistCalls.indexOf(call)].exist = call.result;
-    });
-    callback(undefined, {
-      map: addressHDNodeMap,
-      list
-    });
-  }, (err: any) => {
-    callback(err, {
-      map: addressHDNodeMap,
-      list
-    });
   })
+  return list;
 }
 
 export function generateMasternodeTypeChildWallets(mnemonic: string, password: string, addressIndex: number, size: number): HDNode[] {

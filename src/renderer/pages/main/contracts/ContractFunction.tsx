@@ -1,12 +1,11 @@
 import { Alert, Button, Card, Col, Divider, Input, Row, Spin, Typography } from "antd"
 import { FunctionFragment, Interface } from "ethers/lib/utils"
 import { RefObject, useCallback, useRef, useState } from "react"
-import { useETHBalances, useWalletsActiveAccount, useWalletsActiveSigner } from "../../../state/wallets/hooks"
-import { TransactionResponse } from "@ethersproject/providers"
+import { useETHBalances, useWalletsActiveAccount } from "../../../state/wallets/hooks"
 import { ethers } from "ethers"
 import { useTransactionAdder } from "../../../state/transactions/hooks"
-import { ExportOutlined } from "@ant-design/icons"
 import Safescan from "../../components/Safescan"
+import { useWeb3React } from "@web3-react/core"
 
 const { Text } = Typography
 
@@ -27,11 +26,13 @@ export default ({
   address: string
 }) => {
 
-  const signer = useWalletsActiveSigner();
+  const { provider, chainId } = useWeb3React();
   const { inputs, outputs, constant, payable } = functionFragment;
   const activeAccount = useWalletsActiveAccount();
   const balance = useETHBalances([activeAccount])[activeAccount];
   const addTransaction = useTransactionAdder();
+
+
 
   const inputRefs: {
     [inputName: string]: RefObject<{ input: HTMLInputElement }>
@@ -48,7 +49,7 @@ export default ({
     returnError?: string
   }>();
 
-  const encodeInputParams = useCallback(() => {
+  const encodeInputParams = useCallback(async () => {
     setContractCallError(undefined);
     setContractCall(undefined);
     const inputParams: {
@@ -93,34 +94,44 @@ export default ({
       // 你可以添加其他交易参数，例如 gasLimit 和 gasPrice
     };
 
-    if (signer) {
+    if (chainId && provider) {
       setSending(true);
       const { constant } = functionFragment;
       if (!constant) {
-        signer.sendTransaction(tx).then((transactionResponse: TransactionResponse) => {
-          setSending(false);
-          const { hash } = transactionResponse;
-          setContractCall({
-            encodeFunctionData,
-            transactionHash: hash
-          });
-          addTransaction({ to: address }, transactionResponse, {
-            call: {
-              from: activeAccount,
-              to: address,
-              input: encodeFunctionData,
-              value: value.toString()
-            }
-          });
-        }).catch((err: any) => {
-          setSending(false);
-          console.log("send Transaction err >>", err);
+        const { signedTx, error } = await window.electron.wallet.signTransaction(
+          activeAccount,
+          provider.connection.url,
+          tx
+        );
+        if (error) {
           setContractCallError({
-            returnError: err.error.reason
+            returnError: error.reason
           })
-        })
+        }
+        if (signedTx) {
+          try {
+            const response = await provider.sendTransaction(signedTx);
+            const { hash } = response;
+            setContractCall({
+              encodeFunctionData,
+              transactionHash: hash
+            });
+            addTransaction({ to: address }, response, {
+              call: {
+                from: activeAccount,
+                to: address,
+                input: encodeFunctionData,
+                value: value.toString()
+              }
+            });
+          } catch (err: any) {
+            setContractCallError({
+              returnError: err.reason
+            })
+          }
+        }
       } else {
-        signer.call(tx).then((returnOutputRaw: any) => {
+        provider.call(tx).then((returnOutputRaw: any) => {
           setSending(false);
           console.log("function encode >>", contractCall)
           const decodeFunctionResult = IContract.decodeFunctionResult(functionFragment, returnOutputRaw);
@@ -136,6 +147,7 @@ export default ({
           })
         })
       }
+      setSending(false);
     }
 
   }, [IContract, functionFragment, inputRefs, payableAmount]);

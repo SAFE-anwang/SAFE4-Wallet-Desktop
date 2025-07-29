@@ -12,6 +12,7 @@ import { useProposalContract } from "../../../../hooks/useContracts";
 import { ethers } from "ethers";
 import { TransactionResponse } from "@ethersproject/providers";
 import { useTranslation } from "react-i18next"
+import { useWeb3React } from "@web3-react/core"
 
 const { Text } = Typography;
 
@@ -43,7 +44,7 @@ export default ({
   } = useTransactionResponseRender();
   const addTransaction = useTransactionAdder();
   const activeAccount = useWalletsActiveAccount();
-
+  const { provider, chainId } = useWeb3React();
   const [txHash, setTxHash] = useState<string>();
   const cancel = useCallback(() => {
     setOpenCreateModal(false);
@@ -56,34 +57,54 @@ export default ({
     setErr(undefined)
   }, [txHash]);
 
-  const doCreateProposal = useCallback(() => {
+  const doCreateProposal = useCallback(async () => {
     const { title, payAmount, startPayTime, endPayTime, description, payType, payTimes } = createParams;
-    if (activeAccount && proposalContract && payAmount) {
+    if (activeAccount && proposalContract && payAmount && chainId && provider) {
       setSending(true);
       // function create(string memory _title, uint _payAmount, uint _payTimes, uint _startPayTime, uint _endPayTime, string memory _description) external payable returns (uint);
       const _payTimes = payType == PayType.ONETIME ? 1 : payTimes;
-      const value = ethers.utils.parseEther("1").toBigInt()
+      const value = ethers.utils.parseEther("1");
       const _startPayTime = startPayTime && Math.floor(startPayTime / 1000);
       const _endPayTime = endPayTime && Math.floor(endPayTime / 1000);
-      proposalContract.create(title, ethers.utils.parseEther(payAmount).toBigInt(), _payTimes, _startPayTime, _endPayTime, description, {
+
+      const data = proposalContract.interface.encodeFunctionData("create", [
+        title, ethers.utils.parseEther(payAmount), _payTimes, _startPayTime, _endPayTime, description
+      ]);
+      const tx: ethers.providers.TransactionRequest = {
+        to: proposalContract.address,
+        data,
         value,
-      }).then((response: TransactionResponse) => {
-        const { hash, data } = response;
-        addTransaction({ to: proposalContract.address }, response, {
-          call: {
-            from: activeAccount,
-            to: proposalContract.address,
-            input: data,
-            value: value.toString()
-          }
-        });
-        setTxHash(hash);
+        chainId
+      };
+      const { signedTx, error } = await window.electron.wallet.signTransaction(
+        activeAccount,
+        provider.connection.url,
+        tx
+      );
+      if (signedTx) {
+        try {
+          const response = await provider.sendTransaction(signedTx);
+          const { hash, data } = response;
+          setTransactionResponse(response);
+          addTransaction({ to: proposalContract.address }, response, {
+            call: {
+              from: activeAccount,
+              to: proposalContract.address,
+              input: data,
+              value: value.toString()
+            }
+          });
+          setTxHash(hash);
+        } catch (err) {
+          setErr(err)
+        } finally {
+          setSending(false);
+        }
+      }
+      if (error) {
         setSending(false);
-        setTransactionResponse(response);
-      }).catch((err: any) => {
-        setSending(false);
-        setErr(err)
-      });
+        setErr(error)
+      }
     }
   }, [activeAccount, createParams, proposalContract]);
 

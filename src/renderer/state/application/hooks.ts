@@ -66,6 +66,12 @@ export function useApplicationPassword(): string | undefined {
   })
 }
 
+export function useApplicationInitWalletPassword(): string | undefined {
+  return useSelector((state: AppState) => {
+    return state.application.initWalletPassword;
+  })
+}
+
 export function useApplicationRpcConfigs(): { chainId: number, endpoint: string }[] | undefined {
   return useSelector((state: AppState) => {
     return state.application.rpcConfigs;
@@ -95,31 +101,31 @@ export function useSafeswapSlippageTolerance(): string {
   })
 }
 
-export function useApplicationPlatform() : string {
+export function useApplicationPlatform(): string {
   return useSelector((state: AppState) => {
     const platform = state.application.platform;
-    if ( platform.indexOf("darwin") >= 0 ){
+    if (platform.indexOf("darwin") >= 0) {
       return "macos";
     }
     return "windows"
   })
 }
 
-export function useApplicationWalletUpdate(){
+export function useApplicationWalletUpdate() {
   return useSelector((state: AppState) => {
     return state.application.WalletUpdate;
   })
 }
 
-export function useSNAddresses(){
-  const {chainId} = useWeb3React();
+export function useSNAddresses() {
+  const { chainId } = useWeb3React();
   if (!chainId) return undefined;
   return useSelector((state: AppState) => {
-    return state.application.SNAddresses?state.application.SNAddresses[chainId]:undefined;
+    return state.application.SNAddresses ? state.application.SNAddresses[chainId] : undefined;
   })
 }
 
-export function useSSHConfigMap(){
+export function useSSHConfigMap() {
   return useSelector((state: AppState) => {
     return state.application.sshConfigMap
   })

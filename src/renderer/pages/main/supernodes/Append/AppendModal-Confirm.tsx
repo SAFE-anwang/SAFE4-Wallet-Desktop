@@ -14,6 +14,7 @@ import { useNavigate } from "react-router-dom";
 import { applicationUpdateWalletTab } from "../../../../state/application/action";
 import { Safe4_Business_Config } from "../../../../config";
 import { useTranslation } from "react-i18next";
+import { useWeb3React } from "@web3-react/core";
 
 const { Text } = Typography;
 
@@ -40,38 +41,54 @@ export default ({
   const addTransaction = useTransactionAdder();
   const activeAccount = useWalletsActiveAccount();
   const supernodeLogicContract = useSupernodeLogicContract(true);
+  const { provider, chainId } = useWeb3React();
 
-  const doAppendSupernode = useCallback(() => {
-    if (activeAccount && supernodeLogicContract) {
+  const doAppendSupernode = useCallback(async () => {
+    if (activeAccount && supernodeLogicContract && provider && chainId) {
       setSending(true);
       /**
        *  function appendRegister(address _addr, uint _lockDay) external payable;
        */
       const value = ethers.utils.parseEther(valueAmount + "");
-      supernodeLogicContract.appendRegister(
+      const data = supernodeLogicContract.interface.encodeFunctionData("appendRegister", [
         supernodeInfo.addr,
         Safe4_Business_Config.Masternode.Create.LockDays,
-        {
-          value: value
+      ]);
+      const tx: ethers.providers.TransactionRequest = {
+        to: supernodeLogicContract.address,
+        data,
+        value,
+        chainId
+      };
+      const { signedTx, error } = await window.electron.wallet.signTransaction(
+        activeAccount,
+        provider.connection.url,
+        tx
+      );
+      if (signedTx) {
+        try {
+          const response = await provider.sendTransaction(signedTx);
+          const { hash, data } = response;
+          setTransactionResponse(response);
+          addTransaction({ to: supernodeLogicContract.address }, response, {
+            call: {
+              from: activeAccount,
+              to: supernodeLogicContract.address,
+              input: data,
+              value: value.toString()
+            }
+          });
+          setTxHash(hash);
+        } catch (err) {
+          setErr(err)
+        } finally {
+          setSending(false);
         }
-      ).then((response: TransactionResponse) => {
+      }
+      if (error) {
         setSending(false);
-        const { hash, data } = response;
-        addTransaction({ to: supernodeLogicContract.address }, response, {
-          call: {
-            from: activeAccount,
-            to: supernodeLogicContract.address,
-            input: data,
-            value: value.toString()
-          }
-        });
-        setTransactionResponse(response);
-        setTxHash(hash)
-      }).catch((err: any) => {
-        setSending(false);
-        setErr(err)
-      });
-
+        setErr(error)
+      }
     }
   }, [activeAccount, supernodeLogicContract, valueAmount]);
 

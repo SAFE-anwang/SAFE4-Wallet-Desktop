@@ -14,6 +14,8 @@ import { useNavigate } from "react-router-dom";
 import { applicationUpdateWalletTab } from "../../../../state/application/action";
 import useTransactionResponseRender from "../../../components/useTransactionResponseRender";
 import { useTranslation } from "react-i18next";
+import { useWeb3React } from "@web3-react/core";
+import { ethers } from "ethers";
 
 const { Text, Link } = Typography;
 
@@ -32,6 +34,7 @@ export default ({
   const navigate = useNavigate();
   const [sending, setSending] = useState<boolean>(false);
   const [txHash, setTxHash] = useState<string>();
+  const { provider, chainId } = useWeb3React();
   const cancel = useCallback(() => {
     setOpenVoteModal(false);
     if (txHash) {
@@ -66,14 +69,26 @@ export default ({
 
   const supernodeVoteContract = useSupernodeVoteContract(true);
   const activeAccount = useWalletsActiveAccount();
-  const doVoteSupernode = useCallback(() => {
-    if (supernodeVoteContract) {
+  const doVoteSupernode = useCallback(async () => {
+    if (supernodeVoteContract && provider && chainId) {
       setSending(true);
       // function voteOrApproval(bool _isVote, address _dstAddr, uint[] memory _recordIDs) external;
-      supernodeVoteContract.voteOrApproval(true, supernodeInfo.addr, accountRecordIds, {
-        // gasLimit: 1000000
-      })
-        .then((response: any) => {
+      const data = supernodeVoteContract.interface.encodeFunctionData("voteOrApproval", [
+        true , supernodeInfo.addr, accountRecordIds
+      ]);
+      const tx: ethers.providers.TransactionRequest = {
+        to: supernodeVoteContract.address,
+        data,
+        chainId
+      };
+      const { signedTx, error } = await window.electron.wallet.signTransaction(
+        activeAccount,
+        provider.connection.url,
+        tx
+      );
+      if (signedTx) {
+        try {
+          const response = await provider.sendTransaction(signedTx);
           const { hash, data } = response;
           setTransactionResponse(response);
           addTransaction({ to: supernodeVoteContract.address }, response, {
@@ -85,11 +100,16 @@ export default ({
             }
           });
           setTxHash(hash);
+        } catch (err) {
+          setErr(err)
+        } finally {
           setSending(false);
-        }).catch((err: any) => {
-          setErr(err);
-          setSending(false);
-        })
+        }
+      }
+      if (error) {
+        setSending(false);
+        setErr(error)
+      }
     }
   }, [accountRecordIds, supernodeInfo, supernodeVoteContract, activeAccount]);
 

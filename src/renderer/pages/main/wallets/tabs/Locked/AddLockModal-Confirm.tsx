@@ -9,6 +9,8 @@ import { useAccountManagerContract } from "../../../../../hooks/useContracts";
 import { useCallback, useState } from "react";
 import useTransactionResponseRender from "../../../../components/useTransactionResponseRender";
 import { useTranslation } from "react-i18next";
+import { useWeb3React } from "@web3-react/core";
+import { ethers } from "ethers";
 
 const { Text } = Typography;
 
@@ -42,12 +44,32 @@ export default ({
   } = selectedAccountRecord;
   const locked = unlockHeight > blockNumber;
   const unlockDateTime = unlockHeight - blockNumber > 0 ? DateTimeFormat(((unlockHeight - blockNumber) * 30 + timestamp) * 1000) : undefined;
+  const { provider, chainId } = useWeb3React();
 
-  const doAddLockDay = useCallback((id: number, addLockDay: number) => {
-    if (accountManaggerContract) {
+  const doAddLockDay = useCallback(async (id: number, addLockDay: number) => {
+    if (accountManaggerContract && provider && chainId) {
       setSending(true);
-      accountManaggerContract.addLockDay(id, addLockDay)
-        .then((response: any) => {
+
+      const data = accountManaggerContract.interface.encodeFunctionData("addLockDay", [
+        id, addLockDay
+      ]);
+      const tx: ethers.providers.TransactionRequest = {
+        to: accountManaggerContract.address,
+        data,
+        chainId
+      };
+      const { signedTx, error } = await window.electron.wallet.signTransaction(
+        activeAccount,
+        provider.connection.url,
+        tx
+      );
+      if (error) {
+        setSending(false);
+        setErr(error)
+      }
+      if (signedTx) {
+        try {
+          const response = await provider.sendTransaction(signedTx);
           const { hash, data } = response;
           setTransactionResponse(response);
           addTransaction({ to: accountManaggerContract.address }, response, {
@@ -59,12 +81,12 @@ export default ({
             }
           });
           setTxHash(hash);
-          setSending(false);
-        })
-        .catch((err: any) => {
-          setSending(false);
+        } catch (err) {
           setErr(err)
-        });
+        } finally {
+          setSending(false);
+        }
+      }
     }
   }, [accountManaggerContract, activeAccount])
 

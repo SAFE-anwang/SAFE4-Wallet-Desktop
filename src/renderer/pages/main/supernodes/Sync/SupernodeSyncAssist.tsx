@@ -9,7 +9,7 @@ import { AppState } from "../../../../state";
 import { useMasternodeStorageContract, useMulticallContract, useSupernodeLogicContract, useSupernodeStorageContract } from "../../../../hooks/useContracts";
 import { useTransactionAdder } from "../../../../state/transactions/hooks";
 import { generateChildWallet, NodeAddressSelectType, SupportChildWalletType, SupportNodeAddressSelectType } from "../../../../utils/GenerateChildWallet";
-import { useActiveAccountChildWallets, useETHBalances, useSafe4Balance, useWalletsActiveAccount, useWalletsActiveKeystore } from "../../../../state/wallets/hooks";
+import { useActiveAccountChildWallets, useETHBalances, useSafe4Balance, useWalletsActiveAccount, useWalletsActiveWallet } from "../../../../state/wallets/hooks";
 import { TxExecuteStatus } from "../../safe3/Safe3";
 import { CallMulticallAggregateContractCall, SyncCallMulticallAggregate } from "../../../../state/multicall/CallMulticallAggregate";
 import { enodeRegex, InputRules } from "../Register/SupernodeRegister";
@@ -18,6 +18,7 @@ import SSH2CMDTerminalNodeModal from "../../../components/SSH2CMDTerminalNodeMod
 import { formatSupernodeInfo, SupernodeInfo } from "../../../../structs/Supernode";
 import { walletsUpdateUsedChildWalletAddress } from "../../../../state/wallets/action";
 import { useTranslation } from "react-i18next";
+import { useWeb3React } from "@web3-react/core";
 
 const { Text, Title } = Typography
 
@@ -33,12 +34,13 @@ export default () => {
   const addTransaction = useTransactionAdder();
   const multicallContract = useMulticallContract();
   const [nodeAddressSelectType, setNodeAddressSelectType] = useState<SupportNodeAddressSelectType>();
-  const walletsActiveKeystore = useWalletsActiveKeystore();
+  const wallet = useWalletsActiveWallet();
   const activeAccountChildWallets = useActiveAccountChildWallets(SupportChildWalletType.SN);
   const activeAccount = useWalletsActiveAccount();
   const [openSSH2CMDTerminalNodeModal, setOpenSSH2CMDTerminalNodeModal] = useState<boolean>(false);
   const [nodeAddressPrivateKey, setNodeAddressPrivateKey] = useState<string>();
   const dispatch = useDispatch();
+  const { chainId, provider } = useWeb3React();
   const [helpResult, setHelpResult] = useState<
     {
       enode: string,
@@ -109,12 +111,12 @@ export default () => {
   }, [supernodeInfo])
 
   useEffect(() => {
-    if (walletsActiveKeystore?.mnemonic) {
+    if (wallet?.path) {
       setNodeAddressSelectType(NodeAddressSelectType.GEN)
     } else {
       setNodeAddressSelectType(NodeAddressSelectType.INPUT)
     }
-  }, [walletsActiveKeystore]);
+  }, [wallet]);
 
   useEffect(() => {
     if (editSupernodeId && supernodeStorageContract) {
@@ -208,7 +210,7 @@ export default () => {
   }, [supernodeInfo, selectChildWalletOptions, nodeAddressSelectType, helpResult]);
 
   const doUpdate = useCallback(async () => {
-    if (masternodeStorageContract && supernodeStorageContract && multicallContract && supernodeLogicContract && supernodeInfo) {
+    if (masternodeStorageContract && supernodeStorageContract && multicallContract && supernodeLogicContract && supernodeInfo && chainId && provider) {
       const { address, enode, description, name } = updateParams;
       const inputErrors: {
         address?: string, enode?: string, description?: string
@@ -306,28 +308,50 @@ export default () => {
         return;
       }
 
-
       let _updateResult = updateResult ?? {};
       // DO update address
       if (supernodeInfo.addr != address) {
         try {
-          const estimateGas = await supernodeLogicContract.estimateGas.changeAddress(
+          const data = supernodeLogicContract.interface.encodeFunctionData("changeAddress", [
             supernodeInfo.addr, address
-          );
+          ]);
+          const tx: ethers.providers.TransactionRequest = {
+            to: supernodeLogicContract.address,
+            data,
+            chainId
+          };
+          const estimateGas = await provider.estimateGas({
+            ...tx,
+            from: activeAccount
+          })
           const gasLimit = estimateGas.mul(2);
-          const response = await supernodeLogicContract.changeAddress(supernodeInfo.addr, address, { gasLimit });
-          const { hash, data } = response;
-          addTransaction({ to: supernodeLogicContract.address }, response, {
-            call: {
-              from: activeAccount,
-              to: supernodeLogicContract.address,
-              input: data,
-              value: "0"
+          tx.gasLimit = gasLimit;
+          const { signedTx, error } = await window.electron.wallet.signTransaction(
+            activeAccount,
+            provider.connection.url,
+            tx
+          );
+          if (signedTx) {
+            const response = await provider.sendTransaction(signedTx);
+            const { hash, data } = response;
+            addTransaction({ to: supernodeLogicContract.address }, response, {
+              call: {
+                from: activeAccount,
+                to: supernodeLogicContract.address,
+                input: data,
+                value: "0"
+              }
+            });
+            _updateResult.address = {
+              txHash: hash,
+              status: 1,
             }
-          });
-          _updateResult.address = {
-            txHash: hash,
-            status: 1,
+          }
+          if (error) {
+            _updateResult.address = {
+              status: 0,
+              error: error
+            }
           }
           dispatch(walletsUpdateUsedChildWalletAddress({
             address,
@@ -336,7 +360,7 @@ export default () => {
         } catch (err: any) {
           _updateResult.address = {
             status: 0,
-            error: err.error.reason
+            error: err
           }
         }
         setUpdateResult({ ..._updateResult });
@@ -346,28 +370,51 @@ export default () => {
       // DO Update Enode
       if (supernodeInfo.enode != enode) {
         try {
-          const estimateGas = await supernodeLogicContract.estimateGas.changeEnodeByID(
+          const data = supernodeLogicContract.interface.encodeFunctionData("changeEnodeByID", [
             supernodeInfo.id, enode
-          );
+          ]);
+          const tx: ethers.providers.TransactionRequest = {
+            to: supernodeLogicContract.address,
+            data,
+            chainId
+          };
+          const estimateGas = await provider.estimateGas({
+            ...tx,
+            from: activeAccount
+          })
           const gasLimit = estimateGas.mul(2);
-          const response = await supernodeLogicContract.changeEnodeByID(supernodeInfo.id, enode, { gasLimit });
-          const { hash, data } = response;
-          addTransaction({ to: supernodeLogicContract.address }, response, {
-            call: {
-              from: activeAccount,
-              to: supernodeLogicContract.address,
-              input: data,
-              value: "0"
+          tx.gasLimit = gasLimit;
+          const { signedTx, error } = await window.electron.wallet.signTransaction(
+            activeAccount,
+            provider.connection.url,
+            tx
+          );
+          if (signedTx) {
+            const response = await provider.sendTransaction(signedTx);
+            const { hash, data } = response;
+            addTransaction({ to: supernodeLogicContract.address }, response, {
+              call: {
+                from: activeAccount,
+                to: supernodeLogicContract.address,
+                input: data,
+                value: "0"
+              }
+            });
+            _updateResult.enode = {
+              txHash: hash,
+              status: 1,
             }
-          });
-          _updateResult.enode = {
-            txHash: hash,
-            status: 1,
+          }
+          if (error) {
+            _updateResult.enode = {
+              status: 0,
+              error: error
+            }
           }
         } catch (err: any) {
           _updateResult.enode = {
             status: 0,
-            error: err.error.reason
+            error: err
           }
         }
         setUpdateResult({ ..._updateResult });
@@ -377,28 +424,51 @@ export default () => {
       // DO Update description
       if (description != supernodeInfo.description) {
         try {
-          const estimateGas = await supernodeLogicContract.estimateGas.changeDescriptionByID(
+          const data = supernodeLogicContract.interface.encodeFunctionData("changeDescriptionByID", [
             supernodeInfo.id, description
-          );
+          ]);
+          const tx: ethers.providers.TransactionRequest = {
+            to: supernodeLogicContract.address,
+            data,
+            chainId
+          };
+          const estimateGas = await provider.estimateGas({
+            ...tx,
+            from: activeAccount
+          })
           const gasLimit = estimateGas.mul(2);
-          const response = await supernodeLogicContract.changeDescriptionByID(supernodeInfo.id, description, { gasLimit });
-          const { hash, data } = response;
-          addTransaction({ to: supernodeLogicContract.address }, response, {
-            call: {
-              from: activeAccount,
-              to: supernodeLogicContract.address,
-              input: data,
-              value: "0"
+          tx.gasLimit = gasLimit;
+          const { signedTx, error } = await window.electron.wallet.signTransaction(
+            activeAccount,
+            provider.connection.url,
+            tx
+          );
+          if (signedTx) {
+            const response = await provider.sendTransaction(signedTx);
+            const { hash, data } = response;
+            addTransaction({ to: supernodeLogicContract.address }, response, {
+              call: {
+                from: activeAccount,
+                to: supernodeLogicContract.address,
+                input: data,
+                value: "0"
+              }
+            });
+            _updateResult.description = {
+              txHash: hash,
+              status: 1,
             }
-          });
-          _updateResult.description = {
-            status: 1,
-            txHash: hash
+          }
+          if (error) {
+            _updateResult.description = {
+              status: 0,
+              error: error
+            }
           }
         } catch (err: any) {
           _updateResult.description = {
-            status: 1,
-            error: err.error.reason
+            status: 0,
+            error: err
           }
         }
         setUpdateResult({ ..._updateResult });
@@ -409,23 +479,47 @@ export default () => {
       // DO update name
       if (name != supernodeInfo.name) {
         try {
-          const estimateGas = await supernodeLogicContract.estimateGas.changeNameByID(
+
+          const data = supernodeLogicContract.interface.encodeFunctionData("changeNameByID", [
             supernodeInfo.id, name
-          );
+          ]);
+          const tx: ethers.providers.TransactionRequest = {
+            to: supernodeLogicContract.address,
+            data,
+            chainId
+          };
+          const estimateGas = await provider.estimateGas({
+            ...tx,
+            from: activeAccount
+          })
           const gasLimit = estimateGas.mul(2);
-          const response = await supernodeLogicContract.changeNameByID(supernodeInfo.id, name, { gasLimit });
-          const { hash, data } = response;
-          addTransaction({ to: supernodeLogicContract.address }, response, {
-            call: {
-              from: activeAccount,
-              to: supernodeLogicContract.address,
-              input: data,
-              value: "0"
+          tx.gasLimit = gasLimit;
+          const { signedTx, error } = await window.electron.wallet.signTransaction(
+            activeAccount,
+            provider.connection.url,
+            tx
+          );
+          if (signedTx) {
+            const response = await provider.sendTransaction(signedTx);
+            const { hash, data } = response;
+            addTransaction({ to: supernodeLogicContract.address }, response, {
+              call: {
+                from: activeAccount,
+                to: supernodeLogicContract.address,
+                input: data,
+                value: "0"
+              }
+            });
+            _updateResult.name = {
+              txHash: hash,
+              status: 1,
             }
-          });
-          _updateResult.name = {
-            status: 1,
-            txHash: hash
+          }
+          if (error) {
+            _updateResult.name = {
+              status: 0,
+              error: error
+            }
           }
         } catch (err: any) {
           _updateResult.name = {
@@ -448,19 +542,40 @@ export default () => {
           || voter != supernodeInfo.incentivePlan.voter;
         if (incentivePlanChange) {
           try {
-            const response = await supernodeLogicContract.changeIncentivePlan(supernodeInfo.id, creator, partner, voter);
-            const { hash, data } = response;
-            addTransaction({ to: supernodeLogicContract.address }, response, {
-              call: {
-                from: activeAccount,
-                to: supernodeLogicContract.address,
-                input: data,
-                value: "0"
+            const data = supernodeLogicContract.interface.encodeFunctionData("changeIncentivePlan", [
+              supernodeInfo.id, creator, partner, voter
+            ]);
+            const tx: ethers.providers.TransactionRequest = {
+              to: supernodeLogicContract.address,
+              data,
+              chainId
+            };
+            const { signedTx, error } = await window.electron.wallet.signTransaction(
+              activeAccount,
+              provider.connection.url,
+              tx
+            );
+            if (signedTx) {
+              const response = await provider.sendTransaction(signedTx);
+              const { hash, data } = response;
+              addTransaction({ to: supernodeLogicContract.address }, response, {
+                call: {
+                  from: activeAccount,
+                  to: supernodeLogicContract.address,
+                  input: data,
+                  value: "0"
+                }
+              });
+              _updateResult.incentivePlan = {
+                txHash: hash,
+                status: 1,
               }
-            });
-            _updateResult.incentivePlan = {
-              status: 1,
-              txHash: hash
+            }
+            if (error) {
+              _updateResult.incentivePlan = {
+                status: 0,
+                error: error
+              }
             }
           } catch (err: any) {
             console.log("Error >>", err)
@@ -481,20 +596,17 @@ export default () => {
     }
   }, [activeAccount, updateParams, masternodeStorageContract, supernodeStorageContract, multicallContract, supernodeLogicContract, supernodeInfo, sliderVal]);
 
-  const helpToCreate = useCallback(() => {
+  const helpToCreate = useCallback(async () => {
     if (updateParams.address && activeAccountChildWallets && activeAccountChildWallets.wallets[updateParams.address]
-      && walletsActiveKeystore?.mnemonic
+      && wallet?.path
     ) {
-      const path = activeAccountChildWallets.wallets[updateParams.address].path;
-      const hdNode = generateChildWallet(
-        walletsActiveKeystore.mnemonic,
-        walletsActiveKeystore.password ? walletsActiveKeystore.password : "",
-        path
-      );
-      setNodeAddressPrivateKey(hdNode.privateKey);
+      const nodeAddress = updateParams.address;
+      const { path } = activeAccountChildWallets.wallets[nodeAddress];
+      const privateKey = await window.electron.wallet.drivePkByPath(wallet.address, path);
+      setNodeAddressPrivateKey(privateKey);
     }
     setOpenSSH2CMDTerminalNodeModal(true);
-  }, [updateParams, walletsActiveKeystore, activeAccountChildWallets]);
+  }, [updateParams, wallet, activeAccountChildWallets]);
 
   return <>
 
@@ -554,7 +666,7 @@ export default () => {
                         setNodeAddressSelectType(event.target.value);
                       }}>
                       <Space style={{ height: "20px" }} direction="vertical">
-                        <Radio disabled={walletsActiveKeystore?.mnemonic == undefined}
+                        <Radio disabled={wallet?.path == undefined}
                           value={NodeAddressSelectType.GEN}>
                           {t("wallet_supernodes_address_tip3")}
                         </Radio>
@@ -733,7 +845,7 @@ export default () => {
                             <Text type="secondary">{t("wallet_supernodes_sync_error_address")}</Text><br />
                             <Text strong type="danger">
                               <CloseCircleTwoTone twoToneColor="red" style={{ marginRight: "5px" }} />
-                              {updateResult.address.error}
+                              {updateResult.address.error.reason}
                             </Text> <br />
                           </>
                         }
@@ -752,7 +864,7 @@ export default () => {
                             <Text type="secondary">{t("wallet_supernodes_sync_error_enode")}</Text><br />
                             <Text strong type="danger">
                               <CloseCircleTwoTone twoToneColor="red" style={{ marginRight: "5px" }} />
-                              {updateResult.enode.error}
+                              {updateResult.enode.error.reason}
                             </Text> <br />
                           </>
                         }
@@ -771,7 +883,7 @@ export default () => {
                             <Text type="secondary">{t("wallet_supernodes_sync_error_name")}</Text><br />
                             <Text strong type="danger">
                               <CloseCircleTwoTone twoToneColor="red" style={{ marginRight: "5px" }} />
-                              {updateResult.name.error}
+                              {updateResult.name.error.reason}
                             </Text> <br />
                           </>
                         }
@@ -790,7 +902,7 @@ export default () => {
                             <Text type="secondary">{t("wallet_supernodes_sync_error_description")}</Text><br />
                             <Text strong type="danger">
                               <CloseCircleTwoTone twoToneColor="red" style={{ marginRight: "5px" }} />
-                              {updateResult.description.error}
+                              {updateResult.description.error.reason}
                             </Text> <br />
                           </>
                         }

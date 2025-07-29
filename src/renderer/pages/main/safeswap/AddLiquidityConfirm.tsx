@@ -8,7 +8,7 @@ import ERC20TokenLogoComponent from "../../components/ERC20TokenLogoComponent";
 import { useSafeswapV2Router } from "../../../hooks/useContracts";
 import { useSafeswapSlippageTolerance, useTimestamp } from "../../../state/application/hooks";
 import { Contract, ethers } from "ethers";
-import { useTokenAllowanceAmounts, useWalletsActiveAccount, useWalletsActiveSigner } from "../../../state/wallets/hooks";
+import { useTokenAllowanceAmounts, useWalletsActiveAccount } from "../../../state/wallets/hooks";
 import { useTransactionAdder } from "../../../state/transactions/hooks";
 import useTransactionResponseRender from "../../components/useTransactionResponseRender";
 import { useCallback, useMemo, useState } from "react";
@@ -20,6 +20,7 @@ import { getSlippageTolerancePercent } from "./Swap";
 import { SafeswapV2RouterAddress } from "../../../config";
 import { IERC20_Interface } from "../../../abis";
 import TokenSymbol from "../../components/TokenSymbol";
+import { useWeb3React } from "@web3-react/core";
 
 const { Text, Link } = Typography;
 
@@ -45,12 +46,12 @@ export default ({
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { t } = useTranslation();
-  const signer = useWalletsActiveSigner();
+  const { chainId, provider } = useWeb3React();
   const SwapV2RouterContract = useSafeswapV2Router(true);
   const timestamp = useTimestamp();
   const activeAccount = useWalletsActiveAccount();
-  const tokenAContract = tokenA ? new Contract(tokenA.address, IERC20_Interface, signer) : undefined;
-  const tokenBContract = tokenB ? new Contract(tokenB.address, IERC20_Interface, signer) : undefined;
+  const tokenAContract = tokenA ? new Contract(tokenA.address, IERC20_Interface, provider) : undefined;
+  const tokenBContract = tokenB ? new Contract(tokenB.address, IERC20_Interface, provider) : undefined;
   const addTransaction = useTransactionAdder();
   const {
     render,
@@ -105,8 +106,8 @@ export default ({
       hash?: string
     }
   }>({});
-  const approveRouter = useCallback(() => {
-    if (tokenA && activeAccount && tokenAContract) {
+  const approveRouter = useCallback(async () => {
+    if (tokenA && activeAccount && tokenAContract && chainId && provider) {
       setApproveTokenHash({
         ...approveTokenHash,
         [tokenA.address]: {
@@ -114,10 +115,23 @@ export default ({
         }
       });
       setWaitApprove(true);
-      tokenAContract.approve(SafeswapV2RouterAddress, ethers.utils.parseUnits(tokenAAmount, tokenA.decimals))
-        .then((response: any) => {
+      const data = tokenAContract.interface.encodeFunctionData("approve", [
+        SafeswapV2RouterAddress, ethers.utils.parseUnits(tokenAAmount, tokenA.decimals)
+      ]);
+      const tx: ethers.providers.TransactionRequest = {
+        to: tokenAContract.address,
+        data,
+        chainId
+      };
+      const { signedTx, error } = await window.electron.wallet.signTransaction(
+        activeAccount,
+        provider.connection.url,
+        tx
+      );
+      if (signedTx) {
+        try {
+          const response = await provider.sendTransaction(signedTx);
           const { hash, data } = response;
-          setWaitApprove(false);
           setApproveTokenHash({
             ...approveTokenHash,
             [tokenA.address]: {
@@ -125,14 +139,20 @@ export default ({
               execute: true
             }
           })
-        }).catch((err: any) => {
+        } catch (err) {
+          setErr(err)
+        } finally {
           setWaitApprove(false);
-          console.log("Approve TokenA Error =", err)
-        })
+        }
+      }
+      if (error) {
+        setWaitApprove(false);
+        console.log("Approve TokenA Error =", err)
+      }
     }
   }, [activeAccount, tokenA, tokenAContract]);
-  const approveRouterForTokenB = useCallback(() => {
-    if (tokenB && activeAccount && tokenBContract) {
+  const approveRouterForTokenB = useCallback(async () => {
+    if (tokenB && activeAccount && tokenBContract && chainId && provider) {
       setApproveTokenHash({
         ...approveTokenHash,
         [tokenB.address]: {
@@ -140,10 +160,23 @@ export default ({
         }
       })
       setWaitApprove(true);
-      tokenBContract.approve(SafeswapV2RouterAddress, ethers.utils.parseUnits(tokenBAmount, tokenB.decimals))
-        .then((response: any) => {
+      const data = tokenBContract.interface.encodeFunctionData("approve", [
+        SafeswapV2RouterAddress, ethers.utils.parseUnits(tokenBAmount, tokenB.decimals)
+      ]);
+      const tx: ethers.providers.TransactionRequest = {
+        to: tokenBContract.address,
+        data,
+        chainId
+      };
+      const { signedTx, error } = await window.electron.wallet.signTransaction(
+        activeAccount,
+        provider.connection.url,
+        tx
+      );
+      if (signedTx) {
+        try {
+          const response = await provider.sendTransaction(signedTx);
           const { hash, data } = response;
-          setWaitApprove(false);
           setApproveTokenHash({
             ...approveTokenHash,
             [tokenB.address]: {
@@ -151,15 +184,21 @@ export default ({
               execute: true
             }
           })
-        }).catch((err: any) => {
+        } catch (err) {
+          setErr(err)
+        } finally {
           setWaitApprove(false);
-          console.log("Approve TokenB Error =", err)
-        })
+        }
+      }
+      if (error) {
+        setWaitApprove(false);
+        console.log("Approve TokenA Error =", err)
+      }
     }
   }, [activeAccount, tokenB, tokenBContract]);
 
-  const swap = () => {
-    if (SwapV2RouterContract) {
+  const doAddLiquidity = async () => {
+    if (SwapV2RouterContract && chainId && provider) {
       setSending(true);
       const deadline = timestamp + 60 * 10;
       const to = activeAccount;
@@ -172,30 +211,50 @@ export default ({
         const valueMin = value.mul(
           getSlippageToleranceBigInteger(slippageTolerance)
         ).div(10000);
-        SwapV2RouterContract.addLiquidityETH(
+
+        const data = SwapV2RouterContract.interface.encodeFunctionData("addLiquidityETH", [
           tokenB.address,
           amountTokenDesired,
           amountTokenMin,
           valueMin,
           to,
-          deadline,
-          { value }
-        ).then((response: any) => {
-          const { hash, data } = response;
-          setTransactionResponse(response);
-          addTransaction({ to: SwapV2RouterContract.address }, response, {
-            call: {
-              from: activeAccount,
-              to: SwapV2RouterContract.address,
-              input: data,
-              value: value.toString(),
-            }
-          });
-          setTxHash(hash);
-        }).catch((err: any) => {
-          setErr(err);
-          console.log("Swap Error =", err)
-        })
+          deadline
+        ]);
+        const tx: ethers.providers.TransactionRequest = {
+          to: SwapV2RouterContract.address,
+          data,
+          chainId,
+          value
+        };
+        const { signedTx, error } = await window.electron.wallet.signTransaction(
+          activeAccount,
+          provider.connection.url,
+          tx
+        );
+        if (signedTx) {
+          try {
+            const response = await provider.sendTransaction(signedTx);
+            const { hash, data } = response;
+            setTransactionResponse(response);
+            addTransaction({ to: SwapV2RouterContract.address }, response, {
+              call: {
+                from: activeAccount,
+                to: SwapV2RouterContract.address,
+                input: data,
+                value: "0"
+              }
+            });
+            setTxHash(hash);
+          } catch (err) {
+            setErr(err)
+          } finally {
+            setSending(false);
+          }
+        }
+        if (error) {
+          setSending(false);
+          setErr(error)
+        }
       } else if (tokenA && tokenB == undefined) {
         const amountTokenDesired = ethers.utils.parseUnits(tokenAAmount, tokenA.decimals);
         const amountTokenMin = amountTokenDesired.mul(
@@ -205,30 +264,50 @@ export default ({
         const valueMin = value.mul(
           getSlippageToleranceBigInteger(slippageTolerance)
         ).div(10000);
-        SwapV2RouterContract.addLiquidityETH(
+
+        const data = SwapV2RouterContract.interface.encodeFunctionData("addLiquidityETH", [
           tokenA.address,
           amountTokenDesired,
           amountTokenMin,
           valueMin,
           to,
-          deadline,
-          { value }
-        ).then((response: any) => {
-          const { hash, data } = response;
-          setTransactionResponse(response);
-          addTransaction({ to: SwapV2RouterContract.address }, response, {
-            call: {
-              from: activeAccount,
-              to: SwapV2RouterContract.address,
-              input: data,
-              value: value.toString(),
-            }
-          });
-          setTxHash(hash);
-        }).catch((err: any) => {
-          setErr(err);
-          console.log("Swap Error =", err)
-        })
+          deadline
+        ]);
+        const tx: ethers.providers.TransactionRequest = {
+          to: SwapV2RouterContract.address,
+          data,
+          chainId,
+          value
+        };
+        const { signedTx, error } = await window.electron.wallet.signTransaction(
+          activeAccount,
+          provider.connection.url,
+          tx
+        );
+        if (signedTx) {
+          try {
+            const response = await provider.sendTransaction(signedTx);
+            const { hash, data } = response;
+            setTransactionResponse(response);
+            addTransaction({ to: SwapV2RouterContract.address }, response, {
+              call: {
+                from: activeAccount,
+                to: SwapV2RouterContract.address,
+                input: data,
+                value: "0"
+              }
+            });
+            setTxHash(hash);
+          } catch (err) {
+            setErr(err)
+          } finally {
+            setSending(false);
+          }
+        }
+        if (error) {
+          setSending(false);
+          setErr(error)
+        }
       } else if (tokenA && tokenB) {
         const amountADesired = ethers.utils.parseUnits(tokenAAmount, tokenA.decimals);
         const amountBDesired = ethers.utils.parseUnits(tokenBAmount, tokenB.decimals);
@@ -238,7 +317,8 @@ export default ({
         const amountBMin = amountBDesired.mul(
           getSlippageToleranceBigInteger(slippageTolerance)
         ).div(10000);
-        SwapV2RouterContract.addLiquidity(
+
+        const data = SwapV2RouterContract.interface.encodeFunctionData("addLiquidity", [
           tokenA.address,
           tokenB.address,
           amountADesired,
@@ -246,23 +326,42 @@ export default ({
           amountAMin,
           amountBMin,
           to,
-          deadline,
-        ).then((response: any) => {
-          const { hash, data } = response;
-          setTransactionResponse(response);
-          addTransaction({ to: SwapV2RouterContract.address }, response, {
-            call: {
-              from: activeAccount,
-              to: SwapV2RouterContract.address,
-              input: data,
-              value: "0",
-            }
-          });
-          setTxHash(hash);
-        }).catch((err: any) => {
-          setErr(err);
-          console.log("Swap Error =", err)
-        })
+          deadline
+        ]);
+        const tx: ethers.providers.TransactionRequest = {
+          to: SwapV2RouterContract.address,
+          data,
+          chainId
+        };
+        const { signedTx, error } = await window.electron.wallet.signTransaction(
+          activeAccount,
+          provider.connection.url,
+          tx
+        );
+        if (signedTx) {
+          try {
+            const response = await provider.sendTransaction(signedTx);
+            const { hash, data } = response;
+            setTransactionResponse(response);
+            addTransaction({ to: SwapV2RouterContract.address }, response, {
+              call: {
+                from: activeAccount,
+                to: SwapV2RouterContract.address,
+                input: data,
+                value: "0"
+              }
+            });
+            setTxHash(hash);
+          } catch (err) {
+            setErr(err)
+          } finally {
+            setSending(false);
+          }
+        }
+        if (error) {
+          setSending(false);
+          setErr(error)
+        }
       }
     }
   }
@@ -277,7 +376,7 @@ export default ({
         <Col span={3}>
           {
             tokenA ? <>
-              <ERC20TokenLogoComponent style={{ width: "40px", height: "40px", padding: "4px" }} address={tokenA.address} chainId={tokenA.chainId} />
+              <ERC20TokenLogoComponent style={{ width: "40px", height: "40px" }} address={tokenA.address} chainId={tokenA.chainId} />
             </> : <>
               <TokenLogo width="40px" height="40px" />
             </>
@@ -298,7 +397,7 @@ export default ({
         <Col span={3}>
           {
             tokenB ? <>
-              <ERC20TokenLogoComponent style={{ width: "40px", height: "40px", padding: "4px" }} address={tokenB.address} chainId={tokenB.chainId} />
+              <ERC20TokenLogoComponent style={{ width: "40px", height: "40px" }} address={tokenB.address} chainId={tokenB.chainId} />
             </> : <>
               <TokenLogo width="40px" height="40px" />
             </>
@@ -336,7 +435,7 @@ export default ({
         {
           needApproveTokenB && tokenB && <Col span={24}>
             <Alert style={{ marginTop: "10px", marginBottom: "10px" }} type="warning" message={<>
-              <Text>需要先授权 Safeswap 访问 {tokenB? TokenSymbol(tokenB) : ""}</Text>
+              <Text>需要先授权 Safeswap 访问 {tokenB ? TokenSymbol(tokenB) : ""}</Text>
               <Link disabled={approveTokenHash[tokenB?.address]?.execute || waitApprove} onClick={approveRouterForTokenB} style={{ float: "right" }}>
                 {
                   approveTokenHash[tokenB?.address]?.execute && <SyncOutlined spin />
@@ -355,7 +454,7 @@ export default ({
         <Col span={24}>
           {
             !sending && !render && <Button icon={<SendOutlined />} onClick={() => {
-              swap();
+              doAddLiquidity();
             }} type="primary" disabled={!tokenAllowanceAmounts || (needApproveTokenB || needApproveTokenA)} style={{ float: "right" }}>
               {t("wallet_send_status_broadcast")}
             </Button>

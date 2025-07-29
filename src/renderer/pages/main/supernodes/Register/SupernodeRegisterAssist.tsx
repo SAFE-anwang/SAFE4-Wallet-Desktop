@@ -1,6 +1,6 @@
 import { Typography, Row, Col, Button, Card, Divider, Input, Slider, Alert, Radio, Space, Spin, Select } from 'antd';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useActiveAccountChildWallets, useETHBalances, useWalletsActiveAccount, useWalletsActiveKeystore } from '../../../../state/wallets/hooks';
+import { useActiveAccountChildWallets, useETHBalances, useWalletsActiveAccount, useWalletsActiveWallet } from '../../../../state/wallets/hooks';
 import { useMasternodeStorageContract, useMulticallContract, useSupernodeStorageContract } from '../../../../hooks/useContracts';
 import { LeftOutlined, QuestionCircleOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
@@ -9,7 +9,7 @@ import { ethers } from 'ethers';
 import CreateModalConfirm from './CreateModal-Confirm';
 import NumberFormat from '../../../../utils/NumberFormat';
 import { Safe4_Business_Config } from '../../../../config';
-import CallMulticallAggregate, { CallMulticallAggregateContractCall, SyncCallMulticallAggregate } from '../../../../state/multicall/CallMulticallAggregate';
+import CallMulticallAggregate, { CallMulticallAggregateContractCall } from '../../../../state/multicall/CallMulticallAggregate';
 import SSH2CMDTerminalNodeModal from '../../../components/SSH2CMDTerminalNodeModal';
 import AddressComponent from '../../../components/AddressComponent';
 import { generateChildWallet, NodeAddressSelectType, SupportChildWalletType, SupportNodeAddressSelectType } from '../../../../utils/GenerateChildWallet';
@@ -46,7 +46,7 @@ export default () => {
   const [openSSH2CMDTerminalNodeModal, setOpenSSH2CMDTerminalNodeModal] = useState<boolean>(false);
   const [nodeAddressPrivateKey, setNodeAddressPrivateKey] = useState<string>();
   const [nodeAddress, setNodeAddress] = useState<string>();
-  const walletsActiveKeystore = useWalletsActiveKeystore();
+
   const activeAccountChildWallets = useActiveAccountChildWallets(SupportChildWalletType.SN);
   const [nodeAddressSelectType, setNodeAddressSelectType] = useState<SupportNodeAddressSelectType>();
   const activeAccountNodeInfo = useAddrNodeInfo(activeAccount);
@@ -94,13 +94,15 @@ export default () => {
     address: undefined
   });
 
+  const wallet = useWalletsActiveWallet();
   useEffect(() => {
-    if (walletsActiveKeystore?.mnemonic) {
+    if (wallet?.path) {
       setNodeAddressSelectType(NodeAddressSelectType.GEN)
     } else {
       setNodeAddressSelectType(NodeAddressSelectType.INPUT)
     }
-  }, [walletsActiveKeystore]);
+
+  }, [wallet]);
 
   const nextClick = () => {
     const { name, enode, description, incentivePlan, address } = createParams;
@@ -111,7 +113,7 @@ export default () => {
       inputErrors.name = t("please_enter") + t("wallet_supernodes_name");
     };
     if (name && (name.length < InputRules.name.min || name.length > InputRules.name.max)) {
-      inputErrors.name = t("wallet_supernodes_name_lengthrule" , { min : InputRules.name.min , max:InputRules.name.max });
+      inputErrors.name = t("wallet_supernodes_name_lengthrule", { min: InputRules.name.min, max: InputRules.name.max });
     }
     if (!enode) {
       inputErrors.enode = t("please_enter") + t("wallet_supernodes_enode");
@@ -139,7 +141,7 @@ export default () => {
       inputErrors.description = t("please_enter") + t("wallet_supernodes_description");
     };
     if (description && (description.length < InputRules.description.min || description.length > InputRules.description.max)) {
-      inputErrors.description =  t("wallet_supernodes_description_lengthrule" , { min : InputRules.description.min , max:InputRules.description.max });
+      inputErrors.description = t("wallet_supernodes_description_lengthrule", { min: InputRules.description.min, max: InputRules.description.max });
     }
 
     if (createParams.createType == Supernode_Create_Type_NoUnion
@@ -245,7 +247,7 @@ export default () => {
     setNodeAddress(undefined);
     setNodeAddressPrivateKey(undefined);
     setHelpResult(undefined);
-  }, [walletsActiveKeystore]);
+  }, [wallet]);
 
   const selectChildWalletOptions = useMemo(() => {
     if (activeAccountChildWallets) {
@@ -302,21 +304,18 @@ export default () => {
     }
   }, [createParams, selectChildWalletOptions, nodeAddressSelectType])
 
-  const helpToCreate = useCallback(() => {
+  const helpToCreate = useCallback(async () => {
     if (createParams.address && activeAccountChildWallets && activeAccountChildWallets.wallets[createParams.address]
-      && walletsActiveKeystore?.mnemonic
+      && wallet?.path
     ) {
-      const path = activeAccountChildWallets.wallets[createParams.address].path;
-      const hdNode = generateChildWallet(
-        walletsActiveKeystore.mnemonic,
-        walletsActiveKeystore.password ? walletsActiveKeystore.password : "",
-        path
-      );
-      setNodeAddress(hdNode.address);
-      setNodeAddressPrivateKey(hdNode.privateKey);
+      const nodeAddress = createParams.address;
+      const { path } = activeAccountChildWallets.wallets[nodeAddress];
+      const privateKey = await window.electron.wallet.drivePkByPath(wallet.address, path);
+      setNodeAddress(nodeAddress);
+      setNodeAddressPrivateKey(privateKey);
       setOpenSSH2CMDTerminalNodeModal(true);
     }
-  }, [createParams, walletsActiveKeystore, activeAccountChildWallets]);
+  }, [createParams, wallet, activeAccountChildWallets]);
 
   return <>
     <Row style={{ height: "50px" }}>
@@ -495,7 +494,7 @@ export default () => {
           <Row>
             <Text type='secondary'>{t("wallet_supernodes_description")}</Text>
             <Input.TextArea style={{ height: "100px" }} status={inputErrors.description ? "error" : ""}
-              value={createParams.description} placeholder={t("please_enter")+t("wallet_supernodes_description")} onChange={(event) => {
+              value={createParams.description} placeholder={t("please_enter") + t("wallet_supernodes_description")} onChange={(event) => {
                 const inputDescription = event.target.value;
                 setInputErrors({
                   ...inputErrors,

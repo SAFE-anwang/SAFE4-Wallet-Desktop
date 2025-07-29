@@ -2,14 +2,14 @@
 import { Button, Col, Divider, Row, Typography, Alert } from "antd"
 import { useCallback, useMemo, useState } from "react";
 import { ethers } from "ethers";
-import { LockOutlined, SendOutlined } from '@ant-design/icons';
-import { useWalletsActiveAccount, useWalletsActiveSigner } from "../../../../state/wallets/hooks";
+import { SendOutlined } from '@ant-design/icons';
+import { useWalletsActiveAccount } from "../../../../state/wallets/hooks";
 import { useTransactionAdder } from "../../../../state/transactions/hooks";
-import AddressView from "../../../components/AddressView";
 import useTransactionResponseRender from "../../../components/useTransactionResponseRender";
 import { useAccountManagerContract } from "../../../../hooks/useContracts";
 import { useTranslation } from "react-i18next";
 import AddressComponent from "../../../components/AddressComponent";
+import { useWeb3React } from "@web3-react/core";
 
 const { Text } = Typography;
 
@@ -25,10 +25,10 @@ export default ({
 }) => {
 
   const { t } = useTranslation();
-  const signer = useWalletsActiveSigner();
+  const { provider, chainId } = useWeb3React();
   const activeAccount = useWalletsActiveAccount();
   const addTransaction = useTransactionAdder();
-  const accountManaggerContract = useAccountManagerContract(true);
+  const accountManaggerContract = useAccountManagerContract(false);
   const doLockTransfer = useMemo(() => {
     return lockDay && lockDay > 0;
   }, [lockDay])
@@ -37,62 +37,88 @@ export default ({
     render,
     setTransactionResponse,
     setErr,
-    response,
-    err
   } = useTransactionResponseRender();
   const [sending, setSending] = useState<boolean>(false);
 
-  const doSendTransaction = useCallback(({ to, amount, lockDay }: { to: string, amount: string, lockDay: number | undefined }) => {
-    if (signer && accountManaggerContract) {
+  const doSendTransaction = useCallback(async ({ to, amount, lockDay }: { to: string, amount: string, lockDay: number | undefined }) => {
+    if (accountManaggerContract && chainId && provider) {
       const value = ethers.utils.parseEther(amount);
       if (lockDay && lockDay > 0) {
         setSending(true);
-        accountManaggerContract.deposit(to, lockDay, {
-          value: ethers.utils.parseEther(amount),
-        }).then((response: any) => {
-          const { hash, data } = response;
-          setTransactionResponse(response);
-          addTransaction({ to: accountManaggerContract.address }, response, {
-            call: {
-              from: activeAccount,
-              to: accountManaggerContract.address,
-              input: data,
-              value: ethers.utils.parseEther(amount).toString()
-            }
-          });
-          setTxHash(hash);
+        const data = accountManaggerContract.interface.encodeFunctionData("deposit", [to, lockDay]);
+        const tx: ethers.providers.TransactionRequest = {
+          to: accountManaggerContract.address,
+          data,
+          value,
+          chainId
+        };
+        const { signedTx, error } = await window.electron.wallet.signTransaction(
+          activeAccount,
+          provider.connection.url,
+          tx
+        );
+        if (signedTx) {
+          try {
+            const response = await provider.sendTransaction(signedTx);
+            const { hash, data } = response;
+            setTransactionResponse(response);
+            addTransaction({ to: accountManaggerContract.address }, response, {
+              call: {
+                from: activeAccount,
+                to: accountManaggerContract.address,
+                input: data,
+                value: ethers.utils.parseEther(amount).toString()
+              }
+            });
+            setTxHash(hash);
+          } catch (err) {
+            setErr(err)
+          } finally {
+            setSending(false);
+          }
+        }
+        if (error) {
           setSending(false);
-        }).catch((err: any) => {
-          setSending(false);
-          setErr(err)
-        })
+          setErr(error)
+        }
       } else {
         const tx = {
           to,
           value,
+          chainId
         }
         setSending(true);
-        signer.sendTransaction(tx).then(response => {
+        const { signedTx, error } = await window.electron.wallet.signTransaction(
+          activeAccount,
+          provider.connection.url,
+          tx
+        );
+        if (signedTx) {
+          try {
+            const response = await provider.sendTransaction(signedTx);
+            const { hash } = response;
+            setTxHash(hash);
+            setTransactionResponse(response);
+            addTransaction(tx, response, {
+              transfer: {
+                from: activeAccount,
+                to: tx.to,
+                value: tx.value.toString()
+              }
+            });
+          } catch (err) {
+            setErr(err)
+          } finally {
+            setSending(false);
+          }
+        }
+        if (error) {
           setSending(false);
-          const {
-            hash
-          } = response;
-          setTxHash(hash);
-          setTransactionResponse(response);
-          addTransaction(tx, response, {
-            transfer: {
-              from: activeAccount,
-              to: tx.to,
-              value: tx.value.toString()
-            }
-          });
-        }).catch(err => {
-          setSending(false);
-          setErr(err)
-        })
+          setErr(error)
+        }
       }
     }
-  }, [signer, accountManaggerContract]);
+  }, [accountManaggerContract,activeAccount]);
 
   return (<>
     <div style={{ minHeight: "300px" }}>

@@ -2,6 +2,7 @@ import { useRef, useState } from "react";
 import { useDispatch } from "react-redux";
 import { SSH2ConnectConfig } from "../../main/SSH2Ipc";
 import { applicationSaveOrUpdateSSHConfigs } from "../state/application/action";
+import { walletsForceLock, walletsUpdateForceOpen } from "../state/wallets/action";
 
 export enum SSHCheckStatus {
   Pending = "pending",
@@ -60,9 +61,9 @@ export const useBatchSSHCheck = (
     } finally {
       runningRef.current--;
       runNext();
-
       if (runningRef.current === 0 && queueRef.current.length === 0) {
         setPoolStatus(SSHCheckPoolStatus.Finished); //
+        dispatch(walletsUpdateForceOpen(false));
       }
     }
   };
@@ -82,7 +83,7 @@ export const useBatchSSHCheck = (
 
   const start = () => {
     if (poolStatus === SSHCheckPoolStatus.Running) return; // 避免重复执行
-
+    dispatch(walletsUpdateForceOpen(true));
     queueRef.current = [...sshConfigs];
     setResults(
       sshConfigs.map(cfg => ({
@@ -90,7 +91,7 @@ export const useBatchSSHCheck = (
         status: SSHCheckStatus.Pending,
       }))
     );
-    setPoolStatus(SSHCheckPoolStatus.Running); // ✅ 标记开始
+    setPoolStatus(SSHCheckPoolStatus.Running);
     runNext();
   };
 

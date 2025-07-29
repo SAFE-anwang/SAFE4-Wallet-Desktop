@@ -1,5 +1,5 @@
 import { Alert, Button, Card, Col, Form, Image, Input, Row, Spin, Typography } from 'antd';
-import { useApplicationActionAtCreateWallet, useApplicationBlockchainWeb3Rpc, useApplicationLanguage } from './state/application/hooks';
+import { useApplicationActionAtCreateWallet, useApplicationBlockchainWeb3Rpc, useApplicationLanguage, useImportWalletParams, useNewMnemonic } from './state/application/hooks';
 import { useCallback, useEffect, useState } from 'react';
 import { Web3ReactHooks, Web3ReactProvider } from '@web3-react/core'
 import { initializeConnect } from './connectors/network';
@@ -8,8 +8,8 @@ import { Network } from '@web3-react/network';
 import { useDispatch } from 'react-redux';
 import { IndexSingal, Index_Methods } from '../main/handlers/IndexSingalHandler';
 import config, { IPC_CHANNEL } from './config';
-import { applicationDataLoaded, applicationSetPassword, applicationUpdateWeb3Rpc } from './state/application/action';
-import { walletsLoadKeystores, walletsLoadWalletNames } from './state/wallets/action';
+import { applicationDataLoaded, applicationUpdateWeb3Rpc } from './state/application/action';
+import { walletsLoadWalletNames, walletsLoadWallets, walletsUpdateLocked } from './state/wallets/action';
 import { MemoryRouter as Router, Routes, Route } from 'react-router-dom';
 import MenuComponent from './pages/components/MenuComponent';
 import Index from './pages/index';
@@ -55,22 +55,21 @@ import SelectSupernodeSyncMode from './pages/main/supernodes/Sync/SelectSupernod
 import MasternodeSync from './pages/main/masternodes/Sync/MasternodeSync';
 import SupernodeSync from './pages/main/supernodes/Sync/SupernodeSync';
 import TestSSH2CMD from './pages/main/tools/ssh2/TestSSH2CMD';
-import { useWalletsKeystores } from './state/wallets/hooks';
+import { useWalletsActiveAccount, useWalletsForceOpen, useWalletsList, useWalletsLocked } from './state/wallets/hooks';
 import { useTranslation } from 'react-i18next';
 import Crosschain from './pages/main/wallets/crosschain/Crosschain';
 import SafeswapV2 from './pages/main/safeswap/SafeswapV2';
-import Issue from './pages/main/issue/Issue';
 import IssueIndex from './pages/main/issue/IssueIndex';
-import BatchSyncNode from './pages/main/batchsync/BatchSyncNode';
+import { useUserInactivityTracker } from './hooks/useUserInactivityTracker';
+
 const { Text } = Typography;
 
 export default function App() {
 
   const dispatch = useDispatch();
   const [loading, setLoading] = useState<boolean>(true);
-  const walletsKeystores = useWalletsKeystores();
-  const [locked, setLocked] = useState(true);
-
+  const wallets = useWalletsList();
+  const locked = useWalletsLocked();
 
   const [encrypt, setEncrypt] = useState<{
     salt: string,
@@ -155,7 +154,6 @@ export default function App() {
             active: walletName.active == 1
           }
         });
-
         const appProps: any = {};
         if (app_props.length > 0) {
           Object.keys(app_props)
@@ -175,12 +173,17 @@ export default function App() {
         if (encrypt) {
           setEncrypt(encrypt);
         } else {
-          setLocked(false);
+          dispatch(walletsUpdateLocked(false));
         }
         setLoading(false);
       }
     });
   }, []);
+
+  useUserInactivityTracker(() => {
+    console.log("10分钟未操作,自动锁钱包");
+    dispatch(walletsUpdateLocked(true));
+  }, 10 * 60 * 1000, 200);
 
   useEffect(() => {
     const method = ContractCompile_Methods.syncSolcLibrary;
@@ -188,30 +191,23 @@ export default function App() {
   }, []);
 
   const decrypt = useCallback(async () => {
-    if (password && encrypt) {
+    if (password) {
       try {
         setDecrypting(true);
-        const walletsKeystores = await window.electron.crypto.decrypt({ encrypt, password });
-        dispatch(walletsLoadKeystores(walletsKeystores));
-        dispatch(applicationSetPassword(password));
-        setLocked(false);
+        const wallets = await window.electron.wallet.decrypt(password);
+        dispatch(walletsLoadWallets(wallets));
+        setPassword(undefined);
       } catch (err) {
-        console.log("decrypt error:", err);
         setPasswordError(t("enterWalletPasswordError"));
       }
       setDecrypting(false);
     }
-  }, [password, encrypt]);
-
-  useEffect(() => {
-    if (walletsKeystores && walletsKeystores.length > 0) {
-      setLocked(false);
-    }
-  }, [walletsKeystores])
+  }, [password]);
 
   const atCreateWallet = useApplicationActionAtCreateWallet();
   const applicationLanguage = useApplicationLanguage();
   const { t, i18n } = useTranslation();
+
 
   useEffect(() => {
     i18n.changeLanguage(applicationLanguage);
@@ -222,9 +218,8 @@ export default function App() {
       {
         loading && <Spin fullscreen spinning={loading} />
       }
-
       {
-        !loading && encrypt && locked && <>
+        !loading && (encrypt || wallets.length > 0) && locked && <>
           <Row style={{ marginTop: "10%" }}>
             <Card style={{ width: "400px", margin: "auto", boxShadow: "5px 5px 10px #888888" }}>
               <Row>
@@ -262,7 +257,7 @@ export default function App() {
       }
 
       {
-        !loading && !locked && walletsKeystores && connectors && <>
+        !loading && !locked && wallets && connectors && <>
           <Web3ReactProvider key={activeWeb3Rpc?.endpoint} connectors={connectors}>
             <LoopUpdate />
             <Router>

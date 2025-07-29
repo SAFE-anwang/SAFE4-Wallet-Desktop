@@ -78,7 +78,6 @@ export default ({
   const { t } = useTranslation();
   const terminalRef = useRef<HTMLDivElement>(null);
   const terminalInstance = useRef<Terminal | null>(null);
-  const password = useApplicationPassword();
   const [enode, setEnode] = useState<string>();
   const [scriptError, setScriptError] = useState<string>();
   const wallet = nodeAddressPrivateKey ? new ethers.Wallet(nodeAddressPrivateKey) : undefined;
@@ -237,7 +236,7 @@ export default ({
       address: nodeAddress,
       keystore: JSON.stringify(fakeKeystore)
     }
-  }, [wallet, password, nodeAddress]);
+  }, [wallet, nodeAddress]);
 
   const doConnect = useCallback(() => {
     const { host, username, password } = inputParams;

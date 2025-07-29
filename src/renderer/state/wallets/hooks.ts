@@ -7,14 +7,14 @@ import { useAccountManagerContract, useIERC20Contract, useMasternodeStorageContr
 import { isAddress } from '../../utils';
 import { AppState } from '../index';
 import { useMultipleContractSingleData, useSingleContractMultipleData } from '../multicall/hooks';
-import { ERC20Token, Wallet, WalletKeystore } from './reducer';
+import { Wallet } from './reducer';
 import { useBlockNumber } from '../application/hooks';
 import { AccountRecord, IdPageQuery, formatAccountRecord, formatRecordUseInfo } from '../../structs/AccountManager';
 import { useWeb3React } from '@web3-react/core';
 import { IERC20_Interface } from '../../abis';
 import { generateChildWalletsCheckResult, SupportChildWalletType } from '../../utils/GenerateChildWallet';
 import { walletsUpdateWalletChildWallets } from './action';
-import { Safe4NetworkChainId } from '../../config';
+import CallMulticallAggregate, { CallMulticallAggregateContractCall } from '../multicall/CallMulticallAggregate';
 
 export function useWalletsList(): Wallet[] {
   return useSelector((state: AppState) => {
@@ -28,12 +28,6 @@ export function useWalletsWalletNames(): { [address in string]: { name: string, 
   })
 }
 
-export function useWalletsKeystores(): WalletKeystore[] {
-  return useSelector((state: AppState) => {
-    return state.wallets.keystores;
-  });
-}
-
 export function useWalletsActiveWallet(): Wallet | null {
   return useSelector((state: AppState) => {
     return state.wallets.activeWallet;
@@ -44,38 +38,6 @@ export function useWalletsActiveAccount(): string {
   return useSelector((state: AppState) => {
     return state.wallets.activeWallet ? state.wallets.activeWallet.address : "";
   });
-}
-
-export function useWalletsActivePrivateKey(): string | undefined {
-  return useSelector((state: AppState) => {
-    if (state.wallets.activeWallet) {
-      return state.wallets.keystores.filter(
-        walletKetstore => {
-          return walletKetstore.publicKey == state.wallets.activeWallet?.publicKey
-        }
-      )[0].privateKey
-    }
-    return undefined;
-  });
-}
-
-export function useWalletsActiveKeystore(): WalletKeystore | undefined {
-  return useSelector((state: AppState) => {
-    if (state.wallets.activeWallet) {
-      return state.wallets.keystores.filter(
-        walletKetstore => {
-          return walletKetstore.publicKey == state.wallets.activeWallet?.publicKey
-        }
-      )[0];
-    }
-    return undefined;
-  });
-}
-
-export function useWalletsActiveSigner(): ethers.Wallet | undefined {
-  const { provider } = useWeb3React();
-  const activePrivateKey = useWalletsActivePrivateKey();
-  return activePrivateKey ? new ethers.Wallet(activePrivateKey, provider) : undefined;
 }
 
 /**
@@ -470,11 +432,12 @@ export function useTokenBalance(account?: string, token?: Token): TokenAmount | 
  *
  * @param type mn | sn
  */
-export function useActiveAccountChildWallets(type: SupportChildWalletType , initSize ?: number) {
+export function useActiveAccountChildWallets(type: SupportChildWalletType, initSize?: number) {
   // 每一批检查多少个子钱包
   const size = initSize ? initSize : 50;
-  const activeAccountKeystore = useWalletsActiveKeystore();
-  if (!activeAccountKeystore) {
+
+  const activeWallet = useWalletsActiveWallet();
+  if (!activeWallet?.path) {
     return;
   }
   const { chainId } = useWeb3React();
@@ -484,8 +447,8 @@ export function useActiveAccountChildWallets(type: SupportChildWalletType , init
   const dispatch = useDispatch();
 
   const childTypeWallets = useSelector((state: AppState) => {
-    return SupportChildWalletType.SN == type ? state.wallets.walletChildWallets[activeAccountKeystore.address]?.sn
-      : state.wallets.walletChildWallets[activeAccountKeystore.address]?.mn
+    return SupportChildWalletType.SN == type ? state.wallets.walletChildWallets[activeWallet.address]?.sn
+      : state.wallets.walletChildWallets[activeWallet.address]?.mn
   });
   const walletUsedAddressed = useSelector((state: AppState) => {
     return state.wallets.walletUsedAddress;
@@ -493,7 +456,7 @@ export function useActiveAccountChildWallets(type: SupportChildWalletType , init
   const nodeStorageContract = SupportChildWalletType.SN == type ? supernodeContract : masternodeContract;
 
   useEffect(() => {
-    if (activeAccountKeystore.mnemonic && multicall && nodeStorageContract) {
+    if (multicall && nodeStorageContract) {
       let _notExistCount = (childTypeWallets && childTypeWallets.wallets) ?
         Object.keys(childTypeWallets.wallets)
           .map(childAddress => childTypeWallets.wallets[childAddress].exist || walletUsedAddressed.indexOf(childAddress) > 0 ? 0 : 1)
@@ -501,40 +464,43 @@ export function useActiveAccountChildWallets(type: SupportChildWalletType , init
         : 0;
       let _startAddressIndex = (childTypeWallets && childTypeWallets.wallets) ? Object.keys(childTypeWallets.wallets).length : 0;
       if (!childTypeWallets || childTypeWallets.loading) {
-        generateChildWalletsCheckResult(
-          activeAccountKeystore.mnemonic, activeAccountKeystore.password ? activeAccountKeystore.password : "",
-          _startAddressIndex, size,
-          nodeStorageContract, multicall,
-          (err, result) => {
-            if (err) {
-              dispatch(walletsUpdateWalletChildWallets({
-                address: activeAccountKeystore.address,
-                type,
-                loading: false
-              }));
-              return;
+
+        window.electron.wallet.generateNodeChildWallets(
+          activeWallet.address, type, _startAddressIndex, size
+        ).then(wallets => {
+          const payloadMap = wallets.reduce((map, wallet) => {
+            map[wallet.address] = {
+              ...wallet,
+              exist: true,
             }
-            const payloadMap: {
-              [address: string]: {
-                exist: boolean,
-                path: string,
-                privateKey: string
-              }
-            } = {};
+            return map;
+          }, {} as {
+            [address: string]: {
+              exist: boolean,
+              path: string,
+            }
+          });
+          const addrExistCalls: CallMulticallAggregateContractCall[] = wallets.map((wallet) => {
+            return {
+              contract: nodeStorageContract,
+              functionName: "exist",
+              params: [wallet.address]
+            }
+          });
+          CallMulticallAggregate(multicall, addrExistCalls, () => {
             let notExistCount = 0;
-            Object.keys(result.map).forEach(address => {
-              notExistCount += result.map[address].exist || walletUsedAddressed.indexOf(address) >= 0 ? 0 : 1;
-              payloadMap[address] = {
-                exist: result.map[address].exist || walletUsedAddressed.indexOf(address) >= 0,
-                path: result.map[address].hdNode.path,
-                privateKey: result.map[address].hdNode.privateKey,
-              }
+            addrExistCalls.forEach(callResult => {
+              const address = callResult.params[0];
+              const addressUsed = walletUsedAddressed.indexOf(address) >= 0;
+              const exist = callResult.result || addressUsed;
+              payloadMap[address].exist = exist;
+              notExistCount += exist ? 0 : 1;
             });
             // 判断是否需要继续加载子钱包并验证 loading;
             const loading = (notExistCount + _notExistCount) < size / 2;
             console.log("need loading ?? >> ", (notExistCount + _notExistCount), loading)
             dispatch(walletsUpdateWalletChildWallets({
-              address: activeAccountKeystore.address,
+              address: activeWallet.address,
               type,
               loading,
               result: {
@@ -542,28 +508,32 @@ export function useActiveAccountChildWallets(type: SupportChildWalletType , init
               }
             }));
           });
+        })
       } else {
         // 随着用户的使用,导致当前列表的可使用数量低于 size 时,变更状态让它继续加载可用子钱包;
         if (_notExistCount < size / 2) {
           console.log("通知需要更新:: >>", _notExistCount)
           dispatch(walletsUpdateWalletChildWallets({
-            address: activeAccountKeystore.address,
+            address: activeWallet.address,
             type,
             loading: true
           }));
         } else {
           // 判断是否有当前建立的,但是链上还没有更新的exist状态;
           const _map: {
-            [address: string]: { exist: boolean, path: string , privateKey : string }
+            [address: string]: { exist: boolean, path: string }
           } = {}
           Object.keys(childTypeWallets.wallets)
             .filter(childAddress => !childTypeWallets.wallets[childAddress].exist && walletUsedAddressed.indexOf(childAddress) >= 0)
             .forEach(childAddress => {
-              _map[childAddress] = { exist: true, path: childTypeWallets.wallets[childAddress].path , privateKey : childTypeWallets.wallets[childAddress].privateKey }
+              _map[childAddress] = {
+                exist: true,
+                path: childTypeWallets.wallets[childAddress].path,
+              }
             })
           if (Object.keys(_map).length > 0) {
             dispatch(walletsUpdateWalletChildWallets({
-              address: activeAccountKeystore.address,
+              address: activeWallet.address,
               type,
               loading: false,
               result: { map: _map }
@@ -572,8 +542,18 @@ export function useActiveAccountChildWallets(type: SupportChildWalletType , init
         }
       }
     }
-  }, [childTypeWallets, multicall, nodeStorageContract, activeAccountKeystore, walletUsedAddressed, chainId])
+  }, [childTypeWallets, multicall, nodeStorageContract, walletUsedAddressed, chainId, activeWallet])
   return childTypeWallets;
 }
 
+export function useWalletsLocked() {
+  return useSelector((state: AppState) => {
+    return state.wallets.locked;
+  })
+}
 
+export function useWalletsForceOpen() {
+  return useSelector((state: AppState) => {
+    return state.wallets.forceOpen;
+  })
+}

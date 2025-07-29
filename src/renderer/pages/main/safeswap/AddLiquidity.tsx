@@ -5,7 +5,7 @@ import { useWeb3React } from "@web3-react/core";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ChainId, CurrencyAmount, Token, TokenAmount } from "@uniswap/sdk";
 import { Contract, ethers } from "ethers";
-import { useETHBalances, useTokenAllowanceAmounts, useTokenBalances, useWalletsActiveAccount, useWalletsActiveSigner } from "../../../state/wallets/hooks";
+import { useETHBalances, useTokenAllowanceAmounts, useTokenBalances, useWalletsActiveAccount } from "../../../state/wallets/hooks";
 import { calculateAmountAdd, calculateAmountIn, calculateAmountOut, calculatePairAddress, getReserve, sort } from "./Calculate";
 import { useSafeswapTokens } from "../../../state/application/hooks";
 import { useTokens } from "../../../state/transactions/hooks";

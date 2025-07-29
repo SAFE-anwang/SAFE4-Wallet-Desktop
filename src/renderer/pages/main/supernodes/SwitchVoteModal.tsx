@@ -12,6 +12,8 @@ import { useTransactionAdder } from "../../../state/transactions/hooks";
 import { useWalletsActiveAccount } from "../../../state/wallets/hooks";
 import { TxExecuteStatus } from "../safe3/Safe3";
 import Safescan from "../../components/Safescan";
+import { ethers } from "ethers";
+import { useWeb3React } from "@web3-react/core";
 
 const { Text } = Typography;
 
@@ -37,6 +39,7 @@ export default ({
   const [txStatus, setTxStatus] = useState<TxExecuteStatus>();
   const [sending, setSending] = useState<boolean>(false);
   const [usedVotedIdsCache, setUsedVotedIdsCache] = useState<number[]>([]);
+  const { provider, chainId } = useWeb3React();
 
   const showSupernodeInfo = useMemo(() => {
     return newSupernodeInfo ? newSupernodeInfo : supernodeInfo;
@@ -59,12 +62,27 @@ export default ({
     }
   }, [supernodeVoteContract, supernodeInfo, newSupernodeInfo]);
 
-  const switchVote = () => {
-    if (supernodeVoteContract && selectAccountRecordIds && newSupernodeInfo) {
+  const switchVote = async () => {
+    if (supernodeVoteContract && selectAccountRecordIds && newSupernodeInfo && provider && chainId) {
       setSending(true);
       // function voteOrApproval(bool _isVote, address _dstAddr, uint[] memory _recordIDs) external;
-      supernodeVoteContract.voteOrApproval(true, newSupernodeInfo.addr, selectAccountRecordIds)
-        .then((response: any) => {
+
+      const data = supernodeVoteContract.interface.encodeFunctionData("voteOrApproval", [
+        true, newSupernodeInfo.addr, selectAccountRecordIds
+      ]);
+      const tx: ethers.providers.TransactionRequest = {
+        to: supernodeVoteContract.address,
+        data,
+        chainId
+      };
+      const { signedTx, error } = await window.electron.wallet.signTransaction(
+        activeAccount,
+        provider.connection.url,
+        tx
+      );
+      if (signedTx) {
+        try {
+          const response = await provider.sendTransaction(signedTx);
           const { hash, data } = response;
           addTransaction({ to: supernodeVoteContract.address }, response, {
             call: {
@@ -77,17 +95,25 @@ export default ({
           setTxStatus({
             txHash: hash,
             status: 1,
-          })
-          setSending(false);
+          });
           usedVotedIdsCache.push(...selectAccountRecordIds);
           setUsedVotedIdsCache([...usedVotedIdsCache]);
-        }).catch((err: any) => {
+        } catch (err) {
           setTxStatus({
             status: 0,
-            error: err.error.reason
+            error: err
           })
+        } finally {
           setSending(false);
+        }
+      }
+      if (error) {
+        setSending(false);
+        setTxStatus({
+          status: 0,
+          error
         })
+      }
     }
   }
 
@@ -261,7 +287,7 @@ export default ({
               <Alert style={{ marginBottom: "10px" }} showIcon type="error" message={<>
                 <Row>
                   <Col span={24}><Text type="secondary">交易错误</Text></Col>
-                  <Col span={24}>{txStatus.error}</Col>
+                  <Col span={24}>{txStatus.error.reason}</Col>
                 </Row>
               </>} />
             </>

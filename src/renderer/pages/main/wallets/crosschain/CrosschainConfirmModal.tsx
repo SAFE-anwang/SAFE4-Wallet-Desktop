@@ -7,7 +7,7 @@ import { useTranslation } from "react-i18next";
 import { getNetworkLogo, NetworkType, outputNetworkCoin } from "../../../../assets/logo/NetworkLogo";
 import { Application_Crosschain_Pool_BSC, Application_Crosschain_Pool_ETH, Application_Crosschain_Pool_MATIC, Safe4NetworkChainId, USDT } from "../../../../config";
 import { useCrosschainContract, useIERC20Contract } from "../../../../hooks/useContracts";
-import { useTokenAllowance, useWalletsActiveAccount, useWalletsActiveSigner } from "../../../../state/wallets/hooks";
+import { useTokenAllowance, useWalletsActiveAccount } from "../../../../state/wallets/hooks";
 import ERC20TokenLogoComponent from "../../../components/ERC20TokenLogoComponent";
 import TokenLogo from "../../../components/TokenLogo";
 import { ethers } from "ethers";
@@ -35,9 +35,8 @@ export default ({
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { t } = useTranslation();
-  const { chainId } = useWeb3React();
+  const { chainId, provider } = useWeb3React();
   const activeAccount = useWalletsActiveAccount();
-  const signer = useWalletsActiveSigner();
   const addTransaction = useTransactionAdder();
   const {
     render,
@@ -107,7 +106,7 @@ export default ({
     }
   }, [Contract_USDT, CrossChain_Contract]);
 
-  const doCrosschain = useCallback(() => {
+  const doCrosschain = useCallback(async () => {
     if (CrossChain_Contract && Token_USDT && Token_USDT.name == token) {
       const value = ethers.utils.parseUnits(amount, Token_USDT.decimals).toString();
       setSending(true);
@@ -140,7 +139,7 @@ export default ({
           setErr(err)
         })
     } else if (token == 'SAFE') {
-      if (chainId && signer) {
+      if (chainId && provider) {
         let poolAddress = undefined;
         switch (targetNetwork) {
           case NetworkType.BSC:
@@ -154,38 +153,47 @@ export default ({
             break;
         }
         if (poolAddress) {
+          setSending(true);
           const prefix = outputNetworkCoin(targetNetwork) + ":";
           const extraData = ethers.utils.hexlify(ethers.utils.toUtf8Bytes(prefix + targetAddress));
           const value = ethers.utils.parseEther(amount);
-          const tx = {
+          const tx: ethers.providers.TransactionRequest = {
             to: poolAddress,
+            data: extraData,
             value,
-            data: extraData
+            chainId
+          };
+          const { signedTx, error } = await window.electron.wallet.signTransaction(
+            activeAccount,
+            provider.connection.url,
+            tx
+          );
+          if (error) {
+            setErr(error)
           }
-          setSending(true);
-          signer.sendTransaction(tx).then(response => {
-            setSending(false);
-            const {
-              data, hash
-            } = response;
-            setTransactionResponse(response);
-            addTransaction(tx, response, {
-              call: {
-                from: activeAccount,
-                to: tx.to,
-                input: data,
-                value: tx.value.toString()
-              }
-            });
-            setTxHash(hash);
-          }).catch(err => {
-            setSending(false);
-            setErr(err)
-          })
+          if (signedTx) {
+            try {
+              const response = await provider.sendTransaction(signedTx);
+              const { hash, data } = response;
+              setTransactionResponse(response);
+              addTransaction(tx, response, {
+                call: {
+                  from: activeAccount,
+                  to: poolAddress,
+                  input: data,
+                  value: value.toString()
+                }
+              });
+              setTxHash(hash);
+            } catch (err) {
+              setErr(err)
+            }
+          }
+          setSending(false);
         }
       }
     }
-  }, [Token_USDT, CrossChain_Contract, chainId, signer])
+  }, [Token_USDT, CrossChain_Contract, chainId])
 
   return <Modal footer={null} destroyOnClose title={t("wallet_crosschain")} open={openCrosschainConfirmModal} onCancel={cancel}>
     <Divider />

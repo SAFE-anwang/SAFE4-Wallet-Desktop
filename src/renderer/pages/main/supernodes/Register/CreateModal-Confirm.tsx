@@ -7,13 +7,13 @@ import useTransactionResponseRender from "../../../components/useTransactionResp
 import { useWalletsActiveAccount } from "../../../../state/wallets/hooks";
 import { useSupernodeLogicContract } from "../../../../hooks/useContracts";
 import { ethers } from "ethers";
-import { TransactionResponse } from "@ethersproject/providers";
 import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { applicationUpdateWalletTab } from "../../../../state/application/action";
 import { Safe4_Business_Config } from "../../../../config";
 import { walletsUpdateUsedChildWalletAddress } from "../../../../state/wallets/action";
 import { useTranslation } from "react-i18next";
+import { useWeb3React } from "@web3-react/core";
 
 const { Text } = Typography;
 
@@ -50,9 +50,10 @@ export default ({
   const addTransaction = useTransactionAdder();
   const activeAccount = useWalletsActiveAccount();
   const supernodeLogicContract = useSupernodeLogicContract(true);
+  const { provider, chainId } = useWeb3React();
 
-  const doCreateSupernode = useCallback(() => {
-    if (activeAccount && supernodeLogicContract) {
+  const doCreateSupernode = useCallback(async () => {
+    if (activeAccount && supernodeLogicContract && chainId && provider) {
       const { createType, name, enode, description, incentivePlan, address } = createParams;
       // function register(bool _isUnion, address _addr, uint _lockDay, string memory _name, string memory _enode, string memory _description,
       //                    uint _creatorIncentive, uint _partnerIncentive, uint _voterIncentive) external payable;
@@ -61,37 +62,53 @@ export default ({
           : Safe4_Business_Config.Supernode.Create.LockAmount) + ""
       );
       setSending(true);
-      supernodeLogicContract.register(
+
+      const data = supernodeLogicContract.interface.encodeFunctionData("register", [
         Supernode_create_type_Union == createType,
         address,
         Safe4_Business_Config.Supernode.Create.LockDays,
         name, enode, description,
         incentivePlan.creator, incentivePlan.partner, incentivePlan.voter,
-        {
-          value,
+      ]);
+      const tx: ethers.providers.TransactionRequest = {
+        to: supernodeLogicContract.address,
+        data,
+        value,
+        chainId
+      };
+      const { signedTx, error } = await window.electron.wallet.signTransaction(
+        activeAccount,
+        provider.connection.url,
+        tx
+      );
+      if (signedTx) {
+        try {
+          const response = await provider.sendTransaction(signedTx);
+          const { hash, data } = response;
+          setTransactionResponse(response);
+          addTransaction({ to: supernodeLogicContract.address }, response, {
+            call: {
+              from: activeAccount,
+              to: supernodeLogicContract.address,
+              input: data,
+              value: value.toString()
+            }
+          });
+          setTxHash(hash);
+          dispatch(walletsUpdateUsedChildWalletAddress({
+            address,
+            used: true
+          }));
+        } catch (err) {
+          setErr(err)
+        } finally {
+          setSending(false);
         }
-      ).then((response: TransactionResponse) => {
-        const { hash, data } = response;
-        addTransaction({ to: supernodeLogicContract.address }, response, {
-          call: {
-            from: activeAccount,
-            to: supernodeLogicContract.address,
-            input: data,
-            value: value.toString()
-          }
-        });
-        setTxHash(hash);
+      }
+      if (error) {
         setSending(false);
-        setTransactionResponse(response);
-        dispatch(walletsUpdateUsedChildWalletAddress({
-          address,
-          used: true
-        }));
-      }).catch((err: any) => {
-        setSending(false);
-        setErr(err)
-      });
-
+        setErr(error);
+      }
     }
   }, [activeAccount, supernodeLogicContract, createParams]);
 
@@ -138,7 +155,7 @@ export default ({
         <Text type="secondary">{t("wallet_send_to")}</Text>
       </Col>
       <Col span={24} style={{ paddingLeft: "5px" }} >
-        <Text>{t("wallet_send_to")}</Text>
+        <Text>{t("wallet_account_lock")}</Text>
       </Col>
     </Row>
     <Divider />

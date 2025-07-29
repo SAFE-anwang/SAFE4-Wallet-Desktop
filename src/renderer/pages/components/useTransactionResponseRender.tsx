@@ -9,8 +9,8 @@ export default (): {
   render: React.ReactNode
   setTransactionResponse: (response: TransactionResponse) => void,
   setErr: (err: any) => void,
-  response : TransactionResponse | undefined ,
-  err : any
+  response: TransactionResponse | undefined,
+  err: any
 } => {
   const { t } = useTranslation();
   const [showErrorDetail, setShowErrorDetail] = useState(false);
@@ -18,7 +18,7 @@ export default (): {
   const [err, setErr] = useState<any>();
 
   const render = useMemo(() => {
-    if ( !response && !err ){
+    if (!response && !err) {
       return undefined;
     }
     return (<>
@@ -28,7 +28,7 @@ export default (): {
             message={t("error")}
             description={
               <>
-                <Text>{err.reason}</Text>
+                <Text strong type="danger">{err.reason}</Text>
                 <br />
                 {
                   !showErrorDetail && <Link onClick={() => {
@@ -37,9 +37,9 @@ export default (): {
                 }
                 {
                   showErrorDetail && <>
-                    <Divider style={{margin:"8px 0px"}} />
-                    <div style={{maxHeight:"200px" , overflowY:"scroll"}}>
-                      {JSON.stringify(err)}
+                    <Divider style={{ margin: "8px 0px" }} />
+                    <div style={{ maxHeight: "200px", overflowY: "scroll" }}>
+                      {err.message}
                     </div>
                   </>
                 }

@@ -1,13 +1,14 @@
 import { useCallback, useState } from "react";
-import { Button, Col, Divider, Input, Modal, Row, Typography, Space, Alert } from "antd"
-import { useETHBalances, useWalletsActiveAccount, useWalletsActiveSigner } from "../../../../state/wallets/hooks";
+import { Button, Col, Divider, Row, Typography } from "antd"
+import { useWalletsActiveAccount } from "../../../../state/wallets/hooks";
 import { useTransactionAdder } from "../../../../state/transactions/hooks";
-import { SearchOutlined, SendOutlined, QrcodeOutlined, LockOutlined } from '@ant-design/icons';
+import { LockOutlined } from '@ant-design/icons';
 import { ethers } from "ethers";
 import { useAccountManagerContract } from "../../../../hooks/useContracts";
 import useTransactionResponseRender from "../../../components/useTransactionResponseRender";
 import { useTranslation } from "react-i18next";
-const { Text, Link } = Typography;
+import { useWeb3React } from "@web3-react/core";
+const { Text } = Typography;
 
 export default ({
   amount, lockDay,
@@ -21,6 +22,7 @@ export default ({
 
   const { t } = useTranslation();
   const activeAccount = useWalletsActiveAccount();
+  const { chainId, provider } = useWeb3React();
   const addTransaction = useTransactionAdder();
   const accountManaggerContract = useAccountManagerContract(true);
   const [sending, setSending] = useState<boolean>(false);
@@ -31,36 +33,54 @@ export default ({
     setErr
   } = useTransactionResponseRender();
 
-  const doLockTransaction = useCallback(({
+  const doLockTransaction = useCallback(async ({
     to, amount, lockDay
   }: {
     to: string,
     amount: string,
     lockDay: number
   }) => {
-    if (accountManaggerContract) {
+    if (accountManaggerContract && provider && chainId) {
       setSending(true);
-      accountManaggerContract.deposit(to, lockDay, {
-        value: ethers.utils.parseEther(amount),
-      }).then((response: any) => {
-        const { hash, data } = response;
-        setTransactionResponse(response);
-        addTransaction({ to: accountManaggerContract.address }, response, {
-          call: {
-            from: activeAccount,
-            to: accountManaggerContract.address,
-            input: data,
-            value: ethers.utils.parseEther(amount).toString()
-          }
-        });
-        setTxHash(hash);
+      const value = ethers.utils.parseEther(amount)
+      const data = accountManaggerContract.interface.encodeFunctionData("deposit", [to, lockDay]);
+      const tx: ethers.providers.TransactionRequest = {
+        to: accountManaggerContract.address,
+        data,
+        value,
+        chainId
+      };
+      const { signedTx, error } = await window.electron.wallet.signTransaction(
+        activeAccount,
+        provider.connection.url,
+        tx
+      );
+      if (signedTx) {
+        try {
+          const response = await provider.sendTransaction(signedTx);
+          const { hash, data } = response;
+          setTransactionResponse(response);
+          addTransaction({ to: accountManaggerContract.address }, response, {
+            call: {
+              from: activeAccount,
+              to: accountManaggerContract.address,
+              input: data,
+              value: value.toString()
+            }
+          });
+          setTxHash(hash);
+        } catch (err) {
+          setErr(err)
+        } finally {
+          setSending(false);
+        }
+      }
+      if (error) {
         setSending(false);
-      }).catch((err: any) => {
-        setSending(false);
-        setErr(err)
-      })
+        setErr(error)
+      }
     }
-  }, [activeAccount, accountManaggerContract]);
+  }, [activeAccount, chainId, provider, accountManaggerContract]);
 
   return <>
     <div style={{ minHeight: "300px" }}>
@@ -123,7 +143,7 @@ export default ({
           }
           {
             render && <Button onClick={close} type="primary" style={{ float: "right" }}>
-             {t("wallet_send_status_close")}
+              {t("wallet_send_status_close")}
             </Button>
           }
         </Col>

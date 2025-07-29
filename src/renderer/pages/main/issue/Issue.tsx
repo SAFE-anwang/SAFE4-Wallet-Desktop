@@ -9,7 +9,7 @@ import { ContractCompileSignal, ContractCompile_Methods } from "../../../../main
 import { DB_AddressActivity_Actions } from "../../../../main/handlers/DBAddressActivitySingalHandler";
 import { IPC_CHANNEL } from "../../../config";
 import { useTransactionAdder } from "../../../state/transactions/hooks";
-import { useETHBalances, useWalletsActiveAccount, useWalletsActiveSigner } from "../../../state/wallets/hooks";
+import { useETHBalances, useWalletsActiveAccount } from "../../../state/wallets/hooks";
 import Safescan from "../../components/Safescan";
 import { SRC20_Template, SRC20_Template_CompileOption, SRC20_Template_Option } from "./SRC20_Template_Config";
 import { useDispatch } from "react-redux";
@@ -23,9 +23,8 @@ const now = () => new Date().getTime()
 export default () => {
 
   const { t } = useTranslation();
-  const signer = useWalletsActiveSigner();
   const addTransaction = useTransactionAdder();
-  const { chainId } = useWeb3React();
+  const { chainId, provider } = useWeb3React();
   const activeAccount = useWalletsActiveAccount();
   const balance = useETHBalances([activeAccount])[activeAccount];
   const balanceGtZERO = balance && balance.greaterThan(CurrencyAmount.ether("0"));
@@ -62,7 +61,7 @@ export default () => {
     error?: any
   }>();
 
-  const issue = () => {
+  const issue = async () => {
     const { name, symbol, totalSupply } = inputParams;
     const errors: {
       name?: string,
@@ -92,55 +91,77 @@ export default () => {
       return;
     }
     // 执行发行资产
-    if (signer && chainId) {
-      const { abi, bytecode, sourceCode } = SRC20_Template[inputParams.templateType];
-      const compileOption = SRC20_Template_CompileOption;
-      const contractFactory = new ethers.ContractFactory(abi, bytecode, signer);
-      const constructorValues = [name, symbol, ethers.utils.parseUnits(totalSupply)];
+    if (chainId && provider) {
       setDeploy({
         ...deploy,
         execute: true,
       })
-      contractFactory.deploy(...constructorValues).then((contract) => {
-        const transactionHash = contract.deployTransaction.hash;
-        setDeploy({
-          ...deploy,
-          execute: false,
-          txHash: transactionHash
-        });
-        addTransaction({ to: contract.address }, contract.deployTransaction, {
-          call: {
-            from: signer.address,
-            to: contract.address,
-            input: contract.deployTransaction.data,
-            value: "0",
-            type: DB_AddressActivity_Actions.Create
-          }
-        });
-        const method = ContractCompile_Methods.save;
-        window.electron.ipcRenderer.sendMessage(IPC_CHANNEL, [ContractCompileSignal, method, [
-          {
-            address: contract.address,
-            creator: signer?.address,
-            chainId: chainId,
-            name: "SRC20",
-            bytecode,
-            abi,
-            sourceCode,
-            compileOption: JSON.stringify(compileOption),
-            transactionHash,
-            addedTime: now()
-          }
-        ]]);
-        dispatch(applicationUpdateWalletTab("history"));
-        navigate("/main/wallet");
-      }).catch((err: any) => {
-        setDeploy({
-          ...deploy,
-          execute: false,
-          error: err
-        })
-      })
+      const compileOption = SRC20_Template_CompileOption;
+      const { abi, bytecode, sourceCode } = SRC20_Template[inputParams.templateType];
+      const contractFactory = new ethers.ContractFactory(abi, bytecode);
+      const constructorValues = [name, symbol, ethers.utils.parseUnits(totalSupply)];
+      const encodeConstructorData = contractFactory.interface.encodeDeploy(constructorValues);
+      const data = contractFactory.bytecode + encodeConstructorData.slice(2);
+      const tx: ethers.providers.TransactionRequest = {
+        data,
+        chainId
+      };
+      const { signedTx, error } = await window.electron.wallet.signTransaction(
+        activeAccount,
+        provider.connection.url,
+        tx
+      );
+      if (signedTx) {
+        try {
+          const response = await provider.sendTransaction(signedTx);
+          const { hash, data, from } = response;
+          const contractAddress = ethers.utils.getContractAddress(response);
+          setDeploy({
+            ...deploy,
+            execute: false,
+            txHash: hash
+          });
+          addTransaction({ to: contractAddress }, response, {
+            call: {
+              from,
+              to: contractAddress,
+              input: data,
+              value: "0",
+              type: DB_AddressActivity_Actions.Create
+            }
+          });
+          const method = ContractCompile_Methods.save;
+          window.electron.ipcRenderer.sendMessage(IPC_CHANNEL, [ContractCompileSignal, method, [
+            {
+              address: contractAddress,
+              creator: activeAccount,
+              chainId: chainId,
+              name: "SRC20",
+              bytecode,
+              abi,
+              sourceCode,
+              compileOption: JSON.stringify(compileOption),
+              hash,
+              addedTime: now()
+            }
+          ]]);
+          dispatch(applicationUpdateWalletTab("history"));
+          navigate("/main/wallet");
+        } catch (err) {
+          setDeploy({
+            ...deploy,
+            execute: false,
+            error: err
+          })
+        }
+        if (error) {
+          setDeploy({
+            ...deploy,
+            execute: false,
+            error: error
+          })
+        }
+      }
     }
   }
 
