@@ -240,7 +240,7 @@ export default ({
                 locked && <LockOutlined style={{ float: "right", marginTop: "4px" }} />
               }
               {
-                !locked && <UnlockOutlined style={{ float: "right", marginTop: "4px" }} />
+                !locked && <UnlockOutlined style={{ float: "right", marginTop: "4px" , color:"#9c9c9c" , fontSize:"18px" }} />
               }
             </Col>
           </Row>

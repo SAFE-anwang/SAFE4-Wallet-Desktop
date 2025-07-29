@@ -1,6 +1,7 @@
 
 
 import { useEffect, useRef } from 'react';
+import { useWalletsForceOpen } from '../state/wallets/hooks';
 
 export function useUserInactivityTracker(
   onInactivity: () => void,
@@ -9,6 +10,8 @@ export function useUserInactivityTracker(
 ) {
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
+  const forceOpen = useWalletsForceOpen();
+
 
   useEffect(() => {
     const resetTimer = () => {
@@ -29,5 +32,5 @@ export function useUserInactivityTracker(
       if (timerRef.current) clearTimeout(timerRef.current);
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
-  }, [onInactivity, timeout, debounceDelay]);
+  }, [onInactivity, timeout, debounceDelay, forceOpen]);
 }

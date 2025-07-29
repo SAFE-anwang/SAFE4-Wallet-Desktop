@@ -155,7 +155,7 @@ export default ({
         <Text type="secondary">{t("wallet_send_to")}</Text>
       </Col>
       <Col span={24} style={{ paddingLeft: "5px" }} >
-        <Text>{t("wallet_send_to")}</Text>
+        <Text>{t("wallet_account_lock")}</Text>
       </Col>
     </Row>
     <Divider />
