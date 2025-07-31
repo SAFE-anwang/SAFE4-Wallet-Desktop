@@ -1,7 +1,7 @@
 import { JsonRpcProvider, TransactionRequest } from "@ethersproject/providers";
 import { ethers, TypedDataDomain } from "ethers";
 import { HDNode } from "ethers/lib/utils";
-import { scryptDecryptWalletKys, scryptDrive, scryptEncryWalletKeystores } from "./CryptoIpc";
+import { scryptDecryptWalletKys, scryptDrive, scryptEncryWalletKeystores, uint8ArrayToWordArray, wordArrayToUint8Array } from "./CryptoIpc";
 import { generateNodeChildWallets } from "./WalletNodeGenerator";
 import { SupportChildWalletType } from "../renderer/utils/GenerateChildWallet";
 
@@ -10,10 +10,13 @@ const CryptoJS = require('crypto-js');
 export class WalletIpc {
 
   private salt: string | undefined;
-  private pwdKeyWordArray: any | undefined;
 
   private safeStorage: Electron.SafeStorage | undefined;
   private kysDB: any;
+
+  private obfuscationPwdKey: Uint8Array  | undefined;
+  private maskInsertRule: MaskInsertRule | undefined;
+  private byteOffsetRule: ByteOffsetRule | undefined;
 
   encryptWalletKeystoreMap: {
     [address: string]: WalletKeystore
@@ -96,11 +99,22 @@ export class WalletIpc {
   }
 
   private cachePwdKey(pwdKeyWordArray: any) {
-    this.pwdKeyWordArray = pwdKeyWordArray;
+    const pwdKeyUint8Array = wordArrayToUint8Array(pwdKeyWordArray);
+    const maskInsertRule = generateMaskInsertRule(pwdKeyUint8Array.length, 20);
+    const masked = maskUint8Array(pwdKeyUint8Array, maskInsertRule);
+    this.maskInsertRule = maskInsertRule;
+    this.obfuscationPwdKey = masked;
+    // const unmask = unmaskUint8Array(masked, maskInsertRule);
+    // this.pwdKeyWordArray = pwdKeyWordArray;
   }
 
-  private getPwdKey(): Promise<any> {
-    return this.pwdKeyWordArray;
+  private getPwdKey(): any {
+    if (this.obfuscationPwdKey && this.maskInsertRule) {
+      console.log("Unmask obfuscationPwdKey From ", Buffer.from(this.obfuscationPwdKey).toString("hex"));
+      const unmask = unmaskUint8Array(this.obfuscationPwdKey, this.maskInsertRule);
+      return uint8ArrayToWordArray(Buffer.from(unmask));
+    }
+    return undefined;
   }
 
   public async loadWalletKeystores(
@@ -580,4 +594,148 @@ export interface EtherStructuredError {
 
   // inner JSON-RPC error object
   error?: any;
+}
+
+// 字节偏移规则
+export interface ByteOffsetRule {
+  positions: Uint32Array;     // 替换位置
+  values: Uint8Array;         // 偏移值
+}
+
+// 掩码插入规则类型
+export interface MaskInsertRule {
+  positions: number[];        // 插入位置（基于原始数据）
+  values: number[][];         // 对应位置插入的字节数据
+}
+
+/**
+ * 生成掩码插入规则
+ * @param originalLength 原始 Uint8Array 长度
+ * @param insertCount 插入点数量（不能超过 originalLength + 1）
+ * @returns MaskInsertRule
+ */
+export function generateMaskInsertRule(originalLength: number, insertCount: number): MaskInsertRule {
+  if (insertCount > originalLength + 1) {
+    throw new Error("Insert count cannot exceed original length + 1");
+  }
+
+  // 构造所有可能的插入位置（在每个原字节之间插入，包括头尾）
+  const possiblePositions = Array.from({ length: originalLength + 1 }, (_, i) => i);
+
+  // 使用 Fisher-Yates 洗牌随机选取插入点
+  for (let i = possiblePositions.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [possiblePositions[i], possiblePositions[j]] = [possiblePositions[j], possiblePositions[i]];
+  }
+
+  const selectedPositions = possiblePositions.slice(0, insertCount).sort((a, b) => a - b);
+  const insertedValues = selectedPositions.map(() => {
+    const byteCount = Math.floor(Math.random() * 6) + 1; // 插入 1~6 个随机字节
+    return Array.from({ length: byteCount }, () => Math.floor(Math.random() * 256));
+  });
+
+  return {
+    positions: selectedPositions,
+    values: insertedValues
+  };
+}
+
+/**
+ * 根据插入规则对原始数据进行掩码插入
+ */
+export function maskUint8Array(original: Uint8Array, rule: MaskInsertRule): Uint8Array {
+  const { positions, values } = rule;
+
+  const totalInsertLength = values.reduce((sum, v) => sum + v.length, 0);
+  const masked = new Uint8Array(original.length + totalInsertLength);
+
+  let oIndex = 0, mIndex = 0, pIndex = 0;
+
+  for (let i = 0; i <= original.length; i++) {
+    if (pIndex < positions.length && positions[pIndex] === i) {
+      masked.set(values[pIndex], mIndex);
+      mIndex += values[pIndex].length;
+      pIndex++;
+    }
+    if (i < original.length) {
+      masked[mIndex++] = original[oIndex++];
+    }
+  }
+  return masked;
+}
+
+/**
+ * 还原掩码插入后的数据
+ */
+export function unmaskUint8Array(masked: Uint8Array, rule: MaskInsertRule): Uint8Array {
+  const { positions, values } = rule;
+
+  const insertLengths = values.map(v => v.length);
+  const totalInsertLength = insertLengths.reduce((sum, len) => sum + len, 0);
+  const originalLength = masked.length - totalInsertLength;
+  const restored = new Uint8Array(originalLength);
+
+  // 计算插入偏移量的实际位置（因前面已插入其他字节，所以要偏移）
+  const adjustedOffsets = positions.map((pos, index) => {
+    const offsetAdjustment = insertLengths.slice(0, index).reduce((sum, len) => sum + len, 0);
+    return pos + offsetAdjustment;
+  });
+
+  let rIndex = 0, mIndex = 0, skipIndex = 0;
+
+  while (mIndex < masked.length) {
+    if (skipIndex < adjustedOffsets.length && mIndex === adjustedOffsets[skipIndex]) {
+      mIndex += values[skipIndex].length; // 跳过插入数据
+      skipIndex++;
+    } else {
+      restored[rIndex++] = masked[mIndex++];
+    }
+  }
+
+  return restored;
+}
+
+export function createOffsetRule(length: number, count: number): ByteOffsetRule {
+  const positions = new Uint32Array(count);
+  const values = new Uint8Array(count);
+  const used = new Uint8Array(length);
+
+  for (let i = 0; i < count;) {
+    const pos = Math.floor(Math.random() * length);
+    if (!used[pos]) {
+      used[pos] = 1;
+      positions[i] = pos;
+      values[i] = Math.floor(Math.random() * 254) + 1; // 1~254
+      i++;
+    }
+  }
+  // Uint32Array 没有内置 sort，需要先转成普通数组排序再赋值
+  const sortedPositions = Array.from(positions).sort((a, b) => a - b);
+  for (let i = 0; i < count; i++) {
+    positions[i] = sortedPositions[i];
+  }
+
+  return { positions, values };
+}
+
+export function applyOffsets(input: Uint8Array, rule: ByteOffsetRule): Uint8Array {
+  const output = new Uint8Array(input);
+  const { positions, values } = rule;
+
+  for (let i = 0; i < positions.length; i++) {
+    const pos = positions[i];
+    output[pos] = (output[pos] + values[i]) & 0xff;
+  }
+  return output;
+}
+
+export function revertOffsets(input: Uint8Array, rule: ByteOffsetRule): Uint8Array {
+  const output = new Uint8Array(input);
+  const { positions, values } = rule;
+
+  for (let i = 0; i < positions.length; i++) {
+    const pos = positions[i];
+    output[pos] = (output[pos] - values[i] + 256) & 0xff;
+  }
+  return output;
 }

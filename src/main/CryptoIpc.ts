@@ -13,9 +13,9 @@ const TargetN = 262144;           // 迭代目标次数
 const iterations = TargetN / N;   // 计算循环迭代的次数
 
 export async function scryptDecryptWalletKys(Base58Encode: string, password: string): Promise<{
-  walletKeystores : WalletKeystore[] ,
-  aes : any ,
-  salt : string
+  walletKeystores: WalletKeystore[],
+  aes: any,
+  salt: string
 }> {
 
   const encrypt = JSON.parse(
@@ -103,11 +103,11 @@ export async function scryptDrive(password: string, salt: string): Promise<any> 
       });
     });
   }
-  return bufferToWordArray(derivedKey);
+  return uint8ArrayToWordArray(derivedKey);
 }
 
 
-function bufferToWordArray(buffer: Buffer) {
+export function uint8ArrayToWordArray(buffer: Buffer) {
   const words = [];
   for (let i = 0; i < buffer.length; i += 4) {
     words.push(
@@ -118,5 +118,16 @@ function bufferToWordArray(buffer: Buffer) {
     );
   }
   return CryptoJS.lib.WordArray.create(words, buffer.length);
+}
+
+export function wordArrayToUint8Array(wordArray: any): Uint8Array {
+  const words = wordArray.words;
+  const sigBytes = wordArray.sigBytes;
+  const u8 = new Uint8Array(sigBytes);
+  for (let i = 0; i < sigBytes; i++) {
+    const word = words[i >>> 2];  // 等价于 Math.floor(i / 4)
+    u8[i] = (word >>> (24 - (i % 4) * 8)) & 0xff;
+  }
+  return u8;
 }
 
