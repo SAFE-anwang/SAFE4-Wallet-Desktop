@@ -12,16 +12,11 @@ const dkLen = 32;                 // 生成32字节（256位）的密钥
 const TargetN = 262144;           // 迭代目标次数
 const iterations = TargetN / N;   // 计算循环迭代的次数
 
-export class CryptoIpc {
-
-
-  constructor(ipcMain: any) {
-
-  }
-
-}
-
-export async function scryptDecryptWalletKys(Base58Encode: string , password : string) {
+export async function scryptDecryptWalletKys(Base58Encode: string, password: string): Promise<{
+  walletKeystores : WalletKeystore[] ,
+  aes : any ,
+  salt : string
+}> {
 
   const encrypt = JSON.parse(
     ethers.utils.toUtf8String(
@@ -41,16 +36,16 @@ export async function scryptDecryptWalletKys(Base58Encode: string , password : s
   let text = decrypted.toString(CryptoJS.enc.Utf8);
   let walletKeystores = JSON.parse(text);
   return {
-    walletKeystores ,
-    _aes : CryptoJS.enc.Hex.stringify(aes),
+    walletKeystores,
+    aes,
     salt
   }
 }
 
 export async function scryptEncryWalletKeystores(
   walletKeystores: WalletKeystore[],
-  { _aes, salt }: {
-    _aes: string | undefined,
+  { aes, salt }: {
+    aes: any | undefined,
     salt: string | undefined
   },
   password?: string
@@ -66,17 +61,15 @@ export async function scryptEncryWalletKeystores(
   let text = JSON.stringify(_walletKeystores);
   _walletKeystores = [];
 
-  let aes = undefined;
   // Always new IV by secret with random-iv(32 byte length);
   const iv = CryptoJS.lib.WordArray.random(32);
   if (password) {
     salt = crypto.randomBytes(32).toString("hex");
     if (!salt) return;
     aes = await scryptDrive(password, salt);
-    console.log("Use New Password To Drived A New Aes-Key For AES-Encrypt");
+    console.log("Use [New_Password] To Drived A New Aes-Key For AES-Encrypt.");
   } else {
-    aes = CryptoJS.enc.Hex.parse(_aes);
-    console.log("Use Cached Aes-Key For AES-Encrypt");
+    console.log("Use Cached [..Aes-Key..] For AES-Encrypt");
   }
 
   // AES-Encrypt & Saved as JSON Constructure In BASE58
@@ -93,41 +86,10 @@ export async function scryptEncryWalletKeystores(
   const Base58Encode = base58.encode(ethers.utils.toUtf8Bytes(json));
   return {
     Base58Encode,
-    _aes: CryptoJS.enc.Hex.stringify(aes),
+    aes,
     salt
   }
 }
-
-export async function scryptEncryptWallets({ walletList, applicationPassword }: { walletList: any, applicationPassword: string }): Promise<string> {
-  const crypto = require('crypto');
-  const content = JSON.stringify(walletList);
-  const salt = crypto.randomBytes(32).toString("hex");
-  let derivedKey = Buffer.from(applicationPassword);
-  for (let i = 0; i < iterations; i++) {
-    derivedKey = await new Promise((resolve, reject) => {
-      crypto.scrypt(derivedKey, salt, dkLen, { N, r, p }, (err: any, _derivedKey: any) => {
-        if (err) reject(err);
-        else resolve(_derivedKey);
-      });
-    });
-  }
-  // aes by secret with random-iv(32 byte length)
-  const iv = CryptoJS.lib.WordArray.random(32);
-  const aesKey = bufferToWordArray(derivedKey);
-  const encrypt = CryptoJS.AES.encrypt(
-    content, aesKey,
-    { iv: iv, mode: CryptoJS.mode.CBC, padding: CryptoJS.pad.Pkcs7 }
-  );
-  const json = JSON.stringify({
-    salt: salt,
-    iv: CryptoJS.enc.Hex.stringify(iv),
-    ciphertext: encrypt.ciphertext.toString(CryptoJS.enc.Hex)
-  });
-  // base58
-  const base58Encode = base58.encode(ethers.utils.toUtf8Bytes(json));
-  return base58Encode;
-}
-
 
 export async function scryptDrive(password: string, salt: string): Promise<any> {
   const crypto = require('crypto');

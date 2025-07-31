@@ -3,7 +3,6 @@ import { Channel } from "../ApplicationIpcManager";
 import { Context } from "./Context";
 import { ListenSignalHandler } from "./ListenSignalHandler";
 import * as bip39 from 'bip39';
-import { scryptEncryptWallets } from "../CryptoIpc";
 const fs = require('fs');
 const CryptoJS = require('crypto-js');
 
@@ -57,56 +56,12 @@ export class WalletSignalHandler implements ListenSignalHandler {
       } catch (err: any) {
         data = err;
       }
-    } else if (Wallet_Methods.storeWallet == method) {
-      data = await this.storeWallet(params);
     }
     event.reply(Channel, [this.getSingal(), method, [data]])
   }
 
   private generateMnemonic() {
     return bip39.generateMnemonic();
-  }
-
-  private async storeWallet(params: any[]) {
-    const walletList = params[0];
-    const applicationPassword = params[1];
-    try {
-      const base58Encode = await scryptEncryptWallets({ walletList, applicationPassword });
-      const dbUpdatePromise = new Promise((resolve, reject) => {
-        this.kysDB.all("SELECT * FROM wallet_kys", [], (err: any, rows: any[]) => {
-          if (err) {
-            reject(err);
-            return;
-          }
-          if (rows && rows.length > 0) {
-            console.log("[sqlite3-kys] UPDATE for stored.")
-            this.kysDB.run("UPDATE wallet_kys set data = ?", [base58Encode], (err: any, rows: any) => {
-              if (!err) {
-                resolve(rows);
-              }
-            })
-          } else {
-            console.log("[sqlite3-kys] INSERT for stored.")
-            this.kysDB.run("INSERT INTO wallet_kys(data) VALUES(?)", [base58Encode], (err: any, rows: any) => {
-              if (!err) {
-                resolve(rows);
-              }
-            })
-          }
-        })
-      });
-      const rows = await dbUpdatePromise;
-      console.log("stored wallet-keystores into kys-db");
-      return {
-        success: true,
-        path: Wallet_Keystore_FileName
-      }
-    } catch (err: any) {
-      return {
-        success: false,
-        reason: err
-      }
-    }
   }
 
   private async gennerateWallet(params: any[]) {

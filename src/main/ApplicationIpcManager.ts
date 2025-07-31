@@ -11,7 +11,6 @@ import { WalletNameHandler } from "./handlers/WalletNameHandler";
 import { SSH2Ipc } from "./SSH2Ipc";
 import { ERC20TokenSignalHandler } from "./handlers/ERC20TokenSignalHandler";
 import { LocalFileReader } from "./handlers/LocalFileReaderIpc";
-import { CryptoIpc } from "./CryptoIpc";
 import { AppPropSignalHandler } from "./handlers/AppPropSignalHandler";
 import { CrosschainSignalHandler } from "./handlers/CrosschainSignalHandler";
 import { SSHSIpc } from "./SSHSIpc";
@@ -46,7 +45,7 @@ export class ApplicationIpcManager {
     this.listenSignalHandlers.push(this.indexSignalHandler);
   }
 
-  public register(ipcMain: Electron.IpcMain): ApplicationIpcManager {
+  public register(ipcMain: Electron.IpcMain , safeStorage : Electron.SafeStorage): ApplicationIpcManager {
     ipcMain.on(Channel, async (event, arg) => {
       if (arg instanceof Array) {
         const signal = arg[0];
@@ -71,8 +70,7 @@ export class ApplicationIpcManager {
     new SSH2Ipc(ipcMain);
     new SSHSIpc(ipcMain);
     new LocalFileReader(ipcMain);
-    const walletIpc = new WalletIpc(ipcMain , this.indexSignalHandler.getSqliteKys());
-    new CryptoIpc(ipcMain, walletIpc);
+    new WalletIpc(ipcMain, this.indexSignalHandler.getSqliteKys(), safeStorage);
     return this;
   }
 }
