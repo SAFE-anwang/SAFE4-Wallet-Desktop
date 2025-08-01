@@ -24,10 +24,13 @@ export default ({
   const [currentStep, setCurrentStep] = useState<number>(STEP_0_WARNING);
   const [inputPWD, setInputPWD] = useState<string>();
   const [PWDError, setPWDError] = useState<string>();
+  const [validating, setValidating] = useState<boolean>(false);
 
   const validateWalletPassword = useCallback(async () => {
     if (!inputPWD) return;
+    setValidating(true);
     const result = await window.electron.wallet.viewKeystore(activeAccount, inputPWD);
+    setValidating(false);
     if (!result) {
       setPWDError(t("wallet_password_error"));
       return;
@@ -83,7 +86,7 @@ export default ({
               }
             </Col>
             <Col span={24} style={{ marginTop: "20px" }}>
-              <Button onClick={validateWalletPassword} size='large' type='primary' style={{ width: "100%" }}>
+              <Button loading={validating} onClick={validateWalletPassword} size='large' type='primary' style={{ width: "100%" }}>
                 {t("wallet_querysecret_keystore_show")}
               </Button>
             </Col>
@@ -93,6 +96,8 @@ export default ({
       {
         currentStep == STEP_2_SHOW &&
         <>
+          <Text type='secondary'>Keystore 使用您的钱包密码进行加密</Text>
+          <br />
           <Input.TextArea value={keystore} disabled style={{ minHeight: "300px" }} />
           <Divider />
           {

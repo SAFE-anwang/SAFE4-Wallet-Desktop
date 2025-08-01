@@ -9,14 +9,16 @@ const CryptoJS = require('crypto-js');
 
 export class WalletIpc {
 
-  private salt: string | undefined;
-
   private safeStorage: Electron.SafeStorage | undefined;
   private kysDB: any;
 
-  private obfuscationPwdKey: Uint8Array  | undefined;
+  private salt: string | undefined;
+
   private maskInsertRule: MaskInsertRule | undefined;
   private byteOffsetRule: ByteOffsetRule | undefined;
+  private obfuscationOdd: Buffer | undefined;
+  private obfuscationEven: Buffer | undefined;
+  private pwdKeyValidateHMAC: Buffer | undefined;
 
   encryptWalletKeystoreMap: {
     [address: string]: WalletKeystore
@@ -89,6 +91,7 @@ export class WalletIpc {
       salt
     } = await scryptDecryptWalletKys(Base58Encode, password);
     const encryptWalletKeystores = await this.loadWalletKeystores(walletKeystores, { salt, aes });
+    if (!encryptWalletKeystores) return;
     const wallets = encryptWalletKeystores.map(encryptWalletKeystore => {
       const { publicKey, address, path } = encryptWalletKeystore;
       return {
@@ -99,20 +102,72 @@ export class WalletIpc {
   }
 
   private cachePwdKey(pwdKeyWordArray: any) {
+    console.log("PwdKey <== ", CryptoJS.enc.Hex.stringify(pwdKeyWordArray));
+
     const pwdKeyUint8Array = wordArrayToUint8Array(pwdKeyWordArray);
-    const maskInsertRule = generateMaskInsertRule(pwdKeyUint8Array.length, 20);
+    // 生成随机掩码插入规则,进行掩码混淆.
+    const maskInsertRule = createMaskInsertRule(pwdKeyUint8Array.length, 20);
     const masked = maskUint8Array(pwdKeyUint8Array, maskInsertRule);
+    // 生成随机字节偏移规则,进行偏移混淆.
+    const byteOffsetRule = createOffsetRule(masked.length, masked.length / 2);
+    const offseted = applyOffsets(masked, byteOffsetRule);
+    // 奇偶分段
+    const [odd, even] = splitByOddEven(offseted);
+
+    this.obfuscationEven = even;
+    this.obfuscationOdd = odd;
     this.maskInsertRule = maskInsertRule;
-    this.obfuscationPwdKey = masked;
-    // const unmask = unmaskUint8Array(masked, maskInsertRule);
-    // this.pwdKeyWordArray = pwdKeyWordArray;
+    this.byteOffsetRule = byteOffsetRule;
+    // 使用 Electron.safestorage 进行奇段加密;
+    if (this.safeStorage && this.safeStorage.isEncryptionAvailable()) {
+      this.obfuscationOdd = this.safeStorage.encryptString(odd.toString("hex"));
+    }
+    this.pwdKeyValidateHMAC = CryptoJS.HmacSHA256(
+      Buffer.concat([
+        Buffer.from(masked),
+        Buffer.from(offseted),
+        Buffer.from(this.obfuscationOdd),
+        Buffer.from(this.obfuscationEven)
+      ]),
+      pwdKeyWordArray
+    );
   }
 
   private getPwdKey(): any {
-    if (this.obfuscationPwdKey && this.maskInsertRule) {
-      console.log("Unmask obfuscationPwdKey From ", Buffer.from(this.obfuscationPwdKey).toString("hex"));
-      const unmask = unmaskUint8Array(this.obfuscationPwdKey, this.maskInsertRule);
-      return uint8ArrayToWordArray(Buffer.from(unmask));
+    if (this.obfuscationEven && this.obfuscationOdd
+      && this.maskInsertRule && this.byteOffsetRule
+      && this.pwdKeyValidateHMAC) {
+
+      let odd = this.obfuscationOdd;
+      let even = this.obfuscationEven;
+      if (this.safeStorage && this.safeStorage.isEncryptionAvailable()) {
+        const decryptOddStr = this.safeStorage.decryptString(this.obfuscationOdd);
+        odd = Buffer.from(decryptOddStr, "hex");
+      }
+
+      const offseted = mergeOddEven(odd, even);
+      const masked = revertOffsets(offseted, this.byteOffsetRule);
+      const pwdKeyUint8Array = unmaskUint8Array(masked, this.maskInsertRule);
+      const pwdKeyWordArray = uint8ArrayToWordArray(Buffer.from(pwdKeyUint8Array));
+
+      const hmac = CryptoJS.HmacSHA256(
+        Buffer.concat([
+          Buffer.from(masked),
+          Buffer.from(offseted),
+          Buffer.from(this.obfuscationOdd),
+          Buffer.from(this.obfuscationEven)
+        ]),
+        pwdKeyWordArray
+      );
+
+      const crypto = require("crypto");
+      const validateResult = crypto.timingSafeEqual(
+        wordArrayToUint8Array(hmac),
+        wordArrayToUint8Array(this.pwdKeyValidateHMAC)
+      );
+      if (!validateResult) return undefined;
+      console.log("Compare HMAC256Hash True...");
+      return pwdKeyWordArray;
     }
     return undefined;
   }
@@ -122,7 +177,11 @@ export class WalletIpc {
     { salt, aes }: { salt: string, aes: any }
   ) {
     const crypto = require('crypto');
-    const pwdKeyWordArray = aes;
+
+    this.cachePwdKey(aes);
+    this.salt = salt;
+    const pwdKeyWordArray = this.getPwdKey();
+    if (!pwdKeyWordArray) return;
 
     // 为每一个钱包生成随机盐,通过PBKDF2 派生密码密钥,并通过随机IV进行AES加密敏感数据.
     const encryptWalletKeystores = await Promise.all(
@@ -147,8 +206,7 @@ export class WalletIpc {
       [address: string]: WalletKeystore
     });
 
-    this.cachePwdKey(pwdKeyWordArray);
-    this.salt = salt;
+
     return encryptWalletKeystores;
   }
 
@@ -222,18 +280,21 @@ export class WalletIpc {
   private async regenerateKys(password?: string) {
     if (Object.keys(this.encryptWalletKeystoreMap).length == 0) return;
     // 遍历 encryptWalletKeystoreMap,将钱包数据全部解密为明文;
+    const pwdKeyWordArray = this.getPwdKey();
     const walletKeystores = Object.values(this.encryptWalletKeystoreMap).map(encryptWalletKeystore => {
-      return this.decryptWalletKeystore(encryptWalletKeystore);
+      return this.decryptWalletKeystore(encryptWalletKeystore, pwdKeyWordArray);
     });
+
     const result = await scryptEncryWalletKeystores(
       walletKeystores,
       {
-        aes: await this.getPwdKey(),
+        aes: pwdKeyWordArray,
         salt: this.salt
       },
       password
     );
     if (!result) return undefined;
+
     const { Base58Encode, aes, salt } = result;
     if (password && salt) {
       this.loadWalletKeystores(
@@ -257,9 +318,8 @@ export class WalletIpc {
 
     // 未创建钱包加密文件情况下的第一次创建/导入钱包..
     if (initWalletPassword && Object.keys(this.encryptWalletKeystoreMap).length == 0) {
-      console.log("Init Wallet By A New Password...");
-      const crypto = require('crypto');
       ///////////////////////////////////
+      console.log("Init Wallet By A Init-Password ...");
       const salt = crypto.randomBytes(32).toString("hex");
       const pwdKeyWordArray = await scryptDrive(initWalletPassword, salt);
       this.salt = salt;
@@ -294,7 +354,7 @@ export class WalletIpc {
     }
     if (!_walletKeystore) return;
 
-    this.encryptWalletKeystore(_walletKeystore);
+    this.encryptWalletKeystore(_walletKeystore, this.getPwdKey());
     const encryptWalletKeystore = _walletKeystore;
     this.encryptWalletKeystoreMap[encryptWalletKeystore.address] = encryptWalletKeystore;
 
@@ -354,10 +414,8 @@ export class WalletIpc {
     ]
   }
 
-  private async encryptWalletKeystore(walletKeystore: WalletKeystore, pwdKeyWordArray?: any) {
-    const _pwdKeyWordArray = pwdKeyWordArray ?? this.getPwdKey();
-    const [aes, iv] = this.calculateWalletAES(walletKeystore, _pwdKeyWordArray);
-
+  private async encryptWalletKeystore(walletKeystore: WalletKeystore, pwdKeyWordArray: any) {
+    const [aes, iv] = this.calculateWalletAES(walletKeystore, pwdKeyWordArray);
     Object.keys(walletKeystore).forEach(prop => {
       switch (prop) {
         case 'mnemonic':
@@ -377,9 +435,9 @@ export class WalletIpc {
     });
   }
 
-  private decryptWalletKeystore(encryptWalletKeystore: WalletKeystore) {
+  private decryptWalletKeystore(encryptWalletKeystore: WalletKeystore, pwdKeyWordArray: any) {
     const _walletKeystore = { ...encryptWalletKeystore };
-    const [aes, iv] = this.calculateWalletAES(_walletKeystore, this.getPwdKey());
+    const [aes, iv] = this.calculateWalletAES(_walletKeystore, pwdKeyWordArray);
     Object.keys(_walletKeystore).forEach(prop => {
       switch (prop) {
         case 'mnemonic':
@@ -426,14 +484,11 @@ export class WalletIpc {
   private async validatePassword(password: string): Promise<boolean> {
     if (!this.salt) return false;
     let _pwdKeyWordArray = await scryptDrive(password, this.salt);
-    let pwdKeyWordArray = await this.getPwdKey();
+    let pwdKeyWordArray = this.getPwdKey();
     try {
       if (!_pwdKeyWordArray || !pwdKeyWordArray) return false;
       return CryptoJS.enc.Hex.stringify(_pwdKeyWordArray) === CryptoJS.enc.Hex.stringify(pwdKeyWordArray);
     } finally {
-      // 覆盖敏感数据,提升安全性
-      if (_pwdKeyWordArray) wipeWordArray(_pwdKeyWordArray);
-      if (pwdKeyWordArray) wipeWordArray(pwdKeyWordArray);
       // 重置变量引用,加速回收
       _pwdKeyWordArray = undefined;
       pwdKeyWordArray = undefined;
@@ -442,7 +497,7 @@ export class WalletIpc {
 
   private async viewMnemonic(walletAddress: string, pwd: string) {
     if (! await this.validatePassword(pwd)) return undefined;
-    let pwdKeyWordArray = await this.getPwdKey();
+    let pwdKeyWordArray = this.getPwdKey();
     const [aes, iv] = this.calculateWalletAES(this.encryptWalletKeystoreMap[walletAddress], pwdKeyWordArray);
     const { mnemonic, password, path } = this.encryptWalletKeystoreMap[walletAddress];
     try {
@@ -472,9 +527,14 @@ export class WalletIpc {
   }
 
   private async clean() {
-    console.log("Clean Wallet-IPC | ... | ")
     this.salt = undefined;
+    this.maskInsertRule = undefined;
+    this.byteOffsetRule = undefined;
+    this.obfuscationOdd = undefined;
+    this.obfuscationEven = undefined;
+    this.pwdKeyValidateHMAC = undefined;
     this.encryptWalletKeystoreMap = {};
+    console.log("Clean Wallet-IPC | *** | ")
   }
 
   // **** DB **** //
@@ -614,7 +674,7 @@ export interface MaskInsertRule {
  * @param insertCount 插入点数量（不能超过 originalLength + 1）
  * @returns MaskInsertRule
  */
-export function generateMaskInsertRule(originalLength: number, insertCount: number): MaskInsertRule {
+export function createMaskInsertRule(originalLength: number, insertCount: number): MaskInsertRule {
   if (insertCount > originalLength + 1) {
     throw new Error("Insert count cannot exceed original length + 1");
   }
@@ -739,3 +799,47 @@ export function revertOffsets(input: Uint8Array, rule: ByteOffsetRule): Uint8Arr
   }
   return output;
 }
+
+
+/**
+ * 将 Uint8Array 按奇偶位分组
+ * @param data 输入的 Uint8Array
+ * @returns [奇数位数组, 偶数位数组]
+ */
+function splitByOddEven(data: Uint8Array): [Buffer, Buffer] {
+  const odd: number[] = [];
+  const even: number[] = [];
+
+  for (let i = 0; i < data.length; i++) {
+    if (i % 2 === 0) {
+      even.push(data[i]);
+    } else {
+      odd.push(data[i]);
+    }
+  }
+
+  return [Buffer.from(odd), Buffer.from(even)];
+}
+
+/**
+ * 合并奇偶位数组还原原始Uint8Array
+ * @param odd 奇数位数组
+ * @param even 偶数位数组
+ * @returns 合并后的完整数组
+ */
+function mergeOddEven(odd: Buffer, even: Buffer): Uint8Array {
+  const totalLength = odd.length + even.length;
+  const result = new Uint8Array(totalLength);
+  let oddIndex = 0;
+  let evenIndex = 0;
+  for (let i = 0; i < totalLength; i++) {
+    if (i % 2 === 0) {
+      result[i] = even[evenIndex++];
+    } else {
+      result[i] = odd[oddIndex++];
+    }
+  }
+  return result;
+}
+
+

@@ -69,7 +69,7 @@ export async function scryptEncryWalletKeystores(
     aes = await scryptDrive(password, salt);
     console.log("Use [New_Password] To Drived A New Aes-Key For AES-Encrypt.");
   } else {
-    console.log("Use Cached [..Aes-Key..] For AES-Encrypt");
+    console.log("Use Cached [..Aes-Key..]:[{}] For AES-Encrypt", CryptoJS.enc.Hex.stringify(aes));
   }
 
   // AES-Encrypt & Saved as JSON Constructure In BASE58

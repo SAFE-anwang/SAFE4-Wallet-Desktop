@@ -218,6 +218,7 @@ export default createReducer(initialState, (builder) => {
   builder.addCase(walletsForceLock, (state, { payload }) => {
     state.forceOpen = false;
     state.locked = true;
+    window.electron.wallet.clean();
   });
 
 });

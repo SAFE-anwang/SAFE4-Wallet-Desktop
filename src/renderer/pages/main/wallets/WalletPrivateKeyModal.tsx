@@ -26,11 +26,14 @@ export default ({
   const [PWDError, setPWDError] = useState<string>();
 
   const [result, setResult] = useState<string>();
+  const [validating, setValidating] = useState<boolean>(false);
 
   const validateWalletPassword = useCallback(async () => {
 
     if (!inputPWD) return;
+    setValidating(true);
     const result = await window.electron.wallet.viewPrivateKey(activeAccount, inputPWD);
+    setValidating(false);
     if (!result) {
       setPWDError(t("wallet_password_error"));
       return;
@@ -87,7 +90,7 @@ export default ({
               }
             </Col>
             <Col span={24} style={{ marginTop: "20px" }}>
-              <Button onClick={validateWalletPassword} size='large' type='primary' style={{ width: "100%" }}>
+              <Button loading={validating} onClick={validateWalletPassword} size='large' type='primary' style={{ width: "100%" }}>
                 {t("wallet_querysecret_privateKey_show")}
               </Button>
             </Col>
