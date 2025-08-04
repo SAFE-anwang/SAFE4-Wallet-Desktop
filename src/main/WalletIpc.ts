@@ -102,8 +102,6 @@ export class WalletIpc {
   }
 
   private cachePwdKey(pwdKeyWordArray: any) {
-    console.log("PwdKey <== ", CryptoJS.enc.Hex.stringify(pwdKeyWordArray));
-
     const pwdKeyUint8Array = wordArrayToUint8Array(pwdKeyWordArray);
     // 生成随机掩码插入规则,进行掩码混淆.
     const maskInsertRule = createMaskInsertRule(pwdKeyUint8Array.length, 20);
@@ -507,7 +505,6 @@ export class WalletIpc {
         path
       ];
     } finally {
-      wipeWordArray(pwdKeyWordArray);
       pwdKeyWordArray = undefined;
     }
   }
@@ -585,20 +582,7 @@ export class WalletIpc {
       return false;
     }
   }
-
-
-
 }
-
-function wipeWordArray(wordArray: any) {
-  // if (wordArray && wordArray.words) {
-  //   for (let i = 0; i < wordArray.words.length; i++) {
-  //     wordArray.words[i] = 0;
-  //   }
-  //   wordArray.sigBytes = 0;
-  // }
-}
-
 
 export function wrapEthersError(err: any): EtherStructuredError {
   return {

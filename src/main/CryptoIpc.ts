@@ -1,7 +1,7 @@
 const CryptoJS = require('crypto-js');
 import { ethers } from "ethers";
 import { base58 } from "ethers/lib/utils";
-import { WalletIpc, WalletKeystore } from './WalletIpc';
+import { WalletKeystore } from './WalletIpc';
 
 // 设置 scrypt 参数
 // [ 1024 , 2048 , 4096 , 8192 , 16384 , 32768 , 65536 , 131072 , 262144 ]
@@ -69,7 +69,7 @@ export async function scryptEncryWalletKeystores(
     aes = await scryptDrive(password, salt);
     console.log("Use [New_Password] To Drived A New Aes-Key For AES-Encrypt.");
   } else {
-    console.log("Use Cached [..Aes-Key..]:[{}] For AES-Encrypt", CryptoJS.enc.Hex.stringify(aes));
+    console.log("Use Cached [..Aes-Key..] For AES-Encrypt");
   }
 
   // AES-Encrypt & Saved as JSON Constructure In BASE58
