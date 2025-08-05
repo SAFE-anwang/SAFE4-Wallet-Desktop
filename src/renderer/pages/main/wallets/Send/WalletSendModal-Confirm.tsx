@@ -10,6 +10,7 @@ import { useAccountManagerContract } from "../../../../hooks/useContracts";
 import { useTranslation } from "react-i18next";
 import AddressComponent from "../../../components/AddressComponent";
 import { useWeb3React } from "@web3-react/core";
+import EstimateTx from "../../../../utils/EstimateTx";
 
 const { Text } = Typography;
 
@@ -82,12 +83,13 @@ export default ({
           setErr(error)
         }
       } else {
-        const tx = {
+        setSending(true);
+        let tx: ethers.providers.TransactionRequest = {
           to,
           value,
-          chainId
+          chainId,
         }
-        setSending(true);
+        tx = await EstimateTx(activeAccount, chainId, tx, provider);
         const { signedTx, error } = await window.electron.wallet.signTransaction(
           activeAccount,
           provider.connection.url,
@@ -118,7 +120,7 @@ export default ({
         }
       }
     }
-  }, [accountManaggerContract,activeAccount]);
+  }, [accountManaggerContract, activeAccount]);
 
   return (<>
     <div style={{ minHeight: "300px" }}>
