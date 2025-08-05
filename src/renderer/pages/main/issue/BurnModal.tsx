@@ -11,6 +11,7 @@ import { SRC20_Template } from "./SRC20_Template_Config";
 import { useContract } from "../../../hooks/useContracts";
 import { useTranslation } from "react-i18next";
 import { SendOutlined } from "@ant-design/icons";
+import EstimateTx from "../../../utils/EstimateTx";
 
 const { Text } = Typography;
 
@@ -99,14 +100,14 @@ export default ({ openBurnModal, setOpenBurnModal, address }: {
       const data = SRC20Contract.interface.encodeFunctionData("burn", [
         ethers.BigNumber.from(tokenBurnAmount.raw.toString())
       ]);
-      const tx: ethers.providers.TransactionRequest = {
+      let tx: ethers.providers.TransactionRequest = {
         to: SRC20Contract.address,
         data,
         chainId,
       };
+      tx = await EstimateTx(activeAccount , chainId , tx , provider);
       const { signedTx, error } = await window.electron.wallet.signTransaction(
         activeAccount,
-        provider.connection.url,
         tx
       );
       if (signedTx) {

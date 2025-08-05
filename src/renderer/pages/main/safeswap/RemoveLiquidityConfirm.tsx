@@ -20,6 +20,7 @@ import { calculatePairAddress } from "./Calculate";
 import { splitSignature } from "ethers/lib/utils";
 import { getSlippageToleranceBigInteger } from "./AddLiquidityConfirm";
 import { getSlippageTolerancePercent } from "./Swap";
+import EstimateTx from "../../../utils/EstimateTx";
 
 
 const { Text } = Typography;
@@ -120,14 +121,14 @@ export default ({
           r,
           s
         ]);
-        const tx: ethers.providers.TransactionRequest = {
+        let tx: ethers.providers.TransactionRequest = {
           to: safeswapV2Router.address,
           data,
           chainId
         };
+        tx = await EstimateTx(activeAccount, chainId, tx, provider);
         const { signedTx, error } = await window.electron.wallet.signTransaction(
           activeAccount,
-          provider.connection.url,
           tx
         );
         if (signedTx) {
@@ -178,14 +179,14 @@ export default ({
           r,
           s
         ]);
-        const tx: ethers.providers.TransactionRequest = {
+        let tx: ethers.providers.TransactionRequest = {
           to: safeswapV2Router.address,
           data,
           chainId
         };
+        tx = await EstimateTx(activeAccount, chainId, tx, provider);
         const { signedTx, error } = await window.electron.wallet.signTransaction(
           activeAccount,
-          provider.connection.url,
           tx
         );
         if (signedTx) {

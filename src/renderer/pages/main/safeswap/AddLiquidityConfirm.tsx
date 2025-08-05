@@ -21,6 +21,7 @@ import { SafeswapV2RouterAddress } from "../../../config";
 import { IERC20_Interface } from "../../../abis";
 import TokenSymbol from "../../components/TokenSymbol";
 import { useWeb3React } from "@web3-react/core";
+import EstimateTx from "../../../utils/EstimateTx";
 
 const { Text, Link } = Typography;
 
@@ -118,14 +119,14 @@ export default ({
       const data = tokenAContract.interface.encodeFunctionData("approve", [
         SafeswapV2RouterAddress, ethers.utils.parseUnits(tokenAAmount, tokenA.decimals)
       ]);
-      const tx: ethers.providers.TransactionRequest = {
+      let tx: ethers.providers.TransactionRequest = {
         to: tokenAContract.address,
         data,
         chainId
       };
+      tx = await EstimateTx(activeAccount, chainId, tx, provider);
       const { signedTx, error } = await window.electron.wallet.signTransaction(
         activeAccount,
-        provider.connection.url,
         tx
       );
       if (signedTx) {
@@ -163,14 +164,14 @@ export default ({
       const data = tokenBContract.interface.encodeFunctionData("approve", [
         SafeswapV2RouterAddress, ethers.utils.parseUnits(tokenBAmount, tokenB.decimals)
       ]);
-      const tx: ethers.providers.TransactionRequest = {
+      let tx: ethers.providers.TransactionRequest = {
         to: tokenBContract.address,
         data,
         chainId
       };
+      tx = await EstimateTx(activeAccount, chainId, tx, provider);
       const { signedTx, error } = await window.electron.wallet.signTransaction(
         activeAccount,
-        provider.connection.url,
         tx
       );
       if (signedTx) {
@@ -220,15 +221,15 @@ export default ({
           to,
           deadline
         ]);
-        const tx: ethers.providers.TransactionRequest = {
+        let tx: ethers.providers.TransactionRequest = {
           to: SwapV2RouterContract.address,
           data,
           chainId,
           value
         };
+        tx = await EstimateTx(activeAccount, chainId, tx, provider);
         const { signedTx, error } = await window.electron.wallet.signTransaction(
           activeAccount,
-          provider.connection.url,
           tx
         );
         if (signedTx) {
@@ -273,15 +274,15 @@ export default ({
           to,
           deadline
         ]);
-        const tx: ethers.providers.TransactionRequest = {
+        let tx: ethers.providers.TransactionRequest = {
           to: SwapV2RouterContract.address,
           data,
           chainId,
           value
         };
+        tx = await EstimateTx(activeAccount, chainId, tx, provider);
         const { signedTx, error } = await window.electron.wallet.signTransaction(
           activeAccount,
-          provider.connection.url,
           tx
         );
         if (signedTx) {
@@ -328,14 +329,14 @@ export default ({
           to,
           deadline
         ]);
-        const tx: ethers.providers.TransactionRequest = {
+        let tx: ethers.providers.TransactionRequest = {
           to: SwapV2RouterContract.address,
           data,
           chainId
         };
+        tx = await EstimateTx(activeAccount, chainId, tx, provider);
         const { signedTx, error } = await window.electron.wallet.signTransaction(
           activeAccount,
-          provider.connection.url,
           tx
         );
         if (signedTx) {

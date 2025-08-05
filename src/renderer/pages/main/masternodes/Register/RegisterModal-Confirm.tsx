@@ -15,6 +15,7 @@ import { Safe4_Business_Config } from "../../../../config";
 import { walletsUpdateUsedChildWalletAddress, walletsUpdateWalletChildWallets } from "../../../../state/wallets/action";
 import { useTranslation } from "react-i18next";
 import { useWeb3React } from "@web3-react/core";
+import EstimateTx from "../../../../utils/EstimateTx";
 
 const { Text } = Typography;
 
@@ -72,15 +73,15 @@ export default ({
         enode, description,
         incentivePlan.creator, incentivePlan.partner
       ]);
-      const tx: ethers.providers.TransactionRequest = {
+      let tx: ethers.providers.TransactionRequest = {
         to: masternodeLogicContract.address,
         data,
         value,
         chainId
       };
+      tx = await EstimateTx(activeAccount, chainId, tx, provider);
       const { signedTx, error } = await window.electron.wallet.signTransaction(
         activeAccount,
-        provider.connection.url,
         tx
       );
       if (signedTx) {

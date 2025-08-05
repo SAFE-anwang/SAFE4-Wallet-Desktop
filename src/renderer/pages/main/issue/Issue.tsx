@@ -15,6 +15,7 @@ import { SRC20_Template, SRC20_Template_CompileOption, SRC20_Template_Option } f
 import { useDispatch } from "react-redux";
 import { applicationUpdateWalletTab } from "../../../state/application/action";
 import { useNavigate } from "react-router-dom";
+import EstimateTx from "../../../utils/EstimateTx";
 
 const { Text, Title, Link } = Typography;
 const now = () => new Date().getTime()
@@ -102,13 +103,13 @@ export default () => {
       const constructorValues = [name, symbol, ethers.utils.parseUnits(totalSupply)];
       const encodeConstructorData = contractFactory.interface.encodeDeploy(constructorValues);
       const data = contractFactory.bytecode + encodeConstructorData.slice(2);
-      const tx: ethers.providers.TransactionRequest = {
+      let tx: ethers.providers.TransactionRequest = {
         data,
         chainId
       };
+      tx = await EstimateTx(activeAccount, chainId, tx, provider);
       const { signedTx, error } = await window.electron.wallet.signTransaction(
         activeAccount,
-        provider.connection.url,
         tx
       );
       if (signedTx) {

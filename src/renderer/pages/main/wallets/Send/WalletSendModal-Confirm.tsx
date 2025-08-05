@@ -47,15 +47,15 @@ export default ({
       if (lockDay && lockDay > 0) {
         setSending(true);
         const data = accountManaggerContract.interface.encodeFunctionData("deposit", [to, lockDay]);
-        const tx: ethers.providers.TransactionRequest = {
+        let tx: ethers.providers.TransactionRequest = {
           to: accountManaggerContract.address,
           data,
           value,
           chainId
         };
+        tx = await EstimateTx(activeAccount, chainId, tx, provider);
         const { signedTx, error } = await window.electron.wallet.signTransaction(
           activeAccount,
-          provider.connection.url,
           tx
         );
         if (signedTx) {
@@ -90,10 +90,8 @@ export default ({
           chainId,
         }
         tx = await EstimateTx(activeAccount, chainId, tx, provider);
-        console.log("Before Sign tx =>" , tx)
         const { signedTx, error } = await window.electron.wallet.signTransaction(
           activeAccount,
-          provider.connection.url,
           tx
         );
         if (signedTx) {

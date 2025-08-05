@@ -19,6 +19,7 @@ import { applicationUpdateWalletTab } from "../../../state/application/action";
 import { getSlippageTolerancePercent } from "./Swap";
 import { IERC20_Interface } from "../../../abis";
 import TokenSymbol from "../../components/TokenSymbol";
+import EstimateTx from "../../../utils/EstimateTx";
 
 const { Text, Link } = Typography;
 
@@ -92,7 +93,7 @@ export default ({
     }
   }>({});
   const approveRouter = useCallback(async () => {
-    if (tokenA && activeAccount && tokenAContract && trade && provider) {
+    if (tokenA && activeAccount && tokenAContract && trade && provider && chainId) {
       setApproveTokenHash({
         ...approveTokenHash,
         [tokenA.address]: {
@@ -103,14 +104,14 @@ export default ({
       const data = tokenAContract.interface.encodeFunctionData("approve", [
         SafeswapV2RouterAddress, amountIn
       ]);
-      const tx: ethers.providers.TransactionRequest = {
+      let tx: ethers.providers.TransactionRequest = {
         to: tokenAContract.address,
         data,
         chainId,
       };
+      tx = await EstimateTx(activeAccount, chainId, tx, provider);
       const { signedTx, error } = await window.electron.wallet.signTransaction(
         activeAccount,
-        provider.connection.url,
         tx
       );
       if (signedTx) {
@@ -140,15 +141,15 @@ export default ({
       }
       if (!data) return;
       setSending(true);
-      const tx: ethers.providers.TransactionRequest = {
+      let tx: ethers.providers.TransactionRequest = {
         to: WSAFEContract.address,
         data,
         chainId,
         value
       };
+      tx = await EstimateTx(activeAccount, chainId, tx, provider);
       const { signedTx, error } = await window.electron.wallet.signTransaction(
         activeAccount,
-        provider.connection.url,
         tx
       );
       if (signedTx) {
@@ -248,15 +249,15 @@ export default ({
       }
 
       if (!data) return;
-      const tx: ethers.providers.TransactionRequest = {
+      let tx: ethers.providers.TransactionRequest = {
         to: SwapV2RouterContract.address,
         data,
         chainId,
         value
       };
+      tx = await EstimateTx(activeAccount, chainId, tx, provider);
       const { signedTx, error } = await window.electron.wallet.signTransaction(
         activeAccount,
-        provider.connection.url,
         tx
       );
       if (signedTx) {

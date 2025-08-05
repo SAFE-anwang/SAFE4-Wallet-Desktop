@@ -12,6 +12,7 @@ import { useTransactionAdder } from "../../../state/transactions/hooks";
 import useTransactionResponseRender from "../../components/useTransactionResponseRender";
 import { useTranslation } from "react-i18next";
 import { ethers } from "ethers";
+import EstimateTx from "../../../utils/EstimateTx";
 
 const { Text } = Typography;
 
@@ -102,15 +103,15 @@ export default ({
       const logoPayAmountRaw = ethers.BigNumber.from(logoPayAmount.raw.toString());
 
       const data = SRC20Contract.interface.encodeFunctionData("setLogo", [LOGO.hex]);
-      const tx: ethers.providers.TransactionRequest = {
+      let tx: ethers.providers.TransactionRequest = {
         to: SRC20Contract.address,
         data,
         chainId,
         value: logoPayAmountRaw
       };
+      tx = await EstimateTx( activeAccount , chainId , tx , provider );
       const { signedTx, error } = await window.electron.wallet.signTransaction(
         activeAccount,
-        provider.connection.url,
         tx
       );
 

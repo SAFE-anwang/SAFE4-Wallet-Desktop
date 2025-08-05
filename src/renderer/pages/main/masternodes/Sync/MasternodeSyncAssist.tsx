@@ -20,6 +20,7 @@ import SSH2CMDTerminalNodeModal from "../../../components/SSH2CMDTerminalNodeMod
 import { walletsUpdateUsedChildWalletAddress } from "../../../../state/wallets/action";
 import { useTranslation } from "react-i18next";
 import { useWeb3React } from "@web3-react/core";
+import EstimateTx from "../../../../utils/EstimateTx";
 
 const { Text, Title } = Typography
 
@@ -288,24 +289,17 @@ export default () => {
       // DO update address
       if (masternodeInfo.addr != address) {
         try {
-          console.log("What ??")
           const data = masternodeLogicContract.interface.encodeFunctionData("changeAddress", [
             masternodeInfo.addr, address
           ]);
-          const tx: ethers.providers.TransactionRequest = {
+          let tx: ethers.providers.TransactionRequest = {
             to: masternodeLogicContract.address,
             data,
             chainId
           };
-          const estimateGas = await provider.estimateGas({
-            ...tx,
-            from: activeAccount
-          })
-          const gasLimit = estimateGas.mul(2);
-          tx.gasLimit = gasLimit;
+          tx = await EstimateTx(activeAccount, chainId, tx, provider, { doubleGasLimit: true });
           const { signedTx, error } = await window.electron.wallet.signTransaction(
             activeAccount,
-            provider.connection.url,
             tx
           );
           if (signedTx) {
@@ -350,20 +344,14 @@ export default () => {
           const data = masternodeLogicContract.interface.encodeFunctionData("changeEnodeByID", [
             masternodeInfo.id, enode
           ]);
-          const tx: ethers.providers.TransactionRequest = {
+          let tx: ethers.providers.TransactionRequest = {
             to: masternodeLogicContract.address,
             data,
             chainId
           };
-          const estimateGas = await provider.estimateGas({
-            ...tx,
-            from: activeAccount
-          })
-          const gasLimit = estimateGas.mul(2);
-          tx.gasLimit = gasLimit;
+          tx = await EstimateTx(activeAccount, chainId, tx, provider, { doubleGasLimit: true });
           const { signedTx, error } = await window.electron.wallet.signTransaction(
             activeAccount,
-            provider.connection.url,
             tx
           );
           if (signedTx) {
@@ -404,20 +392,14 @@ export default () => {
           const data = masternodeLogicContract.interface.encodeFunctionData("changeDescriptionByID", [
             masternodeInfo.id, description
           ]);
-          const tx: ethers.providers.TransactionRequest = {
+          let tx: ethers.providers.TransactionRequest = {
             to: masternodeLogicContract.address,
             data,
             chainId
           };
-          const estimateGas = await provider.estimateGas({
-            ...tx,
-            from: activeAccount
-          })
-          const gasLimit = estimateGas.mul(2);
-          tx.gasLimit = gasLimit;
+          tx = await EstimateTx(activeAccount, chainId, tx, provider , {doubleGasLimit:true});
           const { signedTx, error } = await window.electron.wallet.signTransaction(
             activeAccount,
-            provider.connection.url,
             tx
           );
           if (signedTx) {

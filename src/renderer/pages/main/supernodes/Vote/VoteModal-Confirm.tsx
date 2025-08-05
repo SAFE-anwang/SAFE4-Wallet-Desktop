@@ -16,6 +16,7 @@ import useTransactionResponseRender from "../../../components/useTransactionResp
 import { useTranslation } from "react-i18next";
 import { useWeb3React } from "@web3-react/core";
 import { ethers } from "ethers";
+import EstimateTx from "../../../../utils/EstimateTx";
 
 const { Text, Link } = Typography;
 
@@ -74,16 +75,16 @@ export default ({
       setSending(true);
       // function voteOrApproval(bool _isVote, address _dstAddr, uint[] memory _recordIDs) external;
       const data = supernodeVoteContract.interface.encodeFunctionData("voteOrApproval", [
-        true , supernodeInfo.addr, accountRecordIds
+        true, supernodeInfo.addr, accountRecordIds
       ]);
-      const tx: ethers.providers.TransactionRequest = {
+      let tx: ethers.providers.TransactionRequest = {
         to: supernodeVoteContract.address,
         data,
         chainId
       };
+      tx = await EstimateTx(activeAccount, chainId, tx, provider);
       const { signedTx, error } = await window.electron.wallet.signTransaction(
         activeAccount,
-        provider.connection.url,
         tx
       );
       if (signedTx) {

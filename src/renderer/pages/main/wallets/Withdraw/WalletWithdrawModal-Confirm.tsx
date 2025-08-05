@@ -9,6 +9,7 @@ import { RetweetOutlined } from '@ant-design/icons';
 import useTransactionResponseRender from "../../../components/useTransactionResponseRender";
 import { useTranslation } from "react-i18next";
 import { useWeb3React } from "@web3-react/core";
+import EstimateTx from "../../../../utils/EstimateTx";
 const { Text } = Typography;
 
 export default ({
@@ -45,15 +46,14 @@ export default ({
       setSending(true);
       if (accountRecord) {
         const data = accountManaggerContract.interface.encodeFunctionData("withdrawByID", [[accountRecord.id]]);
-        const tx: ethers.providers.TransactionRequest = {
+        let tx: ethers.providers.TransactionRequest = {
           to: accountManaggerContract.address,
           data,
           chainId
         };
-
+        tx = await EstimateTx(activeAccount, chainId, tx, provider);
         const { signedTx, error } = await window.electron.wallet.signTransaction(
           activeAccount,
-          provider.connection.url,
           tx
         );
 
@@ -87,14 +87,14 @@ export default ({
 
       } else {
         const data = accountManaggerContract.interface.encodeFunctionData("withdraw", []);
-        const tx: ethers.providers.TransactionRequest = {
+        let tx: ethers.providers.TransactionRequest = {
           to: accountManaggerContract.address,
           data,
           chainId
         };
+        tx = await EstimateTx(activeAccount, chainId, tx, provider);
         const { signedTx, error } = await window.electron.wallet.signTransaction(
           activeAccount,
-          provider.connection.url,
           tx
         );
         if (signedTx) {

@@ -17,6 +17,7 @@ import { useTransactionAdder } from '../../../state/transactions/hooks';
 import { DB_AddressActivity_Actions } from '../../../../main/handlers/DBAddressActivitySingalHandler';
 import { useTranslation } from 'react-i18next';
 import Safescan, { SafescanComponentType } from '../../components/Safescan';
+import EstimateTx from '../../../utils/EstimateTx';
 
 const { Title, Text, Link } = Typography;
 
@@ -130,13 +131,13 @@ export default () => {
         const encodeConstructorData = contractFactory.interface.encodeDeploy(constructorValues);
         const data = contractFactory.bytecode + encodeConstructorData.slice(2);
 
-        const tx: ethers.providers.TransactionRequest = {
+        let tx: ethers.providers.TransactionRequest = {
           data,
           chainId
         };
+        tx = await EstimateTx( activeAccount , chainId , tx , provider );
         const { signedTx, error } = await window.electron.wallet.signTransaction(
           activeAccount,
-          provider.connection.url,
           tx
         );
         if (error) {

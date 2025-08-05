@@ -13,6 +13,7 @@ import { ethers } from "ethers";
 import { TransactionResponse } from "@ethersproject/providers";
 import { useTranslation } from "react-i18next"
 import { useWeb3React } from "@web3-react/core"
+import EstimateTx from "../../../../utils/EstimateTx"
 
 const { Text } = Typography;
 
@@ -70,15 +71,15 @@ export default ({
       const data = proposalContract.interface.encodeFunctionData("create", [
         title, ethers.utils.parseEther(payAmount), _payTimes, _startPayTime, _endPayTime, description
       ]);
-      const tx: ethers.providers.TransactionRequest = {
+      let tx: ethers.providers.TransactionRequest = {
         to: proposalContract.address,
         data,
         value,
         chainId
       };
+      tx = await EstimateTx(activeAccount, chainId, tx, provider);
       const { signedTx, error } = await window.electron.wallet.signTransaction(
         activeAccount,
-        provider.connection.url,
         tx
       );
       if (signedTx) {

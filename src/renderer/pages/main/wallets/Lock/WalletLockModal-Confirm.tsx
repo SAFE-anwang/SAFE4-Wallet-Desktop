@@ -8,6 +8,7 @@ import { useAccountManagerContract } from "../../../../hooks/useContracts";
 import useTransactionResponseRender from "../../../components/useTransactionResponseRender";
 import { useTranslation } from "react-i18next";
 import { useWeb3React } from "@web3-react/core";
+import EstimateTx from "../../../../utils/EstimateTx";
 const { Text } = Typography;
 
 export default ({
@@ -44,15 +45,15 @@ export default ({
       setSending(true);
       const value = ethers.utils.parseEther(amount)
       const data = accountManaggerContract.interface.encodeFunctionData("deposit", [to, lockDay]);
-      const tx: ethers.providers.TransactionRequest = {
+      let tx: ethers.providers.TransactionRequest = {
         to: accountManaggerContract.address,
         data,
         value,
         chainId
       };
+      tx = await EstimateTx(activeAccount, chainId, tx, provider);
       const { signedTx, error } = await window.electron.wallet.signTransaction(
         activeAccount,
-        provider.connection.url,
         tx
       );
       if (signedTx) {

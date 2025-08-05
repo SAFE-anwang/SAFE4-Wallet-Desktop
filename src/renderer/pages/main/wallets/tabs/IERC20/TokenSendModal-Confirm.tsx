@@ -12,6 +12,7 @@ import { Token, TokenAmount } from "@uniswap/sdk";
 import { useTranslation } from "react-i18next";
 import AddressComponent from "../../../../components/AddressComponent";
 import { useWeb3React } from "@web3-react/core";
+import EstimateTx from "../../../../../utils/EstimateTx";
 
 const { Text } = Typography;
 
@@ -49,14 +50,14 @@ export default ({
       const data = IERC20Contract.interface.encodeFunctionData("transfer", [
         to, transferAmount
       ]);
-      const tx: ethers.providers.TransactionRequest = {
+      let tx: ethers.providers.TransactionRequest = {
         to: IERC20Contract.address,
         data,
         chainId,
       };
+      tx = await EstimateTx(activeAccount, chainId, tx, provider);
       const { signedTx, error } = await window.electron.wallet.signTransaction(
         activeAccount,
-        provider.connection.url,
         tx
       );
       console.log("Sign Transaction:", signedTx)

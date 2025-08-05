@@ -59,11 +59,9 @@ export default ({
         data,
         chainId
       };
-      tx = await EstimateTx(activeAccount, chainId, tx, provider);
-      console.log("Before Sign Tx =", tx)
+      tx = await EstimateTx(activeAccount, chainId, tx, provider , {doubleGasLimit:true});
       const { signedTx, error } = await window.electron.wallet.signTransaction(
         activeAccount,
-        provider.connection.url,
         tx
       );
       if (error) {

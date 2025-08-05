@@ -14,6 +14,7 @@ import { TxExecuteStatus } from "../safe3/Safe3";
 import Safescan from "../../components/Safescan";
 import { ethers } from "ethers";
 import { useWeb3React } from "@web3-react/core";
+import EstimateTx from "../../../utils/EstimateTx";
 
 const { Text } = Typography;
 
@@ -66,18 +67,17 @@ export default ({
     if (supernodeVoteContract && selectAccountRecordIds && newSupernodeInfo && provider && chainId) {
       setSending(true);
       // function voteOrApproval(bool _isVote, address _dstAddr, uint[] memory _recordIDs) external;
-
       const data = supernodeVoteContract.interface.encodeFunctionData("voteOrApproval", [
         true, newSupernodeInfo.addr, selectAccountRecordIds
       ]);
-      const tx: ethers.providers.TransactionRequest = {
+      let tx: ethers.providers.TransactionRequest = {
         to: supernodeVoteContract.address,
         data,
         chainId
       };
+      tx = await EstimateTx(activeAccount, chainId, tx, provider);
       const { signedTx, error } = await window.electron.wallet.signTransaction(
         activeAccount,
-        provider.connection.url,
         tx
       );
       if (signedTx) {

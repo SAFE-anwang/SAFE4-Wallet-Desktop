@@ -6,6 +6,7 @@ import { ethers } from "ethers"
 import { useTransactionAdder } from "../../../state/transactions/hooks"
 import Safescan from "../../components/Safescan"
 import { useWeb3React } from "@web3-react/core"
+import EstimateTx from "../../../utils/EstimateTx"
 
 const { Text } = Typography
 
@@ -87,7 +88,7 @@ export default ({
       encodeFunctionData: encodeFunctionData
     });
     console.log(`Function-${functionFragment.name} :: ${encodeFunctionData}`);
-    const tx = {
+    let tx : ethers.providers.TransactionRequest = {
       to: address,
       data: encodeFunctionData,
       value
@@ -98,9 +99,9 @@ export default ({
       setSending(true);
       const { constant } = functionFragment;
       if (!constant) {
+        tx = await EstimateTx(activeAccount , chainId , tx , provider);
         const { signedTx, error } = await window.electron.wallet.signTransaction(
           activeAccount,
-          provider.connection.url,
           tx
         );
         if (error) {

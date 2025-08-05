@@ -9,6 +9,7 @@ import useSRC20Prop from "../../../hooks/useSRC20Prop";
 import { useTranslation } from "react-i18next";
 import { useWeb3React } from "@web3-react/core";
 import { ethers } from "ethers";
+import EstimateTx from "../../../utils/EstimateTx";
 
 const { Text } = Typography;
 
@@ -93,14 +94,14 @@ export default ({
       let _updates = updates ?? {};
       if (whitePaperUrl != src20TokenProp.whitePaperUrl) {
         const data = SRC20Contract.interface.encodeFunctionData("setWhitePaperUrl", [whitePaperUrl]);
-        const tx: ethers.providers.TransactionRequest = {
+        let tx: ethers.providers.TransactionRequest = {
           to: SRC20Contract.address,
           data,
           chainId
         };
+        tx = await EstimateTx(activeAccount , chainId , tx , provider);
         const { signedTx, error } = await window.electron.wallet.signTransaction(
           activeAccount,
-          provider.connection.url,
           tx
         );
         if (error) {
@@ -138,14 +139,14 @@ export default ({
       }
       if (orgName != src20TokenProp.orgName) {
         const data = SRC20Contract.interface.encodeFunctionData("setOrgName", [orgName]);
-        const tx: ethers.providers.TransactionRequest = {
+        let tx: ethers.providers.TransactionRequest = {
           to: SRC20Contract.address,
           data,
           chainId
         };
+        tx = await EstimateTx(activeAccount , chainId , tx , provider);
         const { signedTx, error } = await window.electron.wallet.signTransaction(
           activeAccount,
-          provider.connection.url,
           tx
         );
         if (error) {
@@ -184,14 +185,14 @@ export default ({
       if (officialUrl != src20TokenProp.officialUrl) {
 
         const data = SRC20Contract.interface.encodeFunctionData("setOfficialUrl", [officialUrl]);
-        const tx: ethers.providers.TransactionRequest = {
+        let tx: ethers.providers.TransactionRequest = {
           to: SRC20Contract.address,
           data,
           chainId
         };
+        tx = await EstimateTx(activeAccount , chainId , tx , provider);
         const { signedTx, error } = await window.electron.wallet.signTransaction(
           activeAccount,
-          provider.connection.url,
           tx
         );
         if (error) {
@@ -230,14 +231,14 @@ export default ({
       if (description != src20TokenProp.description) {
 
         const data = SRC20Contract.interface.encodeFunctionData("setDescription", [description]);
-        const tx: ethers.providers.TransactionRequest = {
+        let tx: ethers.providers.TransactionRequest = {
           to: SRC20Contract.address,
           data,
           chainId
         };
+        tx = await EstimateTx(activeAccount , chainId , tx , provider);
         const { signedTx, error } = await window.electron.wallet.signTransaction(
           activeAccount,
-          provider.connection.url,
           tx
         );
         if (error) {

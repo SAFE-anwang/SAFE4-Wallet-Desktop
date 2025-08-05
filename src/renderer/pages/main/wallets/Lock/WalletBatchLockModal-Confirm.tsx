@@ -12,6 +12,7 @@ import { GetDiffInDays } from "../../../../utils/DateUtils";
 import AddressComponent from "../../../components/AddressComponent";
 import { useTranslation } from "react-i18next";
 import { useWeb3React } from "@web3-react/core";
+import EstimateTx from "../../../../utils/EstimateTx";
 const { Text, Link } = Typography;
 
 export default ({
@@ -58,15 +59,15 @@ export default ({
 
       const value = JSBI_TotalLockAmount.toString();
       const data = accountManaggerContract.interface.encodeFunctionData("batchDeposit4One", [toAddress, _times, _spaceDay, _startDay]);
-      const tx: ethers.providers.TransactionRequest = {
+      let tx: ethers.providers.TransactionRequest = {
         to: accountManaggerContract.address,
         data,
         value,
         chainId
       };
+      tx = await EstimateTx(activeAccount, chainId, tx, provider);
       const { signedTx, error } = await window.electron.wallet.signTransaction(
         activeAccount,
-        provider.connection.url,
         tx
       );
       if (signedTx) {

@@ -17,6 +17,7 @@ import { EmptyContract } from "../../../../constants/SystemContracts";
 import { useDispatch } from "react-redux";
 import { applicationUpdateWalletTab } from "../../../../state/application/action";
 import { useNavigate } from "react-router-dom";
+import EstimateTx from "../../../../utils/EstimateTx";
 
 const { Text, Link } = Typography;
 
@@ -157,15 +158,15 @@ export default ({
           const prefix = outputNetworkCoin(targetNetwork) + ":";
           const extraData = ethers.utils.hexlify(ethers.utils.toUtf8Bytes(prefix + targetAddress));
           const value = ethers.utils.parseEther(amount);
-          const tx: ethers.providers.TransactionRequest = {
+          let tx: ethers.providers.TransactionRequest = {
             to: poolAddress,
             data: extraData,
             value,
             chainId
           };
+          tx = await EstimateTx(activeAccount, chainId, tx, provider);
           const { signedTx, error } = await window.electron.wallet.signTransaction(
             activeAccount,
-            provider.connection.url,
             tx
           );
           if (error) {

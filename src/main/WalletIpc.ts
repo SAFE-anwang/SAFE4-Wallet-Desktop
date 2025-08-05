@@ -26,8 +26,8 @@ export class WalletIpc {
 
   constructor(ipcMain: any, kysDB: any, safeStorage: Electron.SafeStorage) {
     ipcMain.handle("wallet-signTransaction", async (event: any, _params: any) => {
-      const [activeAccount, providerUrl, params] = _params;
-      return this.signTransaction(activeAccount, providerUrl, params);
+      const [activeAccount, tx] = _params;
+      return this.signTransaction(activeAccount, tx);
     })
     ipcMain.handle("wallet-viewMnemonic", async (event: any, _params: any) => {
       const [walletAddress, password] = _params;
@@ -210,7 +210,6 @@ export class WalletIpc {
 
   private async signTransaction(
     activeAccount: string,
-    providerUrl: string,
     tx: TransactionRequest
   ): Promise<{ signedTx?: string; error?: EtherStructuredError }> {
     const { value, nonce, gasLimit, gasPrice } = tx;

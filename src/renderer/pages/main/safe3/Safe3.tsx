@@ -15,6 +15,7 @@ import Safe3AssetRender, { Safe3Asset } from "./Safe3AssetRender";
 import { useTransactionAdder } from "../../../state/transactions/hooks";
 import { useTranslation } from "react-i18next";
 import { useWeb3React } from "@web3-react/core";
+import EstimateTx from "../../../utils/EstimateTx";
 
 const { Text, Title } = Typography;
 
@@ -216,14 +217,14 @@ export default () => {
           [ethers.utils.arrayify(signMsg)],
           safe4TargetAddress,
         ]);
-        const tx: ethers.providers.TransactionRequest = {
+        let tx: ethers.providers.TransactionRequest = {
           to: safe3Contract.address,
           data,
           chainId
         };
+        tx = await EstimateTx(activeAccount, chainId, tx, provider);
         const { signedTx, error } = await window.electron.wallet.signTransaction(
           activeAccount,
-          provider.connection.url,
           tx
         );
         if (signedTx) {
@@ -278,21 +279,15 @@ export default () => {
               [ethers.utils.arrayify(signMsg)],
               safe4TargetAddress
             ]);
-            const tx: ethers.providers.TransactionRequest = {
+            let tx: ethers.providers.TransactionRequest = {
               to: safe3Contract.address,
               data,
               chainId
             };
-            const estimateGas = await provider.estimateGas({
-              ...tx,
-              from: activeAccount
-            })
-            const gasLimit = estimateGas.mul(2);
-            tx.gasLimit = gasLimit;
+            tx = await EstimateTx(activeAccount, chainId, tx, provider, { doubleGasLimit: true });
 
             const { signedTx, error } = await window.electron.wallet.signTransaction(
               activeAccount,
-              provider.connection.url,
               tx
             );
             if (error) {
@@ -347,14 +342,14 @@ export default () => {
             [""],
             safe4TargetAddress
           ]);
-          const tx: ethers.providers.TransactionRequest = {
+          let tx: ethers.providers.TransactionRequest = {
             to: safe3Contract.address,
             data,
             chainId
           };
+          tx = await EstimateTx(activeAccount, chainId, tx, provider);
           const { signedTx, error } = await window.electron.wallet.signTransaction(
             activeAccount,
-            provider.connection.url,
             tx
           );
           if (error) {
