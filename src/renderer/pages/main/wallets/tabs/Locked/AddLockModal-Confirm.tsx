@@ -11,6 +11,7 @@ import useTransactionResponseRender from "../../../../components/useTransactionR
 import { useTranslation } from "react-i18next";
 import { useWeb3React } from "@web3-react/core";
 import { ethers } from "ethers";
+import EstimateTx from "../../../../../utils/EstimateTx";
 
 const { Text } = Typography;
 
@@ -53,11 +54,13 @@ export default ({
       const data = accountManaggerContract.interface.encodeFunctionData("addLockDay", [
         id, addLockDay
       ]);
-      const tx: ethers.providers.TransactionRequest = {
+      let tx: ethers.providers.TransactionRequest = {
         to: accountManaggerContract.address,
         data,
         chainId
       };
+      tx = await EstimateTx(activeAccount, chainId, tx, provider);
+      console.log("Before Sign Tx =", tx)
       const { signedTx, error } = await window.electron.wallet.signTransaction(
         activeAccount,
         provider.connection.url,
