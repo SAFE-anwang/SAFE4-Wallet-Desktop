@@ -213,46 +213,27 @@ export class WalletIpc {
     providerUrl: string,
     tx: TransactionRequest
   ): Promise<{ signedTx?: string; error?: EtherStructuredError }> {
-    const provider = new JsonRpcProvider(providerUrl);
-    const { value } = tx;
+    const { value, nonce, gasLimit, gasPrice } = tx;
     const transaction: TransactionRequest = {
       ...tx,
       value: value !== undefined ? ethers.BigNumber.from(value) : ethers.constants.Zero,
+      nonce: nonce !== undefined ? ethers.BigNumber.from(nonce) : ethers.constants.Zero,
+      gasLimit: gasLimit !== undefined ? ethers.BigNumber.from(gasLimit) : ethers.constants.Zero,
+      gasPrice: gasPrice !== undefined ? ethers.BigNumber.from(gasPrice) : ethers.constants.Zero,
+      from: activeAccount
     };
-
     try {
-
-      let nonce: number;
-      let gasPrice: ethers.BigNumber;
-      let gasLimit: ethers.BigNumber;
-      let chainId: number;
-
-      [nonce, gasPrice, chainId, gasLimit] = await Promise.all([
-        provider.getTransactionCount(activeAccount, "pending"),
-        transaction.gasPrice ? Promise.resolve(ethers.BigNumber.from(transaction.gasPrice)) : provider.getGasPrice(),
-        transaction.chainId ? Promise.resolve(transaction.chainId) : provider.getNetwork().then((net) => net.chainId),
-        transaction.gasLimit ? Promise.resolve(ethers.BigNumber.from(transaction.gasLimit)) : provider.estimateGas({
-          ...transaction,
-          from: activeAccount
-        })
-      ]);
-
       // 用块作用域控制私钥生命周期
       let signedTx: string;
       {
         let decrypted = this.getActiveAccountPrivateKey(activeAccount);
-        const signer = new ethers.Wallet(decrypted, provider);
+        const signer = new ethers.Wallet(decrypted);
         // 主动释放
         decrypted = "";
         signedTx = await signer.signTransaction({
           ...transaction,
-          nonce,
-          gasPrice,
-          gasLimit,
-          chainId,
         });
       }
-
       return { signedTx };
     } catch (err) {
       return { error: wrapEthersError(err) };

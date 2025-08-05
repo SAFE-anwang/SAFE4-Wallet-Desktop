@@ -90,6 +90,7 @@ export default ({
           chainId,
         }
         tx = await EstimateTx(activeAccount, chainId, tx, provider);
+        console.log("Before Sign tx =>" , tx)
         const { signedTx, error } = await window.electron.wallet.signTransaction(
           activeAccount,
           provider.connection.url,
@@ -104,8 +105,8 @@ export default ({
             addTransaction(tx, response, {
               transfer: {
                 from: activeAccount,
-                to: tx.to,
-                value: tx.value.toString()
+                to: to,
+                value: response.value.toString()
               }
             });
           } catch (err) {
