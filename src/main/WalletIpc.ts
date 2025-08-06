@@ -1,4 +1,4 @@
-import { JsonRpcProvider, TransactionRequest } from "@ethersproject/providers";
+import { TransactionRequest } from "@ethersproject/providers";
 import { ethers, TypedDataDomain } from "ethers";
 import { HDNode } from "ethers/lib/utils";
 import { scryptDecryptWalletKys, scryptDrive, scryptEncryWalletKeystores, uint8ArrayToWordArray, wordArrayToUint8Array } from "./CryptoIpc";
