@@ -16,6 +16,7 @@ import { CrosschainSignalHandler } from "./handlers/CrosschainSignalHandler";
 import { SSHSIpc } from "./SSHSIpc";
 import { SSHConfigSignalHandler } from "./handlers/SSHConfigSignalHandler";
 import { WalletIpc } from "./WalletIpc";
+import { ProposalReadedSignalHandler } from "./handlers/ProposalReadedSignalHandler";
 
 export const Channel: Channels = "ipc-example";
 
@@ -41,11 +42,12 @@ export class ApplicationIpcManager {
       this.listenSignalHandlers.push(new AppPropSignalHandler(ctx, this.indexSignalHandler.getSqlite3DB()));
       this.listenSignalHandlers.push(new CrosschainSignalHandler(ctx, this.indexSignalHandler.getSqlite3DB()));
       this.listenSignalHandlers.push(new SSHConfigSignalHandler(ctx, this.indexSignalHandler.getSqlite3DB()));
+      this.listenSignalHandlers.push(new ProposalReadedSignalHandler(ctx, this.indexSignalHandler.getSqlite3DB()));
     });
     this.listenSignalHandlers.push(this.indexSignalHandler);
   }
 
-  public register(ipcMain: Electron.IpcMain , safeStorage : Electron.SafeStorage): ApplicationIpcManager {
+  public register(ipcMain: Electron.IpcMain, safeStorage: Electron.SafeStorage): ApplicationIpcManager {
     ipcMain.on(Channel, async (event, arg) => {
       if (arg instanceof Array) {
         const signal = arg[0];

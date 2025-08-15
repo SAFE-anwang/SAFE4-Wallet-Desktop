@@ -1,7 +1,7 @@
 import { Alert, Button, Card, Col, Divider, Row, Space, Tabs, TabsProps, Typography } from "antd";
 import { useNavigate } from "react-router-dom";
 import { LeftOutlined } from '@ant-design/icons';
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { AppState } from "../../../../state";
 import { useEffect, useMemo, useState } from "react";
 import { formatProposalInfo, formatVoteInfo, ProposalInfo, VoteInfo } from "../../../../structs/Proposal";
@@ -16,6 +16,8 @@ import VoteModalConfirm from "./VoteModal-Confirm";
 import { useTranslation } from "react-i18next";
 import AddressComponent from "../../../components/AddressComponent";
 import { useProposalBalance } from "../../../../hooks/useProposalBalance";
+import { useWeb3React } from "@web3-react/core";
+import { updateProposalReaded } from "../../../../state/proposals/actions";
 
 const { Text, Title } = Typography;
 
@@ -23,6 +25,7 @@ export default () => {
 
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const proposalId = useSelector<AppState, number | undefined>(state => state.application.control.proposalId);
   const [proposalInfo, setProposalInfo] = useState<ProposalInfo>();
 
@@ -118,6 +121,13 @@ export default () => {
         })
     }
   }, [proposalId, proposalContract, activeAccount, blockNumber]);
+
+  const {chainId} = useWeb3React();
+  useEffect( () => {
+    if ( proposalId && chainId ){
+      dispatch( updateProposalReaded( { chainId , proposalId } ) )
+    }
+  } , [proposalId , chainId] )
 
   const doVote = (voteResult: number) => {
     setVoteResult(voteResult);

@@ -11,11 +11,12 @@ import { useWalletsActiveAccount } from "../../../state/wallets/hooks";
 import { formatProposalInfo, ProposalInfo } from "../../../structs/Proposal";
 import { DateTimeFormat } from "../../../utils/DateUtils";
 import AddressComponent from "../../components/AddressComponent";
+import { useReadedProposalIds } from "../../../state/proposals/hooks";
 
 const { Text } = Typography;
 const Proposals_Page_Size = 10;
 
-export const RenderProposalState = (state: number, startPayTime: number, latestBlockTimestamp: number, t ?: any) => {
+export const RenderProposalState = (state: number, startPayTime: number, latestBlockTimestamp: number, t?: any) => {
   switch (state) {
     case 0:
       if (latestBlockTimestamp >= startPayTime) {
@@ -184,7 +185,7 @@ export default ({
         return <>
           <Row>
             <Col span={24}>
-              {RenderProposalState(state, proposalInfo.startPayTime, timestamp , t)}
+              {RenderProposalState(state, proposalInfo.startPayTime, timestamp, t)}
             </Col>
           </Row>
         </>
@@ -296,6 +297,9 @@ export default ({
     }
   }, [proposalContract, queryKey]);
 
+
+  const readedProposalIds = useReadedProposalIds();
+
   return <>
 
     {
@@ -316,6 +320,9 @@ export default ({
       </Row>
     }
 
+    {
+      JSON.stringify(readedProposalIds)
+    }
     <Table loading={loading} onChange={(pagination) => {
       const { current, pageSize, total } = pagination;
       setPagination({

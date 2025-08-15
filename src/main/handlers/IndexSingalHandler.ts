@@ -70,15 +70,17 @@ export class IndexSingalHandler implements ListenSignalHandler {
     const rpc_configs = await this.loadRpcConfig();
     const wallet_names = await this.loadWalletNames();
     const app_props = await this.loadAppProps();
+    const proposal_readed = await this.loadProposalReaded();
     return {
       path: this.ctx.path,
       encrypt,
       rpc_configs,
       wallet_names,
       app_props,
-      os : {
-        locale : this.ctx.osLocale ,
-        platform : this.ctx.os
+      proposal_readed,
+      os: {
+        locale: this.ctx.osLocale,
+        platform: this.ctx.os
       }
     }
   }
@@ -99,10 +101,26 @@ export class IndexSingalHandler implements ListenSignalHandler {
     });
   }
 
-  private loadAppProps():Promise<any>{
+  private loadAppProps(): Promise<any> {
     return new Promise((resolve, reject) => {
       this.db.all(
         "SELECT * FROM app_props",
+        [],
+        (err: any, rows: any) => {
+          if (err) {
+            reject(err)
+            return;
+          }
+          resolve(rows);
+        }
+      )
+    });
+  }
+
+  private loadProposalReaded(): Promise<any> {
+     return new Promise((resolve, reject) => {
+      this.db.all(
+        "SELECT * FROM proposal_readed",
         [],
         (err: any, rows: any) => {
           if (err) {
