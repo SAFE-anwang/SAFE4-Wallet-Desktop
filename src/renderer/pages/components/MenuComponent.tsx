@@ -1,18 +1,19 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { AppstoreOutlined, WalletOutlined, SettingOutlined, ClusterOutlined, ApartmentOutlined, FilePptOutlined, ApiOutlined, GiftOutlined, FileZipOutlined, SyncOutlined, SwapOutlined, BankOutlined } from '@ant-design/icons';
-import { Badge, Button, Dropdown, MenuProps, MenuTheme, Space, message } from 'antd';
+import { Badge, Button, Dropdown, MenuProps, MenuTheme, Space, Tooltip, Typography, message } from 'antd';
 import { Menu, Switch } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import WalletSwitchComponent from './WalletSwitchComponent';
 import { useTranslation } from 'react-i18next';
-import { useWeb3React } from '@web3-react/core';
 import { fetchWalletLatest } from '../../services/getWalletVersion';
 import useSafeScan from '../../hooks/useSafeScan';
 import { useApplicationPlatform, useApplicationWalletUpdate, useBlockNumber } from '../../state/application/hooks';
 import { useDispatch } from 'react-redux';
 import { applicationUpdateWalletUpdateVersion } from '../../state/application/action';
 import VersionModal from '../main/menu/version/VersionModal';
+import { useUnreadProposalIds } from '../../state/proposals/hooks';
 
+const { Text } = Typography;
 type MenuItem = Required<MenuProps>['items'][number];
 
 function getItem(
@@ -39,13 +40,31 @@ const MenuComponent: React.FC = () => {
   const platform = useApplicationPlatform();
   const blockNumber = useBlockNumber();
   const dispatch = useDispatch();
+  const unreadProposalIds = useUnreadProposalIds();
+
 
   const items: MenuItem[] = useMemo(() => {
+
     return [
       getItem(t("wallet"), '/main/wallet', <WalletOutlined />),
       getItem(t("supernode"), '/main/supernodes', <ClusterOutlined />),
       getItem(t("masternode"), '/main/masternodes', <ApartmentOutlined />),
-      getItem(t("proposal"), '/main/proposals', <FilePptOutlined />),
+
+      /////
+      getItem(
+        <>
+          {t("proposal")}
+          {
+            unreadProposalIds && unreadProposalIds.length > 0 && <>
+              <Tooltip title="未查看的提案">
+                <Text style={{ marginLeft: "5px" }} type='secondary'>({unreadProposalIds?.length})</Text>
+              </Tooltip>
+            </>
+          }
+        </>,
+        '/main/proposals', <FilePptOutlined />),
+      ////
+
       getItem(t("safe3AssetRedeem"), '/main/safe3nav', <ApiOutlined />),
       getItem(t("wallet_crosschain"), '/main/crosschain', <SyncOutlined />),
       getItem(t("wallet_safeswap"), '/main/swap', <SwapOutlined />),
@@ -54,7 +73,7 @@ const MenuComponent: React.FC = () => {
       getItem(t("getTestCoin"), '/main/gettestcoin', <GiftOutlined />),
       // getItem(t("batchSyncNode"), '/main/batchSyncNode', <GiftOutlined />),
     ]
-  }, [t]);
+  }, [t, unreadProposalIds]);
 
   const onClick: MenuProps['onClick'] = (e) => {
     setCurrent(e.key);

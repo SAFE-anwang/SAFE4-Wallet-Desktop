@@ -1,9 +1,11 @@
 import { useEffect } from "react"
-import { useBlockNumber } from "../application/hooks";
+import { useBlockNumber, useTimestamp } from "../application/hooks";
 import { useMulticallContract, useProposalContract } from "../../hooks/useContracts";
 import { useWeb3React } from "@web3-react/core";
 import { formatProposalInfo } from "../../structs/Proposal";
 import { useDispatch } from "react-redux";
+import { addProposals, updateUnreadIds } from "./actions";
+import { useReadedProposalIds, useStateProposals } from "./hooks";
 
 const MAX_PROPOSALS_PAGE_SIZE = 2;
 
@@ -14,6 +16,9 @@ export default () => {
   const { chainId } = useWeb3React();
   const multicallContract = useMulticallContract();
   const dispatch = useDispatch();
+  const stateProposals = useStateProposals();
+  const readedProposalIds = useReadedProposalIds();
+  const timestamp = useTimestamp();
 
   useEffect(() => {
     if (proposalContract && chainId && multicallContract) {
@@ -57,10 +62,26 @@ export default () => {
         const allPageResults = await Promise.all(promises);
         // 二维数组 => 一维 flatten
         const proposals = allPageResults.flat();
+        dispatch(addProposals({
+          chainId, proposals: proposals.map(proposalInfo => {
+            const { id, state, title, startPayTime } = proposalInfo;
+            return { id, state, title, startPayTime }
+          })
+        }));
       }
       loadProposals();
     }
-  }, [chainId, proposalContract, multicallContract]);
+  }, [chainId, proposalContract, multicallContract, blockNumber]);
+
+  useEffect(() => {
+    if (stateProposals && readedProposalIds && chainId) {
+      const votingProposalIds = Object.values(stateProposals).filter(proposalState => {
+        return proposalState.state == 0 && timestamp < proposalState.startPayTime;
+      }).map(proposalState => proposalState.id);
+      const unreadVotingProposalIds = votingProposalIds.filter(votingProposalId => readedProposalIds.indexOf(votingProposalId) == -1);
+      dispatch(updateUnreadIds({ chainId, proposalIds: unreadVotingProposalIds }))
+    }
+  }, [stateProposals, readedProposalIds, timestamp, chainId]);
 
   return <>
 

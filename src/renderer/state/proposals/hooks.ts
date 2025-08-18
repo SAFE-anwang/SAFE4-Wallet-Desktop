@@ -4,12 +4,26 @@ import { AppState } from "..";
 
 
 
-export function useReadedProposalIds(){
-
+export function useReadedProposalIds() {
   const { chainId } = useWeb3React();
-    return useSelector((state: AppState) => {
-      if ( !chainId || !state.proposals[chainId] ) return undefined;
-      return state.proposals[chainId].readedIds;
-    });
+  return useSelector((state: AppState) => {
+    if (!chainId || !state.proposals[chainId]) return undefined;
+    return state.proposals[chainId].readedIds;
+  });
+}
 
+export function useStateProposals() {
+  const { chainId } = useWeb3React();
+  return useSelector((state: AppState) => {
+    if (!chainId || !state.proposals[chainId]) return undefined;
+    return state.proposals[chainId].proposals;
+  });
+}
+
+export function useUnreadProposalIds() {
+  const { chainId } = useWeb3React();
+  return useSelector((state: AppState) => {
+    if (!chainId || !state.proposals[chainId]) return undefined;
+    return state.proposals[chainId].unreadIds;
+  });
 }
