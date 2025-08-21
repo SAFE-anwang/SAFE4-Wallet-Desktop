@@ -219,18 +219,21 @@ export default () => {
           .map(date => {
             const systemRewardAmount = transactions[date].systemRewardAmount;
             const rewardsTimestamp = TimestampTheEndOf(date);
-            if (!earliesTx) return <></>
-            const timestamp = earliesTx.timestamp ?? earliesTx.addedTime;
+
+            let timestamp = undefined;
+            if (earliesTx) {
+              timestamp = earliesTx.timestamp ?? earliesTx.addedTime;
+            }
             return (<div key={date}>
               {
                 (transactions[date].transactions.length > 0 || (systemRewardAmount.greaterThan(ZERO) && showNodeReward)) &&
                 <>
                   <Text type="secondary">{date}</Text>
-                  <br/>
+                  <br />
                 </>
               }
               {
-                systemRewardAmount.greaterThan(ZERO) && showNodeReward && !(rewardsTimestamp < timestamp) && <>
+                systemRewardAmount.greaterThan(ZERO) && showNodeReward &&  (timestamp && !(rewardsTimestamp < timestamp) || !timestamp ) && <>
                   <Divider dashed style={{ marginTop: "5px", marginBottom: "5px" }} />
                   <Text strong style={{ color: "#104499" }}>{t("wallet_history_rewards")}  +{systemRewardAmount.toFixed(6)} SAFE</Text>
                   <Divider dashed style={{ marginTop: "5px", marginBottom: "20px" }} />
