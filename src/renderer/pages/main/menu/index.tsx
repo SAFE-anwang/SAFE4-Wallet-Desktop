@@ -9,6 +9,7 @@ import { useTranslation } from 'react-i18next';
 import LanguageSelector from './language/LanguageSelector';
 import Version from './version';
 import { walletsForceLock, walletsUpdateLocked } from '../../../state/wallets/action';
+import { cleanAddressActiviesFetch } from '../../../state/transactions/actions';
 
 const { Title } = Typography;
 
@@ -81,6 +82,7 @@ export default () => {
           <Divider style={{ margin: "0px 0px" }} />
           <Row className='menu-item' onClick={() => {
             dispatch(walletsForceLock());
+            dispatch(cleanAddressActiviesFetch(true));
           }}>
             <Col span={2} style={{ textAlign: "center" }}>
               <LockOutlined />

@@ -73,3 +73,6 @@ export const updateAudit = createAction<{chainId : number , tokens : {
   address : string,
   decimals : number
 }[]}>("transactions/updateAudit");
+
+
+export const cleanAddressActiviesFetch = createAction<boolean>("transactions/cleanAddressActiviesFetch");

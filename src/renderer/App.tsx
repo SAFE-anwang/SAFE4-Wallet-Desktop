@@ -62,6 +62,7 @@ import SafeswapV2 from './pages/main/safeswap/SafeswapV2';
 import IssueIndex from './pages/main/issue/IssueIndex';
 import { useUserInactivityTracker } from './hooks/useUserInactivityTracker';
 import { loadProposalReadedIds } from './state/proposals/actions';
+import { cleanAddressActiviesFetch } from './state/transactions/actions';
 
 const { Text } = Typography;
 
@@ -196,6 +197,7 @@ export default function App() {
   useUserInactivityTracker(() => {
     console.log("10分钟未操作,自动锁钱包");
     dispatch(walletsUpdateLocked(true));
+    dispatch(cleanAddressActiviesFetch(true));
   }, 30 * 60 * 1000, 200);
 
   useEffect(() => {
@@ -284,7 +286,9 @@ export default function App() {
                     <MenuComponent />
                   </Col>
                 }
-                <Col id='appContainer' span={18} style={{
+                <Col id='appContainer' onScroll={()=>{
+                  console.log(".sadsa")
+                }} span={18} style={{
                   minWidth: "1200px",
                   overflowX: "auto",
                   overflowY: "auto",

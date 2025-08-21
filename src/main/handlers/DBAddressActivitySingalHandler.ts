@@ -110,8 +110,9 @@ export class DBAddressActivitySingalHandler implements ListenSignalHandler {
     } else if (DB_AddressActivity_Methods.loadActivities == method) {
       const address = params[0];
       const chainId = params[1];
-      data = this.loadActivities(address, chainId, (rows: any) => {
-        event.reply(Channel, [this.getSingal(), method, [rows]])
+      const txDbId = params[2];
+      data = this.loadActivities(address, chainId, txDbId, (rows: any) => {
+        event.reply(Channel, [this.getSingal(), method, [rows, txDbId]])
       });
     } else if (DB_AddressActivity_Methods.saveOrUpdateActivities == method) {
       const [addressActivities, chainId] = params;
@@ -119,9 +120,9 @@ export class DBAddressActivitySingalHandler implements ListenSignalHandler {
     } else if (DB_AddressActivity_Methods.deleteAddressActivities == method) {
       const [address, chainId] = params;
       this.deleteAddressActivities(address, chainId);
-    } else if (DB_AddressActivity_Methods.getActivitiesFromToAction == method){
-      const [from, to,action,chainId] = params;
-      this.getActivitiesFromToAction(from, to,action,chainId , (rows:any) => {
+    } else if (DB_AddressActivity_Methods.getActivitiesFromToAction == method) {
+      const [from, to, action, chainId] = params;
+      this.getActivitiesFromToAction(from, to, action, chainId, (rows: any) => {
         event.reply(Channel, [this.getSingal(), method, [rows]])
       });
     }
@@ -141,12 +142,12 @@ export class DBAddressActivitySingalHandler implements ListenSignalHandler {
       });
   }
 
-  private getActivitiesFromToAction(from: string, to: string, action : string , chainId: number , callback:(rows:any)=>void ) {
+  private getActivitiesFromToAction(from: string, to: string, action: string, chainId: number, callback: (rows: any) => void) {
     this.db.all(
-      "SELECT * FROM Address_Activities where ref_from = ? and ref_to = ? and action = ? and chain_id = ? order by timestamp desc,added_time desc",
-      [from , to , action , chainId],
-      ( err :any , rows : any ) => {
-        if ( !err ){
+      "SELECT * FROM Address_Activities where ref_from = ? and ref_to = ? and action = ? and chain_id = ? order by timestamp desc,added_time desc limit 500",
+      [from, to, action, chainId],
+      (err: any, rows: any) => {
+        if (!err) {
           callback(rows)
         }
       })
@@ -179,11 +180,20 @@ export class DBAddressActivitySingalHandler implements ListenSignalHandler {
     )
   }
 
-  private loadActivities(address: string, chainId: number, callback: (rows: any) => void) {
+  private loadActivities(address: string, chainId: number, txDbId: number, callback: (rows: any) => void) {
+
+    const querySQL = txDbId ?
+      "SELECT * FROM Address_Activities WHERE ID < ? and (ref_from = ? or ref_to = ?) and chain_id = ? order by id desc limit 500"
+      : "SELECT * FROM Address_Activities WHERE (ref_from = ? or ref_to = ?) and chain_id = ? order by id desc limit 500";
+    const params = txDbId ?
+      [txDbId, address, address, chainId]
+      : [address, address, chainId];
+
+    console.log("Execute SQL ==", querySQL)
 
     this.db.all(
-      "SELECT * FROM Address_Activities WHERE (ref_from = ? or ref_to = ?) and chain_id = ?",
-      [address, address, chainId],
+      querySQL,
+      params,
       (err: any, rows: any) => {
         if (err) {
           console.log("load activities error:", err, address)
@@ -207,16 +217,16 @@ export class DBAddressActivitySingalHandler implements ListenSignalHandler {
         }
       });
 
-      this.db.run(
-        "DELETE FROM time_noderewards WHERE address = ? AND chain_id = ?",
-        [address, chainId],
-        (err: any, rows: any) => {
-          if (err) {
-            console.log(`Delete ${address}.time_noderewards Error:`, err);
-          } else {
-            console.log(`Delete ${address}.time_noderewards Success.`, rows);
-          }
-        });
+    this.db.run(
+      "DELETE FROM time_noderewards WHERE address = ? AND chain_id = ?",
+      [address, chainId],
+      (err: any, rows: any) => {
+        if (err) {
+          console.log(`Delete ${address}.time_noderewards Error:`, err);
+        } else {
+          console.log(`Delete ${address}.time_noderewards Success.`, rows);
+        }
+      });
   }
 
   private saveOrUpdateActivities(addressActivities: AddressActivityVO[], chainId: number) {

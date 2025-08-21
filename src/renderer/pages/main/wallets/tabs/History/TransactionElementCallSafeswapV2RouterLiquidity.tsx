@@ -100,7 +100,7 @@ export default ({ transaction, setClickTransaction, support }: {
         const receives = safeReceives.reduce((amount, internalTransfer) => {
           return amount.add(CurrencyAmount.ether(internalTransfer.value))
         }, CurrencyAmount.ether("0"));
-        tokenBAmount = tokenBAmount?.subtract(receives);
+        tokenBAmount = tokenBAmount && tokenBAmount.greaterThan(receives) ? tokenBAmount.subtract(receives) : undefined;
       }
     } else if (supportFuncName == SupportSafeswapV2RouterFunctions.AddLiquidity) {
       // addLiquidity( address tokenA, address tokenB, uint256 amountADesired, uint256 amountBDesired, uint256 amountAMin, uint256 amountBMin, address to, uint256 deadline )

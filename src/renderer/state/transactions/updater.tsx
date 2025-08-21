@@ -64,13 +64,14 @@ export default () => {
             if (current < totalPages) {
               newFetch.current = newFetch.current + 1;
             } else {
-              if (newFetch.blockNumberStart == 1) {
-                newFetch.status = 1;
-              } else {
-                newFetch.blockNumberStart = 1;
-                newFetch.blockNumberEnd = newFetch.dbStoredRange.start;
-                newFetch.current = 1;
-              }
+              // if (newFetch.blockNumberStart == 1) {
+              //   newFetch.status = 1;
+              // } else {
+              //   newFetch.blockNumberStart = 1;
+              //   newFetch.blockNumberEnd = newFetch.dbStoredRange.start;
+              //   newFetch.current = 1;
+              // }
+              newFetch.status = 1;
             }
             window.electron.ipcRenderer.sendMessage(IPC_CHANNEL,
               [DBAddressActivitySignal, DB_AddressActivity_Methods.saveOrUpdateActivities,
