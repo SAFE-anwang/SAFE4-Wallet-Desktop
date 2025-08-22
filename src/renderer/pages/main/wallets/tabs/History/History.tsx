@@ -15,7 +15,7 @@ import { ZERO } from "../../../../../utils/CurrentAmountUtils";
 import { fetchAddressAnalyticNodeRewards } from "../../../../../services/address";
 import { useWeb3React } from "@web3-react/core";
 import { AddressAnalyticVO, DateTimeNodeRewardVO } from "../../../../../services";
-import { DateTimeFormat, TimestampTheEndOf, TimestampTheStartOf } from "../../../../../utils/DateUtils";
+import { DateFormat, DateTimeFormat, TimestampTheEndOf, TimestampTheStartOf } from "../../../../../utils/DateUtils";
 import { TimeNodeRewardSignal, TimeNodeReward_Methods } from "../../../../../../main/handlers/TimeNodeRewardHandler";
 import useSafeScan from "../../../../../hooks/useSafeScan";
 import { DeleteOutlined } from "@ant-design/icons";
@@ -93,8 +93,12 @@ export default () => {
             }))
           }
           if (txns.length > 0) {
-            console.log("||| txns ==>", txns[txns.length - 1]);
-            setEarliesTx(txns[txns.length - 1]);
+            const txn = txns.sort((txn0: TransactionDetails, txn1: TransactionDetails) => {
+              const txn0Timestamp = txn0.timestamp ?? txn0.addedTime;
+              const txn1Timestamp = txn1.timestamp ?? txn1.addedTime;
+              return txn0Timestamp - txn1Timestamp;
+            })[0];
+            setEarliesTx(txn);
           }
           setLoadingMore(false);
         }
@@ -233,7 +237,7 @@ export default () => {
                 </>
               }
               {
-                systemRewardAmount.greaterThan(ZERO) && showNodeReward &&  (timestamp && !(rewardsTimestamp < timestamp) || !timestamp ) && <>
+                systemRewardAmount.greaterThan(ZERO) && showNodeReward && ((timestamp && rewardsTimestamp >= timestamp) || !timestamp) && <>
                   <Divider dashed style={{ marginTop: "5px", marginBottom: "5px" }} />
                   <Text strong style={{ color: "#104499" }}>{t("wallet_history_rewards")}  +{systemRewardAmount.toFixed(6)} SAFE</Text>
                   <Divider dashed style={{ marginTop: "5px", marginBottom: "20px" }} />
