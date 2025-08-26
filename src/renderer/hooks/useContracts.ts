@@ -7,6 +7,7 @@ import { IERC20_Interface } from "../abis";
 import { Application_Crosschain, Safe4NetworkChainId, SafeswapV2FactoryAddreess, SafeswapV2RouterAddress, WSAFE } from "../config";
 import ApplicationContractAbiConfig from "../constants/ApplicationContractAbiConfig";
 import { SwapV2FactoryABI, SwapV2RouterABI } from "../constants/SafeswapAbiConfig";
+import { BatchLockContract, BatchLockLevel } from "../constants/BatchLockContract";
 
 
 export function useContract(address: string | undefined, ABI: any, withSignerIfPossible = true): Contract | null {
@@ -37,6 +38,22 @@ export function useIERC20Contract(address: string, withSignerIfPossible?: boolea
 
 export function useAccountManagerContract(withSignerIfPossible?: boolean): Contract | null | undefined {
   return useContract(SystemContract.AccountManager, SysContractABI[SystemContract.AccountManager], withSignerIfPossible);
+}
+
+export function useBatchLockTenCentsContract() {
+  const { chainId } = useWeb3React();
+  if (!chainId) return undefined;
+  return useContract(BatchLockContract[chainId][BatchLockLevel.TEN_CENTS], SysContractABI[SystemContract.AccountManager], undefined);
+}
+
+export function useBatchLockOneCentContract() {
+  const { chainId } = useWeb3React();
+  if (!chainId) return undefined;
+  return useContract(BatchLockContract[chainId][BatchLockLevel.ONE_CENT], SysContractABI[SystemContract.AccountManager], undefined);
+}
+
+export function useOneCentContract() {
+  return useContract(SystemContract.AccountManager, SysContractABI[SystemContract.AccountManager], undefined);
 }
 
 export function useSupernodeStorageContract(withSignerIfPossible?: boolean): Contract | null | undefined {

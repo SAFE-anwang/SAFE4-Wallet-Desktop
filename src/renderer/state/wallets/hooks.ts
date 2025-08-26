@@ -3,7 +3,7 @@ import { CurrencyAmount, JSBI, Token, TokenAmount } from '@uniswap/sdk';
 import { ethers } from 'ethers';
 import { useEffect, useMemo, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux'
-import { useAccountManagerContract, useIERC20Contract, useMasternodeStorageContract, useMulticallContract, useSupernodeStorageContract } from '../../hooks/useContracts';
+import { useAccountManagerContract, useBatchLockOneCentContract, useBatchLockTenCentsContract, useIERC20Contract, useMasternodeStorageContract, useMulticallContract, useSupernodeStorageContract } from '../../hooks/useContracts';
 import { isAddress } from '../../utils';
 import { AppState } from '../index';
 import { useMultipleContractSingleData, useSingleContractMultipleData } from '../multicall/hooks';
@@ -92,6 +92,8 @@ export function useSafe4Balance(
 
   const multicallContract = useMulticallContract();
   const accountManagerContract = useAccountManagerContract();
+  const batchLockOneCentContract = useBatchLockOneCentContract();
+  const batchLockTenCentsContract = useBatchLockTenCentsContract();
 
   const addresses: string[] = useMemo(
     () =>
@@ -131,6 +133,48 @@ export function useSafe4Balance(
     addresses.map(address => [address])
   );
 
+  const totalAmountResults_tencents = useSingleContractMultipleData(
+    batchLockTenCentsContract,
+    'getTotalAmount',
+    addresses.map(address => [address])
+  );
+  const availableAmountResults_tencents = useSingleContractMultipleData(
+    batchLockTenCentsContract,
+    'getAvailableAmount',
+    addresses.map(address => [address])
+  );
+  const lockedAmountResults_tencents = useSingleContractMultipleData(
+    batchLockTenCentsContract,
+    'getLockedAmount',
+    addresses.map(address => [address])
+  );
+  // const uesdAmountResults_tencents = useSingleContractMultipleData(
+  //   batchLockTenCentsContract,
+  //   'getUsedAmount',
+  //   addresses.map(address => [address])
+  // );
+
+  const totalAmountResults_onecent = useSingleContractMultipleData(
+    batchLockOneCentContract,
+    'getTotalAmount',
+    addresses.map(address => [address])
+  );
+  const availableAmountResults_onecent = useSingleContractMultipleData(
+    batchLockOneCentContract,
+    'getAvailableAmount',
+    addresses.map(address => [address])
+  );
+  const lockedAmountResults_onecent = useSingleContractMultipleData(
+    batchLockOneCentContract,
+    'getLockedAmount',
+    addresses.map(address => [address])
+  );
+  // const uesdAmountResults_onecent = useSingleContractMultipleData(
+  //   batchLockOneCentContract,
+  //   'getUsedAmount',
+  //   addresses.map(address => [address])
+  // );
+
   return useMemo(
     () =>
       addresses.reduce<{
@@ -164,6 +208,16 @@ export function useSafe4Balance(
         const totalCount = totalAmountResults?.[i]?.result?.[1];
         if (totalAmount) memo[address].total.amount = CurrencyAmount.ether(JSBI.BigInt(totalAmount.toString()))
         if (totalCount) memo[address].total.count = totalCount.toNumber();
+        ////////// - ONE/TEN CENTS - BatchLock - /////////
+        const totalAmount_tencents = totalAmountResults_tencents?.[i]?.result?.[0];
+        const totalCount_tencents = totalAmountResults_tencents?.[i]?.result?.[1];
+        if (totalAmount_tencents) memo[address].total.amount = memo[address].total.amount.add(CurrencyAmount.ether(JSBI.BigInt(totalAmount_tencents.toString())))
+        if (totalCount_tencents) memo[address].total.count = memo[address].total.count + totalCount_tencents.toNumber();
+        const totalAmount_onecent = totalAmountResults_onecent?.[i]?.result?.[0];
+        const totalCount_onecent = totalAmountResults_onecent?.[i]?.result?.[1];
+        if (totalAmount_onecent) memo[address].total.amount = memo[address].total.amount.add(CurrencyAmount.ether(JSBI.BigInt(totalAmount_onecent.toString())))
+        if (totalCount_onecent) memo[address].total.count = memo[address].total.count + totalCount_onecent.toNumber();
+        ////////// - ONE/TEN CENTS - BatchLock - /////////
 
 
         memo[address].avaiable = memo[address].avaiable ?? {};
@@ -171,17 +225,40 @@ export function useSafe4Balance(
         const avaiableCount = availableAmountResults?.[i]?.result?.[1];
         if (avaiableAmount) memo[address].avaiable.amount = CurrencyAmount.ether(JSBI.BigInt(avaiableAmount.toString()));
         if (avaiableCount) memo[address].avaiable.count = avaiableCount.toNumber();
+        ////////// - ONE/TEN CENTS - BatchLock - /////////
+        const avaiableAmount_tencents = availableAmountResults_tencents?.[i]?.result?.[0];
+        const avaiableCount_tencents = availableAmountResults_tencents?.[i]?.result?.[1];
+        if (avaiableAmount) memo[address].avaiable.amount = memo[address].avaiable.amount.add(CurrencyAmount.ether(JSBI.BigInt(avaiableAmount_tencents.toString())));
+        if (avaiableCount) memo[address].avaiable.count = memo[address].avaiable.count + avaiableCount_tencents.toNumber();
+        const avaiableAmount_onecent = availableAmountResults_onecent?.[i]?.result?.[0];
+        const avaiableCount_onecent = availableAmountResults_onecent?.[i]?.result?.[1];
+        if (avaiableAmount_onecent) memo[address].avaiable.amount = memo[address].avaiable.amount.add(CurrencyAmount.ether(JSBI.BigInt(avaiableAmount_onecent.toString())));
+        if (avaiableCount_onecent) memo[address].avaiable.count = memo[address].avaiable.count + avaiableCount_onecent.toNumber();
+        ////////// - ONE/TEN CENTS - BatchLock - /////////
 
         memo[address].locked = memo[address].locked ?? {};
         const lockedAmount = lockedAmountResults?.[i]?.result?.[0];
         const lockedCount = lockedAmountResults?.[i]?.result?.[1];
         if (lockedAmount) memo[address].locked.amount = CurrencyAmount.ether(JSBI.BigInt(lockedAmount.toString()));
         if (lockedCount) memo[address].locked.count = lockedCount.toNumber();
+        ////////// - ONE/TEN CENTS - BatchLock - /////////
+        const lockedAmount_tencents = lockedAmountResults_tencents?.[i]?.result?.[0];
+        const lockedCount_tencents = lockedAmountResults_tencents?.[i]?.result?.[1];
+        if (lockedAmount_tencents) memo[address].locked.amount = memo[address].locked.amount.add(CurrencyAmount.ether(JSBI.BigInt(lockedAmount_tencents.toString())));
+        if (lockedCount_tencents) memo[address].locked.count += lockedCount_tencents.toNumber();
+        const lockedAmount_onecent = lockedAmountResults_onecent?.[i]?.result?.[0];
+        const lockedCount_onecent = lockedAmountResults_onecent?.[i]?.result?.[1];
+        if (lockedAmount_onecent) memo[address].locked.amount = memo[address].locked.amount.add(CurrencyAmount.ether(JSBI.BigInt(lockedAmount_onecent.toString())));
+        if (lockedCount_onecent) memo[address].locked.count += lockedCount_onecent.toNumber();
+        ////////// - ONE/TEN CENTS - BatchLock - /////////
+
         memo[address].used = memo[address].used ?? {};
         const usedAmount = uesdAmountResults?.[i]?.result?.[0];
         const usedCount = uesdAmountResults?.[i]?.result?.[1];
         if (usedAmount) memo[address].used.amount = CurrencyAmount.ether(JSBI.BigInt(usedAmount.toString()));
         if (usedCount) memo[address].used.count = usedCount.toNumber();
+        // Not Need For USED Statistic at ONE/TEN CENTS BactckLock //
+
         return memo
       }, {}),
     [addresses, balanceResults, availableAmountResults, lockedAmountResults, uesdAmountResults]
