@@ -1,13 +1,12 @@
-import { Row, Statistic, Card, Col, Typography, Button, Divider, Space, Tag, List, Input } from "antd";
+import { Row, Statistic, Card, Col, Typography, Button, Divider, Space, Tag, List, Input, Select } from "antd";
 import { useSafe4Balance, useWalletsActiveAccount } from "../../../../../state/wallets/hooks";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useBlockNumber, useTimestamp } from "../../../../../state/application/hooks";
-import { useAccountManagerContract, useMulticallContract } from "../../../../../hooks/useContracts";
+import { useAccountManagerContract, useBatchLockOneCentContract, useBatchLockTenCentsContract, useMulticallContract } from "../../../../../hooks/useContracts";
 import { AccountRecord, formatAccountRecord, formatRecordUseInfo } from "../../../../../structs/AccountManager";
 import { ClockCircleOutlined, LockOutlined, RetweetOutlined } from '@ant-design/icons';
 import WalletWithdrawModal from "../../Withdraw/WalletWithdrawModal";
-import { EmptyContract } from "../../../../../constants/SystemContracts";
-import AddressView from "../../../../components/AddressView";
+import { EmptyContract, SystemContract } from "../../../../../constants/SystemContracts";
 import { DateTimeFormat } from "../../../../../utils/DateUtils";
 import { ZERO } from "../../../../../utils/CurrentAmountUtils";
 import AddLockModal from "./AddLockModal";
@@ -16,6 +15,12 @@ import AddressComponent from "../../../../components/AddressComponent";
 
 const { Text } = Typography;
 const AccountRecords_Page_Size = 5;
+
+export enum LockContractType {
+  Normal = 'normal',
+  TEN_CENTS = 'ten_cents',
+  ONE_CENT = 'one_cent'
+}
 
 export default () => {
 
@@ -30,14 +35,28 @@ export default () => {
 
   const [accountRecords, setAccountRecords] = useState<AccountRecord[]>([]);
   const timestamp = useTimestamp();
-  const accountManagerContract = useAccountManagerContract();
+
+  const _accountManagerContract = useAccountManagerContract();
+  const batchLockContract_tencents = useBatchLockTenCentsContract();
+  const batchLockContract_onecent = useBatchLockOneCentContract();
+  const [lockType, setLockType] = useState<LockContractType>(LockContractType.Normal);
+
+  const accountManagerContract = useMemo(() => {
+    if (!(_accountManagerContract && batchLockContract_tencents && batchLockContract_onecent)) return undefined;
+    switch (lockType) {
+      case LockContractType.Normal:
+        return _accountManagerContract;
+      case LockContractType.TEN_CENTS:
+        return batchLockContract_tencents;
+      case LockContractType.ONE_CENT:
+        return batchLockContract_onecent;
+    }
+  }, [lockType, _accountManagerContract, batchLockContract_tencents, batchLockContract_onecent]);
+
   const multicallContract = useMulticallContract();
   const [loading, setLoading] = useState<boolean>(false);
   const [accountRecordZERO, setAccountRecordZERO] = useState<AccountRecord>();
-
   const [queryAccountRecordId, setQueryAccountRecordId] = useState<number>();
-
-
 
   useEffect(() => {
     if (accountManagerContract) {
@@ -128,7 +147,7 @@ export default () => {
               multicallGetAccountRecordByIds(accountRecordIds);
             })
         } else {
-          multicallGetAccountRecordByIds([queryAccountRecordId])
+          multicallGetAccountRecordByIds([queryAccountRecordId]);
         }
       } else {
         setAccountRecords([]);
@@ -138,6 +157,7 @@ export default () => {
 
   const multicallGetAccountRecordByIds = useCallback((_accountRecordIds: any) => {
     if (multicallContract && accountManagerContract) {
+
       const accountRecordIds = _accountRecordIds.map((_id: any) => _id.toNumber ? _id.toNumber() : _id)
         .filter((id: number) => id > 0)
       // .sort((id0: number, id1: number) => id1 - id0)
@@ -156,15 +176,20 @@ export default () => {
         ]);
       }
       const accountRecords: AccountRecord[] = [];
-      multicallContract.callStatic.aggregate(getRecordByIDCalls.concat(getRecordUseInfoCalls))
+      const calls = accountManagerContract.address == SystemContract.AccountManager ? getRecordByIDCalls.concat(getRecordUseInfoCalls) : getRecordByIDCalls;
+
+      multicallContract.callStatic.aggregate(calls)
         .then(data => {
           const raws = data[1];
-          const half = raws.length / 2;
+          const half = accountManagerContract.address == SystemContract.AccountManager ? raws.length / 2 : raws.length;
           for (let i = half - 1; i >= 0; i--) {
             const _accountRecord = accountManagerContract?.interface.decodeFunctionResult(getRecordByIDFragment, raws[i])[0];
-            const _recordUseInfo = accountManagerContract?.interface.decodeFunctionResult(getRecordUseInfoFragment, raws[half + i])[0];
             const accountRecord = formatAccountRecord(_accountRecord);
-            accountRecord.recordUseInfo = formatRecordUseInfo(_recordUseInfo);
+
+            if (accountManagerContract.address == SystemContract.AccountManager) {
+              const _recordUseInfo = accountManagerContract?.interface.decodeFunctionResult(getRecordUseInfoFragment, raws[half + i])[0];
+              accountRecord.recordUseInfo = formatRecordUseInfo(_recordUseInfo);
+            }
             if (accountRecord.addr == activeAccount) {
               accountRecords.push(accountRecord);
             }
@@ -333,7 +358,31 @@ export default () => {
       </Col>
     </Row>
 
-    <Card title={t("wallet_locked_list")} style={{ marginTop: "40px" }}>
+    <Card title={<>
+      <Select
+        defaultValue={lockType}
+        style={{ width: 200 }}
+        onChange={(value) => {
+          setLockType(value);
+        }}
+        options={[
+          {
+            label: <span>普通锁仓</span>,
+            options: [
+              { label: <span>锁仓列表</span>, value: LockContractType.Normal },
+            ],
+          },
+          {
+            label: <span>小额锁仓</span>,
+            title: '小额锁仓',
+            options: [
+              { label: <span>[0.1 ~ 1)</span>, value: LockContractType.TEN_CENTS },
+              { label: <span>[0.01 ~ 0.1)</span>, value: LockContractType.ONE_CENT },
+            ],
+          },
+        ]}
+      />
+    </>} style={{ marginTop: "40px" }}>
 
       <Input.Search size="large" placeholder={t("wallet_locked_placehold_inputAccountRecordId")} onChange={(event) => {
         if (!event.target.value.trim()) {
@@ -348,7 +397,7 @@ export default () => {
         }
       }} />
       {
-        accountRecordZERO && (pagination && pagination.current == 1) && !queryAccountRecordId && <>
+        accountRecordZERO && (pagination && pagination.current == 1) && !queryAccountRecordId && lockType == LockContractType.Normal && <>
           {RenderAccountRecord(accountRecordZERO)}
         </>
       }
