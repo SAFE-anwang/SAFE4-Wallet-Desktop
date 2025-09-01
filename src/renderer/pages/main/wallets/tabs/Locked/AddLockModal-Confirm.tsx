@@ -6,7 +6,7 @@ import { LockOutlined } from "@ant-design/icons";
 import { useWalletsActiveAccount } from "../../../../../state/wallets/hooks";
 import { useTransactionAdder } from "../../../../../state/transactions/hooks";
 import { useAccountManagerContract } from "../../../../../hooks/useContracts";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import useTransactionResponseRender from "../../../../components/useTransactionResponseRender";
 import { useTranslation } from "react-i18next";
 import { useWeb3React } from "@web3-react/core";
@@ -59,7 +59,7 @@ export default ({
         data,
         chainId
       };
-      tx = await EstimateTx(activeAccount, chainId, tx, provider , {doubleGasLimit:true});
+      tx = await EstimateTx(activeAccount, chainId, tx, provider, { doubleGasLimit: true });
       const { signedTx, error } = await window.electron.wallet.signTransaction(
         activeAccount,
         tx
@@ -89,7 +89,7 @@ export default ({
         }
       }
     }
-  }, [accountManaggerContract, activeAccount])
+  }, [accountManaggerContract, activeAccount]);
 
   return <>
     <Row>

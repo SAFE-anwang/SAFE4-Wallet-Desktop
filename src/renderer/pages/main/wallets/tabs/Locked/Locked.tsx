@@ -185,6 +185,7 @@ export default () => {
           for (let i = half - 1; i >= 0; i--) {
             const _accountRecord = accountManagerContract?.interface.decodeFunctionResult(getRecordByIDFragment, raws[i])[0];
             const accountRecord = formatAccountRecord(_accountRecord);
+            accountRecord.contractAddress = accountManagerContract.address;
 
             if (accountManagerContract.address == SystemContract.AccountManager) {
               const _recordUseInfo = accountManagerContract?.interface.decodeFunctionResult(getRecordUseInfoFragment, raws[half + i])[0];
@@ -305,12 +306,13 @@ export default () => {
           <div style={{ lineHeight: "42px" }}>
             <Space style={{ float: "right", marginTop: "2px" }}>
               {
-                id != 0 && <>
+                id != 0 && accountRecord?.contractAddress == SystemContract.AccountManager && <>
                   <Button size="small" icon={<ClockCircleOutlined />} title="追加锁仓" onClick={() => {
                     setSelectedAccountRecord(accountRecord);
                     setOpenAddModal(true)
                   }}>
                     {t("wallet_locked_addLockDay")}
+
                   </Button>
                 </>
               }

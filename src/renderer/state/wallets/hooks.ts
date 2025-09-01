@@ -95,6 +95,7 @@ export function useSafe4Balance(
   const batchLockOneCentContract = useBatchLockOneCentContract();
   const batchLockTenCentsContract = useBatchLockTenCentsContract();
 
+
   const addresses: string[] = useMemo(
     () =>
       uncheckedAddresses
@@ -133,6 +134,7 @@ export function useSafe4Balance(
     addresses.map(address => [address])
   );
 
+
   const totalAmountResults_tencents = useSingleContractMultipleData(
     batchLockTenCentsContract,
     'getTotalAmount',
@@ -148,12 +150,6 @@ export function useSafe4Balance(
     'getLockedAmount',
     addresses.map(address => [address])
   );
-  // const uesdAmountResults_tencents = useSingleContractMultipleData(
-  //   batchLockTenCentsContract,
-  //   'getUsedAmount',
-  //   addresses.map(address => [address])
-  // );
-
   const totalAmountResults_onecent = useSingleContractMultipleData(
     batchLockOneCentContract,
     'getTotalAmount',
@@ -169,11 +165,7 @@ export function useSafe4Balance(
     'getLockedAmount',
     addresses.map(address => [address])
   );
-  // const uesdAmountResults_onecent = useSingleContractMultipleData(
-  //   batchLockOneCentContract,
-  //   'getUsedAmount',
-  //   addresses.map(address => [address])
-  // );
+
 
   return useMemo(
     () =>

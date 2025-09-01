@@ -53,7 +53,7 @@ export default () => {
   const [openEditNameModal, setOpenEditNameModal] = useState<boolean>(false);
   const { URL } = useSafeScan();
 
-  const tabItems: TabsProps['items'] = [
+  const tabItems = chainId && [
     {
       key: 'locked',
       label: t("wallet_lock"),
@@ -253,7 +253,9 @@ export default () => {
           </Col>
         </Row>
         <Row style={{ marginTop: "50px" }}>
-          <Tabs style={{ width: "100%" }} activeKey={walletTab} defaultActiveKey={walletTab} items={tabItems} onChange={onChange} />
+          {
+            tabItems && <Tabs style={{ width: "100%" }} activeKey={walletTab} defaultActiveKey={walletTab} items={tabItems} onChange={onChange} />
+          }
         </Row>
       </div>
     </div>
