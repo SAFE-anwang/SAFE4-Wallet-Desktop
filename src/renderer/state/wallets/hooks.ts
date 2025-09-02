@@ -95,7 +95,6 @@ export function useSafe4Balance(
   const batchLockOneCentContract = useBatchLockOneCentContract();
   const batchLockTenCentsContract = useBatchLockTenCentsContract();
 
-
   const addresses: string[] = useMemo(
     () =>
       uncheckedAddresses

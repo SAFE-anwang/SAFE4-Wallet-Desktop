@@ -23,6 +23,7 @@ import TransactionElementCallCrosschain from "./TransactionElementCallCrosschain
 import TransactionElementCallSafeswapV2Router from "./TransactionElementCallSafeswapV2Router";
 import TransactionElementCallSafeswapV2RouterLiquidity from "./TransactionElementCallSafeswapV2RouterLiquidity";
 import TransactionElementCallSafeswapV2RouterLiquidityRemove from "./TransactionElementCallSafeswapV2RouterLiquidityRemove";
+import { BatchLockContract, BatchLockLevel } from "../../../../../constants/BatchLockContract";
 
 export default ({ transaction, setClickTransaction, support }: {
   transaction: TransactionDetails,
@@ -39,6 +40,10 @@ export default ({ transaction, setClickTransaction, support }: {
     const to = transaction.call?.to;
     const from = transaction.call?.from;
     switch (to) {
+      case BatchLockContract[Safe4NetworkChainId.Mainnet][BatchLockLevel.TEN_CENTS]:
+      case BatchLockContract[Safe4NetworkChainId.Mainnet][BatchLockLevel.ONE_CENT]:
+      case BatchLockContract[Safe4NetworkChainId.Testnet][BatchLockLevel.TEN_CENTS]:
+      case BatchLockContract[Safe4NetworkChainId.Testnet][BatchLockLevel.ONE_CENT]:
       case SystemContract.AccountManager:
         return CallAccountManagerFuncRender(support.supportFuncName, transaction, setClickTransaction, support)
       case SystemContract.SuperNodeLogic:

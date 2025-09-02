@@ -14,7 +14,7 @@ import { useTranslation } from "react-i18next";
 import AddressComponent from "../../../../components/AddressComponent";
 
 const { Text } = Typography;
-const AccountRecords_Page_Size = 5;
+
 
 export enum LockContractType {
   Normal = 'normal',
@@ -41,6 +41,7 @@ export default () => {
   const batchLockContract_onecent = useBatchLockOneCentContract();
   const [lockType, setLockType] = useState<LockContractType>(LockContractType.Normal);
 
+  const AccountRecords_Page_Size = lockType == LockContractType.Normal ? 5 : 16;
   const accountManagerContract = useMemo(() => {
     if (!(_accountManagerContract && batchLockContract_tencents && batchLockContract_onecent)) return undefined;
     switch (lockType) {
@@ -221,111 +222,160 @@ export default () => {
     const unlockDateTime = unlockHeight - blockNumber > 0 ? DateTimeFormat(((unlockHeight - blockNumber) * 30 + timestamp) * 1000) : undefined;
     const unfreezeDateTime = unfreezeHeight - blockNumber > 0 ? DateTimeFormat(((unfreezeHeight - blockNumber) * 30 + timestamp) * 1000) : undefined;
     const releaseDateTime = releaseHeight - blockNumber > 0 ? DateTimeFormat(((releaseHeight - blockNumber) * 30 + timestamp) * 1000) : undefined;
-    return <Card key={id} size="small" style={{ marginTop: "30px" }}>
-      <Row>
-        <Col span={6}>
-          <Divider orientation="center" style={{ fontSize: "14px", marginTop: "-23px", fontWeight: "600" }}>{t("wallet_locked_accountRecordLockInfo")}</Divider>
-          <Text strong type="secondary">{t("wallet_locked_accountRecordLockId")}</Text><br />
-          <Text strong>
-            {
-              locked && <LockOutlined />
-            }
-            {id}
-          </Text>
-          <Divider style={{ margin: "4px 0" }} />
-          <Text strong type="secondary">{t("wallet_locked_lockedAmount")}</Text><br />
-          <Text strong>{amount.toFixed(2)} SAFE</Text>
-          <Divider style={{ margin: "4px 0" }} />
-          <Text strong type="secondary">{t("wallet_locked_unlockHeight")}</Text><br />
-          <Text strong type={locked ? "secondary" : "success"}>{unlockHeight}</Text>
-          {
-            unlockDateTime && <Text strong style={{ float: "right" }} type="secondary">[{unlockDateTime}]</Text>
-          }
-        </Col>
-        <Col>
-          <Divider type="vertical" style={{ height: "100%" }} />
-        </Col>
-        <Col span={17}>
-          <Divider orientation="center" style={{ fontSize: "14px", marginTop: "-23px" }}>{t("wallet_locked_accountRecordUseInfo")}</Divider>
+    return <List.Item>
+      {
+        lockType != LockContractType.Normal &&
+        <Card key={id} size="small" style={{ marginTop: "30px" }}>
           <Row>
-            <Col span={13}>
-              <Text strong type="secondary">{t("wallet_locked_memberOfNode")}</Text><br />
-              {
-                frozenAddr == EmptyContract.EMPTY && <>
-                  <Tag>{t("wallet_locked_notMember")}</Tag>
-                </>
-              }
-              {
-                frozenAddr != EmptyContract.EMPTY && <>
-                  <AddressComponent address={frozenAddr} copyable qrcode />
-                </>
-              }
-            </Col>
-            <Col offset={3} span={8}>
-              <Text strong type="secondary" style={{ float: "right" }}>{t("wallet_locked_stakeRelease")}</Text><br />
-              <Text strong style={{ float: "right", color: unfreezeHeight > blockNumber ? "#104499" : "#27c92d" }}>
-                {unfreezeHeight == 0 ? "-" : unfreezeHeight}
+            <Col span={24}>
+              <Divider orientation="center" style={{ fontSize: "14px", marginTop: "-23px", fontWeight: "600" }}>{t("wallet_locked_accountRecordLockInfo")}</Divider>
+              <Text strong type="secondary">{t("wallet_locked_accountRecordLockId")}</Text><br />
+              <Text strong>
                 {
-                  unfreezeDateTime && <>
-                    <Divider type="vertical" style={{ margin: "0px 4px" }} ></Divider>
-                    <Text strong style={{ color: "#104499" }}>{unfreezeDateTime}</Text>
-                  </>
+                  locked && <LockOutlined />
                 }
+                {id}
               </Text>
-            </Col>
-          </Row>
-          <Divider style={{ margin: "4px 0" }} />
-          <Row>
-            <Col span={13}>
-              <Text strong type="secondary">{t("wallet_locked_votedSupernode")}</Text><br />
-              {
-                votedAddr == EmptyContract.EMPTY && <>
-                  <Tag>{t("wallet_locked_notVoted")}</Tag>
-                </>
-              }
-              {
-                votedAddr != EmptyContract.EMPTY && <>
-                  <AddressComponent address={votedAddr} qrcode copyable />
-                </>
-              }
-            </Col>
-            <Col offset={3} span={8}>
-              <Text strong type="secondary" style={{ float: "right" }}>{t("wallet_locked_stakeRelease")}</Text><br />
-              <Text strong style={{ float: "right", color: releaseHeight > blockNumber ? "#104499" : "#27c92d" }}>
-                {releaseHeight == 0 ? "-" : releaseHeight}
-                {
-                  releaseDateTime && <>
-                    <Divider type="vertical" style={{ margin: "0px 4px" }} ></Divider>
-                    <Text strong style={{ color: "#104499" }}>{releaseDateTime}</Text>
-                  </>
-                }
-              </Text>
-            </Col>
-          </Row>
-          <Divider style={{ margin: "4px 0" }} />
-          <div style={{ lineHeight: "42px" }}>
-            <Space style={{ float: "right", marginTop: "2px" }}>
-              {
-                id != 0 && accountRecord?.contractAddress == SystemContract.AccountManager && <>
-                  <Button size="small" icon={<ClockCircleOutlined />} title="追加锁仓" onClick={() => {
-                    setSelectedAccountRecord(accountRecord);
-                    setOpenAddModal(true)
-                  }}>
-                    {t("wallet_locked_addLockDay")}
-
-                  </Button>
-                </>
-              }
-              <Button title="提现" disabled={!couldWithdraw} size="small" type="primary" onClick={() => {
+              <Divider style={{ margin: "4px 0" }} />
+              <Text strong type="secondary">{t("wallet_locked_lockedAmount")}</Text>
+              <Button style={{ float: "right" }} title="提现" disabled={!couldWithdraw} size="small" type="primary" onClick={() => {
                 setSelectedAccountRecord(accountRecord);
                 setOpenWithdrawModal(true)
               }}>{t("wallet_withdraw")}</Button>
-            </Space>
-          </div>
-        </Col>
-      </Row>
-    </Card>
-  }, [blockNumber, timestamp]);
+              <br />
+              <Text strong>{amount.toSignificant(4)} SAFE</Text>
+              <Divider style={{ margin: "4px 0" }} />
+              <Text strong type="secondary">{t("wallet_locked_unlockHeight")}</Text>
+              {
+                id != 0 && accountRecord?.contractAddress == SystemContract.AccountManager && <>
+                  <Button style={{ float: "right", height: "22px" }} size="small"
+                    icon={<ClockCircleOutlined />} title="追加锁仓" onClick={() => {
+                      setSelectedAccountRecord(accountRecord);
+                      setOpenAddModal(true)
+                    }}>
+                    {t("wallet_locked_addLockDay")}
+                  </Button>
+                </>
+              }
+              <br />
+              <Text strong type={locked ? "secondary" : "success"}>{unlockHeight}</Text>
+              {
+                unlockDateTime && <Text strong style={{ float: "right" }} type="secondary">[{unlockDateTime}]</Text>
+              }
+            </Col>
+
+          </Row>
+        </Card>
+      }
+      {
+        lockType == LockContractType.Normal &&
+        <Card key={id} size="small" style={{ marginTop: "30px" }}>
+          <Row>
+            <Col span={6}>
+              <Divider orientation="center" style={{ fontSize: "14px", marginTop: "-23px", fontWeight: "600" }}>{t("wallet_locked_accountRecordLockInfo")}</Divider>
+              <Text strong type="secondary">{t("wallet_locked_accountRecordLockId")}</Text><br />
+              <Text strong>
+                {
+                  locked && <LockOutlined />
+                }
+                {id}
+              </Text>
+              <Divider style={{ margin: "4px 0" }} />
+              <Text strong type="secondary">{t("wallet_locked_lockedAmount")}</Text><br />
+              <Text strong>{amount.toFixed(2)} SAFE</Text>
+              <Divider style={{ margin: "4px 0" }} />
+              <Text strong type="secondary">{t("wallet_locked_unlockHeight")}</Text><br />
+              <Text strong type={locked ? "secondary" : "success"}>{unlockHeight}</Text>
+              {
+                unlockDateTime && <Text strong style={{ float: "right" }} type="secondary">[{unlockDateTime}]</Text>
+              }
+            </Col>
+            <Col>
+              <Divider type="vertical" style={{ height: "100%" }} />
+            </Col>
+            <Col span={17}>
+              <Divider orientation="center" style={{ fontSize: "14px", marginTop: "-23px" }}>{t("wallet_locked_accountRecordUseInfo")}</Divider>
+              <Row>
+                <Col span={13}>
+                  <Text strong type="secondary">{t("wallet_locked_memberOfNode")}</Text><br />
+                  {
+                    frozenAddr == EmptyContract.EMPTY && <>
+                      <Tag>{t("wallet_locked_notMember")}</Tag>
+                    </>
+                  }
+                  {
+                    frozenAddr != EmptyContract.EMPTY && <>
+                      <AddressComponent address={frozenAddr} copyable qrcode />
+                    </>
+                  }
+                </Col>
+                <Col offset={3} span={8}>
+                  <Text strong type="secondary" style={{ float: "right" }}>{t("wallet_locked_stakeRelease")}</Text><br />
+                  <Text strong style={{ float: "right", color: unfreezeHeight > blockNumber ? "#104499" : "#27c92d" }}>
+                    {unfreezeHeight == 0 ? "-" : unfreezeHeight}
+                    {
+                      unfreezeDateTime && <>
+                        <Divider type="vertical" style={{ margin: "0px 4px" }} ></Divider>
+                        <Text strong style={{ color: "#104499" }}>{unfreezeDateTime}</Text>
+                      </>
+                    }
+                  </Text>
+                </Col>
+              </Row>
+              <Divider style={{ margin: "4px 0" }} />
+              <Row>
+                <Col span={13}>
+                  <Text strong type="secondary">{t("wallet_locked_votedSupernode")}</Text><br />
+                  {
+                    votedAddr == EmptyContract.EMPTY && <>
+                      <Tag>{t("wallet_locked_notVoted")}</Tag>
+                    </>
+                  }
+                  {
+                    votedAddr != EmptyContract.EMPTY && <>
+                      <AddressComponent address={votedAddr} qrcode copyable />
+                    </>
+                  }
+                </Col>
+                <Col offset={3} span={8}>
+                  <Text strong type="secondary" style={{ float: "right" }}>{t("wallet_locked_stakeRelease")}</Text><br />
+                  <Text strong style={{ float: "right", color: releaseHeight > blockNumber ? "#104499" : "#27c92d" }}>
+                    {releaseHeight == 0 ? "-" : releaseHeight}
+                    {
+                      releaseDateTime && <>
+                        <Divider type="vertical" style={{ margin: "0px 4px" }} ></Divider>
+                        <Text strong style={{ color: "#104499" }}>{releaseDateTime}</Text>
+                      </>
+                    }
+                  </Text>
+                </Col>
+              </Row>
+              <Divider style={{ margin: "4px 0" }} />
+              <div style={{ lineHeight: "42px" }}>
+                <Space style={{ float: "right", marginTop: "2px" }}>
+                  {
+                    id != 0 && accountRecord?.contractAddress == SystemContract.AccountManager && <>
+                      <Button size="small" icon={<ClockCircleOutlined />} title="追加锁仓" onClick={() => {
+                        setSelectedAccountRecord(accountRecord);
+                        setOpenAddModal(true)
+                      }}>
+                        {t("wallet_locked_addLockDay")}
+                      </Button>
+                    </>
+                  }
+                  <Button title="提现" disabled={!couldWithdraw} size="small" type="primary" onClick={() => {
+                    setSelectedAccountRecord(accountRecord);
+                    setOpenWithdrawModal(true)
+                  }}>{t("wallet_withdraw")}</Button>
+                </Space>
+              </div>
+            </Col>
+          </Row>
+        </Card>
+      }
+
+    </List.Item>
+  }, [blockNumber, timestamp, lockType]);
 
   return <>
     <Row>
@@ -366,6 +416,7 @@ export default () => {
         style={{ width: 200 }}
         onChange={(value) => {
           setLockType(value);
+          setAccountRecords([]);
         }}
         options={[
           {
@@ -408,6 +459,7 @@ export default () => {
         renderItem={RenderAccountRecord}
         pagination={pagination}
         loading={loading}
+        grid={lockType == LockContractType.Normal ? { gutter: 16, column: 1 } : { gutter: 16, column: 4 }}
       />
     </Card>
     <WalletWithdrawModal selectedAccountRecord={selectedAccountRecord}
