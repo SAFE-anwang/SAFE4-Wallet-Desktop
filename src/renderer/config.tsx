@@ -41,6 +41,12 @@ export const USDT: { [chainId in Safe4NetworkChainId]: Token } = {
   [Safe4NetworkChainId.Mainnet]: new Token(Safe4NetworkChainId.Mainnet as number, "0x55d398326f99059ff775485246999027b3197955", 18, "USDT", "USDT"),
 };
 
+// MiniChefV2 合约地址
+export const MiniChefV2: { [chainId in Safe4NetworkChainId]: string } = {
+  [Safe4NetworkChainId.Testnet]: "0x83839cC17788d0829f2b3601E2b7E4ac96e7625B",
+  [Safe4NetworkChainId.Mainnet]: "",
+}
+
 export const SafeswapV2FactoryAddreess = "0xB3c827077312163c53E3822defE32cAffE574B42";
 export const SafeswapV2RouterAddress = "0x6476008C612dF9F8Db166844fFE39D24aEa12271";
 export const SafeswapV2InitCodeHash = "0xad0e51aa7a058efb9eb40fd6385473f0175ee7419e8d4f91a4e0294ec12b2d13";

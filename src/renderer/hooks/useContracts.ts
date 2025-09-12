@@ -4,10 +4,11 @@ import { useWalletsActiveWallet } from "../state/wallets/hooks";
 import { SysContractABI, SystemContract } from "../constants/SystemContracts";
 import { useWeb3React } from "@web3-react/core";
 import { IERC20_Interface } from "../abis";
-import { Application_Crosschain, Safe4NetworkChainId, SafeswapV2FactoryAddreess, SafeswapV2RouterAddress, WSAFE } from "../config";
+import { Application_Crosschain, MiniChefV2, Safe4NetworkChainId, SafeswapV2FactoryAddreess, SafeswapV2RouterAddress, WSAFE } from "../config";
 import ApplicationContractAbiConfig from "../constants/ApplicationContractAbiConfig";
 import { SwapV2FactoryABI, SwapV2RouterABI } from "../constants/SafeswapAbiConfig";
 import { BatchLockContract, BatchLockLevel } from "../constants/BatchLockContract";
+import { MiniChefV2ABI } from "../constants/MiniChefV2AbiConfig";
 
 
 export function useContract(address: string | undefined, ABI: any, withSignerIfPossible = true): Contract | null {
@@ -104,6 +105,14 @@ export function useWSAFEContract(withSignerIfPossible?: boolean): Contract | nul
   const { chainId } = useWeb3React();
   if (chainId && chainId in Safe4NetworkChainId) {
     return useContract(WSAFE[chainId as Safe4NetworkChainId].address, ApplicationContractAbiConfig.WSAFEABI, withSignerIfPossible);
+  }
+  return undefined;
+}
+
+export function useMiniChefV2(): Contract | null | undefined {
+  const { chainId } = useWeb3React();
+  if (chainId && chainId in Safe4NetworkChainId) {
+    return useContract(MiniChefV2[chainId as Safe4NetworkChainId], MiniChefV2ABI, undefined);
   }
   return undefined;
 }

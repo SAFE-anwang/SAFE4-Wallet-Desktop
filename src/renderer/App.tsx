@@ -63,6 +63,7 @@ import IssueIndex from './pages/main/issue/IssueIndex';
 import { useUserInactivityTracker } from './hooks/useUserInactivityTracker';
 import { loadProposalReadedIds } from './state/proposals/actions';
 import { cleanAddressActiviesFetch } from './state/transactions/actions';
+import FarmPools from './pages/main/farm/FarmPools';
 
 const { Text } = Typography;
 
@@ -286,7 +287,7 @@ export default function App() {
                     <MenuComponent />
                   </Col>
                 }
-                <Col id='appContainer' onScroll={()=>{
+                <Col id='appContainer' onScroll={() => {
                   console.log(".sadsa")
                 }} span={18} style={{
                   minWidth: "1200px",
@@ -344,6 +345,7 @@ export default function App() {
                     <Route path="/main/crosschain" element={<Crosschain />} />
                     <Route path="/main/swap" element={<SafeswapV2 />} />
                     <Route path="/main/issue" element={<IssueIndex />} />
+                    <Route path="/main/farm" element={<FarmPools />} />
                   </Routes>
                 </Col>
               </Row>

@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { AppstoreOutlined, WalletOutlined, SettingOutlined, ClusterOutlined, ApartmentOutlined, FilePptOutlined, ApiOutlined, GiftOutlined, FileZipOutlined, SyncOutlined, SwapOutlined, BankOutlined } from '@ant-design/icons';
+import { AppstoreOutlined, WalletOutlined, SettingOutlined, ClusterOutlined, ApartmentOutlined, FilePptOutlined, ApiOutlined, GiftOutlined, FileZipOutlined, SyncOutlined, SwapOutlined, BankOutlined, ExperimentOutlined } from '@ant-design/icons';
 import { Badge, Button, Dropdown, MenuProps, MenuTheme, Space, Tooltip, Typography, message } from 'antd';
 import { Menu, Switch } from 'antd';
 import { useNavigate } from 'react-router-dom';
@@ -68,6 +68,7 @@ const MenuComponent: React.FC = () => {
       getItem(t("safe3AssetRedeem"), '/main/safe3nav', <ApiOutlined />),
       getItem(t("wallet_crosschain"), '/main/crosschain', <SyncOutlined />),
       getItem(t("wallet_safeswap"), '/main/swap', <SwapOutlined />),
+      getItem("流动性挖矿", '/main/farm', <ExperimentOutlined />),
       getItem(t("wallet_issue"), '/main/issue', <BankOutlined />),
       getItem(t("contract"), '/main/contracts', <FileZipOutlined />),
       getItem(t("getTestCoin"), '/main/gettestcoin', <GiftOutlined />),
