@@ -119,7 +119,8 @@ export const applicationUpdateLanguage = createAction<string>(
 export const applicationUpdateSafeswapTokens = createAction<{
   chainId: number,
   tokenA: { chainId: number, address: string, decimals: number, name?: string, symbol?: string } | undefined,
-  tokenB: { chainId: number, address: string, decimals: number, name?: string, symbol?: string } | undefined
+  tokenB: { chainId: number, address: string, decimals: number, name?: string, symbol?: string } | undefined,
+  action? : string
 }>(
   "application/updateSafeswapTokens"
 )

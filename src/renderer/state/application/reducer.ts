@@ -131,9 +131,11 @@ export interface IApplicationState {
     [chainId: number]: {
       tokenA: { chainId: number, address: string, decimals: number, name?: string, symbol?: string } | undefined,
       tokenB: { chainId: number, address: string, decimals: number, name?: string, symbol?: string } | undefined
-    }
+    },
+    action?: string
   } | undefined,
   SlippageTolerance: string,
+
 
   sshConfigMap: {
     [host: string]: SSH2ConnectConfig
@@ -342,12 +344,13 @@ export default createReducer(initialState, (builder) => {
     })
 
     .addCase(applicationUpdateSafeswapTokens, (state, { payload }) => {
-      const { chainId, tokenA, tokenB } = payload;
+      const { chainId, tokenA, tokenB, action } = payload;
       const _safeswap = state.safeswap ?? {};
       _safeswap[chainId] = {
         tokenA: tokenA ? { ...tokenA } : undefined,
         tokenB: tokenB ? { ...tokenB } : undefined,
       }
+      _safeswap.action = action;
       state.safeswap = _safeswap;
     })
 

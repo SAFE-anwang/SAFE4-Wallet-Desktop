@@ -1,33 +1,43 @@
-import { Alert, Button, Col, Divider, InputNumberProps, Modal, Row, Slider, Typography } from "antd"
-import { MiniChefV2PoolInfoWithSafeswapPair } from "../../../hooks/useMiniChefV2"
+import { Alert, Button, Col, Divider, InputNumberProps, Modal, Row, Slider, Spin, Typography } from "antd"
+import { Farm, MiniChefV2PoolInfoWithSafeswapPair } from "../../../hooks/useMiniChefV2"
 import { useWeb3React } from "@web3-react/core";
 import ERC20TokenLogoComponent from "../../components/ERC20TokenLogoComponent";
 import { useEffect, useMemo, useState } from "react";
 import { Fraction, JSBI, Token, TokenAmount } from "@uniswap/sdk";
 import { useTranslation } from "react-i18next";
 import { ZERO } from "../../../utils/CurrentAmountUtils";
-import { useTokenAllowance, useTokenAllowanceAmounts, useTokenAllowanceWithLoadingIndicator, useWalletsActiveAccount } from "../../../state/wallets/hooks";
-import { ethers } from "ethers";
-import { ArrowDownOutlined } from "@ant-design/icons";
+import { useTokenAllowance, useWalletsActiveAccount } from "../../../state/wallets/hooks";
+import { BigNumber, Contract, ethers } from "ethers";
+import { ArrowDownOutlined, SendOutlined, SyncOutlined } from "@ant-design/icons";
 import TokenSymbol from "../../components/TokenSymbol";
 import ViewFiexdAmount from "../../../utils/ViewFiexdAmount";
-import { useBlockNumber } from "../../../state/application/hooks";
 import { useMiniChefV2 } from "../../../hooks/useContracts";
-import { MiniChefV2 } from "../../../config";
+import { IERC20_Interface } from "../../../abis";
+import EstimateTx from "../../../utils/EstimateTx";
+import { useTransactionAdder } from "../../../state/transactions/hooks";
+import useTransactionResponseRender from "../../components/useTransactionResponseRender";
+import { useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
+import { applicationUpdateSafeswapTokens } from "../../../state/application/action";
+import { SerializeToken } from "../safeswap/Swap";
+import { Safe4NetworkChainId, WSAFE } from "../../../config";
+import { calculateRewardSpeed, Default_Reward_Speed_Level } from "./FarmPools";
 
-const { Text, Title } = Typography;
+const { Text, Title, Link } = Typography;
 
 export default ({
   openDepositModal, setOpenDepositModal,
-  pool,
+  farm, pool,
 }: {
   openDepositModal: boolean,
-  setOpenDepositModal: (openDepositModal: boolean) => void
+  setOpenDepositModal: (openDepositModal: boolean) => void,
+  farm: Farm,
   pool: MiniChefV2PoolInfoWithSafeswapPair
 }) => {
   const { t } = useTranslation();
-  const { chainId } = useWeb3React();
-  const blockNumber = useBlockNumber();
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const { chainId, provider } = useWeb3React();
   const activeAccount = useWalletsActiveAccount();
   const cancel = () => {
     setOpenDepositModal(false);
@@ -35,6 +45,11 @@ export default ({
   const { pair, pairResult, poolInfo } = pool;
   const { token0, token1 } = pair;
   const liquidityToken = new Token(pair.liquidityToken.chainId, poolInfo.lpToken, pair.liquidityToken.decimals, pair.liquidityToken.name);
+
+  const [userRewardPerLevelAmount, setUserRewardPerLevelAmount] = useState<Fraction | undefined>(
+    calculateRewardSpeed(farm, pool, Default_Reward_Speed_Level)[1]
+  );
+
   const { LPTokenAmount, token0Amount, token1Amount } = useMemo(() => {
     const {
       token0, token1,
@@ -55,7 +70,8 @@ export default ({
     const token1Amount = token1Reserver.multiply(lpTokenRatio);
     return {
       LPTokenAmount,
-      token0Amount, token1Amount
+      token0Amount, token1Amount,
+      userRewardPerLevelAmount
     }
   }, [pairResult, pair, chainId]);
   const hasLPToken = useMemo(() => {
@@ -82,11 +98,19 @@ export default ({
         _token0Stake = token0Amount.multiply(removePercent);
         _token1Stake = token1Amount.multiply(removePercent);
         _lpTokenStake = LPTokenAmount.multiply(removePercent);
+
         setStake({
           token0Stake: ViewFiexdAmount(_token0Stake, token0, 6),
           token1Stake: ViewFiexdAmount(_token1Stake, token1, 6),
           lpTokenStake: new TokenAmount(liquidityToken, ethers.utils.parseUnits(_lpTokenStake.toFixed(liquidityToken.decimals)).toBigInt()),
         })
+
+        // 计算 [已存入 + 准备存入] 的 lptoken 所对应的当前用户的挖矿速率;
+        const userNewLpTokenStakeAmount = ethers.utils.parseUnits(_lpTokenStake.toFixed(liquidityToken.decimals)).add(
+          poolInfo.userInfo.amount
+        );
+        const [_, userRewardPerLevelAmount] = calculateRewardSpeed(farm, pool, Default_Reward_Speed_Level, userNewLpTokenStakeAmount);
+        setUserRewardPerLevelAmount(userRewardPerLevelAmount);
       } else {
         setStake(undefined)
       }
@@ -96,10 +120,118 @@ export default ({
   const allowanceForMiniChefV2OfLpToken = miniChefV2Contract && useTokenAllowance(liquidityToken, activeAccount, miniChefV2Contract.address);
 
   const needApprove = useMemo(() => {
-    if (allowanceForMiniChefV2OfLpToken && stake) {
-      return allowanceForMiniChefV2OfLpToken.greaterThan(stake.lpTokenStake)
+    if (allowanceForMiniChefV2OfLpToken && stake && stake.lpTokenStake) {
+      return stake.lpTokenStake.greaterThan(allowanceForMiniChefV2OfLpToken);
     }
+    return false;
   }, [allowanceForMiniChefV2OfLpToken, stake]);
+
+  const [executeApprove, setExecuteApproving] = useState<{
+    hash?: string,
+    executing: boolean
+  } | undefined>(undefined);
+
+  const doApproveMaxForMiniChefV2 = async () => {
+    if (chainId && provider) {
+      setExecuteApproving({
+        executing: true
+      });
+      const data = IERC20_Interface.encodeFunctionData("approve", [
+        miniChefV2Contract?.address, ethers.constants.MaxUint256
+      ]);
+      let tx: ethers.providers.TransactionRequest = {
+        to: liquidityToken.address,
+        data,
+        chainId
+      };
+      tx = await EstimateTx(activeAccount, chainId, tx, provider);
+      const { signedTx, error } = await window.electron.wallet.signTransaction(
+        activeAccount,
+        tx
+      );
+      if (signedTx) {
+        try {
+          const response = await provider.sendTransaction(signedTx);
+          const { hash, data } = response;
+          console.log("Approving Hash ==>", hash);
+          setExecuteApproving({
+            hash,
+            executing: false
+          });
+        } catch (err) {
+        } finally {
+          setExecuteApproving({
+            ...executeApprove,
+            executing: false
+          });
+        }
+      }
+    }
+  }
+
+  const depositable = useMemo(() => {
+    return !needApprove && stake?.lpTokenStake.greaterThan(ZERO);
+  }, [needApprove, stake]);
+
+  const addTransaction = useTransactionAdder();
+  const {
+    render,
+    setTransactionResponse,
+    setErr,
+    response,
+    err
+  } = useTransactionResponseRender();
+  const [sending, setSending] = useState<boolean>(false);
+  const [txHash, setTxHash] = useState<string>();
+  const doDeposit = async () => {
+    if (!needApprove && (allowanceForMiniChefV2OfLpToken && stake?.lpTokenStake) && allowanceForMiniChefV2OfLpToken.greaterThan(stake.lpTokenStake)) {
+      if (miniChefV2Contract && chainId && provider) {
+        setSending(true);
+        /**
+         * deposit(uint256,uint256,address) [pid , amount , to]
+         */
+        const data = miniChefV2Contract.interface.encodeFunctionData("deposit", [
+          poolInfo.pid,
+          BigNumber.from(stake.lpTokenStake.raw.toString()),
+          activeAccount
+        ]);
+        let tx: ethers.providers.TransactionRequest = {
+          to: miniChefV2Contract.address,
+          data,
+          chainId,
+        };
+        tx = await EstimateTx(activeAccount, chainId, tx, provider);
+        const { signedTx, error } = await window.electron.wallet.signTransaction(
+          activeAccount,
+          tx
+        );
+        if (signedTx) {
+          try {
+            const response = await provider.sendTransaction(signedTx);
+            const { hash, data } = response;
+            setTransactionResponse(response);
+            addTransaction({ to: miniChefV2Contract.address }, response, {
+              call: {
+                from: activeAccount,
+                to: miniChefV2Contract.address,
+                input: data,
+                value: "0"
+              }
+            });
+            setTxHash(hash);
+          } catch (err) {
+            setErr(err)
+          } finally {
+            setSending(false);
+          }
+        }
+        if (error) {
+          setSending(false);
+          setErr(error)
+        }
+      }
+    }
+  }
 
   const RenderTitle = () => {
     return <>
@@ -114,10 +246,49 @@ export default ({
     </>
   }
 
-  return <Modal title={RenderTitle()} open={openDepositModal} onCancel={cancel} footer={null} destroyOnClose>
-    {liquidityToken.address}
+  const goToAddLiquidity = () => {
+    if (chainId) {
+      cancel();
+      navigate("/main/swap");
+      const tokenA = token0 && [
+        WSAFE[Safe4NetworkChainId.Testnet].address,
+        WSAFE[Safe4NetworkChainId.Mainnet].address
+      ].indexOf(token0.address) < 0 ? SerializeToken(token0) : undefined;
+      const tokenB = token1 && [
+        WSAFE[Safe4NetworkChainId.Testnet].address,
+        WSAFE[Safe4NetworkChainId.Mainnet].address
+      ].indexOf(token1.address) < 0 ? SerializeToken(token1) : undefined;
+      dispatch(applicationUpdateSafeswapTokens({
+        chainId,
+        tokenA,
+        tokenB,
+        action: "AddLiquidity"
+      }));
+    }
+  }
+
+  return <Modal width={"600px"} title={RenderTitle()} open={openDepositModal} onCancel={cancel} footer={null} destroyOnClose>
     <Divider />
+    {
+      render
+    }
     <Row>
+
+      {
+        !hasLPToken && <>
+          <Col span={24} style={{ marginBottom: "20px" }}>
+            <Alert message={<>
+              <Text>您还没有添加
+                <Text strong style={{ marginLeft: "5px", marginRight: "5px" }}>
+                  {TokenSymbol(token0)}/{TokenSymbol(token1)}
+                </Text>
+                流动性,请先添加流动性;</Text>
+              <Link onClick={goToAddLiquidity} style={{ float: "right" }}>添加流动性</Link>
+            </>} />
+          </Col>
+        </>
+      }
+
       <Col span={24}>
         <Text type="secondary" strong>{t("wallet_safeswap_liquidity_removeamount")}</Text>
       </Col>
@@ -158,8 +329,8 @@ export default ({
     </Row>
 
     <Row>
-
       <Col span={24} style={{ marginTop: "5px" }}>
+        <Text type="secondary" strong>您将质押的流动性</Text>
         <Row>
           <Col span={12}>
             <Text style={{ fontSize: "24px" }}>- {stake?.token0Stake}</Text>
@@ -191,16 +362,62 @@ export default ({
           </Col>
         </Row>
       </Col>
+
+      {
+        userRewardPerLevelAmount && <>
+          <Col span={24} style={{ marginTop: "20px" }}>
+            <Text type="secondary" strong>奖励速率</Text>
+          </Col>
+          <Col span={24}>
+            <Text strong style={{ color: "#091e9ae0", fontSize: "20px" }} italic>{userRewardPerLevelAmount.toSignificant(4)}</Text>
+          </Col>
+        </>
+      }
+
     </Row>
     <Divider />
     <Row>
+      {
+        needApprove &&
+        <Col span={24} style={{ marginBottom: "20px" }}>
+          <Alert type="warning" message={<>
+            <Row>
+              <Col span={16}>
+                需要先授权访问您的流动性
+              </Col>
+              <Col style={{ textAlign: "right" }} span={8}>
+                <Link disabled={executeApprove != undefined} onClick={doApproveMaxForMiniChefV2}>
+                  {
+                    executeApprove && <SyncOutlined spin />
+                  }
+                  {
+                    executeApprove ? "正在授权" : "点击授权"
+                  }
+                </Link>
+              </Col>
+            </Row>
+          </>} />
+        </Col>
+      }
+
       <Col span={24}>
-        <Alert type="warning" message={<>
-          需要先授权访问您的流动性
-        </>} />
-      </Col>
-      <Col span={24}>
-        <Button>广播交易</Button>
+        {
+          !sending && !render && <Button icon={<SendOutlined />} onClick={() => {
+            doDeposit();
+          }} type="primary" disabled={!depositable} style={{ float: "right" }}>
+            {t("wallet_send_status_broadcast")}
+          </Button>
+        }
+        {
+          sending && !render && <Button loading disabled type="primary" style={{ float: "right" }}>
+            {t("wallet_send_status_sending")}
+          </Button>
+        }
+        {
+          render && <Button onClick={cancel} type="primary" style={{ float: "right" }}>
+            {t("wallet_send_status_close")}
+          </Button>
+        }
       </Col>
     </Row>
   </Modal>

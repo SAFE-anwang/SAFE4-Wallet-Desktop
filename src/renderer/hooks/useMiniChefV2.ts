@@ -5,7 +5,7 @@ import { CallMulticallAggregateContractCall, SyncCallMulticallAggregate } from '
 import { BigNumber, Contract } from 'ethers';
 import useSafeswapV2Pairs from './useSafeswapV2Pairs';
 import { getPairCallResults, PairResult } from '../pages/main/safeswap/hooks';
-import { useWalletsActiveAccount } from '../state/wallets/hooks';
+import { useTokenBalances, useWalletsActiveAccount } from '../state/wallets/hooks';
 import { useWeb3React } from '@web3-react/core';
 import { useWalletTokens } from '../state/transactions/hooks';
 import { useAuditTokenList } from '../state/audit/hooks';
@@ -33,7 +33,19 @@ export interface MiniChefV2PoolInfo {
     rewardDebt: BigNumber
   },
   pendingSushi: BigNumber,
-  pid : number
+  pid: number,
+  lpTokenBalance?: BigNumber
+}
+
+export interface Farm {
+  SUSHI: string,
+  SUSHI_Balance: BigNumber,
+
+  sushiPerSecond: BigNumber,
+  owner: string,
+  poolLength: number,
+  totalAllocPoint: BigNumber,
+
 }
 
 export interface MiniChefV2PoolInfoWithSafeswapPair {
@@ -44,15 +56,57 @@ export interface MiniChefV2PoolInfoWithSafeswapPair {
 
 export function useMiniChefV2PoolInfos() {
   const activeAccount = useWalletsActiveAccount();
-  const { provider } = useWeb3React();
   const multicall = useMulticallContract();
   const MiniChefV2 = useMiniChefV2();
   const blockNumber = useBlockNumber();
-  const [poolInfos, setPoolInfos] = useState<MiniChefV2PoolInfo[]>([]);
+  const { provider } = useWeb3React();
+  const [poolInfos, setPoolInfos] = useState<{
+    farm: Farm,
+    pools: MiniChefV2PoolInfo[],
+  }>();
+  const [loading, setLoading] = useState<boolean>(false);
   useEffect(() => {
-    if (multicall && MiniChefV2) {
+    if (multicall && MiniChefV2 && provider) {
       const loadMiniChefV2PoolInfos = async () => {
-        const poolLength = (await MiniChefV2.poolLength()).toNumber();
+        setLoading(true);
+        const miniChefV2_BaseInfo_Calls: CallMulticallAggregateContractCall[] = [];
+        const SUSHI_Call: CallMulticallAggregateContractCall = {
+          contract: MiniChefV2,
+          functionName: "SUSHI",
+          params: [],
+        };
+        const SUSHI_Persecond_Call: CallMulticallAggregateContractCall = {
+          contract: MiniChefV2,
+          functionName: "sushiPerSecond",
+          params: []
+        };
+        const Owner_Call: CallMulticallAggregateContractCall = {
+          contract: MiniChefV2,
+          functionName: "owner",
+          params: []
+        };
+        const PoolLength_Call: CallMulticallAggregateContractCall = {
+          contract: MiniChefV2,
+          functionName: "poolLength",
+          params: []
+        };
+        const TotalAllocPoint_Call: CallMulticallAggregateContractCall = {
+          contract: MiniChefV2,
+          functionName: "totalAllocPoint",
+          params: []
+        };
+
+        miniChefV2_BaseInfo_Calls.push(
+          SUSHI_Call, SUSHI_Persecond_Call, Owner_Call, PoolLength_Call, TotalAllocPoint_Call
+        )
+        await SyncCallMulticallAggregate(multicall, miniChefV2_BaseInfo_Calls);
+
+        const SUSHI = SUSHI_Call.result;
+        const owner = Owner_Call.result;
+        const poolLength = PoolLength_Call.result.toNumber();
+        const sushiPerSecond = SUSHI_Persecond_Call.result;
+        const totalAllocPoint = TotalAllocPoint_Call.result;
+
         const calls: CallMulticallAggregateContractCall[] = [];
         for (let i = 0; i < poolLength; i++) {
           calls.push({
@@ -100,29 +154,54 @@ export function useMiniChefV2PoolInfos() {
           };
           const pid = i;
           const poolInfo = {
-            lpToken, allocPoint, lastRewardTime, accSushiPerShare, rewarder, userInfo, pendingSushi , pid
+            lpToken, allocPoint, lastRewardTime, accSushiPerShare, rewarder, userInfo, pendingSushi, pid
           }
           poolInfos.push(poolInfo);
         }
-        setPoolInfos(poolInfos);
+
+        // 查询 MiniChefV2 上存入的 SUSHI-balance
+        const SUSHI_balance_call: CallMulticallAggregateContractCall[] = []
+        SUSHI_balance_call.push({
+          contract: new Contract(SUSHI, IERC20_Interface, provider),
+          functionName: "balanceOf",
+          params: [MiniChefV2.address],
+        });
+        await SyncCallMulticallAggregate(multicall, SUSHI_balance_call);
+        const SUSHI_Balance = SUSHI_balance_call[0].result;
+        const farm: Farm = {
+          SUSHI, owner, poolLength, sushiPerSecond, totalAllocPoint, SUSHI_Balance
+        }
+        setPoolInfos({
+          farm,
+          pools: poolInfos
+        });
+        setLoading(false);
       }
       loadMiniChefV2PoolInfos();
     }
-  }, [blockNumber, multicall, MiniChefV2]);
-  return poolInfos;
+  }, [blockNumber, multicall, MiniChefV2, activeAccount]);
+  return {
+    poolInfos, loading
+  };
 }
 
 export function useMiniChefV2PoolInfosFilterSafeswap() {
-  const miniChefV2PoolInfos = useMiniChefV2PoolInfos();
+  const miniChefV2Contract = useMiniChefV2();
   const safeswapPairs = useSafeswapV2Pairs();
+
+  const _result = useMiniChefV2PoolInfos();
+  const result = _result.poolInfos;
+  const loading = _result.loading;
+  const [loading2, setLoading] = useState<boolean>(false);
 
   // 过滤在 Safeswap中的 LP 代币;
   const lpTokenPoolInfos = useMemo(() => {
-    if (safeswapPairs && miniChefV2PoolInfos) {
-      return miniChefV2PoolInfos.filter(poolInfo => safeswapPairs.includes(poolInfo.lpToken));
+    if (safeswapPairs && result?.pools) {
+      return result.pools.filter(poolInfo => safeswapPairs.includes(poolInfo.lpToken));
     }
     return undefined;
-  }, [safeswapPairs, miniChefV2PoolInfos]);
+  }, [safeswapPairs, result]);
+  const farm = result?.farm;
 
   const activeAccount = useWalletsActiveAccount();
   const { provider } = useWeb3React();
@@ -149,7 +228,8 @@ export function useMiniChefV2PoolInfosFilterSafeswap() {
   }>();
 
   useEffect(() => {
-    if (lpTokenPoolInfos && provider && multicallContract && erc20Tokens) {
+    if (lpTokenPoolInfos && provider && multicallContract && erc20Tokens && farm) {
+      setLoading(true);
       const resultMap: {
         [lpToken: string]: MiniChefV2PoolInfoWithSafeswapPair
       } = {};
@@ -159,8 +239,8 @@ export function useMiniChefV2PoolInfosFilterSafeswap() {
       }, {} as { [address: string]: Token });
       const wrappMiniChefPoolInfos = async () => {
         console.log("[wrappMiniChefPoolInfos]");
-        const pairAddress = lpTokenPoolInfos.map(poolInfo => poolInfo.lpToken);
-        const pairResults = await getPairCallResults(pairAddress, provider, activeAccount, multicallContract);
+        const pairAddresses = lpTokenPoolInfos.map(poolInfo => poolInfo.lpToken);
+        const pairResults = await getPairCallResults(pairAddresses, provider, activeAccount, multicallContract);
         const pairsMap = Object.keys(pairResults).filter(pairAddress => {
           const { token0, token1 } = pairResults[pairAddress];
           return tokensMap[token0] && tokensMap[token1];
@@ -177,11 +257,6 @@ export function useMiniChefV2PoolInfosFilterSafeswap() {
           map[pairAddress] = new Pair(token0Amount, token1Amount);
           return map;
         }, {} as { [address: string]: Pair });
-
-        // 查询挖矿池中已经质押的LP-Tokens,lpToken.balanceOf(pool);
-
-
-
         Object.keys(pairResults).forEach(lpToken => {
           const poolInfo = lpTokenPoolInfos[
             lpTokenPoolInfos.map(lpTokenInfo => lpTokenInfo.lpToken).indexOf(lpToken)
@@ -192,11 +267,34 @@ export function useMiniChefV2PoolInfosFilterSafeswap() {
             pair: pairsMap[lpToken]
           }
         });
+
+        // 查询 MiniChefV2 在每一个 LP 上的 balance;
+        const calls: CallMulticallAggregateContractCall[] =
+          pairAddresses.map(lpToken => {
+            const call = {
+              contract: new Contract(lpToken, IERC20_Interface, provider),
+              functionName: "balanceOf",
+              params: [miniChefV2Contract?.address],
+            }
+            return call;
+          });
+        await SyncCallMulticallAggregate(multicallContract, calls);
+        calls.forEach(call => {
+          const lpToken = call.contract.address;
+          if (resultMap[lpToken]) {
+            resultMap[lpToken].poolInfo.lpTokenBalance = call.result;
+          }
+        });
         setMiniChefV2PoolMap(resultMap);
+        setLoading(false);
       }
       wrappMiniChefPoolInfos();
     }
   }, [lpTokenPoolInfos]);
 
-  return miniChefV2PoolMap;
+  return {
+    farm: result?.farm,
+    miniChefV2PoolMap,
+    loading: loading || loading2
+  };
 }
