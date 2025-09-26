@@ -9,8 +9,9 @@ import { useTokenBalances, useWalletsActiveAccount } from '../state/wallets/hook
 import { useWeb3React } from '@web3-react/core';
 import { useWalletTokens } from '../state/transactions/hooks';
 import { useAuditTokenList } from '../state/audit/hooks';
-import { Pair, Token, TokenAmount } from '@uniswap/sdk';
+import { ChainId, Pair, Token, TokenAmount } from '@uniswap/sdk';
 import { IERC20_Interface } from '../abis';
+import { Safe4NetworkChainId } from '../config';
 
 /**
     /// @notice Info of each MCV2 pool.
@@ -40,12 +41,12 @@ export interface MiniChefV2PoolInfo {
 export interface Farm {
   SUSHI: string,
   SUSHI_Balance: BigNumber,
+  SUSHI_Token: Token,
 
   sushiPerSecond: BigNumber,
   owner: string,
   poolLength: number,
   totalAllocPoint: BigNumber,
-
 }
 
 export interface MiniChefV2PoolInfoWithSafeswapPair {
@@ -65,6 +66,8 @@ export function useMiniChefV2PoolInfos() {
     pools: MiniChefV2PoolInfo[],
   }>();
   const [loading, setLoading] = useState<boolean>(false);
+  const walletTokens = useWalletTokens();
+
   useEffect(() => {
     if (multicall && MiniChefV2 && provider) {
       const loadMiniChefV2PoolInfos = async () => {
@@ -168,8 +171,22 @@ export function useMiniChefV2PoolInfos() {
         });
         await SyncCallMulticallAggregate(multicall, SUSHI_balance_call);
         const SUSHI_Balance = SUSHI_balance_call[0].result;
+
+        let SUSHI_Token = new Token(
+          ChainId.MAINNET,
+          SUSHI,
+          18
+        );;
+        if (walletTokens) {
+          let SUSHI_Token_Find = walletTokens.find((token) => {
+            return token.address == SUSHI;
+          });
+          if (SUSHI_Token_Find) {
+            SUSHI_Token = SUSHI_Token_Find;
+          }
+        }
         const farm: Farm = {
-          SUSHI, owner, poolLength, sushiPerSecond, totalAllocPoint, SUSHI_Balance
+          SUSHI, owner, poolLength, sushiPerSecond, totalAllocPoint, SUSHI_Balance, SUSHI_Token
         }
         setPoolInfos({
           farm,

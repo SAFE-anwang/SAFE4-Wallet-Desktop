@@ -12,6 +12,7 @@ import { BigNumber } from "ethers";
 import { MinusCircleOutlined, SyncOutlined } from "@ant-design/icons";
 import Withdraws from "./Withdraws";
 import { useWalletTokens } from "../../../state/transactions/hooks";
+import EditFarm from "./EditFarm";
 
 const { Text, Title } = Typography;
 
@@ -19,9 +20,11 @@ export enum RewardSpeedLevel {
   SECOND = "1",
   BLOCK = "30",
   Minute = "60",
-  HOUR = "3600"
+  HOUR = "3600",
+  DAY = "86400",
+  MONTH = "2592000"
 }
-export const Default_Reward_Speed_Level = RewardSpeedLevel.BLOCK;
+export const Default_Reward_Speed_Level = RewardSpeedLevel.HOUR;
 
 export function calculateRewardSpeed(farm: Farm, pool: MiniChefV2PoolInfoWithSafeswapPair, level: RewardSpeedLevel,
   _userLpTokenStake?: BigNumber
@@ -80,27 +83,9 @@ export default () => {
   const pools = miniChefV2PoolMap && Object.values(miniChefV2PoolMap);
   const [openDepositModal, setOpenDepositModal] = useState<boolean>(false);
   const [openWithdrawModal, setOpenWithdrawModal] = useState<boolean>(false);
+  const [openEditFarmModal, setOpenEditFarmModal] = useState<boolean>(false);
   const [selectPool, setSelectPool] = useState<MiniChefV2PoolInfoWithSafeswapPair | undefined>(undefined);
   const walletTokens = useWalletTokens();
-
-  const { SUSHI_Token, SUSHI_Balance_Amount } = useMemo(() => {
-    let SUSHI_Token: Token | undefined;
-    let SUSHI_Balance_Amount: TokenAmount | undefined;
-    if (farm && walletTokens) {
-      SUSHI_Token = walletTokens.find(token => {
-        return token.address == farm.SUSHI
-      });
-      SUSHI_Balance_Amount = SUSHI_Token && new TokenAmount(
-        SUSHI_Token,
-        farm.SUSHI_Balance.toBigInt()
-      )
-    }
-    return {
-      SUSHI_Token,
-      SUSHI_Balance_Amount
-    }
-  }, [farm, walletTokens]);
-
 
   const doDepositLpToken = (pool: MiniChefV2PoolInfoWithSafeswapPair) => {
     setSelectPool(pool);
@@ -308,9 +293,7 @@ export default () => {
             </div>
           </Row>
           <Divider />
-          {
-            SUSHI_Balance_Amount?.toFixed(6)
-          }
+          <Button onClick={() => setOpenEditFarmModal(true)}>编辑农场</Button>
         </Card>
         <Table loading={loading} dataSource={pools} columns={columns} pagination={false} />
       </div>
@@ -322,6 +305,10 @@ export default () => {
     {
       openWithdrawModal && selectPool && farm && <Withdraws openWithdrawModal={openWithdrawModal} setOpenWithdrawModal={setOpenWithdrawModal}
         pool={selectPool} farm={farm} />
+    }
+    {
+      openEditFarmModal && farm && pools && <EditFarm openEditFarmModal={openEditFarmModal} setOpenEditFarmModal={setOpenEditFarmModal}
+        farm={farm} pools={pools} />
     }
   </>
 
