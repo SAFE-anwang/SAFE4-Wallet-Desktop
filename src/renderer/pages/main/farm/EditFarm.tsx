@@ -72,14 +72,23 @@ export default ({
   }
 
   const editable = useMemo(() => {
-    const perSecondSUSHI = ethers.utils.parseUnits(
-      perSecond, farm.SUSHI_Token.decimals
-    );
-    const perSecondChanged = !perSecondSUSHI.eq(farm.sushiPerSecond);
+    let perSecondChanged = false;
+    try {
+      const perSecondSUSHI = ethers.utils.parseUnits(
+        perSecond, farm.SUSHI_Token.decimals
+      );
+      perSecondChanged = !perSecondSUSHI.eq(farm.sushiPerSecond);
+    } catch (err) {
+
+    }
     const allocPointChanged = Object.keys(poolAllocPointMap).filter(pid => {
       return !poolAllocPointMap[Number(pid)].eq(_poolAllocPointMap[Number(pid)]);
     });
-    return perSecondChanged || allocPointChanged.length > 0;
+    const totalAllocPoint = Object.values(poolAllocPointMap).reduce((total, allocPoint) => {
+      total = total.add(allocPoint);
+      return total;
+    }, BigNumber.from("0"))
+    return (perSecondChanged || allocPointChanged.length > 0) && totalAllocPoint.gt(BigNumber.from("0"));
   }, [perSecond, poolAllocPointMap])
 
   const doEditFarm = async () => {
@@ -105,7 +114,19 @@ export default ({
         }
       });
       if (calls.length > 0) {
-        const data = miniChefV2Contract.interface.encodeFunctionData("batch", [calls, true]);
+        // 对所有池子进行 deposit(0)
+        const poolsDepositZEROCalls = Object.keys(_poolAllocPointMap).map(pid => {
+          const depositZEROCall = miniChefV2Contract.interface.encodeFunctionData("deposit", [
+            BigNumber.from(pid),
+            BigNumber.from("0"),
+            activeAccount
+          ]);
+          return depositZEROCall;
+        });
+        const allCalls: string[] = [];
+        allCalls.push(...poolsDepositZEROCalls);
+        allCalls.push(...calls);
+        const data = miniChefV2Contract.interface.encodeFunctionData("batch", [allCalls, true]);
         setSending(true);
         let tx: ethers.providers.TransactionRequest = {
           to: miniChefV2Contract.address,
@@ -143,10 +164,6 @@ export default ({
         }
       }
     }
-
-
-
-
   }
 
   const RenderSpeedIntervals = (perSecondBN: BigNumber) => {
@@ -245,7 +262,7 @@ export default ({
                 total = total.add(allocPoint)
                 return total;
               }, BigNumber.from("0"));
-              const farmPerSecondBN = ethers.utils.parseUnits(perSecond, farm.SUSHI_Token.decimals);
+              const farmPerSecondBN = perSecond ? ethers.utils.parseUnits(perSecond, farm.SUSHI_Token.decimals) : BigNumber.from("0");
               const poolPerSecondBN = totalAllocPoint.gt(BigNumber.from("0")) ?
                 poolAllocPoint.mul(farmPerSecondBN).div(totalAllocPoint) : BigNumber.from("0");
 

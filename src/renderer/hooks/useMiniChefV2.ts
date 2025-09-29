@@ -102,6 +102,7 @@ export function useMiniChefV2PoolInfos() {
         miniChefV2_BaseInfo_Calls.push(
           SUSHI_Call, SUSHI_Persecond_Call, Owner_Call, PoolLength_Call, TotalAllocPoint_Call
         )
+        console.log("[Query MiniChefV2.SUSHI/sushiPerSecond/owner/poolLength/totalAllocPoint]");
         await SyncCallMulticallAggregate(multicall, miniChefV2_BaseInfo_Calls);
 
         const SUSHI = SUSHI_Call.result;
@@ -138,7 +139,7 @@ export function useMiniChefV2PoolInfos() {
             params: [i, activeAccount],
           });
         }
-        console.log("Query MiniChefV2 [lpToken , poolInfo , rewarder , userInfo];")
+        console.log("Query MiniChefV2-Pools/[lpToken , poolInfo , rewarder , userInfo];")
         await SyncCallMulticallAggregate(multicall, calls);
         const poolInfos: MiniChefV2PoolInfo[] = [];
         for (let i = 0; i < calls.length / 5; i++) {

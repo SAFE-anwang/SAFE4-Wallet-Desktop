@@ -13,6 +13,7 @@ import { MinusCircleOutlined, SyncOutlined } from "@ant-design/icons";
 import Withdraws from "./Withdraws";
 import { useWalletTokens } from "../../../state/transactions/hooks";
 import EditFarm from "./EditFarm";
+import { useWalletsActiveAccount } from "../../../state/wallets/hooks";
 
 const { Text, Title } = Typography;
 
@@ -58,9 +59,9 @@ export function calculateRewardSpeed(farm: Farm, pool: MiniChefV2PoolInfoWithSaf
   ) : poolInfo.lpTokenBalance;
 
   // pool reward per second;
-  const poolRewardPerSecond: BigNumber = sushiPerSecond
+  const poolRewardPerSecond: BigNumber = totalAllocPoint.gt(BigNumber.from("0")) ? sushiPerSecond
     .mul(allocPoint)
-    .div(totalAllocPoint);
+    .div(totalAllocPoint) : BigNumber.from("0");
   let userRewardPerSecond: BigNumber | undefined = undefined;
   if (poolLpTokenStake && poolLpTokenStake.gt(BigNumber.from("0"))
     && userLpTokenStake && userLpTokenStake.gt(BigNumber.from("0"))) {
@@ -79,13 +80,14 @@ export default () => {
 
   const { t } = useTranslation();
   const { chainId } = useWeb3React();
+  const activeAccount = useWalletsActiveAccount();
   const { miniChefV2PoolMap, farm, loading } = useMiniChefV2PoolInfosFilterSafeswap();
   const pools = miniChefV2PoolMap && Object.values(miniChefV2PoolMap);
   const [openDepositModal, setOpenDepositModal] = useState<boolean>(false);
   const [openWithdrawModal, setOpenWithdrawModal] = useState<boolean>(false);
   const [openEditFarmModal, setOpenEditFarmModal] = useState<boolean>(false);
   const [selectPool, setSelectPool] = useState<MiniChefV2PoolInfoWithSafeswapPair | undefined>(undefined);
-  const walletTokens = useWalletTokens();
+  const isOwner = activeAccount == farm?.owner;
 
   const doDepositLpToken = (pool: MiniChefV2PoolInfoWithSafeswapPair) => {
     setSelectPool(pool);
@@ -293,7 +295,13 @@ export default () => {
             </div>
           </Row>
           <Divider />
-          <Button onClick={() => setOpenEditFarmModal(true)}>编辑农场</Button>
+          {
+            isOwner && <>
+              <Space>
+                <Button onClick={() => setOpenEditFarmModal(true)}>编辑农场</Button>
+              </Space>
+            </>
+          }
         </Card>
         <Table loading={loading} dataSource={pools} columns={columns} pagination={false} />
       </div>
