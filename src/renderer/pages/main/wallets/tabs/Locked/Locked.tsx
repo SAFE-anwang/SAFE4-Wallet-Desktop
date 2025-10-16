@@ -1,25 +1,29 @@
-import { Row, Statistic, Card, Col, Typography, Button, Divider, Space, Tag, List, Input, Select } from "antd";
+import { Row, Statistic, Card, Col, Typography, Button, Divider, Space, Tag, List, Input, Select, Radio, Alert } from "antd";
 import { useSafe4Balance, useWalletsActiveAccount } from "../../../../../state/wallets/hooks";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useBlockNumber, useTimestamp } from "../../../../../state/application/hooks";
 import { useAccountManagerContract, useBatchLockOneCentContract, useBatchLockTenCentsContract, useMulticallContract } from "../../../../../hooks/useContracts";
 import { AccountRecord, formatAccountRecord, formatRecordUseInfo } from "../../../../../structs/AccountManager";
-import { ClockCircleOutlined, LockOutlined, RetweetOutlined } from '@ant-design/icons';
 import WalletWithdrawModal from "../../Withdraw/WalletWithdrawModal";
-import { EmptyContract, SystemContract } from "../../../../../constants/SystemContracts";
-import { DateTimeFormat } from "../../../../../utils/DateUtils";
-import { ZERO } from "../../../../../utils/CurrentAmountUtils";
+import { SystemContract } from "../../../../../constants/SystemContracts";
 import AddLockModal from "./AddLockModal";
 import { useTranslation } from "react-i18next";
-import AddressComponent from "../../../../components/AddressComponent";
+import AccountRecordRender, { AccountRecordRenderType } from "./AccountRecordRender";
+import useSupernodeAddresses from "../../../../../hooks/useSupernodeAddresses";
+import Checkbox, { CheckboxGroupProps } from "antd/es/checkbox";
+import BatchWithdrawModal from "../../Withdraw/BatchWithdrawModal";
+import { ZERO } from "../../../../../utils/CurrentAmountUtils";
 
 const { Text } = Typography;
-
 
 export enum LockContractType {
   Normal = 'normal',
   TEN_CENTS = 'ten_cents',
   ONE_CENT = 'one_cent'
+}
+export enum FilterType {
+  All = 'All',
+  Available = "Available"
 }
 
 export default () => {
@@ -28,20 +32,27 @@ export default () => {
   const activeAccount = useWalletsActiveAccount();
   const safe4balance = useSafe4Balance([activeAccount])[activeAccount];
   const blockNumber = useBlockNumber();
-
-  const [openWithdrawModal, setOpenWithdrawModal] = useState<boolean>(false);
-  const [openAddModal, setOpenAddModal] = useState<boolean>(false);
-  const [selectedAccountRecord, setSelectedAccountRecord] = useState<AccountRecord>();
-
-  const [accountRecords, setAccountRecords] = useState<AccountRecord[]>([]);
+  const supernodeAddresses = useSupernodeAddresses();
   const timestamp = useTimestamp();
 
   const _accountManagerContract = useAccountManagerContract();
   const batchLockContract_tencents = useBatchLockTenCentsContract();
   const batchLockContract_onecent = useBatchLockOneCentContract();
   const [lockType, setLockType] = useState<LockContractType>(LockContractType.Normal);
+  const [filterType, setFilterType] = useState<FilterType>(FilterType.All);
+  const AccountRecords_Page_Size = 20;
+  const [accountRecords, setAccountRecords] = useState<AccountRecord[]>([]);
+  const multicallContract = useMulticallContract();
+  const [loading, setLoading] = useState<boolean>(false);
+  const [pagination, setPagination] = useState<{
+    total: number | undefined
+    pageSize: number | undefined,
+    current: number | undefined,
+    onChange?: (page: number, pageSize: number) => void,
+    pageSizeOptions: number[],
+  }>();
 
-  const AccountRecords_Page_Size = lockType == LockContractType.Normal ? 5 : 16;
+
   const accountManagerContract = useMemo(() => {
     if (!(_accountManagerContract && batchLockContract_tencents && batchLockContract_onecent)) return undefined;
     switch (lockType) {
@@ -54,107 +65,51 @@ export default () => {
     }
   }, [lockType, _accountManagerContract, batchLockContract_tencents, batchLockContract_onecent]);
 
-  const multicallContract = useMulticallContract();
-  const [loading, setLoading] = useState<boolean>(false);
+  const [openWithdrawModal, setOpenWithdrawModal] = useState<boolean>(false);
+  const [openAddModal, setOpenAddModal] = useState<boolean>(false);
+  const [selectedAccountRecord, setSelectedAccountRecord] = useState<AccountRecord>();
   const [accountRecordZERO, setAccountRecordZERO] = useState<AccountRecord>();
   const [queryAccountRecordId, setQueryAccountRecordId] = useState<number>();
-
-  useEffect(() => {
-    if (accountManagerContract) {
-      // function getRecord0(address _addr) external view returns (AccountRecord memory);
-      accountManagerContract.callStatic.getRecord0(activeAccount)
-        .then(_accountRecord => {
-          const accountRecordZERO = formatAccountRecord(_accountRecord);
-          if (accountRecordZERO.amount.greaterThan(ZERO)) {
-            setAccountRecordZERO(accountRecordZERO)
-          } else {
-            setAccountRecordZERO(undefined);
-          }
-        })
-        .catch((err: any) => {
-        })
-    }
-  }, [accountManagerContract, blockNumber, activeAccount]);
-
-  const [pagination, setPagination] = useState<{
-    total: number | undefined
-    pageSize: number | undefined,
-    current: number | undefined,
-    onChange?: (page: number) => void
-  }>();
+  const [checkedAccountRecordIds, setCheckedAccountRecordIds] = useState<number[]>([]);
 
   const initilizePageQuery = useCallback(() => {
     if (accountManagerContract) {
       if (!queryAccountRecordId) {
         // function getTotalAmount(address _addr) external view returns (uint, uint);
-        accountManagerContract.callStatic.getTotalAmount(activeAccount)
-          .then((data: any) => {
-            const pagination = {
-              total: data[1].toNumber(),
-              pageSize: AccountRecords_Page_Size,
-              position: "bottom",
-              current: 1,
-              onChange: (page: number) => {
-                pagination.current = page;
-                setPagination({
-                  ...pagination
-                })
-              }
+        // function getAvailableAmount(address _addr) external view returns (uint, uint);
+        const query = filterType == FilterType.All ? accountManagerContract.callStatic.getTotalAmount(activeAccount)
+          : accountManagerContract.callStatic.getAvailableAmount(activeAccount);
+        query.then((data: any) => {
+          const _pagination = {
+            total: data[1].toNumber(),
+            pageSize: pagination?.pageSize ?? AccountRecords_Page_Size,
+            position: "bottom",
+            current: 1,
+            pageSizeOptions: [20, 60, 100],
+            onChange: (page: number, pageSize: number) => {
+              _pagination.current = page;
+              _pagination.pageSize = pageSize;
+              setPagination({
+                ..._pagination
+              });
+              setCheckedAccountRecordIds([]);
             }
-            setPagination({
-              ...pagination,
-            })
+          }
+          setPagination({
+            ..._pagination,
           })
+        })
       } else {
         console.log("AccountRecord Id - Query initilizePageQuery");
         setPagination({
           total: 1,
           pageSize: AccountRecords_Page_Size,
+          pageSizeOptions: [20, 60, 100],
           current: 1,
         })
       }
     }
-  }, [accountManagerContract, queryAccountRecordId]);
-
-  useEffect(() => {
-    if (pagination && pagination.current != 1) {
-      // 如果已经刷新过数据且不是第一页的情况下,不自动刷新数据.
-      return;
-    }
-    initilizePageQuery();
-  }, [blockNumber]);
-
-  useEffect(() => {
-    initilizePageQuery();
-  }, [accountManagerContract, activeAccount, queryAccountRecordId]);
-
-  useEffect(() => {
-    if (pagination && accountManagerContract && multicallContract) {
-      const { pageSize, current, total } = pagination;
-      if (current && pageSize && total && total > 0) {
-        //////////////////// 逆序 ////////////////////////
-        let position = total - (pageSize * current);
-        let offset = pageSize;
-        if (position < 0) {
-          offset = pageSize + position;
-          position = 0;
-        }
-        /////////////////////////////////////////////////
-        // function getTotalIDs(address _addr, uint _start, uint _count) external view returns (uint[] memory);
-        setLoading(true);
-        if (!queryAccountRecordId) {
-          accountManagerContract.getTotalIDs(activeAccount, position, offset)
-            .then((accountRecordIds: any) => {
-              multicallGetAccountRecordByIds(accountRecordIds);
-            })
-        } else {
-          multicallGetAccountRecordByIds([queryAccountRecordId]);
-        }
-      } else {
-        setAccountRecords([]);
-      }
-    }
-  }, [pagination]);
+  }, [pagination, accountManagerContract, queryAccountRecordId, filterType]);
 
   const multicallGetAccountRecordByIds = useCallback((_accountRecordIds: any) => {
     if (multicallContract && accountManagerContract) {
@@ -202,180 +157,99 @@ export default () => {
     }
   }, [multicallContract, accountManagerContract, pagination]);
 
-  const RenderAccountRecord = useCallback((accountRecord: AccountRecord) => {
-    const {
-      id, amount, unlockHeight, recordUseInfo
-    } = accountRecord;
-    const {
-      frozenAddr, freezeHeight, unfreezeHeight,
-      votedAddr, voteHeight, releaseHeight
-    } = recordUseInfo ? recordUseInfo : {
-      frozenAddr: EmptyContract.EMPTY,
-      freezeHeight: 0,
-      unfreezeHeight: 0,
-      votedAddr: EmptyContract.EMPTY,
-      voteHeight: 0,
-      releaseHeight: 0
+  useEffect(() => {
+    if (accountManagerContract) {
+      // function getRecord0(address _addr) external view returns (AccountRecord memory);
+      accountManagerContract.callStatic.getRecord0(activeAccount)
+        .then(_accountRecord => {
+          const accountRecordZERO = formatAccountRecord(_accountRecord);
+          setAccountRecordZERO(accountRecordZERO)
+        })
+        .catch((err: any) => {
+        })
     }
-    const locked = unlockHeight > blockNumber;
-    const couldWithdraw = (!locked && blockNumber > unfreezeHeight && blockNumber > releaseHeight);
-    const unlockDateTime = unlockHeight - blockNumber > 0 ? DateTimeFormat(((unlockHeight - blockNumber) * 30 + timestamp) * 1000) : undefined;
-    const unfreezeDateTime = unfreezeHeight - blockNumber > 0 ? DateTimeFormat(((unfreezeHeight - blockNumber) * 30 + timestamp) * 1000) : undefined;
-    const releaseDateTime = releaseHeight - blockNumber > 0 ? DateTimeFormat(((releaseHeight - blockNumber) * 30 + timestamp) * 1000) : undefined;
+  }, [accountManagerContract, blockNumber, activeAccount]);
+
+  useEffect(() => {
+    if (pagination && pagination.current != 1) {
+      // 如果已经刷新过数据且不是第一页的情况下,不自动刷新数据.
+      return;
+    }
+    initilizePageQuery();
+  }, [blockNumber]);
+  useEffect(() => {
+    initilizePageQuery();
+  }, [accountManagerContract, activeAccount, queryAccountRecordId, filterType]);
+
+  useEffect(() => {
+    if (pagination && accountManagerContract && multicallContract) {
+      const { pageSize, current, total } = pagination;
+      if (current && pageSize && total && total > 0) {
+        //////////////////// 逆序 ////////////////////////
+        let position = total - (pageSize * current);
+        let offset = pageSize;
+        if (position < 0) {
+          offset = pageSize + position;
+          position = 0;
+        }
+        /////////////////////////////////////////////////
+        // function getTotalIDs(address _addr, uint _start, uint _count) external view returns (uint[] memory);
+        // function getAvailableIDs(address _addr, uint _start, uint _count) external view returns (uint[] memory);
+        setLoading(true);
+        if (!queryAccountRecordId) {
+          const query = filterType == FilterType.All ? accountManagerContract.getTotalIDs(activeAccount, position, offset) :
+            accountManagerContract.getAvailableIDs(activeAccount, position, offset);
+          query.then((accountRecordIds: any) => {
+            multicallGetAccountRecordByIds(accountRecordIds);
+          })
+        } else {
+          multicallGetAccountRecordByIds([queryAccountRecordId]);
+        }
+      } else {
+        setAccountRecords([]);
+      }
+    }
+  }, [pagination]);
+
+  const RenderAccountRecord = useCallback((accountRecord: AccountRecord) => {
     return <List.Item>
       {
-        lockType != LockContractType.Normal &&
-        <Card key={id} size="small" style={{ marginTop: "30px" }}>
-          <Row>
-            <Col span={24}>
-              <Divider orientation="center" style={{ fontSize: "14px", marginTop: "-23px", fontWeight: "600" }}>{t("wallet_locked_accountRecordLockInfo")}</Divider>
-              <Text strong type="secondary">{t("wallet_locked_accountRecordLockId")}</Text><br />
-              <Text strong>
-                {
-                  locked && <LockOutlined />
-                }
-                {id}
-              </Text>
-              <Divider style={{ margin: "4px 0" }} />
-              <Text strong type="secondary">{t("wallet_locked_lockedAmount")}</Text>
-              <Button style={{ float: "right" }} title="提现" disabled={!couldWithdraw} size="small" type="primary" onClick={() => {
-                setSelectedAccountRecord(accountRecord);
-                setOpenWithdrawModal(true)
-              }}>{t("wallet_withdraw")}</Button>
-              <br />
-              <Text strong>{amount.toSignificant(4)} SAFE</Text>
-              <Divider style={{ margin: "4px 0" }} />
-              <Text strong type="secondary">{t("wallet_locked_unlockHeight")}</Text>
-              {
-                id != 0 && accountRecord?.contractAddress == SystemContract.AccountManager && <>
-                  <Button style={{ float: "right", height: "22px" }} size="small"
-                    icon={<ClockCircleOutlined />} title="追加锁仓" onClick={() => {
-                      setSelectedAccountRecord(accountRecord);
-                      setOpenAddModal(true)
-                    }}>
-                    {t("wallet_locked_addLockDay")}
-                  </Button>
-                </>
+        AccountRecordRender({
+          accountRecord, renderType: AccountRecordRenderType.Simple, blockNumber, timestamp, t, supernodeAddresses,
+          checkedAccountRecordIds: FilterType.Available == filterType ? checkedAccountRecordIds : undefined,
+          actions: {
+            addLockDay: (accountRecord) => {
+              setSelectedAccountRecord(accountRecord);
+              setOpenAddModal(true)
+            },
+            withdraw: (accountRecord) => {
+              setSelectedAccountRecord(accountRecord);
+              setOpenWithdrawModal(true)
+            },
+            checked: (accountRecord) => {
+              if (checkedAccountRecordIds.includes(accountRecord.id)) {
+                setCheckedAccountRecordIds(checkedAccountRecordIds.filter(id => id !== accountRecord.id));
+              } else {
+                checkedAccountRecordIds.push(accountRecord.id);
+                setCheckedAccountRecordIds([...checkedAccountRecordIds]);
               }
-              <br />
-              <Text strong type={locked ? "secondary" : "success"}>{unlockHeight}</Text>
-              {
-                unlockDateTime && <Text strong style={{ float: "right" }} type="secondary">[{unlockDateTime}]</Text>
-              }
-            </Col>
-
-          </Row>
-        </Card>
+            }
+          }
+        })
       }
-      {
-        lockType == LockContractType.Normal &&
-        <Card key={id} size="small" style={{ marginTop: "30px" }}>
-          <Row>
-            <Col span={6}>
-              <Divider orientation="center" style={{ fontSize: "14px", marginTop: "-23px", fontWeight: "600" }}>{t("wallet_locked_accountRecordLockInfo")}</Divider>
-              <Text strong type="secondary">{t("wallet_locked_accountRecordLockId")}</Text><br />
-              <Text strong>
-                {
-                  locked && <LockOutlined />
-                }
-                {id}
-              </Text>
-              <Divider style={{ margin: "4px 0" }} />
-              <Text strong type="secondary">{t("wallet_locked_lockedAmount")}</Text><br />
-              <Text strong>{amount.toFixed(2)} SAFE</Text>
-              <Divider style={{ margin: "4px 0" }} />
-              <Text strong type="secondary">{t("wallet_locked_unlockHeight")}</Text><br />
-              <Text strong type={locked ? "secondary" : "success"}>{unlockHeight}</Text>
-              {
-                unlockDateTime && <Text strong style={{ float: "right" }} type="secondary">[{unlockDateTime}]</Text>
-              }
-            </Col>
-            <Col>
-              <Divider type="vertical" style={{ height: "100%" }} />
-            </Col>
-            <Col span={17}>
-              <Divider orientation="center" style={{ fontSize: "14px", marginTop: "-23px" }}>{t("wallet_locked_accountRecordUseInfo")}</Divider>
-              <Row>
-                <Col span={13}>
-                  <Text strong type="secondary">{t("wallet_locked_memberOfNode")}</Text><br />
-                  {
-                    frozenAddr == EmptyContract.EMPTY && <>
-                      <Tag>{t("wallet_locked_notMember")}</Tag>
-                    </>
-                  }
-                  {
-                    frozenAddr != EmptyContract.EMPTY && <>
-                      <AddressComponent address={frozenAddr} copyable qrcode />
-                    </>
-                  }
-                </Col>
-                <Col offset={3} span={8}>
-                  <Text strong type="secondary" style={{ float: "right" }}>{t("wallet_locked_stakeRelease")}</Text><br />
-                  <Text strong style={{ float: "right", color: unfreezeHeight > blockNumber ? "#104499" : "#27c92d" }}>
-                    {unfreezeHeight == 0 ? "-" : unfreezeHeight}
-                    {
-                      unfreezeDateTime && <>
-                        <Divider type="vertical" style={{ margin: "0px 4px" }} ></Divider>
-                        <Text strong style={{ color: "#104499" }}>{unfreezeDateTime}</Text>
-                      </>
-                    }
-                  </Text>
-                </Col>
-              </Row>
-              <Divider style={{ margin: "4px 0" }} />
-              <Row>
-                <Col span={13}>
-                  <Text strong type="secondary">{t("wallet_locked_votedSupernode")}</Text><br />
-                  {
-                    votedAddr == EmptyContract.EMPTY && <>
-                      <Tag>{t("wallet_locked_notVoted")}</Tag>
-                    </>
-                  }
-                  {
-                    votedAddr != EmptyContract.EMPTY && <>
-                      <AddressComponent address={votedAddr} qrcode copyable />
-                    </>
-                  }
-                </Col>
-                <Col offset={3} span={8}>
-                  <Text strong type="secondary" style={{ float: "right" }}>{t("wallet_locked_stakeRelease")}</Text><br />
-                  <Text strong style={{ float: "right", color: releaseHeight > blockNumber ? "#104499" : "#27c92d" }}>
-                    {releaseHeight == 0 ? "-" : releaseHeight}
-                    {
-                      releaseDateTime && <>
-                        <Divider type="vertical" style={{ margin: "0px 4px" }} ></Divider>
-                        <Text strong style={{ color: "#104499" }}>{releaseDateTime}</Text>
-                      </>
-                    }
-                  </Text>
-                </Col>
-              </Row>
-              <Divider style={{ margin: "4px 0" }} />
-              <div style={{ lineHeight: "42px" }}>
-                <Space style={{ float: "right", marginTop: "2px" }}>
-                  {
-                    id != 0 && accountRecord?.contractAddress == SystemContract.AccountManager && <>
-                      <Button size="small" icon={<ClockCircleOutlined />} title="追加锁仓" onClick={() => {
-                        setSelectedAccountRecord(accountRecord);
-                        setOpenAddModal(true)
-                      }}>
-                        {t("wallet_locked_addLockDay")}
-                      </Button>
-                    </>
-                  }
-                  <Button title="提现" disabled={!couldWithdraw} size="small" type="primary" onClick={() => {
-                    setSelectedAccountRecord(accountRecord);
-                    setOpenWithdrawModal(true)
-                  }}>{t("wallet_withdraw")}</Button>
-                </Space>
-              </div>
-            </Col>
-          </Row>
-        </Card>
-      }
-
     </List.Item>
-  }, [blockNumber, timestamp, lockType]);
+  }, [blockNumber, timestamp, lockType, filterType, checkedAccountRecordIds, supernodeAddresses]);
+
+  const options: CheckboxGroupProps<string>['options'] = [
+    { label: '全部', value: FilterType.All },
+    { label: '仅显示已解锁', value: FilterType.Available },
+  ];
+
+  const [openBatchWithdrawModal, setOpenBatchWithdrawModal] = useState<boolean>(false);
+  const checkedAccountRecords = useMemo(() => {
+    return accountRecords && accountRecords.filter(accountRecord => checkedAccountRecordIds.indexOf(accountRecord.id) >= 0);
+  }, [accountRecords, checkedAccountRecordIds]);
+  const [selectedAccountRecords, setSelectedAccountRecords] = useState<AccountRecord[] | undefined>(undefined);
 
   return <>
     <Row>
@@ -411,64 +285,128 @@ export default () => {
     </Row>
 
     <Card title={<>
-      <Select
-        defaultValue={lockType}
-        style={{ width: 200 }}
-        onChange={(value) => {
-          setLockType(value);
-          setAccountRecords([]);
-        }}
-        options={[
-          {
-            label: <span>普通锁仓</span>,
-            options: [
-              { label: <span>锁仓列表</span>, value: LockContractType.Normal },
-            ],
-          },
-          {
-            label: <span>小额锁仓</span>,
-            title: '小额锁仓',
-            options: [
-              { label: <span>[0.1 ~ 1)</span>, value: LockContractType.TEN_CENTS },
-              { label: <span>[0.01 ~ 0.1)</span>, value: LockContractType.ONE_CENT },
-            ],
-          },
-        ]}
-      />
+      <Space>
+        <Select
+          defaultValue={lockType}
+          style={{ width: 200 }}
+          onChange={(value) => {
+            setLockType(value);
+            setAccountRecords([]);
+          }}
+          options={[
+            {
+              label: <span>普通锁仓</span>,
+              options: [
+                { label: <span>锁仓列表</span>, value: LockContractType.Normal },
+              ],
+            },
+            {
+              label: <span>小额锁仓</span>,
+              title: '小额锁仓',
+              options: [
+                { label: <span>[0.1 ~ 1)</span>, value: LockContractType.TEN_CENTS },
+                { label: <span>[0.01 ~ 0.1)</span>, value: LockContractType.ONE_CENT },
+              ],
+            },
+          ]} />
+        <Radio.Group
+          options={options}
+          value={filterType}
+          optionType="button"
+          buttonStyle="solid"
+          onChange={(event) => {
+            setFilterType(event.target.value);
+            setAccountRecords([]);
+          }}
+        />
+      </Space>
+
     </>} style={{ marginTop: "40px" }}>
+      <Row>
+        <Col span={filterType == FilterType.Available ? 12 : 24}>
+          <Input.Search size="large" placeholder={t("wallet_locked_placehold_inputAccountRecordId")} onChange={(event) => {
+            if (!event.target.value.trim()) {
+              setQueryAccountRecordId(undefined);
+            }
+          }} onSearch={(value) => {
+            const id = Number(value);
+            if (id) {
+              setQueryAccountRecordId(id);
+            } else {
 
-      <Input.Search size="large" placeholder={t("wallet_locked_placehold_inputAccountRecordId")} onChange={(event) => {
-        if (!event.target.value.trim()) {
-          setQueryAccountRecordId(undefined);
-        }
-      }} onSearch={(value) => {
-        const id = Number(value);
-        if (id) {
-          setQueryAccountRecordId(id);
-        } else {
-
-        }
-      }} />
+            }
+          }} />
+        </Col>
+        <Col span={filterType == FilterType.Available ? 12 : 0} style={{ textAlign: "right" }}>
+          <Checkbox checked={accountRecords.length > 0 && checkedAccountRecordIds.length == accountRecords.length}
+            indeterminate={checkedAccountRecordIds.length > 0 && checkedAccountRecordIds.length != accountRecords.length} onClick={() => {
+              if (checkedAccountRecordIds.length == accountRecords.length) {
+                setCheckedAccountRecordIds([]);
+              } else {
+                setCheckedAccountRecordIds(
+                  accountRecords.map(accountRecord => accountRecord.id)
+                )
+              }
+            }} />
+          <Text>勾选所有</Text><Divider type="vertical" />
+          <Button disabled={checkedAccountRecords.length == 0} onClick={() => {
+            setSelectedAccountRecords(checkedAccountRecords);
+            setOpenBatchWithdrawModal(true);
+          }}>
+            批量提现
+          </Button>
+        </Col>
+      </Row>
       {
-        accountRecordZERO && (pagination && pagination.current == 1) && !queryAccountRecordId && lockType == LockContractType.Normal && <>
-          {RenderAccountRecord(accountRecordZERO)}
+        accountRecordZERO && (pagination && pagination.current == 1) && !queryAccountRecordId
+        && lockType == LockContractType.Normal && filterType == FilterType.All && <>
+          <Alert style={{ marginTop: "20px" }} type="info" message={<>
+            <Row>
+              <Col span={20}>
+                <Text strong>挖矿奖励:
+                  {accountRecordZERO?.amount.toFixed(6)} SAFE
+                </Text>
+                <br />
+                <Text type="secondary">
+                  通过创建超级节点以及主节点来参与 SAFE4 网络治理,对超级节点进行投票,获取挖矿奖励.您可以随时从锁仓账户中提现当前累计的奖励.
+                </Text>
+              </Col>
+              <Col span={4}>
+                <Button disabled={!accountRecordZERO.amount.greaterThan(ZERO)} type="primary" style={{ float: "right", marginTop: "5px" }}
+                  onClick={() => {
+                    setSelectedAccountRecord(accountRecordZERO);
+                    setOpenWithdrawModal(true);
+                  }}>
+                  提现
+                </Button>
+              </Col>
+            </Row>
+          </>}></Alert>
         </>
       }
+
       <List
         dataSource={accountRecords}
         renderItem={RenderAccountRecord}
         pagination={pagination}
         loading={loading}
-        grid={lockType == LockContractType.Normal ? { gutter: 16, column: 1 } : { gutter: 16, column: 4 }}
+        grid={lockType == LockContractType.Normal ? { gutter: 16, column: 4 } : { gutter: 16, column: 4 }}
       />
-    </Card>
-    <WalletWithdrawModal selectedAccountRecord={selectedAccountRecord}
-      openWithdrawModal={openWithdrawModal} setOpenWithdrawModal={setOpenWithdrawModal} />
+    </Card >
+
     <AddLockModal selectedAccountRecord={selectedAccountRecord}
-      openAddModal={openAddModal} setOpenAddModal={setOpenAddModal}
-    />
+      openAddModal={openAddModal} setOpenAddModal={setOpenAddModal} />
+
+    {
+      accountManagerContract && selectedAccountRecord &&
+      <WalletWithdrawModal selectedAccountRecord={selectedAccountRecord} accountManagerContract={accountManagerContract}
+        openWithdrawModal={openWithdrawModal} setOpenWithdrawModal={setOpenWithdrawModal} />
+    }
+    {
+      accountManagerContract && selectedAccountRecords &&
+      <BatchWithdrawModal accountRecords={selectedAccountRecords} accountManagerContract={accountManagerContract}
+        openBatchWithdrawModal={openBatchWithdrawModal} setOpenBatchWithdrawModal={setOpenBatchWithdrawModal} />
+    }
   </>
-
-
 
 }

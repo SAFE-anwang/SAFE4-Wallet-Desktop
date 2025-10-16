@@ -34,7 +34,7 @@ export default ({
   return <>
     <Modal footer={null} destroyOnClose title={t("wallet_locked_addLockDay")} style={{ height: "300px" }} open={openAddModal} onCancel={cancel}>
       {
-        step == STEP_INPUT && selectedAccountRecord && <>
+       selectedAccountRecord && <>
           <AddLockModalInput selectedAccountRecord={selectedAccountRecord}
             close={cancel} setTxHash={setTxHash} />
         </>

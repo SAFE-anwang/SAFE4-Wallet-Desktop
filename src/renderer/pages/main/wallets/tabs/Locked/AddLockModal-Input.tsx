@@ -25,7 +25,6 @@ export default ({
   selectedAccountRecord: AccountRecord,
   close: () => void,
   setTxHash: (txHash: string) => void
-
 }) => {
 
   const { t } = useTranslation();
@@ -44,7 +43,6 @@ export default ({
   }, [recordUseInfo])
   const [addLockDay, setAddLockDay] = useState<string>(isMemberOfNode ? "360" : "");
   const [addLockDayError, setAddLockDayError] = useState<string>();
-
 
   const contractAddress = selectedAccountRecord.contractAddress;
   const _accountManaggerContract = useAccountManagerContract();
