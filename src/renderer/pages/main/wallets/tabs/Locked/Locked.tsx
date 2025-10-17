@@ -242,7 +242,7 @@ export default () => {
 
   const options: CheckboxGroupProps<string>['options'] = [
     { label: '全部', value: FilterType.All },
-    { label: '仅显示已解锁', value: FilterType.Available },
+    { label: '仅显示可提现', value: FilterType.Available },
   ];
 
   const [openBatchWithdrawModal, setOpenBatchWithdrawModal] = useState<boolean>(false);

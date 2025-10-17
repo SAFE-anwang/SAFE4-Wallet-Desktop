@@ -15,6 +15,7 @@ export interface Safe3QueryResult {
 
   lockedNum?: number,
   availableInfo?: AvailableSafe3Info,
+  petty?: AvailableSafe3Info,
   specialInfo?: SpecialSafe3Info,
 
   lockedAmount?: CurrencyAmount,
@@ -30,6 +31,7 @@ export interface Safe3QueryResult {
 export interface Safe3RedeemStatistic {
   addressCount: number,
   totalAvailable: CurrencyAmount,
+  totalPetty: CurrencyAmount,
   totalLocked: CurrencyAmount,
   totalMasternodes: number
 }
@@ -62,6 +64,7 @@ export default ({
       address: string,
 
       availableInfo?: AvailableSafe3Info,
+      petty?: AvailableSafe3Info,
       specialInfo?: SpecialSafe3Info,
       lockedNum?: number,
 
@@ -106,6 +109,11 @@ export default ({
                 functionName: "getAvailableInfo",
                 params: [address]
               };
+              const getPettyInfoCall: CallMulticallAggregateContractCall = {
+                contract: safe3Contract,
+                functionName: "getPettyInfo",
+                params: [address]
+              };
               const getLockedNumCall: CallMulticallAggregateContractCall = {
                 contract: safe3Contract,
                 functionName: "getLockedNum",
@@ -116,17 +124,19 @@ export default ({
                 functionName: "getSpecialInfo",
                 params: [address]
               };
-              calls.push(getAvailableInfoCall, getLockedNumCall, getSpecialInfoCall);
+              calls.push(getAvailableInfoCall, getPettyInfoCall, getLockedNumCall, getSpecialInfoCall);
               _addressFirstQueryMap[address] = {
                 address,
               }
             });
           CallMulticallAggregate(multicallContract, calls, () => {
-            for (let i = 0; i < calls.length / 3; i++) {
-              const getAvailableInfoCall = calls[i * 3];
-              const getLockedNumCall = calls[i * 3 + 1];
-              const getSpecialInfoCall = calls[i * 3 + 2];
+            for (let i = 0; i < calls.length / 4; i++) {
+              const getAvailableInfoCall = calls[i * 4];
+              const getPettyInfoCall = calls[i * 4 + 1];
+              const getLockedNumCall = calls[i * 4 + 2];
+              const getSpecialInfoCall = calls[i * 4 + 3];
               const availableInfo = formatAvailableSafe3Info(getAvailableInfoCall.result);
+              const petty = formatAvailableSafe3Info(getPettyInfoCall.result);
               const lockedNum = getLockedNumCall.result.toNumber();
               const specialInfo = formatSpecialSafe3Info(getSpecialInfoCall.result);
               const address = getAvailableInfoCall.params[0];
@@ -134,7 +144,8 @@ export default ({
                 ..._addressFirstQueryMap[address],
                 lockedNum,
                 specialInfo,
-                availableInfo
+                availableInfo,
+                petty
               }
             }
             setAddressFirstQueryMap(_addressFirstQueryMap);
@@ -177,7 +188,7 @@ export default ({
         setAddressLockedQueryMap(_addressLockedQueryMap);
       } else {
         Object.keys(addressFirstQueryMap).forEach(address => {
-          const { lockedNum, locked, availableInfo, specialInfo, mnLocked, lockedRedeemHeight } = addressFirstQueryMap[address];
+          const { lockedNum, locked, availableInfo, petty, specialInfo, mnLocked, lockedRedeemHeight } = addressFirstQueryMap[address];
           if (lockedNum == 0) {
             addressFirstQueryMap[address].lockedAmount = ZERO;
           } else if (locked) {
@@ -216,6 +227,7 @@ export default ({
             address,
             lockedNum,
             availableInfo,
+            petty,
             specialInfo,
             mnLocked,
             lockedRedeemHeight,
@@ -343,26 +355,34 @@ export default ({
   const { hasAssetList, needRedeemList, statistic, percent } = useMemo(() => {
     // 过滤有资产的数据需要进行显示;
     const hasAssetList = Object.keys(addressResultMap).filter(address => {
-      const { availableInfo, lockedAmount, mnLocked } = addressResultMap[address];
+      const { availableInfo, lockedAmount, mnLocked, petty } = addressResultMap[address];
       const hasAvailable = availableInfo?.amount.greaterThan(ZERO)
+      const hasPetty = petty?.amount.greaterThan(ZERO)
       const hasLocked = lockedAmount?.greaterThan(ZERO)
       const hasMasternode = mnLocked
-      return hasAvailable || hasLocked || hasMasternode;
+      return hasAvailable || hasLocked || hasMasternode || hasPetty;
     }).map(address => addressResultMap[address]);
 
     const needRedeemList = hasAssetList.filter(result => {
-      const { availableInfo, mnLocked, unredeemCount } = result;
+      const { availableInfo, mnLocked, unredeemCount, petty } = result;
       const needRedeemAvailable = availableInfo?.amount.greaterThan(ZERO)
         && availableInfo.redeemHeight == 0;
       let needRedeemLocked = unredeemCount && unredeemCount > 0;
       const needRedeemMasternode = mnLocked
         && mnLocked.redeemHeight == 0;
-      return needRedeemAvailable || needRedeemLocked || needRedeemMasternode;
+      const needRedeemPetty = petty?.amount.greaterThan(ZERO)
+        && petty.redeemHeight == 0;
+      return needRedeemAvailable || needRedeemLocked || needRedeemMasternode || needRedeemPetty;
     });
 
     const needRedeemTotalAvailableAmount = needRedeemList
       .filter((result) => { return result.availableInfo?.redeemHeight == 0 })
       .map(result => result.availableInfo?.amount)
+      .reduce((total: CurrencyAmount, current: CurrencyAmount | undefined) => { return total.add(current ?? ZERO) }, ZERO);
+
+    const needRedeemTotalPettyAmount = needRedeemList
+      .filter((result) => { return result.petty?.redeemHeight == 0 })
+      .map(result => result.petty?.amount)
       .reduce((total: CurrencyAmount, current: CurrencyAmount | undefined) => { return total.add(current ?? ZERO) }, ZERO);
 
     const needRedeemTotalLockedAmount = needRedeemList
@@ -382,7 +402,7 @@ export default ({
     return {
       statistic: {
         needRedeemAddressCount: needRedeemList.length,
-        needRedeemTotalAvailableAmount, needRedeemTotalLockedAmount, needRedeemMasternodeCounts,
+        needRedeemTotalAvailableAmount, needRedeemTotalLockedAmount, needRedeemMasternodeCounts, needRedeemTotalPettyAmount
       },
       percent: {
         value: Math.floor((Object.keys(addressResultMap).length / safe3AddressArr.length) * 100)
@@ -398,7 +418,8 @@ export default ({
       addressCount: needRedeemList.length,
       totalAvailable: statistic.needRedeemTotalAvailableAmount,
       totalLocked: statistic.needRedeemTotalLockedAmount,
-      totalMasternodes: statistic.needRedeemMasternodeCounts
+      totalMasternodes: statistic.needRedeemMasternodeCounts,
+      totalPetty: statistic.needRedeemTotalPettyAmount
     });
   }
 
@@ -435,7 +456,7 @@ export default ({
           }
         </>
       },
-      width: "20%"
+      width: "15%"
     },
     {
       title: t("wallet_redeems_batch_col_locked"),
@@ -509,7 +530,7 @@ export default ({
           }
         </>
       },
-      width: "20%"
+      width: "15%"
     },
     {
       title: t("wallet_redeems_batch_col_masternode"),
@@ -535,7 +556,33 @@ export default ({
           }
         </>
       },
-      width: "20%"
+      width: "15%"
+    },
+    {
+      title: t("wallet_redeems_batch_col_petty"),
+      dataIndex: 'address',
+      key: 'address0',
+      render: (address) => {
+        const petty = addressResultMap[address]?.petty;
+        const needRedeemPetty = petty?.amount.greaterThan(ZERO) && petty.redeemHeight == 0;
+        return <>
+          {
+            !needRedeemPetty && <>
+              <Text type="secondary" delete>
+                {petty?.amount.toExact()} SAFE
+              </Text>
+            </>
+          }
+          {
+            needRedeemPetty && <>
+              <Text strong>
+                {petty?.amount.toExact()} SAFE
+              </Text>
+            </>
+          }
+        </>
+      },
+      width: "15%"
     },
   ];
 
@@ -561,14 +608,17 @@ export default ({
           </Col>
         </Row>
         <Row style={{ marginTop: "10px" }}>
-          <Col span={8}>
+          <Col span={6}>
             <Statistic value={statistic.needRedeemTotalAvailableAmount.toFixed(2)} title={t("wallet_redeems_batch_totalwaitavailable")} />
           </Col>
-          <Col span={8}>
+          <Col span={6}>
             <Statistic value={statistic.needRedeemTotalLockedAmount.toFixed(2)} title={t("wallet_redeems_batch_totalwaitlocked")} />
           </Col>
-          <Col span={8}>
+          <Col span={6}>
             <Statistic value={statistic.needRedeemMasternodeCounts} title={t("wallet_redeems_batch_totalwaitmasternode")} />
+          </Col>
+          <Col span={6}>
+            <Statistic value={statistic.needRedeemTotalPettyAmount.toFixed(2)} title={t("wallet_redeems_batch_totalwaitpetty")} />
           </Col>
         </Row>
       </Col>

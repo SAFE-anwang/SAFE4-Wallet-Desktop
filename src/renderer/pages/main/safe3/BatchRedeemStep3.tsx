@@ -13,6 +13,8 @@ import { useTransactionAdder } from "../../../state/transactions/hooks";
 import { useTranslation } from "react-i18next";
 import { useWeb3React } from "@web3-react/core";
 import EstimateTx from "../../../utils/EstimateTx";
+import { EmptyContract } from "../../../constants/SystemContracts";
+import { ZERO } from "../../../utils/CurrentAmountUtils";
 
 const { Text } = Typography;
 
@@ -46,7 +48,8 @@ export default ({
   const [redeemTxHashs, setRedeemTxHashs] = useState<{
     avaiables: TxExecuteStatus[],
     lockeds: TxExecuteStatus[],
-    masternodes: TxExecuteStatus[]
+    masternodes: TxExecuteStatus[],
+    petties: TxExecuteStatus[]
   }>();
   const [redeeming, setRedeeming] = useState<boolean>(false);
   const [finished, setFinished] = useState<boolean>(false);
@@ -95,12 +98,27 @@ export default ({
       let _redeemTxHashs = redeemTxHashs ?? {
         avaiables: [],
         lockeds: [],
-        masternodes: []
+        masternodes: [],
+        petties: []
       };
       const BatchMax = 20;
       for (let i = 0; i < publicKeyArr.length; i += BatchMax) {
         const slicePublickKeyArr = publicKeyArr.slice(i, i + BatchMax);
         const sliceSignMsgKArr = signMsgArr.slice(i, i + BatchMax);
+        const totalUnredeemCount = slicePublickKeyArr
+          .map(publicKeyArr => publicKeyAddressMap[ethers.utils.hexlify(publicKeyArr)])
+          .map(address => safe3QueryResultMap[address])
+          .reduce((total, safe3QueryResult) => {
+            if (safe3QueryResult.availableInfo
+              && safe3QueryResult.availableInfo.amount.greaterThan(ZERO)
+              && safe3QueryResult.availableInfo.safe4Addr == EmptyContract.EMPTY) {
+              return total + 1;
+            }
+            return total;
+          }, 0);
+        if (totalUnredeemCount == 0) {
+          continue;
+        }
         try {
           const data = safe3Contract.interface.encodeFunctionData("batchRedeemAvailable", [
             slicePublickKeyArr,
@@ -161,6 +179,7 @@ export default ({
           .map(publicKeyArr => publicKeyAddressMap[ethers.utils.hexlify(publicKeyArr)])
           .map(address => safe3QueryResultMap[address])
           .reduce((total, safe3QueryResult) => {
+            console.log("safe3QueryResult ..", safe3QueryResult)
             if (safe3QueryResult.unredeemCount) {
               return total + safe3QueryResult.unredeemCount;
             }
@@ -227,8 +246,21 @@ export default ({
       for (let i = 0; i < publicKeyArr.length; i += BatchMax) {
         const slicePublickKeyArr = publicKeyArr.slice(i, i + BatchMax);
         const sliceSignMsgKArr = signMsgArr.slice(i, i + BatchMax);
+        const totalUnredeemCount = slicePublickKeyArr
+          .map(publicKeyArr => publicKeyAddressMap[ethers.utils.hexlify(publicKeyArr)])
+          .map(address => safe3QueryResultMap[address])
+          .reduce((total, safe3QueryResult) => {
+            if (safe3QueryResult.specialInfo
+              && safe3QueryResult.specialInfo.amount.greaterThan(ZERO)
+              && safe3QueryResult.specialInfo.safe4Addr == EmptyContract.EMPTY) {
+              return total + 1;
+            }
+            return total;
+          }, 0);
+        if (totalUnredeemCount == 0) {
+          continue;
+        }
         try {
-
           const data = safe3Contract.interface.encodeFunctionData("batchRedeemMasterNode", [
             slicePublickKeyArr,
             sliceSignMsgKArr,
@@ -283,6 +315,77 @@ export default ({
           return;
         }
       }
+
+      for (let i = 0; i < publicKeyArr.length; i += BatchMax) {
+        const slicePublickKeyArr = publicKeyArr.slice(i, i + BatchMax);
+        const sliceSignMsgKArr = signMsgArr.slice(i, i + BatchMax);
+        const totalUnredeemCount = slicePublickKeyArr
+          .map(publicKeyArr => publicKeyAddressMap[ethers.utils.hexlify(publicKeyArr)])
+          .map(address => safe3QueryResultMap[address])
+          .reduce((total, safe3QueryResult) => {
+            if (safe3QueryResult.petty
+              && safe3QueryResult.petty.amount.greaterThan(ZERO)
+              && safe3QueryResult.petty.safe4Addr == EmptyContract.EMPTY) {
+              return total + 1;
+            }
+            return total;
+          }, 0);
+        if (totalUnredeemCount == 0) {
+          continue;
+        }
+        try {
+          const data = safe3Contract.interface.encodeFunctionData("batchRedeemPetty", [
+            slicePublickKeyArr,
+            sliceSignMsgKArr,
+            safe4TargetAddress
+          ]);
+          let tx: ethers.providers.TransactionRequest = {
+            to: safe3Contract.address,
+            data,
+            chainId
+          };
+          tx = await EstimateTx(activeAccount, chainId, tx, provider);
+          const { signedTx, error } = await window.electron.wallet.signTransaction(
+            activeAccount,
+            tx
+          );
+          if (error) {
+            _redeemTxHashs.avaiables.push({
+              status: 0,
+              error: error
+            })
+            setRedeemTxHashs({ ..._redeemTxHashs })
+            console.log("执行迁移小额补偿,Error:", error);
+          }
+          if (signedTx) {
+            const response = await provider.sendTransaction(signedTx);
+            _redeemTxHashs.petties.push({
+              status: 1,
+              txHash: response.hash
+            })
+            setRedeemTxHashs({ ..._redeemTxHashs });
+            addTransaction({ to: safe3Contract.address }, response, {
+              call: {
+                from: activeAccount,
+                to: safe3Contract.address,
+                input: response.data,
+                value: "0"
+              }
+            });
+            console.log("执行迁移小额补偿Hash:", response.hash);
+          }
+        } catch (error: any) {
+          _redeemTxHashs.petties.push({
+            status: 0,
+            error: error
+          })
+          setRedeemTxHashs({ ..._redeemTxHashs })
+          console.log("error", error)
+          console.log("执行迁移小额补偿,Error:", error.reason);
+          return;
+        }
+      }
+
       setRedeeming(false);
       setFinished(true);
     }
@@ -290,17 +393,20 @@ export default ({
 
   return <>
     <Row style={{ marginTop: "20px" }}>
-      <Col span={6}>
+      <Col span={4}>
         <Statistic value={safe3RedeemStatistic.addressCount} title={t("wallet_redeems_batch_totalwaitaddrcount")} />
       </Col>
-      <Col span={6}>
+      <Col span={4}>
         <Statistic value={safe3RedeemStatistic.totalAvailable.toFixed(2)} title={t("wallet_redeems_batch_totalwaitavailable")} />
       </Col>
-      <Col span={6}>
+      <Col span={4}>
         <Statistic value={safe3RedeemStatistic.totalLocked.toFixed(2)} title={t("wallet_redeems_batch_totalwaitlocked")} />
       </Col>
-      <Col span={6}>
+      <Col span={4}>
         <Statistic value={safe3RedeemStatistic.totalMasternodes} title={t("wallet_redeems_batch_totalwaitmasternode")} />
+      </Col>
+      <Col span={4}>
+        <Statistic value={safe3RedeemStatistic.totalPetty.toFixed(2)} title={t("wallet_redeems_batch_totalwaitpetty")} />
       </Col>
     </Row>
     <Divider />
@@ -435,6 +541,32 @@ export default ({
                       <Text strong type="danger">
                         <CloseCircleTwoTone twoToneColor="red" style={{ marginRight: "5px" }} />
                         {masternode.error.reason}
+                      </Text> <br />
+                    </Col>
+                  </>
+                }
+              </Row>
+            })
+          }
+
+          {
+            redeemTxHashs.petties && redeemTxHashs.petties.map(petty => {
+              return <Row key={"masternode" + redeemTxHashs.petties.indexOf(petty)}>
+                {
+                  petty.status == 1 && <>
+                    <Col span={24}>
+                      <Text type="secondary">{t("wallet_redeems_petty_txhash")}</Text><br />
+                      <Text strong>{petty.txHash}</Text> <br />
+                    </Col>
+                  </>
+                }
+                {
+                  petty.status == 0 && <>
+                    <Col span={24}>
+                      <Text type="secondary">{t("wallet_redeems_petty_error")}</Text><br />
+                      <Text strong type="danger">
+                        <CloseCircleTwoTone twoToneColor="red" style={{ marginRight: "5px" }} />
+                        {petty.error.reason}
                       </Text> <br />
                     </Col>
                   </>

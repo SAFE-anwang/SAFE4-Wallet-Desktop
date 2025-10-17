@@ -14,6 +14,7 @@ const LockedTxLimit = 10;
 export interface Safe3Asset {
   safe3Address: string
   availableSafe3Info: AvailableSafe3Info,
+  pettyInfo?: AvailableSafe3Info,
   locked: {
     lockedNum: number,
     lockedAmount: CurrencyAmount,
@@ -67,11 +68,15 @@ export default ({
 
   const loadSafe3Asset = useCallback(async (address: string, callback: (safe3Asset: Safe3Asset) => void) => {
     if (safe3Contract && masternodeStorageContract && multicallContract) {
+
+      // 查询地址的小额补偿信息
+      const pettyInfo = formatAvailableSafe3Info(await safe3Contract.callStatic.getPettyInfo(address));
       // 查询地址的可用资产信息
       const availableSafe3Info = formatAvailableSafe3Info(await safe3Contract.callStatic.getAvailableInfo(address));
       const _safe3Asset: Safe3Asset = {
         safe3Address: address,
         availableSafe3Info,
+        pettyInfo,
         locked: {
           lockedNum: 0,
           lockedAmount: ZERO,
@@ -255,6 +260,15 @@ export default ({
                 </Text>
               </>
             }
+            <Divider />
+            <Col span={24} style={{ marginTop: "5px" }}>
+              <Text strong type="secondary">小额补偿</Text><br />
+            </Col>
+            <Col span={24}>
+              <Text strong delete={
+                safe3AddressAsset && safe3AddressAsset.pettyInfo && safe3AddressAsset.pettyInfo.redeemHeight > 0
+              }>{safe3AddressAsset?.pettyInfo?.amount.toFixed(2)} SAFE</Text><br />
+            </Col>
           </Spin>
         </>
       }
