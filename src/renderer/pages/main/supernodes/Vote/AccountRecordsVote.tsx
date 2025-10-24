@@ -1,28 +1,20 @@
-import { Typography, Row, Col, Button, Card, Checkbox, CheckboxProps, Divider, Alert, Pagination, Spin } from 'antd';
+import { Typography, Row, Col, Button, Card, Checkbox, CheckboxProps, Divider, Alert, Pagination, Spin, List } from 'antd';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { CheckboxValueType } from 'antd/es/checkbox/Group';
-import type { GetProp } from 'antd';
-import { useActiveAccountAccountRecords, useWalletsActiveAccount } from '../../../../state/wallets/hooks';
-import { EmptyContract } from '../../../../constants/SystemContracts';
-import { useSelector } from 'react-redux';
-import { AppState } from '../../../../state';
-import { useAccountManagerContract, useMulticallContract, useSupernodeStorageContract } from '../../../../hooks/useContracts';
+import { useWalletsActiveAccount } from '../../../../state/wallets/hooks';
 import { SupernodeInfo, formatSupernodeInfo } from '../../../../structs/Supernode';
 import VoteModalConfirm from './VoteModal-Confirm';
 import { AccountRecord, formatAccountRecord, formatRecordUseInfo } from '../../../../structs/AccountManager';
-import { LeftOutlined, LockOutlined } from '@ant-design/icons';
-import { useNavigate } from 'react-router-dom';
-import Supernode from '../Supernode';
 import { CurrencyAmount } from '@uniswap/sdk';
 import { ethers } from 'ethers';
-import { fetchSuperNodeAddresses } from '../../../../services/supernode';
-import type { TabsProps } from 'antd';
-import { useBlockNumber } from '../../../../state/application/hooks';
+import { useBlockNumber, useTimestamp } from '../../../../state/application/hooks';
 import useAddrNodeInfo from '../../../../hooks/useAddrIsNode';
 import { useTranslation } from 'react-i18next';
+import useAccountRecords from '../../../../hooks/useAccountRecords';
+import AccountRecordRender, { AccountRecordRenderType } from '../../wallets/tabs/Locked/AccountRecordRender';
+import { EmptyContract } from '../../../../constants/SystemContracts';
 
 const { Text } = Typography;
-const AccountRecords_Page_Size = 24;
+const ONE = CurrencyAmount.ether(ethers.utils.parseEther("1").toBigInt());
 
 export default ({
   supernodeInfo, supernodeAddresses
@@ -31,167 +23,121 @@ export default ({
   supernodeAddresses: string[]
 }) => {
   const { t } = useTranslation();
-  const accountManagerContract = useAccountManagerContract();
   const activeAccount = useWalletsActiveAccount();
   const blockNumber = useBlockNumber();
-  const multicallContract = useMulticallContract();
+  const timestamp = useTimestamp();
   const activeAccountNodeInfo = useAddrNodeInfo(activeAccount);
-
   const [pagination, setPagination] = useState<{
     total: number | undefined
     pageSize: number | undefined,
     current: number | undefined,
-    onChange?: (page: number) => void
-  }>();
-  const initilizePageQuery = useCallback(() => {
-    if (accountManagerContract) {
-      // function getTotalAmount(address _addr) external view returns (uint, uint);
-      accountManagerContract.callStatic.getTotalAmount(activeAccount)
-        .then((data: any) => {
-          const pagination = {
-            total: data[1].toNumber(),
-            pageSize: AccountRecords_Page_Size,
-            position: "bottom",
-            current: 1,
-            onChange: (page: number) => {
-              pagination.current = page;
-              setPagination({
-                ...pagination
-              })
+    pageSizeOptions: number[],
+    onChange?: (page: number, pageSize: number) => void
+  }>({
+    total: undefined,
+    pageSize: 20,
+    current: 1,
+    pageSizeOptions: [20, 60, 100],
+    onChange: (page, pageSize) => {
+      setCheckedAccountRecords([]);
+      setPagination(prev => {
+        return {
+          ...prev,
+          current: page,
+          pageSize
+        };
+      })
+    }
+  });
+
+  const [currentPageAccountRecords, setCurrentPageAccountRecords] = useState<AccountRecord[]>([]);
+  const [checkedAccountRecords, setCheckedAccountRecords] = useState<AccountRecord[]>([]);
+  const checkedAccountRecordIds = checkedAccountRecords.map(ar => ar.id);
+  const { result, Render } = useAccountRecords();
+  const [activeAccountAccountRecords, setActiveAccountRecords] = useState<AccountRecord[] | undefined>(undefined);
+  const [openVoteModal, setOpenVoteModal] = useState<boolean>(false);
+
+  // 从 useAccountRecords 钩子中加载锁仓数据.
+  useEffect(() => {
+    if (result.activeAccount != activeAccount) {
+      setActiveAccountRecords(undefined);
+      setPagination({
+        ...pagination,
+        current: 1
+      })
+    } else {
+      const accountRecords = result.accountRecords;
+      if (accountRecords) {
+        const _activeAccountRecords = accountRecords.filter((accountRecord) => {
+          if (!accountRecord.recordUseInfo) { return false };
+          const noVote = accountRecord.recordUseInfo.votedAddr == EmptyContract.EMPTY;
+          const greaterEqThanOne = !ONE.greaterThan(accountRecord.amount);
+          const noJoinSN = !supernodeAddresses.includes(accountRecord.recordUseInfo?.frozenAddr);
+          return noVote && greaterEqThanOne && noJoinSN;
+        }).sort((ar0, ar1) => {
+          return ar1.startHeight - ar0.startHeight;
+        })
+        setActiveAccountRecords(prev => {
+          return prev == undefined ? _activeAccountRecords :
+            _activeAccountRecords.length >= prev.length ? _activeAccountRecords : prev;
+        });
+      }
+    }
+  }, [result, activeAccount, supernodeAddresses]);
+
+  // 切片当前页的数据...
+  useEffect(() => {
+    const { current, pageSize } = pagination;
+    if (activeAccountAccountRecords && current && pageSize) {
+      const slicePageAccountRecords = activeAccountAccountRecords.slice(
+        (current - 1) * pageSize, (current - 1) * pageSize + pageSize
+      );
+      setCurrentPageAccountRecords(slicePageAccountRecords);
+    }
+  }, [pagination, activeAccountAccountRecords]);
+
+
+  const RenderAccountRecord = useCallback((accountRecord: AccountRecord) => {
+    return <List.Item>
+      {
+        AccountRecordRender({
+          accountRecord, renderType: AccountRecordRenderType.Small, blockNumber, timestamp, t, supernodeAddresses,
+          checkedAccountRecordIds,
+          actions: {
+            checked: (accountRecord) => {
+              if (checkedAccountRecordIds.includes(accountRecord.id)) {
+                setCheckedAccountRecords(
+                  [...checkedAccountRecords].filter(checkedAccountRecord => checkedAccountRecord.id !== accountRecord.id)
+                )
+              } else {
+                const _checked = [...checkedAccountRecords];
+                _checked.push(accountRecord);
+                setCheckedAccountRecords(_checked)
+              }
             }
           }
-          setPagination({
-            ...pagination,
-          })
         })
-    }
-  }, [accountManagerContract]);
-  useEffect(() => {
-    if (pagination && pagination.current != 1) {
-      // 如果已经刷新过数据且不是第一页的情况下,不自动刷新数据.
-      return;
-    }
-    initilizePageQuery();
-  }, [blockNumber]);
-
-  useEffect(() => {
-    initilizePageQuery();
-  }, [accountManagerContract, activeAccount]);
-  useEffect(() => {
-    if (pagination && accountManagerContract && multicallContract) {
-      const { pageSize, current, total } = pagination;
-      if (current && pageSize && total && total > 0) {
-        //////////////////// 逆序 ////////////////////////
-        let position = total - (pageSize * current);
-        let offset = pageSize;
-        if (position < 0) {
-          offset = pageSize + position;
-          position = 0;
-        }
-        /////////////////////////////////////////////////
-        // function getTotalIDs(address _addr, uint _start, uint _count) external view returns (uint[] memory);
-        accountManagerContract.getTotalIDs(activeAccount, position, offset)
-          .then((accountRecordIds: any) => {
-            multicallGetAccountRecordByIds(accountRecordIds);
-          })
-      } else {
-        setActiveAccountRecords([]);
       }
-    }
-  }, [pagination]);
-  const multicallGetAccountRecordByIds = useCallback((_accountRecordIds: any) => {
-    if (multicallContract && accountManagerContract) {
-      const accountRecordIds = _accountRecordIds.map((_id: any) => _id.toNumber())
-        .filter((id: number) => id > 0)
-      // .sort((id0: number, id1: number) => id1 - id0)
-      const getRecordByIDFragment = accountManagerContract?.interface?.getFunction("getRecordByID");
-      const getRecordUseInfoFragment = accountManagerContract?.interface?.getFunction("getRecordUseInfo");
-      const getRecordByIDCalls = [];
-      const getRecordUseInfoCalls = [];
-      for (let i = 0; i < accountRecordIds.length; i++) {
-        getRecordByIDCalls.push([
-          accountManagerContract.address,
-          accountManagerContract?.interface.encodeFunctionData(getRecordByIDFragment, [accountRecordIds[i]])
-        ]);
-        getRecordUseInfoCalls.push([
-          accountManagerContract.address,
-          accountManagerContract?.interface.encodeFunctionData(getRecordUseInfoFragment, [accountRecordIds[i]])
-        ]);
-      }
-      const accountRecords: AccountRecord[] = [];
-      multicallContract.callStatic.aggregate(getRecordByIDCalls.concat(getRecordUseInfoCalls))
-        .then(data => {
-          const raws = data[1];
-          const half = raws.length / 2;
-          for (let i = half - 1; i >= 0; i--) {
-            const _accountRecord = accountManagerContract?.interface.decodeFunctionResult(getRecordByIDFragment, raws[i])[0];
-            const _recordUseInfo = accountManagerContract?.interface.decodeFunctionResult(getRecordUseInfoFragment, raws[half + i])[0];
-            const accountRecord = formatAccountRecord(_accountRecord);
-            accountRecord.recordUseInfo = formatRecordUseInfo(_recordUseInfo);
-            accountRecords.push(accountRecord);
-          }
-          setActiveAccountRecords(accountRecords);
-        })
-    }
-  }, [multicallContract, accountManagerContract, pagination]);
-
-  const [activeAccountAccountRecords, setActiveAccountRecords] = useState<AccountRecord[]>();
-
-  const ONE = CurrencyAmount.ether(ethers.utils.parseEther("1").toBigInt());
-  const {
-    optionsAllAccountRecords, votableAccountRecordIds
-  } = useMemo(() => {
-    if (activeAccountAccountRecords && activeAccountAccountRecords.length > 0) {
-      activeAccountAccountRecords.sort((ar1, ar2) => ar2.id - ar1.id)
-      const optionsAllAccountRecords = activeAccountAccountRecords.filter(accountRecord => accountRecord.recordUseInfo)
-        .map(accountRecord => {
-          // 已经投过的不能再投，另外如果已经关联到超级节点的，也不能再参与投票了.
-          const disabled = !(accountRecord.recordUseInfo?.votedAddr == EmptyContract.EMPTY)
-            || supernodeAddresses.indexOf(accountRecord.recordUseInfo?.frozenAddr) >= 0
-            || ONE.greaterThan(accountRecord.amount);
-          return {
-            label: <>
-              <div key={accountRecord.id} style={{ margin: "15px 15px" }}>
-                <Row>
-                  <Col>{t("wallet_locked_accountRecordLockId")}:</Col>
-                  <Col>{accountRecord.id}</Col>
-                </Row>
-                <Row style={{ fontSize: "12px" }}>{accountRecord.amount.toFixed(2)} SAFE</Row>
-              </div>
-            </>,
-            value: accountRecord.id,
-            disabled
-          }
-        });
-      const votableAccountRecordIds = optionsAllAccountRecords.filter(option => !option.disabled).map(option => option.value);
-      return {
-        optionsAllAccountRecords,
-        votableAccountRecordIds
-      }
-    }
-    return {
-      optionsAllAccountRecords: [],
-      votableAccountRecordIds: []
-    }
-  }, [activeAccountAccountRecords, supernodeAddresses]);
-  const [checkedAccountRecordIds, setCheckedAccountRecordIds] = useState<CheckboxValueType[]>([]);
-  const checkAll = votableAccountRecordIds.length === checkedAccountRecordIds.length;
-  const indeterminate = checkedAccountRecordIds.length > 0 && checkedAccountRecordIds.length < votableAccountRecordIds.length;
-  // 勾选全部
-  const onAccountRecordCheckAllChange: CheckboxProps['onChange'] = (e) => {
-    setCheckedAccountRecordIds(e.target.checked ? votableAccountRecordIds : []);
-  };
-  // 勾选单个记录时触发
-  const onAccountRecordCheckChange: GetProp<typeof Checkbox.Group, 'onChange'> = (checkedValues) => {
-    setCheckedAccountRecordIds(checkedValues);
-  };
-  const [openVoteModal, setOpenVoteModal] = useState<boolean>(false);
-  const [checkedAccountRecords, setCheckedAccountRecords] = useState<AccountRecord[]>([]);
+    </List.Item>
+  }, [blockNumber, timestamp, supernodeAddresses, checkedAccountRecordIds]);
 
   return <>
-    <Card title={t("wallet_supernodes_votes_locked_title")} style={{ width: "100%" }}>
+    <Card title={<>
+      {t("wallet_supernodes_votes_locked_title")}
+      <span style={{ float: "right" }}>{Render()}</span>
+    </>} style={{ width: "100%" }}>
       <>
-        <Checkbox indeterminate={indeterminate} checked={checkAll} onChange={onAccountRecordCheckAllChange}>
+        <Checkbox
+          checked={currentPageAccountRecords.length > 0 && currentPageAccountRecords.length == checkedAccountRecords.length}
+          indeterminate={checkedAccountRecords.length > 0 && checkedAccountRecords.length != currentPageAccountRecords.length}
+          onChange={(event) => {
+            const checkAll = event.target.checked;
+            if (checkAll) {
+              setCheckedAccountRecords([...currentPageAccountRecords]);
+            } else {
+              setCheckedAccountRecords([]);
+            }
+          }}>
           选择全部可用锁仓记录
         </Checkbox>
         <Alert style={{ marginTop: "20px" }} type='info' showIcon message={
@@ -202,20 +148,19 @@ export default ({
             <Text>3. {t("wallet_supernodes_votes_locked_tip2")} <Text strong>1 SAFE</Text></Text><br />
           </>
         } />
+        {JSON.stringify(checkedAccountRecordIds)}
         <Divider />
-        <Checkbox.Group
-          options={optionsAllAccountRecords}
-          onChange={onAccountRecordCheckChange}
-          value={checkedAccountRecordIds}
+        <List
+          dataSource={activeAccountAccountRecords}
+          renderItem={RenderAccountRecord}
+          pagination={pagination}
+          grid={{ gutter: 16, column: 5 }}
         />
-        <br />
-        <Pagination style={{ float: "right" }} {...pagination}></Pagination>
         <br />
         <Divider />
         <Spin spinning={activeAccountNodeInfo == undefined}>
-          <Button type='primary' disabled={activeAccountNodeInfo && (checkedAccountRecordIds.length == 0 || activeAccountNodeInfo.isSN)} onClick={() => {
+          <Button type='primary' disabled={activeAccountNodeInfo && (activeAccountNodeInfo.isSN)} onClick={() => {
             if (activeAccountAccountRecords) {
-              const checkedAccountRecords = activeAccountAccountRecords.filter(accountRecord => checkedAccountRecordIds.indexOf(accountRecord.id) >= 0);
               setOpenVoteModal(true)
               setCheckedAccountRecords(checkedAccountRecords);
             }
@@ -231,12 +176,10 @@ export default ({
         </Spin>
       </>
     </Card>
-
     {
       supernodeInfo && <VoteModalConfirm openVoteModal={openVoteModal} setOpenVoteModal={setOpenVoteModal}
         supernodeInfo={supernodeInfo} accountRecords={checkedAccountRecords} />
     }
-
   </>
 
 }

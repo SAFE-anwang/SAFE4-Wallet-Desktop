@@ -255,7 +255,7 @@ export default {
   wallet_supernodes_votes_safe_tip: "用于投票的SAFE将会在锁仓账户中创建一个新的锁仓记录",
   wallet_supernodes_votes_locked_title: "选择锁仓记录对超级节点进行投票",
   wallet_supernodes_votes_locked_tips: "必须同时满足如下条件的锁仓记录才可以进行投票",
-  wallet_supernodes_votes_locked_tip0: "未关联超级节点的锁仓记录",
+  wallet_supernodes_votes_locked_tip0: "未用于创建超级节点的锁仓记录",
   wallet_supernodes_votes_locked_tip1: "未投票的锁仓记录",
   wallet_supernodes_votes_locked_tip2: "锁仓数量大于",
   wallet_supernodes_votes_amount: "用于投票的 SAFE 数量",

@@ -11,6 +11,7 @@ const { Text } = Typography;
 export enum AccountRecordRenderType {
   Details = 1,
   Simple = 2,
+  Small = 3
 }
 
 export default ({
@@ -31,8 +32,8 @@ export default ({
   supernodeAddresses: string[],
   checkedAccountRecordIds?: number[]
   actions?: {
-    withdraw: (accountRecord: AccountRecord) => void,
-    addLockDay: (accountRecord: AccountRecord) => void,
+    withdraw?: (accountRecord: AccountRecord) => void,
+    addLockDay?: (accountRecord: AccountRecord) => void,
     checked?: (accountRecord: AccountRecord) => void
   }
 }) => {
@@ -150,7 +151,7 @@ export default ({
                   id != 0 && accountRecord?.contractAddress == SystemContract.AccountManager && <>
                     {
                       actions?.addLockDay && <Button size="small" icon={<ClockCircleOutlined />} title="追加锁仓" onClick={() => {
-                        actions.addLockDay(accountRecord);
+                        actions.addLockDay && actions.addLockDay(accountRecord);
                       }}>
                         {t("wallet_locked_addLockDay")}
                       </Button>
@@ -159,7 +160,7 @@ export default ({
                 }
                 {
                   actions?.withdraw && <Button title="提现" disabled={!couldWithdraw} size="small" type="primary" onClick={() => {
-                    actions.withdraw(accountRecord);
+                    actions.withdraw && actions.withdraw(accountRecord);
                   }}>{t("wallet_withdraw")}</Button>
                 }
               </Space>
@@ -222,8 +223,8 @@ export default ({
             <Divider style={{ margin: "4px 0" }} />
             <Text strong type="secondary">{t("wallet_locked_lockedAmount")}</Text>
             {
-              actions?.withdraw && <Button style={{ float: "right" }} title="提现" disabled={!couldWithdraw} size="small" type="primary" onClick={() => {
-                actions.withdraw(accountRecord);
+              actions && actions.withdraw && <Button style={{ float: "right" }} title="提现" disabled={!couldWithdraw} size="small" type="primary" onClick={() => {
+                actions.withdraw && actions.withdraw(accountRecord);
               }}>{t("wallet_withdraw")}</Button>
             }
             <br />
@@ -234,7 +235,7 @@ export default ({
               id != 0 && accountRecord?.contractAddress == SystemContract.AccountManager && <>
                 {
                   actions?.addLockDay && <Button style={{ float: "right" }} size="small" icon={<ClockCircleOutlined />} title="追加锁仓" onClick={() => {
-                    actions.addLockDay(accountRecord);
+                    actions.addLockDay && actions.addLockDay(accountRecord);
                   }}>
                     {t("wallet_locked_addLockDay")}
                   </Button>
@@ -246,6 +247,61 @@ export default ({
             {
               unlockDateTime && <Text strong style={{ float: "right", fontSize: "12px" }} type="secondary">[{unlockDateTime}]</Text>
             }
+          </Col>
+        </Row>
+      </Card>
+    }
+
+    {
+      renderType == AccountRecordRenderType.Small &&
+      <Card key={id} size="small" style={{}}>
+        <Row>
+          <Col span={24}>
+            <Text strong type="secondary">
+              {t("wallet_locked_accountRecordLockId")}:
+              {id}
+            </Text>
+            {
+              checkedAccountRecordIds != undefined && <>
+                <Checkbox checked={checkedAccountRecordIds.includes(accountRecord.id)} style={{ float: "right" }} onChange={() => {
+                  if (actions?.checked) {
+                    actions.checked(accountRecord);
+                  }
+                }} />
+              </>
+            }
+            <br />
+            {
+              locked && <LockOutlined />
+            }
+            <Text strong>{amount.toSignificant(4)} SAFE</Text>
+            <Space style={{ float: "right" }}>
+              {
+                frozenAddr != EmptyContract.EMPTY && supernodeAddresses &&
+                <Tooltip title={<>
+                  {
+                    supernodeAddresses.includes(frozenAddr) ?
+                      "用于建立超级节点"
+                      : "用于建立主节点"
+                  }
+                  : {frozenAddr}
+                </>}>
+                  {
+                    supernodeAddresses.includes(frozenAddr) ?
+                      <ClusterOutlined />
+                      : <ApartmentOutlined />
+                  }
+                </Tooltip>
+              }
+              {
+                votedAddr != EmptyContract.EMPTY &&
+                <Tooltip title={<>
+                  已投票
+                </>}>
+                  <ContainerOutlined />
+                </Tooltip>
+              }
+            </Space>
           </Col>
         </Row>
       </Card>
