@@ -1,7 +1,7 @@
 
 
-import { Button, Col, Divider, Input, Modal, Row, Typography, Space, Checkbox, Card } from "antd"
-import { Children, useCallback, useEffect, useMemo, useState } from "react";
+import { Button, Col, Divider, Input, Modal, Row, Typography, Space, Checkbox, Card, Alert } from "antd"
+import { useCallback, useEffect, useState } from "react";
 import { SupernodeInfo } from "../../../../structs/Supernode";
 import { AccountRecord } from "../../../../structs/AccountManager";
 import AddressView from "../../../components/AddressView";
@@ -17,8 +17,13 @@ import { useTranslation } from "react-i18next";
 import { useWeb3React } from "@web3-react/core";
 import { ethers } from "ethers";
 import EstimateTx from "../../../../utils/EstimateTx";
+import { TxExecuteStatus } from "../../safe3/Safe3";
+import { CheckCircleFilled, CloseCircleFilled, SyncOutlined } from "@ant-design/icons";
+import Safescan, { SafescanComponentType } from "../../../components/Safescan";
 
 const { Text, Link } = Typography;
+
+const Batch_Vote_AccountRecords_Limit = 20;
 
 export default ({
   openVoteModal, setOpenVoteModal,
@@ -34,16 +39,8 @@ export default ({
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const [sending, setSending] = useState<boolean>(false);
-  const [txHash, setTxHash] = useState<string>();
   const { provider, chainId } = useWeb3React();
-  const cancel = useCallback(() => {
-    setOpenVoteModal(false);
-    if (txHash) {
-      setTxHash(undefined);
-      dispatch(applicationUpdateWalletTab("history"));
-      navigate("/main/wallet");
-    }
-  }, [txHash]);
+
   const {
     render, setTransactionResponse, setErr
   } = useTransactionResponseRender();
@@ -70,49 +67,87 @@ export default ({
 
   const supernodeVoteContract = useSupernodeVoteContract(true);
   const activeAccount = useWalletsActiveAccount();
-  const doVoteSupernode = useCallback(async () => {
+  const [batchVoteTxns, setBatchVoteTxns] = useState<TxExecuteStatus[]>();
+  const Batch_Withdraw_Prepare_Txns = Math.ceil(accountRecords.length / Batch_Vote_AccountRecords_Limit);
+
+  const doBatchVoteSupernode = useCallback(async () => {
     if (supernodeVoteContract && provider && chainId) {
       setSending(true);
-      // function voteOrApproval(bool _isVote, address _dstAddr, uint[] memory _recordIDs) external;
-      const data = supernodeVoteContract.interface.encodeFunctionData("voteOrApproval", [
-        true, supernodeInfo.addr, accountRecordIds
-      ]);
-      let tx: ethers.providers.TransactionRequest = {
-        to: supernodeVoteContract.address,
-        data,
-        chainId
-      };
-      tx = await EstimateTx(activeAccount, chainId, tx, provider);
-      const { signedTx, error } = await window.electron.wallet.signTransaction(
-        activeAccount,
-        tx
-      );
-      if (signedTx) {
+      let batchVoteTxns: TxExecuteStatus[] = [];
+
+      for (let i = 0; i < Batch_Withdraw_Prepare_Txns; i++) {
+        const start = i * Batch_Vote_AccountRecords_Limit;
+        const ids = accountRecords.slice(
+          start, start + Batch_Vote_AccountRecords_Limit
+        ).map(accountRecord => accountRecord.id);
+        console.log("==> Vote.ids =>", ids);
+        let batch_withdraw_txn: TxExecuteStatus = {
+          status: 2
+        };
+        batchVoteTxns.push(batch_withdraw_txn)
+        setBatchVoteTxns([
+          ...batchVoteTxns
+        ]);
+        const data = supernodeVoteContract.interface.encodeFunctionData("voteOrApproval", [
+          true, supernodeInfo.addr, ids
+        ]);
+        let tx: ethers.providers.TransactionRequest = {
+          to: supernodeVoteContract.address,
+          data,
+          chainId
+        };
         try {
-          const response = await provider.sendTransaction(signedTx);
-          const { hash, data } = response;
-          setTransactionResponse(response);
-          addTransaction({ to: supernodeVoteContract.address }, response, {
-            call: {
-              from: activeAccount,
-              to: supernodeVoteContract.address,
-              input: data,
-              value: "0"
+          tx = await EstimateTx(activeAccount, chainId, tx, provider);
+          const { signedTx, error } = await window.electron.wallet.signTransaction(
+            activeAccount,
+            tx
+          );
+          if (signedTx) {
+            const response = await provider.sendTransaction(signedTx);
+            const { hash, data } = response;
+            addTransaction({ to: supernodeVoteContract.address }, response, {
+              call: {
+                from: activeAccount,
+                to: supernodeVoteContract.address,
+                input: data,
+                value: "0"
+              }
+            });
+            batchVoteTxns[i] = {
+              status: 1,
+              txHash: hash
             }
-          });
-          setTxHash(hash);
+          }
+          if (error) {
+            batchVoteTxns[i] = {
+              status: 0,
+              error
+            }
+          }
         } catch (err) {
-          setErr(err)
+          console.log("Catch Error ==>", err)
+          batchVoteTxns[i] = {
+            status: 0,
+            error: err
+          }
         } finally {
-          setSending(false);
+          setBatchVoteTxns([
+            ...batchVoteTxns
+          ])
         }
-      }
-      if (error) {
         setSending(false);
-        setErr(error)
       }
+
     }
   }, [accountRecordIds, supernodeInfo, supernodeVoteContract, activeAccount]);
+
+  const cancel = useCallback(() => {
+    setOpenVoteModal(false);
+    if (batchVoteTxns && batchVoteTxns?.length > 0) {
+      dispatch(applicationUpdateWalletTab("history"));
+      navigate("/main/wallet");
+    }
+  }, [batchVoteTxns]);
 
   return <>
     <Modal footer={null} destroyOnClose title={t("wallet_supernodes_votes")} width="600px" open={openVoteModal} onCancel={cancel}>
@@ -190,26 +225,77 @@ export default ({
           </Card>
         </Col>
       </Row>
+
+      {
+        batchVoteTxns && <Row>
+          <Divider />
+          <Col span={24}>
+            <Alert type="success" message={<>
+              {
+                batchVoteTxns.map(txn => {
+                  const { txHash, status, error } = txn;
+                  return <>
+                    <Row>
+                      <Col span={3}>
+                        <Text type="secondary" style={{ fontFamily: "monospace" }}>
+                          [
+                          <Text>
+                            {batchVoteTxns.indexOf(txn) + 1}
+                          </Text>/{Batch_Withdraw_Prepare_Txns}]
+                        </Text>
+                        <Text style={{ float: "right" }}>:</Text>
+                      </Col>
+
+                      <Col span={18} style={{ paddingLeft: "5px" }}>
+                        {status == 2 && <SyncOutlined spin />}
+                        {status == 1 && <CheckCircleFilled style={{ marginRight: "5px", color: "#0bc50b" }} />}
+                        {status == 0 && <CloseCircleFilled style={{ marginRight: "5px", color: "red" }} />}
+                        {
+                          txHash && <Text ellipsis style={{ width: "90%" }}>
+                            {txHash}
+                          </Text>
+                        }
+                        {
+                          error && <Text>
+                            {error.reason && JSON.stringify(error.reason)}
+                          </Text>
+                        }
+
+                      </Col>
+                      <Col span={3} style={{ textAlign: "right" }}>
+                        {
+                          txHash && <Safescan type={SafescanComponentType.Link} url={`/tx/${txHash}`} />
+                        }
+                      </Col>
+                    </Row>
+                  </>
+                })
+              }
+            </>} />
+          </Col>
+        </Row>
+      }
+
       <Divider></Divider>
       <Row style={{ width: "100%", textAlign: "right" }}>
         <Col span={24}>
-          {
-            !sending && !render && <Button onClick={() => {
-              doVoteSupernode();
-            }} disabled={sending} type="primary" style={{ float: "right" }}>
-              {t("wallet_send_status_broadcast")}
-            </Button>
-          }
-          {
-            sending && !render && <Button loading disabled type="primary" style={{ float: "right" }}>
-              {t("wallet_send_status_sending")}
-            </Button>
-          }
-          {
-            render && <Button onClick={cancel} type="primary" style={{ float: "right" }}>
-              {t("wallet_send_status_close")}
-            </Button>
-          }
+          <Button loading={sending} type="primary" onClick={() => {
+            if (!sending && !batchVoteTxns) {
+              doBatchVoteSupernode();
+            } else {
+              cancel();
+            }
+          }} style={{ float: "right" }}>
+            {
+              !sending && !batchVoteTxns && "广播交易"
+            }
+            {
+              sending && "正在发送"
+            }
+            {
+              !sending && batchVoteTxns && "关闭"
+            }
+          </Button>
         </Col>
       </Row>
 

@@ -1,5 +1,5 @@
 import { Typography, Row, Col, Button, Card, Checkbox, CheckboxProps, Divider, Alert, Pagination, Spin, List } from 'antd';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useWalletsActiveAccount } from '../../../../state/wallets/hooks';
 import { SupernodeInfo, formatSupernodeInfo } from '../../../../structs/Supernode';
 import VoteModalConfirm from './VoteModal-Confirm';
@@ -12,6 +12,7 @@ import { useTranslation } from 'react-i18next';
 import useAccountRecords from '../../../../hooks/useAccountRecords';
 import AccountRecordRender, { AccountRecordRenderType } from '../../wallets/tabs/Locked/AccountRecordRender';
 import { EmptyContract } from '../../../../constants/SystemContracts';
+import { ZERO } from '../../../../utils/CurrentAmountUtils';
 
 const { Text } = Typography;
 const ONE = CurrencyAmount.ether(ethers.utils.parseEther("1").toBigInt());
@@ -27,6 +28,12 @@ export default ({
   const blockNumber = useBlockNumber();
   const timestamp = useTimestamp();
   const activeAccountNodeInfo = useAddrNodeInfo(activeAccount);
+  const [currentPageAccountRecords, setCurrentPageAccountRecords] = useState<AccountRecord[]>([]);
+  const [checkedAccountRecords, setCheckedAccountRecords] = useState<AccountRecord[]>([]);
+  const checkedAccountRecordIds = checkedAccountRecords.map(ar => ar.id);
+  const { result, Render } = useAccountRecords();
+  const [activeAccountAccountRecords, setActiveAccountRecords] = useState<AccountRecord[] | undefined>(undefined);
+  const [openVoteModal, setOpenVoteModal] = useState<boolean>(false);
   const [pagination, setPagination] = useState<{
     total: number | undefined
     pageSize: number | undefined,
@@ -35,9 +42,9 @@ export default ({
     onChange?: (page: number, pageSize: number) => void
   }>({
     total: undefined,
-    pageSize: 20,
+    pageSize: 40,
     current: 1,
-    pageSizeOptions: [20, 60, 100],
+    pageSizeOptions: [40, 60, 100],
     onChange: (page, pageSize) => {
       setCheckedAccountRecords([]);
       setPagination(prev => {
@@ -50,13 +57,6 @@ export default ({
     }
   });
 
-  const [currentPageAccountRecords, setCurrentPageAccountRecords] = useState<AccountRecord[]>([]);
-  const [checkedAccountRecords, setCheckedAccountRecords] = useState<AccountRecord[]>([]);
-  const checkedAccountRecordIds = checkedAccountRecords.map(ar => ar.id);
-  const { result, Render } = useAccountRecords();
-  const [activeAccountAccountRecords, setActiveAccountRecords] = useState<AccountRecord[] | undefined>(undefined);
-  const [openVoteModal, setOpenVoteModal] = useState<boolean>(false);
-
   // 从 useAccountRecords 钩子中加载锁仓数据.
   useEffect(() => {
     if (result.activeAccount != activeAccount) {
@@ -64,22 +64,29 @@ export default ({
       setPagination({
         ...pagination,
         current: 1
-      })
+      });
+      setCheckedAccountRecords([]);
     } else {
       const accountRecords = result.accountRecords;
+      const loading = result.loading;
       if (accountRecords) {
         const _activeAccountRecords = accountRecords.filter((accountRecord) => {
           if (!accountRecord.recordUseInfo) { return false };
           const noVote = accountRecord.recordUseInfo.votedAddr == EmptyContract.EMPTY;
           const greaterEqThanOne = !ONE.greaterThan(accountRecord.amount);
           const noJoinSN = !supernodeAddresses.includes(accountRecord.recordUseInfo?.frozenAddr);
-          return noVote && greaterEqThanOne && noJoinSN;
+          return noVote
+            && greaterEqThanOne
+            && noJoinSN;
         }).sort((ar0, ar1) => {
           return ar1.startHeight - ar0.startHeight;
-        })
+        });
         setActiveAccountRecords(prev => {
-          return prev == undefined ? _activeAccountRecords :
-            _activeAccountRecords.length >= prev.length ? _activeAccountRecords : prev;
+          if (prev == undefined || (accountRecords != undefined && !loading)) {
+            console.log(prev != undefined ? "重置数据" : "加载数据");
+            return _activeAccountRecords;
+          }
+          return prev;
         });
       }
     }
@@ -93,9 +100,22 @@ export default ({
         (current - 1) * pageSize, (current - 1) * pageSize + pageSize
       );
       setCurrentPageAccountRecords(slicePageAccountRecords);
+      // 判断是否需要从勾选的ID中去除一些数据...
+      const currentIds = slicePageAccountRecords.map(accountRecord => accountRecord.id);
+      const removeIds: number[] = [];
+      checkedAccountRecordIds.forEach(checkedId => {
+        if (!currentIds.includes(checkedId)) {
+          removeIds.push(checkedId);
+        }
+      });
+      if (removeIds.length > 0) {
+        const newChecked = [...checkedAccountRecords.filter(accountRecord => !removeIds.includes(accountRecord.id))];
+        setCheckedAccountRecords(
+          newChecked
+        )
+      }
     }
   }, [pagination, activeAccountAccountRecords]);
-
 
   const RenderAccountRecord = useCallback((accountRecord: AccountRecord) => {
     return <List.Item>
@@ -121,6 +141,19 @@ export default ({
     </List.Item>
   }, [blockNumber, timestamp, supernodeAddresses, checkedAccountRecordIds]);
 
+  const RenderCheckedResult = () => {
+    const checkedSafeAmount = checkedAccountRecords.reduce((total, accountRecord) => {
+      total = total.add(accountRecord.amount);
+      return total;
+    }, ZERO)
+
+    return <>
+      <Text strong>(已选 {checkedAccountRecordIds.length} 个锁仓记录</Text>
+      <Divider type='vertical' />
+      <Text strong>{checkedSafeAmount.toSignificant(4)} SAFE) </Text>
+    </>
+  }
+
   return <>
     <Card title={<>
       {t("wallet_supernodes_votes_locked_title")}
@@ -138,7 +171,7 @@ export default ({
               setCheckedAccountRecords([]);
             }
           }}>
-          选择全部可用锁仓记录
+          选择全部可用锁仓记录   {checkedAccountRecordIds.length > 0 && RenderCheckedResult()}
         </Checkbox>
         <Alert style={{ marginTop: "20px" }} type='info' showIcon message={
           <>
@@ -148,7 +181,6 @@ export default ({
             <Text>3. {t("wallet_supernodes_votes_locked_tip2")} <Text strong>1 SAFE</Text></Text><br />
           </>
         } />
-        {JSON.stringify(checkedAccountRecordIds)}
         <Divider />
         <List
           dataSource={activeAccountAccountRecords}
@@ -159,7 +191,7 @@ export default ({
         <br />
         <Divider />
         <Spin spinning={activeAccountNodeInfo == undefined}>
-          <Button type='primary' disabled={activeAccountNodeInfo && (activeAccountNodeInfo.isSN)} onClick={() => {
+          <Button type='primary' disabled={(activeAccountNodeInfo && activeAccountNodeInfo.isSN) || checkedAccountRecords.length == 0} onClick={() => {
             if (activeAccountAccountRecords) {
               setOpenVoteModal(true)
               setCheckedAccountRecords(checkedAccountRecords);

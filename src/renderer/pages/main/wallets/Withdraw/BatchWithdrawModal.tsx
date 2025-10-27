@@ -113,7 +113,6 @@ export default ({
   }
 
   const [batchWithdrawTxns, setBatchWithdrawTxns] = useState<TxExecuteStatus[]>();
-
   const [sending, setSending] = useState<boolean>(false);
 
   return <Modal open={openBatchWithdrawModal} title="批量提现" footer={null} destroyOnClose onCancel={cancel}>
