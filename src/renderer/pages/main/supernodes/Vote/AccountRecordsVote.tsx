@@ -9,7 +9,7 @@ import { ethers } from 'ethers';
 import { useBlockNumber, useTimestamp } from '../../../../state/application/hooks';
 import useAddrNodeInfo from '../../../../hooks/useAddrIsNode';
 import { useTranslation } from 'react-i18next';
-import useAccountRecords from '../../../../hooks/useAccountRecords';
+import useAccountRecords, { AccountRecordUseType } from '../../../../hooks/useAccountRecords';
 import AccountRecordRender, { AccountRecordRenderType } from '../../wallets/tabs/Locked/AccountRecordRender';
 import { EmptyContract } from '../../../../constants/SystemContracts';
 import { ZERO } from '../../../../utils/CurrentAmountUtils';
@@ -31,7 +31,7 @@ export default ({
   const [currentPageAccountRecords, setCurrentPageAccountRecords] = useState<AccountRecord[]>([]);
   const [checkedAccountRecords, setCheckedAccountRecords] = useState<AccountRecord[]>([]);
   const checkedAccountRecordIds = checkedAccountRecords.map(ar => ar.id);
-  const { result, Render } = useAccountRecords();
+  const { result, Render } = useAccountRecords({ type: AccountRecordUseType.Total });
   const [activeAccountAccountRecords, setActiveAccountRecords] = useState<AccountRecord[] | undefined>(undefined);
   const [openVoteModal, setOpenVoteModal] = useState<boolean>(false);
   const [pagination, setPagination] = useState<{

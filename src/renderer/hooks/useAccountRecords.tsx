@@ -1,11 +1,16 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useBlockNumber } from "../state/application/hooks";
 import { useWalletsActiveAccount } from "../state/wallets/hooks";
-import { useAccountManagerContract, useMulticallContract } from "./useContracts";
+import { useAccountManagerContract, useMulticallContract, useSupernodeVoteContract } from "./useContracts";
 import { CallMulticallAggregateContractCall, SyncCallMulticallAggregate } from "../state/multicall/CallMulticallAggregate";
 import { BigNumber } from "ethers";
 import { AccountRecord, formatAccountRecord, formatRecordUseInfo } from "../structs/AccountManager";
 import { Progress, Space, Tooltip, Typography } from "antd";
+
+export enum AccountRecordUseType {
+  Total = "getTotalAmount",
+  Voted = "getVotedIDs4Voter",
+}
 
 const { Text } = Typography;
 
@@ -13,7 +18,11 @@ const Max_Limit = {
   getTotalIDs: 100,
 };
 
-export default (): {
+export default ({
+  type
+}: {
+  type: AccountRecordUseType
+}): {
   result: {
     activeAccount: string;
     accountRecords: AccountRecord[] | undefined;
@@ -25,6 +34,7 @@ export default (): {
 } => {
   const activeAccount = useWalletsActiveAccount();
   const accountManagerContract = useAccountManagerContract();
+  const supernodeVoteContract = useSupernodeVoteContract();
   const multicallContract = useMulticallContract();
   const blockNumber = useBlockNumber();
 
@@ -53,7 +63,7 @@ export default (): {
   }, []);
 
   useEffect(() => {
-    if (!blockNumber || !activeAccount || !accountManagerContract || !multicallContract) return;
+    if (!blockNumber || !activeAccount || !accountManagerContract || !multicallContract || !supernodeVoteContract || !supernodeVoteContract.callStatic) return;
     const accountChanged = lastAccountRef.current !== activeAccount;
     // 如果正在加载，且账户未变，不重新执行（防止中途 blockNumber 变更打断加载）
     if (isLoadingRef.current && !accountChanged) {
@@ -76,10 +86,21 @@ export default (): {
           totalIds: undefined,
         });
 
-        // 从合约查询一共有多少条锁仓记录
-        const [_totalAmount, _totalIdCount] = await accountManagerContract.getTotalAmount(activeAccount);
-        const totalIdCount = _totalIdCount.toNumber();
-
+        let totalIdCount = undefined;
+        if (type == AccountRecordUseType.Total) {
+          // 从合约查询一共有多少条锁仓记录..
+          const [_totalAmount, _totalIdCount] = await accountManagerContract.getTotalAmount(activeAccount);
+          totalIdCount = _totalIdCount.toNumber();
+        } else if (type == AccountRecordUseType.Voted) {
+          // 从超级节点投票合约查询用户的投票锁仓..
+          const calls: CallMulticallAggregateContractCall[] = [{
+            contract: supernodeVoteContract,
+            functionName: "getVotedIDNum4Voter",
+            params: [activeAccount],
+          }];
+          await SyncCallMulticallAggregate(multicallContract, calls);
+          totalIdCount = calls[0].result.toNumber();
+        }
         if (shutdown()) {
           console.log("[useAccountRecors] 组件已卸载|账户变更,停止任务...")
           return;
@@ -105,9 +126,17 @@ export default (): {
             const offset = i * batchSize * multiCallCount + j * batchSize;
             if (offset >= totalIdCount) break;
             const limit = Math.min(batchSize, totalIdCount - offset);
+            let functionName = "getTotalIDs";
+            let contract = accountManagerContract;
+            if (type == AccountRecordUseType.Total) {
+              functionName = "getTotalIDs";
+            } else if (type == AccountRecordUseType.Voted) {
+              functionName = "getVotedIDs4Voter";
+              contract = supernodeVoteContract;
+            }
             getTotalIDsCalls.push({
-              contract: accountManagerContract,
-              functionName: "getTotalIDs",
+              contract,
+              functionName,
               params: [activeAccount, offset, limit],
             });
           }

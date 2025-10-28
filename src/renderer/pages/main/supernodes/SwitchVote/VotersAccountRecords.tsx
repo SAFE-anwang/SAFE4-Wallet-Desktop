@@ -1,14 +1,14 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { SupernodeInfo } from "../../../../structs/Supernode";
 import { useWalletsActiveAccount } from "../../../../state/wallets/hooks";
-import { useAccountManagerContract, useMulticallContract, useSupernodeVoteContract } from "../../../../hooks/useContracts";
-import { Alert, Checkbox, CheckboxProps, Col, Divider, GetProp, Pagination, Row, Spin, Tooltip, Typography } from "antd";
+import { Alert, Card, Checkbox, CheckboxProps, Col, Divider, GetProp, List, Pagination, Row, Spin, Tooltip, Typography } from "antd";
 import { AccountRecord, formatAccountRecord, formatRecordUseInfo } from "../../../../structs/AccountManager";
 import { useTranslation } from "react-i18next";
-import { useBlockNumber } from "../../../../state/application/hooks";
-import { ClusterOutlined } from "@ant-design/icons";
-
-const AccountRecords_Page_Size = 25;
+import { useBlockNumber, useTimestamp } from "../../../../state/application/hooks";
+import useAccountRecords, { AccountRecordUseType } from "../../../../hooks/useAccountRecords";
+import AccountRecordRender, { AccountRecordRenderType } from "../../wallets/tabs/Locked/AccountRecordRender";
+import useSupernodeAddresses from "../../../../hooks/useSupernodeAddresses";
+import { ZERO } from "../../../../utils/CurrentAmountUtils";
 
 const { Text } = Typography;
 
@@ -20,194 +20,186 @@ export default ({
   usedVotedIdsCache: number[]
 }) => {
 
-  const activeAccount = useWalletsActiveAccount();
-  const supernodeVoteContract = useSupernodeVoteContract();
-  const multicallContract = useMulticallContract();
-  const accountManagerContract = useAccountManagerContract();
   const { t } = useTranslation();
+  const activeAccount = useWalletsActiveAccount();
   const blockNumber = useBlockNumber();
-  const [loading, setLoading] = useState<boolean>(false);
+  const timestamp = useTimestamp();
+  const [currentPageAccountRecords, setCurrentPageAccountRecords] = useState<AccountRecord[]>([]);
+  const [checkedAccountRecords, setCheckedAccountRecords] = useState<AccountRecord[]>([]);
+  const checkedAccountRecordIds = checkedAccountRecords.map(ar => ar.id);
+  const [activeAccountAccountRecords, setActiveAccountRecords] = useState<AccountRecord[] | undefined>(undefined);
+  const { result, Render } = useAccountRecords({ type: AccountRecordUseType.Voted });
+  const supernodeAddresses = useSupernodeAddresses();
+  const disabledAccountRecordIds = currentPageAccountRecords.filter(accountRecord => accountRecord.recordUseInfo && accountRecord.recordUseInfo.releaseHeight > blockNumber)
+    .map(accountRecord => accountRecord.id);
+
   const [pagination, setPagination] = useState<{
     total: number | undefined
     pageSize: number | undefined,
     current: number | undefined,
-    onChange?: (page: number) => void
-  }>();
-  const [activeAccountAccountRecords, setActiveAccountRecords] = useState<AccountRecord[]>();
-  const [checkedAccountRecordIds, setCheckedAccountRecordIds] = useState<any[]>([]);
+    pageSizeOptions: number[],
+    onChange?: (page: number, pageSize: number) => void
+  }>({
+    total: undefined,
+    pageSize: 20,
+    current: 1,
+    pageSizeOptions: [20],
+    onChange: (page, pageSize) => {
+      setCheckedAccountRecords([]);
+      setPagination(prev => {
+        return {
+          ...prev,
+          current: page,
+          pageSize
+        };
+      })
+    }
+  });
 
-  const initilizePageQuery = useCallback(() => {
-    if (supernodeVoteContract && activeAccount) {
-      // function getTotalAmount(address _addr) external view returns (uint, uint);
-      supernodeVoteContract.callStatic.getVotedIDNum4Voter(activeAccount)
-        .then((data: any) => {
-          const pagination = {
-            total: data.toNumber(),
-            pageSize: AccountRecords_Page_Size,
-            position: "bottom",
-            current: 1,
-            onChange: (page: number) => {
-              pagination.current = page;
-              setPagination({
-                ...pagination
-              })
+  // 从 useAccountRecords 钩子中加载锁仓数据.
+  useEffect(() => {
+    if (result.activeAccount != activeAccount) {
+      setActiveAccountRecords(undefined);
+      setPagination({
+        ...pagination,
+        current: 1
+      });
+      setCheckedAccountRecords([]);
+    } else {
+      const accountRecords = result.accountRecords;
+      const loading = result.loading;
+      if (accountRecords) {
+        const _activeAccountRecords = accountRecords.filter((accountRecord) => {
+          if (!accountRecord.recordUseInfo) { return false };
+          const inVotedCache = usedVotedIdsCache.includes(accountRecord.id);
+          const isSupernodeVotes = supernodeInfo.addr == accountRecord.recordUseInfo.votedAddr;
+          return !inVotedCache
+            && isSupernodeVotes
+        }).sort((ar0, ar1) => {
+          if (ar0.recordUseInfo == undefined
+            || ar1.recordUseInfo == undefined) {
+            return 0;
+          }
+          if (ar0.recordUseInfo.releaseHeight !== ar1.recordUseInfo.releaseHeight) {
+            return ar0.recordUseInfo?.releaseHeight - ar1.recordUseInfo.releaseHeight;
+          }
+          return ar1.startHeight - ar0.startHeight;
+        });
+        setActiveAccountRecords(prev => {
+          if (prev == undefined || (accountRecords != undefined && !loading)) {
+            console.log(prev != undefined ? "重置数据" : "加载数据");
+            return _activeAccountRecords;
+          }
+          return prev;
+        });
+      }
+    }
+  }, [result, activeAccount, usedVotedIdsCache]);
+  // 切片当前页的数据...
+  useEffect(() => {
+    const { current, pageSize } = pagination;
+    if (activeAccountAccountRecords && current && pageSize) {
+      const slicePageAccountRecords = activeAccountAccountRecords.slice(
+        (current - 1) * pageSize, (current - 1) * pageSize + pageSize
+      );
+      setCurrentPageAccountRecords(slicePageAccountRecords);
+      // 判断是否需要从勾选的ID中去除一些数据...
+      const currentIds = slicePageAccountRecords.map(accountRecord => accountRecord.id);
+      const removeIds: number[] = [];
+      checkedAccountRecordIds.forEach(checkedId => {
+        if (!currentIds.includes(checkedId)) {
+          removeIds.push(checkedId);
+        }
+      });
+      if (removeIds.length > 0) {
+        const newChecked = [...checkedAccountRecords.filter(accountRecord => !removeIds.includes(accountRecord.id))];
+        setCheckedAccountRecords(
+          newChecked
+        )
+      }
+    }
+  }, [pagination, activeAccountAccountRecords]);
+
+  const RenderAccountRecord = useCallback((accountRecord: AccountRecord) => {
+    return <List.Item>
+      {
+        AccountRecordRender({
+          accountRecord, renderType: AccountRecordRenderType.Small, blockNumber, timestamp, t, supernodeAddresses,
+          checkedAccountRecordIds,
+          disabledAccountRecordIds,
+          actions: {
+            checked: (accountRecord) => {
+              if (checkedAccountRecordIds.includes(accountRecord.id)) {
+                setCheckedAccountRecords(
+                  [...checkedAccountRecords].filter(checkedAccountRecord => checkedAccountRecord.id !== accountRecord.id)
+                )
+              } else {
+                const _checked = [...checkedAccountRecords];
+                _checked.push(accountRecord);
+                setCheckedAccountRecords(_checked)
+              }
             }
           }
-          setPagination({
-            ...pagination,
-          })
         })
-    }
-  }, [supernodeVoteContract, activeAccount]);
+      }
+    </List.Item>
+  }, [blockNumber, timestamp, supernodeAddresses, checkedAccountRecordIds]);
+
+  const RenderCheckedResult = () => {
+    const checkedSafeAmount = checkedAccountRecords.reduce((total, accountRecord) => {
+      total = total.add(accountRecord.amount);
+      return total;
+    }, ZERO)
+    return <>
+      <Text strong>(已选 {checkedAccountRecordIds.length} 个锁仓记录</Text>
+      <Divider type='vertical' />
+      <Text strong>{checkedSafeAmount.toSignificant(4)} SAFE) </Text>
+    </>
+  }
 
   useEffect(() => {
-    initilizePageQuery();
-  }, [supernodeVoteContract, activeAccount]);
-
-  useEffect(() => {
-    if (pagination && supernodeVoteContract && multicallContract) {
-      const { pageSize, current, total } = pagination;
-      if (current && pageSize && total && total > 0) {
-        //////////////////// 逆序 ////////////////////////
-        let position = total - (pageSize * current);
-        let offset = pageSize;
-        if (position < 0) {
-          offset = pageSize + position;
-          position = 0;
-        }
-        /////////////////////////////////////////////////
-        // function getVotedIDs4Voter(address _voterAddr, uint _start, uint _count) public view override returns (uint[] memory) ;
-        setLoading(true);
-        setCheckedAccountRecordIds([]);
-        supernodeVoteContract.getVotedIDs4Voter(activeAccount, position, offset)
-          .then((accountRecordIds: any) => {
-            multicallGetAccountRecordByIds(accountRecordIds);
-          })
-      } else {
-        setActiveAccountRecords([]);
-      }
-
-    }
-  }, [pagination]);
-
-  const multicallGetAccountRecordByIds = useCallback((_accountRecordIds: any) => {
-    if (multicallContract && accountManagerContract) {
-      const accountRecordIds = _accountRecordIds.map((_id: any) => _id.toNumber())
-        .filter((id: number) => id > 0)
-      // .sort((id0: number, id1: number) => id1 - id0)
-      const getRecordByIDFragment = accountManagerContract?.interface?.getFunction("getRecordByID");
-      const getRecordUseInfoFragment = accountManagerContract?.interface?.getFunction("getRecordUseInfo");
-      const getRecordByIDCalls = [];
-      const getRecordUseInfoCalls = [];
-      for (let i = 0; i < accountRecordIds.length; i++) {
-        getRecordByIDCalls.push([
-          accountManagerContract.address,
-          accountManagerContract?.interface.encodeFunctionData(getRecordByIDFragment, [accountRecordIds[i]])
-        ]);
-        getRecordUseInfoCalls.push([
-          accountManagerContract.address,
-          accountManagerContract?.interface.encodeFunctionData(getRecordUseInfoFragment, [accountRecordIds[i]])
-        ]);
-      }
-      const accountRecords: AccountRecord[] = [];
-      multicallContract.callStatic.aggregate(getRecordByIDCalls.concat(getRecordUseInfoCalls))
-        .then(data => {
-          const raws = data[1];
-          const half = raws.length / 2;
-          for (let i = half - 1; i >= 0; i--) {
-            const _accountRecord = accountManagerContract?.interface.decodeFunctionResult(getRecordByIDFragment, raws[i])[0];
-            const _recordUseInfo = accountManagerContract?.interface.decodeFunctionResult(getRecordUseInfoFragment, raws[half + i])[0];
-            const accountRecord = formatAccountRecord(_accountRecord);
-            accountRecord.recordUseInfo = formatRecordUseInfo(_recordUseInfo);
-            accountRecords.push(accountRecord);
-          }
-          setActiveAccountRecords(accountRecords);
-          setLoading(false);
-        })
-    }
-  }, [multicallContract, accountManagerContract, pagination]);
-
-  const {
-    optionsAllAccountRecords, votableAccountRecordIds
-  } = useMemo(() => {
-    if (activeAccountAccountRecords && activeAccountAccountRecords.length > 0) {
-      activeAccountAccountRecords.sort((ar1, ar2) => ar2.id - ar1.id)
-      const optionsAllAccountRecords = activeAccountAccountRecords.filter(accountRecord => accountRecord.recordUseInfo)
-        .map(accountRecord => {
-          // 过滤条件，必须是老超级节点的投票，并且必须达到 releaseHeight , 以及使用缓存中没用它.
-          const disabled = (accountRecord.recordUseInfo?.votedAddr != supernodeInfo.addr
-            || blockNumber <= accountRecord.recordUseInfo.releaseHeight)
-            || usedVotedIdsCache.indexOf(accountRecord.id) >= 0;
-          // const disabled = usedVotedIdsCache.indexOf(accountRecord.id) >= 0;
-          return {
-            label: <>
-              <div key={accountRecord.id} style={{ margin: "15px 15px" }}>
-                <Row>
-                  <Col>{t("wallet_locked_accountRecordLockId")}:</Col>
-                  <Col>{accountRecord.id}</Col>
-                </Row>
-                <Row style={{ fontSize: "12px" }}>
-                  {
-                    supernodeInfo.addr == accountRecord.recordUseInfo?.votedAddr && <ClusterOutlined />
-                  }
-                  {accountRecord.amount.toFixed(2)} SAFE
-                </Row>
-              </div>
-            </>,
-            value: accountRecord.id,
-            disabled
-          }
-        });
-      const votableAccountRecordIds = optionsAllAccountRecords.filter(option => !option.disabled).map(option => option.value);
-      return {
-        optionsAllAccountRecords,
-        votableAccountRecordIds
-      }
-    }
-    return {
-      optionsAllAccountRecords: [],
-      votableAccountRecordIds: []
-    }
-  }, [activeAccountAccountRecords, blockNumber, usedVotedIdsCache]);
-
-
-  // 勾选单个记录时触发
-  const onAccountRecordCheckChange: GetProp<typeof Checkbox.Group, 'onChange'> = (checkedValues) => {
-    setCheckedAccountRecordIds(checkedValues);
-  };
-  // 勾选全部
-  const onAccountRecordCheckAllChange: CheckboxProps['onChange'] = (e) => {
-    setCheckedAccountRecordIds(e.target.checked ? votableAccountRecordIds : []);
-  };
-  const indeterminate = checkedAccountRecordIds.length > 0 && checkedAccountRecordIds.length < votableAccountRecordIds.length;
-  const checkAll = votableAccountRecordIds.length === checkedAccountRecordIds.length;
-
-  useEffect(() => {
-    selectAccountRecordIdCallback(checkedAccountRecordIds.filter(id => usedVotedIdsCache.indexOf(id) < 0));
-  }, [checkedAccountRecordIds, usedVotedIdsCache])
+    selectAccountRecordIdCallback(checkedAccountRecords.map(accountRecord => accountRecord.id));
+  }, [checkedAccountRecords]);
 
   return <>
-    <Spin spinning={loading}>
-      <Checkbox indeterminate={indeterminate} checked={checkAll} onChange={onAccountRecordCheckAllChange}>
-        选择全部可用锁仓记录
+    <Card title={<>
+      投票锁仓记录
+      <span style={{ float: "right" }}>
+        {Render()}
+      </span>
+    </>}>
+      <Checkbox
+        checked={currentPageAccountRecords.length > 0 && checkedAccountRecords.length > 0
+          && currentPageAccountRecords.length - disabledAccountRecordIds.length == checkedAccountRecords.length}
+        indeterminate={checkedAccountRecords.length > 0
+          && checkedAccountRecords.length != currentPageAccountRecords.length - disabledAccountRecordIds.length}
+        onChange={(event) => {
+          const checkAll = event.target.checked;
+          if (checkAll) {
+            setCheckedAccountRecords([...currentPageAccountRecords.filter(
+              accountRecord => !disabledAccountRecordIds.includes(accountRecord.id)
+            )]);
+          } else {
+            setCheckedAccountRecords([]);
+          }
+        }}>
+        选择全部可用锁仓记录   {checkedAccountRecordIds.length > 0 && RenderCheckedResult()}
       </Checkbox>
       <Alert style={{ marginTop: "20px" }} type='info' showIcon message={
         <>
           <Text>必须同时满足如下条件的投票锁仓记录才能进行转投</Text><br />
-          <Text>1. 投票给当前 <Text type="secondary" strong>超级节点ID:{supernodeInfo.id}<Divider type="vertical"/>{supernodeInfo.name}</Text> 的锁仓</Text><br />
+          <Text>1. 投票给当前 <Text type="secondary" strong>超级节点ID:{supernodeInfo.id}<Divider type="vertical" />{supernodeInfo.name}</Text> 的锁仓</Text><br />
           <Text>2. 满足质押时间才可以进行转投</Text><br />
         </>
       } />
       <Divider />
-      <Checkbox.Group
-        options={optionsAllAccountRecords}
-        onChange={onAccountRecordCheckChange}
-        value={checkedAccountRecordIds}
+      <List
+        dataSource={activeAccountAccountRecords}
+        renderItem={RenderAccountRecord}
+        pagination={pagination}
+        grid={{ gutter: 16, column: 5 }}
       />
-      <br /><br />
-      <Pagination style={{ float: "right" }} {...pagination}></Pagination>
-      <br /><br />
-    </Spin>
+    </Card>
   </>
 
 }

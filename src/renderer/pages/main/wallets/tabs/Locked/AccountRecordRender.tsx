@@ -22,6 +22,7 @@ export default ({
   t,
   supernodeAddresses,
   checkedAccountRecordIds,
+  disabledAccountRecordIds,
   actions
 }: {
   accountRecord: AccountRecord,
@@ -30,7 +31,8 @@ export default ({
   timestamp: number,
   t: any,
   supernodeAddresses: string[],
-  checkedAccountRecordIds?: number[]
+  checkedAccountRecordIds?: number[],
+  disabledAccountRecordIds?: number[],
   actions?: {
     withdraw?: (accountRecord: AccountRecord) => void,
     addLockDay?: (accountRecord: AccountRecord) => void,
@@ -254,20 +256,21 @@ export default ({
 
     {
       renderType == AccountRecordRenderType.Small &&
-      <Card key={id} size="small" style={{}}>
+      <Card key={id} size="small" style={{ backgroundColor: disabledAccountRecordIds && disabledAccountRecordIds.includes(accountRecord.id) ? "#d5d5d5" : "" }}>
         <Row>
-          <Col span={24}>
+          <Col span={24} style={{ color: "" }}>
             <Text strong type="secondary">
               {t("wallet_locked_accountRecordLockId")}:
               {id}
             </Text>
             {
               checkedAccountRecordIds != undefined && <>
-                <Checkbox checked={checkedAccountRecordIds.includes(accountRecord.id)} style={{ float: "right" }} onChange={() => {
-                  if (actions?.checked) {
-                    actions.checked(accountRecord);
-                  }
-                }} />
+                <Checkbox disabled={disabledAccountRecordIds && disabledAccountRecordIds.includes(accountRecord.id)}
+                  checked={checkedAccountRecordIds.includes(accountRecord.id)} style={{ float: "right" }} onChange={() => {
+                    if (actions?.checked) {
+                      actions.checked(accountRecord);
+                    }
+                  }} />
               </>
             }
             <br />
