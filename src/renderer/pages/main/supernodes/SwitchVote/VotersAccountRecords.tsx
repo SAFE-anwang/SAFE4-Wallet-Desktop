@@ -37,13 +37,15 @@ export default ({
     total: number | undefined
     pageSize: number | undefined,
     current: number | undefined,
-    pageSizeOptions: number[],
+    pageSizeOptions: number[] | undefined,
+    showSizeChanger: false | undefined,
     onChange?: (page: number, pageSize: number) => void
   }>({
     total: undefined,
     pageSize: 20,
     current: 1,
-    pageSizeOptions: [20],
+    pageSizeOptions: [],
+    showSizeChanger: false,
     onChange: (page, pageSize) => {
       setCheckedAccountRecords([]);
       setPagination(prev => {
