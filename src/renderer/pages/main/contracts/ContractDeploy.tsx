@@ -175,6 +175,7 @@ export default () => {
           setDeployHash(hash);
         }
       } catch (err: any) {
+        console.log( err )
         setDeployError(err.reason);
       }
       setDeploying(false);
