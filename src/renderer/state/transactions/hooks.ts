@@ -215,8 +215,8 @@ export function useWalletTokens(): Token[] | undefined {
     if (!chainId) return [];
     return [
       // TODO USDT DISABLE NOW..
-      // USDT[chainId as Safe4NetworkChainId],
       WSAFE[chainId as Safe4NetworkChainId],
+      USDT[chainId as Safe4NetworkChainId],
     ];
   }, [chainId]);
   const defaultTokenMap = useMemo(() => {

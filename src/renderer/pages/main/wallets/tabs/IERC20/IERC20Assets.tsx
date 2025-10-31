@@ -46,8 +46,8 @@ export default () => {
       }, {} as { [address: string]: any });
       if (tokens.length >= 1) {
         // 如果存在多个代币,则进行排序
-        const _default = tokens.slice(0, 1);
-        const _left = tokens.slice(1);
+        const _default = tokens.slice(0, 2);
+        const _left = tokens.slice(2);
         const _second = _left.filter(token => auditMap[token.address] && auditMap[token.address].logoURI);
         const _thrid = _left.filter(token => auditMap[token.address] && !auditMap[token.address].logoURI);
         const _forth = _left.filter(token => !auditMap[token.address]);
@@ -131,7 +131,7 @@ export default () => {
                     </Col>
                   </Row>
                 </Col>
-                <Col span={4} style={{textAlign:"center"}}>
+                <Col span={4} style={{ textAlign: "center" }}>
                   {
                     !disalbeHide(address) &&
                     <Space>

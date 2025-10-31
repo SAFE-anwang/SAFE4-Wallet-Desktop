@@ -26,7 +26,7 @@ export const Application_Crosschain_Pool_MATIC: { [chainId in Safe4NetworkChainI
 
 // Safe4 USDT 跨链合约地址
 export const Application_Crosschain: { [chainId in Safe4NetworkChainId]: string } = {
-  [Safe4NetworkChainId.Testnet]: "0x268BFd7F4c5F0531294D9172f5DA84f0CC7812C5",
+  [Safe4NetworkChainId.Testnet]: "0x07465A603E232051b139470694F8FF5BbcBf0044",
   [Safe4NetworkChainId.Mainnet]: "0x268BFd7F4c5F0531294D9172f5DA84f0CC7812C5",
 };
 
@@ -37,8 +37,8 @@ export const WSAFE: { [chainId in Safe4NetworkChainId]: Token } = {
 };
 // USDT 合约地址
 export const USDT: { [chainId in Safe4NetworkChainId]: Token } = {
-  [Safe4NetworkChainId.Testnet]: new Token(Safe4NetworkChainId.Testnet as number, "0x55d398326f99059ff775485246999027b3197955", 18, "USDT", "USDT"),
-  [Safe4NetworkChainId.Mainnet]: new Token(Safe4NetworkChainId.Mainnet as number, "0x55d398326f99059ff775485246999027b3197955", 18, "USDT", "USDT"),
+  [Safe4NetworkChainId.Testnet]: new Token(Safe4NetworkChainId.Testnet as number, "0x07465A603E232051b139470694F8FF5BbcBf0044", 6, "USDT", "Safe4-USDT"),
+  [Safe4NetworkChainId.Mainnet]: new Token(Safe4NetworkChainId.Mainnet as number, "0x55d398326f99059ff775485246999027b3197955", 6, "USDT", "Safe4-USDT"),
 };
 
 // MiniChefV2 合约地址
