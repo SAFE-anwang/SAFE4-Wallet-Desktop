@@ -103,9 +103,9 @@ export default () => {
       </Option>
       {
         chainId && Token_USDT &&
-        <Option key={Token_USDT.address} value={Token_USDT.name}>
+        <Option key={Token_USDT.address} value={Token_USDT.symbol}>
           <ERC20TokenLogoComponent style={{ width: "30px", height: "30px" }} chainId={chainId} address={Token_USDT.address} />
-          <Text style={{ marginLeft: "5px" }} strong>{Token_USDT.name}</Text>
+          <Text style={{ marginLeft: "5px" }} strong>{Token_USDT.symbol}</Text>
         </Option>
       }
     </Select>
