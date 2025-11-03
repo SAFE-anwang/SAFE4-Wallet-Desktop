@@ -56,7 +56,7 @@ export enum SupportSafe3Functions {
 }
 
 export enum SupportCrosschainFunctions {
-  Safe2Eth = "eth2safe", // eth2safe(uint256 _value, string memory _safe_dst_address)
+  crossChainRedeem = "crossChainRedeem", // crossChainRedeem(uint amount, string _network, string _to)
 }
 
 export enum SupportSafeswapV2RouterFunctions {
@@ -421,7 +421,7 @@ function decodeCrosschainPoolFunctionData(input: string) {
 }
 
 function decodeCrosschainFunctionData(input: string) {
-  const abi = ApplicationContractAbiConfig.CrosschainABI;
+  const abi = ApplicationContractAbiConfig.Safe4USDTABI;
   const IContract = new Interface(abi);
   const methodId = input.substring(0, 10);
   try {
@@ -429,11 +429,12 @@ function decodeCrosschainFunctionData(input: string) {
     let formatDecodeResult = undefined;
     if (fragment) {
       switch (fragment.name) {
-        case SupportCrosschainFunctions.Safe2Eth:
-          const safe2eth = IContract.decodeFunctionData(fragment, input);
+        case SupportCrosschainFunctions.crossChainRedeem:
+          const crossChainRedeem = IContract.decodeFunctionData(fragment, input);
           formatDecodeResult = {
-            _value: safe2eth[0],
-            _dst_address: safe2eth[1]
+            _value: crossChainRedeem[0],
+            _network: crossChainRedeem[1],
+            _to: crossChainRedeem[2]
           }
           break;
       }

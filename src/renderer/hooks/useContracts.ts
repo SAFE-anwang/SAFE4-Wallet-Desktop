@@ -96,7 +96,7 @@ export function useSafeswapV2Factory(withSignerIfPossible?: boolean): Contract |
 export function useCrosschainContract(withSignerIfPossible?: boolean): Contract | null | undefined {
   const { chainId } = useWeb3React();
   if (chainId && chainId in Safe4NetworkChainId) {
-    return useContract(Application_Crosschain[chainId as Safe4NetworkChainId], ApplicationContractAbiConfig.CrosschainABI, withSignerIfPossible);
+    return useContract(Application_Crosschain[chainId as Safe4NetworkChainId], ApplicationContractAbiConfig.Safe4USDTABI, withSignerIfPossible);
   }
   return undefined;
 }

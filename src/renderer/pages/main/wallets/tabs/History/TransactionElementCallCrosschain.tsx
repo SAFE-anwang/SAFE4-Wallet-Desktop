@@ -19,7 +19,6 @@ const enum CrosschainDirectoinType {
 }
 
 export function getCrosschainDirection(supportFuncName: string) {
-
   return undefined;
 }
 
@@ -41,14 +40,13 @@ export default ({ transaction, setClickTransaction, support }: {
     hash,
   } = transaction;
 
-  const { from, to, value } = {
+  const { from, to, value, networkCoin } = {
     from: call?.from,
-    to: inputDecodeResult._dst_address,
+    to: inputDecodeResult._to,
+    networkCoin: inputDecodeResult._network,
     value: inputDecodeResult._value
   }
   const activeAccount = useWalletsActiveAccount();
-  // TODO
-  const networkCoin = support.supportFuncName.substring(0, support.supportFuncName.indexOf("2"));
   const crosschainDirectoinType = from == activeAccount ? CrosschainDirectoinType.SEND : CrosschainDirectoinType.RECEIVE;
 
   const RenderLogosCrossDirectoin = () => {
@@ -76,7 +74,7 @@ export default ({ transaction, setClickTransaction, support }: {
 
   return <>
     {
-      // <Text>{JSON.stringify(transaction["tokenTransfers"])}</Text>
+      // <Text>{JSON.stringify(transaction["tokenTransfers"])} | { }</Text>
     }
     <List.Item onClick={() => { setClickTransaction(transaction) }} key={transaction.hash} className="history-element" style={{ paddingLeft: "15px", paddingRight: "15px" }}>
       <List.Item.Meta
