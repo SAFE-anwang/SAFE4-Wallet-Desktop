@@ -18,10 +18,6 @@ const enum CrosschainDirectoinType {
   RECEIVE = 2
 }
 
-export function getCrosschainDirection(supportFuncName: string) {
-  return undefined;
-}
-
 export default ({ transaction, setClickTransaction, support }: {
   transaction: TransactionDetails,
   setClickTransaction: (transaction: TransactionDetails) => void,
@@ -44,7 +40,7 @@ export default ({ transaction, setClickTransaction, support }: {
     from: call?.from,
     to: inputDecodeResult._to,
     networkCoin: inputDecodeResult._network,
-    value: inputDecodeResult._value
+    value: inputDecodeResult._value ?? inputDecodeResult._amount
   }
   const activeAccount = useWalletsActiveAccount();
   const crosschainDirectoinType = from == activeAccount ? CrosschainDirectoinType.SEND : CrosschainDirectoinType.RECEIVE;
@@ -63,7 +59,6 @@ export default ({ transaction, setClickTransaction, support }: {
       </>
     }
   }
-
   const crosschainVO = useCrosschain(hash);
   const crosschainSpin = useMemo(() => {
     if (crosschainDirectoinType == CrosschainDirectoinType.SEND) {
@@ -73,10 +68,14 @@ export default ({ transaction, setClickTransaction, support }: {
   }, [crosschainDirectoinType, crosschainVO]);
 
   return <>
-    {
-      // <Text>{JSON.stringify(transaction["tokenTransfers"])} | { }</Text>
-    }
-    <List.Item onClick={() => { setClickTransaction(transaction) }} key={transaction.hash} className="history-element" style={{ paddingLeft: "15px", paddingRight: "15px" }}>
+    {/* {
+      <Text>{JSON.stringify(support)}</Text>
+    } */}
+    <List.Item onClick={() => { setClickTransaction(transaction) }} key={transaction.hash} className="history-element"
+      style={{
+        paddingLeft: crosschainDirectoinType == CrosschainDirectoinType.SEND ? "15px" : "0px",
+        paddingRight: crosschainDirectoinType == CrosschainDirectoinType.SEND ? "15px" : "0px"
+      }}>
       <List.Item.Meta
         avatar={
           <>
@@ -96,13 +95,19 @@ export default ({ transaction, setClickTransaction, support }: {
         }
         title={<>
           <Text strong>
-            {crosschainDirectoinType == CrosschainDirectoinType.RECEIVE && t("wallet_history_received")}
-            {crosschainDirectoinType == CrosschainDirectoinType.SEND && `跨链到 ${getNetworkNameByCoin(networkCoin as NetworkCoinType)} 网络`}
+            {crosschainDirectoinType == CrosschainDirectoinType.RECEIVE && <>
+              {
+                `${t("wallet_history_crosschain_receivefromnetwork", { network: getNetworkNameByCoin(networkCoin as NetworkCoinType) })}`
+              }
+            </>}
+            {crosschainDirectoinType == CrosschainDirectoinType.SEND &&
+              `跨链到 ${getNetworkNameByCoin(networkCoin as NetworkCoinType)} 网络`
+            }
           </Text>
         </>}
         description={
           <>
-            {crosschainDirectoinType == CrosschainDirectoinType.RECEIVE && from}
+            {crosschainDirectoinType == CrosschainDirectoinType.RECEIVE && to}
             {crosschainDirectoinType == CrosschainDirectoinType.SEND && to}
           </>
         }

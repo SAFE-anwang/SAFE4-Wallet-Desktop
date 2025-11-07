@@ -37,7 +37,7 @@ export function useWalletsActiveWallet(): Wallet | null {
 export function useWalletsActiveAccount(): string {
   return useSelector((state: AppState) => {
     return state.wallets.activeWallet ? state.wallets.activeWallet.address : "";
-    // return "0xAC110c0f70867F77D9d230e377043F52480A0B7d";
+    // return "0x99218e05Ec900D85697fF3daAc5170980d6DBbe4";
   });
 }
 

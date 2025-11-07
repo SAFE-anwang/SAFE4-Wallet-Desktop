@@ -64,7 +64,7 @@ export default ({ transaction, setClickTransaction }: {
     return <>
       <List.Item onClick={() => { setClickTransaction(transaction) }} key={transaction.hash} className="history-element" style={{ paddingLeft: "15px", paddingRight: "15px" }}>
         <span style={{ width: "100%" }}>
-          {tokenTransfer && <TransactionElementTokenTransfer status={status} tokenTransfer={tokenTransfer} />}
+          {tokenTransfer && <TransactionElementTokenTransfer transaction={transaction} status={status} tokenTransfer={tokenTransfer} />}
         </span>
       </List.Item>
     </>
@@ -155,7 +155,7 @@ export default ({ transaction, setClickTransaction }: {
                 const tokenTransfer = tokenTransfers[eventLogIndex]
                 return <>
                   <span style={{ width: "100%", marginTop: "20px" }}>
-                    <TransactionElementTokenTransfer status={status} tokenTransfer={tokenTransfer} />
+                    <TransactionElementTokenTransfer transaction={transaction} status={status} tokenTransfer={tokenTransfer} />
                   </span>
                 </>
               })

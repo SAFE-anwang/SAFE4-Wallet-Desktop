@@ -20,12 +20,13 @@ export default ({
 }) => {
 
   const SelectCallRender = useCallback(() => {
-    const to = transaction.call?.to;
+    const to = transaction.call?.to ?? transaction.data.contract;
     const from = transaction.call?.from;
     switch (to) {
       case SystemContract.AccountManager:
         return <></>
-      case Application_Crosschain[Safe4NetworkChainId.Testnet] || Application_Crosschain_Pool_BSC[Safe4NetworkChainId.Mainnet]:
+      case Application_Crosschain[Safe4NetworkChainId.Testnet]:
+      case Application_Crosschain[Safe4NetworkChainId.Mainnet]:
         return <CrosschainDetails support={support} transaction={transaction} />;
       default:
         if (isCrosschainPoolTransaction(to, from)) {

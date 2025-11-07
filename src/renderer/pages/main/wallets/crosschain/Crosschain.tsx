@@ -30,7 +30,8 @@ export default () => {
     NetworkType.BSC, NetworkType.ETH, NetworkType.MATIC
   ];
   const USDT_SUPPORT_TARGET_CHAIN: NetworkType[] = [
-    NetworkType.BSC, NetworkType.ETH, NetworkType.SOL, NetworkType.TRX
+    NetworkType.BSC, NetworkType.ETH,
+    // NetworkType.SOL, NetworkType.TRX
   ];
   const Token_USDT = chainId && USDT[chainId as Safe4NetworkChainId];
   const tokenUSDTBalance = Token_USDT && useTokenBalances(activeAccount, [Token_USDT])[Token_USDT.address];

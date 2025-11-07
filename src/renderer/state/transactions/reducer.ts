@@ -110,7 +110,9 @@ export interface TokenTransfer {
     symbol: string,
     decimals: number
   },
-  value: string
+  value: string ,
+  input ?: string ,
+  contract ?: string
 }
 
 export interface AddressActivityFetch {

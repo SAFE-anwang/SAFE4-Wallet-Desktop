@@ -57,6 +57,7 @@ export enum SupportSafe3Functions {
 
 export enum SupportCrosschainFunctions {
   crossChainRedeem = "crossChainRedeem", // crossChainRedeem(uint amount, string _network, string _to)
+  crossChainIssue = "crossChainIssue", // crossChainIssue( address _to, uint256 amount, string _network, string _txId )
 }
 
 export enum SupportSafeswapV2RouterFunctions {
@@ -437,6 +438,15 @@ function decodeCrosschainFunctionData(input: string) {
             _to: crossChainRedeem[2]
           }
           break;
+        case SupportCrosschainFunctions.crossChainIssue:
+          const crossChainIssue = IContract.decodeFunctionData(fragment, input);
+          formatDecodeResult = {
+            _to: crossChainIssue[0],
+            _amount: crossChainIssue[1],
+            _network: crossChainIssue[2],
+            _txId: crossChainIssue[3]
+          }
+          break;
       }
     }
     return formatDecodeResult ? {
@@ -528,7 +538,6 @@ export default (address: string | undefined, input: string | undefined, from?: s
       return undefined;
     }
   }
-
 
   if (!Object.values(SystemContract).some(addr => addr == address)) {
     return undefined;
