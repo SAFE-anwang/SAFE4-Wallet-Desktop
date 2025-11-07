@@ -109,10 +109,10 @@ export default ({ transaction, setClickTransaction, support }: {
       />
       <div>
         {crosschainDirectoinType == CrosschainDirectoinType.RECEIVE && <>
-          <Text strong type="success">+{value && new TokenAmount(Token_USDT, value).toFixed(2)}  {Token_USDT.name}</Text>
+          <Text strong type="success">+{value && new TokenAmount(Token_USDT, value).toFixed(2)}  {Token_USDT.symbol}</Text>
         </>}
         {crosschainDirectoinType == CrosschainDirectoinType.SEND && <>
-          <Text strong>-{value && new TokenAmount(Token_USDT, value).toExact()} {Token_USDT.name}</Text>
+          <Text strong>-{value && new TokenAmount(Token_USDT, value).toExact()} {Token_USDT.symbol}</Text>
           {
             crosschainSpin && <SyncOutlined spin={crosschainSpin} style={{ marginLeft: "10px" }} />
           }

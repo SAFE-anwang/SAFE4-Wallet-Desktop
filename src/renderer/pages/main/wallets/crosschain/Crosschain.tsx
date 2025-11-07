@@ -7,7 +7,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Safe4NetworkChainId, USDT } from "../../../../config";
 import { useETHBalances, useTokenBalances, useWalletsActiveAccount } from "../../../../state/wallets/hooks";
 import TokenLogo from "../../../components/TokenLogo";
-import { getNetworkLogo, NetworkType } from "../../../../assets/logo/NetworkLogo";
+import { getNetworkLogo, NetworkType, outputNetworkCoin } from "../../../../assets/logo/NetworkLogo";
 import { ZERO, ONE } from "../../../../utils/CurrentAmountUtils";
 import { CurrencyAmount, TokenAmount } from "@uniswap/sdk";
 import { ethers } from "ethers";
@@ -25,7 +25,6 @@ export default () => {
   const activeAccount = useWalletsActiveAccount();
   const activeAccountETHBalance = useETHBalances([activeAccount])[activeAccount];
   const [openCrosschainConfirmModal, setOpenCrosschainConfirmModal] = useState(false);
-
 
   const SAFE_SUPPORT_TARGET_CHAIN: NetworkType[] = [
     NetworkType.BSC, NetworkType.ETH, NetworkType.MATIC
@@ -62,8 +61,8 @@ export default () => {
   const [config, setConfig] = useState<{
     minamount: string,
     safe2eth: boolean,
-    safe2matic: boolean,
     safe2bsc: boolean,
+    safe2matic: boolean | undefined,
     safe2trx: boolean | undefined,
     safe2sol: boolean | undefined
   }>();
@@ -72,22 +71,24 @@ export default () => {
   useEffect(() => {
     if (chainId) {
       setLoading(true);
-      fetchCrosschainConfig(chainId).then((data) => {
+      fetchCrosschainConfig(chainId, inputParams.token).then((data) => {
         setFetchCrosschainConfigError(undefined);
         setLoading(false);
         setConfig({
           minamount: data.minamount,
           safe2eth: data.eth.safe2eth,
-          safe2matic: data.matic.safe2matic,
           safe2bsc: data.bsc.safe2bsc,
+          safe2matic: data.matic?.safe2matic,
           safe2trx: data.trx?.safe2trx,
           safe2sol: data.sol?.safe2sol
-        })
+        });
+        console.log(data)
       }).catch((err: any) => {
+        console.log("Error ==>", err)
         setFetchCrosschainConfigError("跨链网关无法访问,请检查本地网络,或者稍后再试.");
       })
     }
-  }, [chainId]);
+  }, [chainId, inputParams.token]);
 
   const selectTokenOptions = () => {
     return <Select defaultValue="SAFE" bordered={false} onChange={(selectToken) => {
@@ -134,9 +135,19 @@ export default () => {
         }}>
         {
           targetNetworkTypes.map(networkType => {
-            return <Option key={networkType} value={networkType}>
+            let configIndex = "safe2" + outputNetworkCoin(networkType);
+            let disabled = config && config[configIndex as keyof typeof config] ? false : true;
+            return <Option key={networkType} value={networkType} disabled={disabled}>
               <Avatar src={getNetworkLogo(networkType)} style={{ width: "40px", height: "40px" }} />
-              <Text style={{ marginLeft: "5px" }} strong>{networkType}</Text>
+              {
+                disabled &&
+                <Text type="secondary" style={{ marginLeft: "5px" }} strong>{networkType}</Text>
+              }
+              {
+                !disabled &&
+                <Text style={{ marginLeft: "5px" }} strong>{networkType}</Text>
+              }
+
             </Option>
           })
         }

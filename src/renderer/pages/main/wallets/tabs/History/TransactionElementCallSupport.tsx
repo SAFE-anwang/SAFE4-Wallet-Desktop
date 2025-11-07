@@ -56,7 +56,8 @@ export default ({ transaction, setClickTransaction, support }: {
         return CallProposalFunsRender(support.supportFuncName, transaction, setClickTransaction, support)
       case SystemContract.SAFE3:
         return CallSafe3FunsRender(support.supportFuncName, transaction, setClickTransaction, support)
-      case Application_Crosschain[Safe4NetworkChainId.Testnet] || Application_Crosschain[Safe4NetworkChainId.Mainnet]:
+      case Application_Crosschain[Safe4NetworkChainId.Testnet] :
+      case Application_Crosschain[Safe4NetworkChainId.Mainnet] :
         return CallCrosschainFunsRender(support.supportFuncName, transaction, setClickTransaction, support);
       case SafeswapV2RouterAddress:
         return CallSafeswapV2RouterRender(support.supportFuncName, transaction, setClickTransaction, support);
@@ -64,7 +65,7 @@ export default ({ transaction, setClickTransaction, support }: {
         if (isCrosschainPoolTransaction(to, from)) {
           return CallCrosschainPoolFunsRender(support.supportFuncName, transaction, setClickTransaction, support);
         }
-        return <>No support Contract-Function-Render</>
+        return <>No support Contract-Function-Render = {to}</>
     }
     return <></>
   }, [transaction, setClickTransaction, support]);

@@ -12,7 +12,7 @@ export async function fetchCrossChainByAddress(API_CROSSCHAIN: string, params: {
 }
 
 
-export async function fetchCrosschainConfig(chainId: number): Promise<{
+export async function fetchCrosschainConfig(chainId: number, token: string): Promise<{
   safe_usdt: string,
   minamount: string,
   eth: {
@@ -31,11 +31,12 @@ export async function fetchCrosschainConfig(chainId: number): Promise<{
     safe2trx: boolean
   }
 }> {
+  const suffix = 'SAFE' == token ? "" : "/" + token.toLowerCase();
   if (chainId == Safe4NetworkChainId.Testnet) {
-    const serverResponse = await GET("https://safewallet.anwang.com/v1/gate/testnet4");
+    const serverResponse = await GET("https://safewallet.anwang.com/v1/gate/testnet4" + suffix);
     return serverResponse;
   } else {
-    const serverResponse = await GET("https://safewallet.anwang.com/v1/gate/mainnet4");
+    const serverResponse = await GET("https://safewallet.anwang.com/v1/gate/mainnet4" + suffix);
     return serverResponse;
   }
 }

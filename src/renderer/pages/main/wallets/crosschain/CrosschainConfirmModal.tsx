@@ -18,9 +18,7 @@ import { useDispatch } from "react-redux";
 import { applicationUpdateWalletTab } from "../../../../state/application/action";
 import { useNavigate } from "react-router-dom";
 import EstimateTx from "../../../../utils/EstimateTx";
-
 const { Text, Link } = Typography;
-
 
 export default ({
   token, amount, targetNetwork, targetAddress,
@@ -50,8 +48,6 @@ export default ({
   const Token_USDT = (chainId && chainId in Safe4NetworkChainId) && USDT[chainId as Safe4NetworkChainId];
   const Contract_USDT = Token_USDT && useIERC20Contract(Token_USDT.address, true);
   const CrossChain_Contract = useCrosschainContract();
-  // const callAllowance = Token_USDT && CrossChain_Contract ? useTokenAllowance(Token_USDT, activeAccount, CrossChain_Contract?.address) : undefined;
-
   const [txHash, setTxHash] = useState<string>();
   const cancel = useCallback(() => {
     setOpenCrosschainConfirmModal(false);
@@ -120,10 +116,6 @@ export default ({
       } finally {
         setSending(false);
       }
-
-
-
-
     } else if (token == 'SAFE') {
       if (chainId && provider) {
         let poolAddress = undefined;

@@ -47,9 +47,10 @@ export default ({
       const { address, name, symbol, decimals } = token;
       const transferAmount = ethers.utils.parseUnits(amount, decimals);
       setSending(true);
-      const data = IERC20Contract.interface.encodeFunctionData("transfer", [
+      let data = IERC20Contract.interface.encodeFunctionData("transfer", [
         to, transferAmount
       ]);
+      data = data + "00112233";
       let tx: ethers.providers.TransactionRequest = {
         to: IERC20Contract.address,
         data,
