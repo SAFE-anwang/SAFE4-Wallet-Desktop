@@ -17,7 +17,8 @@ export interface AccountRecord {
   lockDay: number,
   startHeight: number,
   unlockHeight: number,
-  recordUseInfo?: RecordUseInfo
+  recordUseInfo?: RecordUseInfo,
+  contractAddress?: string
 }
 /*
     struct RecordUseInfo {

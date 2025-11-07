@@ -95,6 +95,14 @@ export function useSafeswapTokens(): {
   })
 }
 
+export function useSafeswapAction() {
+  return useSelector((state: AppState) => {
+    if (!state.application.safeswap) return undefined;
+    return state.application.safeswap.action;
+  })
+}
+
+
 export function useSafeswapSlippageTolerance(): string {
   return useSelector((state: AppState) => {
     return state.application.SlippageTolerance;

@@ -50,7 +50,7 @@ export default ({
       return false;
     }
     if (selectAccountRecordIds && newSupernodeInfo) {
-      return (selectAccountRecordIds.length > 0 && newSupernodeInfo.addr != supernodeInfo.addr);
+      return (selectAccountRecordIds.length > 0);
     }
     return false;
   }, [txStatus, selectAccountRecordIds, newSupernodeInfo]);
@@ -119,18 +119,16 @@ export default ({
 
   return <Modal width={1200} destroyOnClose title="投票变更" open={openSwitchVoteModal} footer={null} onCancel={cancel}>
     <Divider />
-    <Card title="投票锁仓记录">
-      <VotersAccountRecords selectAccountRecordIdCallback={(selectAccountRecordIds) => {
-        setSelectAccountRecords(selectAccountRecordIds);
-        if (selectAccountRecordIds.length > 0) {
-          setTxStatus(undefined);
-        }
-      }} supernodeInfo={supernodeInfo} usedVotedIdsCache={usedVotedIdsCache} />
-    </Card>
+    <VotersAccountRecords selectAccountRecordIdCallback={(selectAccountRecordIds) => {
+      setSelectAccountRecords(selectAccountRecordIds);
+      if (selectAccountRecordIds.length > 0) {
+        setTxStatus(undefined);
+      }
+    }} supernodeInfo={supernodeInfo} usedVotedIdsCache={usedVotedIdsCache} />
     {
       switchSupernodeListSelector && <>
         <Divider />
-        <SupernodeListSelector disabledSNAddresses={[supernodeInfo.addr]} selectCallback={(selectSupernodeNode: SupernodeInfo) => {
+        <SupernodeListSelector disabledSNAddresses={[]} selectCallback={(selectSupernodeNode: SupernodeInfo) => {
           setNewSupernodeInfo(selectSupernodeNode);
           setSwitchSupernodeListSelector(false);
         }} />
@@ -263,8 +261,17 @@ export default ({
             newSupernodeInfo && <Alert style={{ marginBottom: "20px" }} type="info" message={<>
               <Text>将</Text><br />
               <Text strong type="secondary">超级节点-节点ID:{supernodeInfo.id}<Divider type="vertical" />{supernodeInfo.name}</Text><Text style={{ marginLeft: "20px" }}>中的已选锁仓</Text><br />
-              <Text>转投到</Text><br />
-              <Text strong type="success">超级节点-节点ID:{newSupernodeInfo.id}<Divider type="vertical" />{newSupernodeInfo.name}</Text>
+              {
+                supernodeInfo.id != newSupernodeInfo.id && <>
+                  <Text>转投到</Text><br />
+                  <Text strong type="success">超级节点-节点ID:{newSupernodeInfo.id}<Divider type="vertical" />{newSupernodeInfo.name}</Text>
+                </>
+              }
+              {
+                supernodeInfo.id == newSupernodeInfo.id && <>
+                  <Text>追加投票质押期限</Text><br />
+                </>
+              }
             </>} />
           }
           {
@@ -292,7 +299,9 @@ export default ({
               </>} />
             </>
           }
-          <Button loading={sending} onClick={switchVote} type="primary" disabled={!switchAble}>转投</Button>
+          <Button loading={sending} onClick={switchVote} type="primary" disabled={!switchAble}>
+            {supernodeInfo.id != (newSupernodeInfo && newSupernodeInfo.id) ? "转投" : "追加投票质押期限"}
+          </Button>
         </Card>
       </>
     }

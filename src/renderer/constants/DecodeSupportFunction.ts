@@ -4,6 +4,7 @@ import { Application_Crosschain, Application_Crosschain_Pool_BSC, Application_Cr
 import { ethers } from "ethers";
 import ApplicationContractAbiConfig from "./ApplicationContractAbiConfig";
 import { SafeswapV2ABI, SafeswapV2Contract } from "./SafeswapV2Contracts";
+import { BatchLockContract, BatchLockLevel } from "./BatchLockContract";
 
 
 export enum SupportAccountManagerFunctions {
@@ -55,7 +56,8 @@ export enum SupportSafe3Functions {
 }
 
 export enum SupportCrosschainFunctions {
-  Safe2Eth = "eth2safe", // eth2safe(uint256 _value, string memory _safe_dst_address)
+  crossChainRedeem = "crossChainRedeem", // crossChainRedeem(uint amount, string _network, string _to)
+  crossChainIssue = "crossChainIssue", // crossChainIssue( address _to, uint256 amount, string _network, string _txId )
 }
 
 export enum SupportSafeswapV2RouterFunctions {
@@ -420,7 +422,7 @@ function decodeCrosschainPoolFunctionData(input: string) {
 }
 
 function decodeCrosschainFunctionData(input: string) {
-  const abi = ApplicationContractAbiConfig.CrosschainABI;
+  const abi = ApplicationContractAbiConfig.Safe4USDTABI;
   const IContract = new Interface(abi);
   const methodId = input.substring(0, 10);
   try {
@@ -428,11 +430,21 @@ function decodeCrosschainFunctionData(input: string) {
     let formatDecodeResult = undefined;
     if (fragment) {
       switch (fragment.name) {
-        case SupportCrosschainFunctions.Safe2Eth:
-          const safe2eth = IContract.decodeFunctionData(fragment, input);
+        case SupportCrosschainFunctions.crossChainRedeem:
+          const crossChainRedeem = IContract.decodeFunctionData(fragment, input);
           formatDecodeResult = {
-            _value: safe2eth[0],
-            _dst_address: safe2eth[1]
+            _value: crossChainRedeem[0],
+            _network: crossChainRedeem[1],
+            _to: crossChainRedeem[2]
+          }
+          break;
+        case SupportCrosschainFunctions.crossChainIssue:
+          const crossChainIssue = IContract.decodeFunctionData(fragment, input);
+          formatDecodeResult = {
+            _to: crossChainIssue[0],
+            _amount: crossChainIssue[1],
+            _network: crossChainIssue[2],
+            _txId: crossChainIssue[3]
           }
           break;
       }
@@ -449,6 +461,7 @@ function decodeCrosschainFunctionData(input: string) {
 export function getCrosschainPoolInfo(address: string | undefined, from?: string): {
   isCrosschainPoolBSC: boolean, isCrosschainPoolETH: boolean, isCrosschainPoolMATIC: boolean
 } {
+
   if (address && from) {
     const isCrosschainPoolBSC = Object.values(Application_Crosschain_Pool_BSC).includes(address)
       || Object.values(Application_Crosschain_Pool_BSC).includes(from);
@@ -508,6 +521,23 @@ export default (address: string | undefined, input: string | undefined, from?: s
     }
   }
 
+  const batchLockContracts = [
+    BatchLockContract[Safe4NetworkChainId.Mainnet][BatchLockLevel.TEN_CENTS],
+    BatchLockContract[Safe4NetworkChainId.Mainnet][BatchLockLevel.ONE_CENT],
+    BatchLockContract[Safe4NetworkChainId.Testnet][BatchLockLevel.TEN_CENTS],
+    BatchLockContract[Safe4NetworkChainId.Testnet][BatchLockLevel.ONE_CENT]
+  ];
+  if (address && batchLockContracts.indexOf(address) >= 0) {
+    try {
+      const abi = SysContractABI[SystemContract.AccountManager];
+      const IContract = new Interface(abi);
+      const methodId = input.substring(0, 10);
+      const fragment = IContract.getFunction(methodId);
+      return decodeAccountManagerFunctionData(IContract, fragment, input);
+    } catch (err) {
+      return undefined;
+    }
+  }
 
   if (!Object.values(SystemContract).some(addr => addr == address)) {
     return undefined;
@@ -519,6 +549,10 @@ export default (address: string | undefined, input: string | undefined, from?: s
     const fragment = IContract.getFunction(methodId);
     if (fragment) {
       switch (address) {
+        case BatchLockContract[Safe4NetworkChainId.Mainnet][BatchLockLevel.TEN_CENTS]:
+        case BatchLockContract[Safe4NetworkChainId.Mainnet][BatchLockLevel.ONE_CENT]:
+        case BatchLockContract[Safe4NetworkChainId.Testnet][BatchLockLevel.TEN_CENTS]:
+        case BatchLockContract[Safe4NetworkChainId.Testnet][BatchLockLevel.ONE_CENT]:
         case SystemContract.AccountManager:
           return decodeAccountManagerFunctionData(IContract, fragment, input);
         case SystemContract.SuperNodeLogic:

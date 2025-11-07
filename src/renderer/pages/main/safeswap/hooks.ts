@@ -29,7 +29,7 @@ async function getSafeswapV2PairAddresses(safeswapV2Factory: Contract, multicall
   return calls.map(call => call.result);
 }
 
-async function getPairCallResults(pairAddresses: string[], provider: Web3Provider, activeAccount: string, multicallContract: Contract) {
+export async function getPairCallResults(pairAddresses: string[], provider: Web3Provider, activeAccount: string, multicallContract: Contract) {
   const pairCallResult: {
     [address: string]: {
       token0_call: CallMulticallAggregateContractCall,
@@ -126,7 +126,6 @@ export function useSafeswapV2Pairs(): SafeswapV2Pairs {
 
   const walletTokens = useWalletTokens();
   const auditTokens = useAuditTokenList();
-
   const erc20Tokens = useMemo(() => {
     const tokens = walletTokens && walletTokens.filter(token => {
       return token.name != 'Safeswap V2'

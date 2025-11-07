@@ -70,7 +70,7 @@ export default () => {
     <div style={{ width: "100%", paddingTop: "40px", minWidth: "1000px" }}>
       <div style={{ margin: "auto", width: "90%" }}>
         <Row >
-          <Tabs style={{ width: "100%" }} defaultActiveKey="inputAmount" items={items} />
+          <Tabs style={{ width: "100%" }} defaultActiveKey="accountRecords" items={items} />
         </Row>
         <Row>
           {

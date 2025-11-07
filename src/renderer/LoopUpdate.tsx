@@ -8,6 +8,7 @@ import { useDispatch } from "react-redux";
 import { clearMulticallState } from "./state/multicall/actions";
 import CrosschainUpdater from "./state/transactions/CrosschainUpdater";
 import AuditUpdater from "./state/audit/AuditUpdater";
+import ProposalUpdater from "./state/proposals/ProposalUpdater";
 
 export default () => {
   const dispatch = useDispatch();
@@ -23,6 +24,7 @@ export default () => {
     <TransactionUpdater />
     <CrosschainUpdater />
     <AuditUpdater />
+    <ProposalUpdater />
   </>)
 
 }

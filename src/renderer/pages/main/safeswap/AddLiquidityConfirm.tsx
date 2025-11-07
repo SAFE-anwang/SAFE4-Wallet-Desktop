@@ -117,7 +117,8 @@ export default ({
       });
       setWaitApprove(true);
       const data = tokenAContract.interface.encodeFunctionData("approve", [
-        SafeswapV2RouterAddress, ethers.utils.parseUnits(tokenAAmount, tokenA.decimals)
+        SafeswapV2RouterAddress, 
+        ethers.constants.MaxUint256 , // ethers.utils.parseUnits(tokenAAmount, tokenA.decimals)
       ]);
       let tx: ethers.providers.TransactionRequest = {
         to: tokenAContract.address,
@@ -162,7 +163,8 @@ export default ({
       })
       setWaitApprove(true);
       const data = tokenBContract.interface.encodeFunctionData("approve", [
-        SafeswapV2RouterAddress, ethers.utils.parseUnits(tokenBAmount, tokenB.decimals)
+        SafeswapV2RouterAddress, 
+        ethers.constants.MaxUint256  //ethers.utils.parseUnits(tokenBAmount, tokenB.decimals)
       ]);
       let tx: ethers.providers.TransactionRequest = {
         to: tokenBContract.address,

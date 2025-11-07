@@ -11,13 +11,13 @@ const container = document.getElementById('root') as HTMLElement;
 const root = createRoot(container);
 
 root.render(
-  <React.StrictMode>
+  // <React.StrictMode>
     <Provider store={store}>
         <I18nextProvider i18n={i18n}>
           <App />
         </I18nextProvider>
     </Provider>
-  </React.StrictMode>
+  // </React.StrictMode>
 );
 
 

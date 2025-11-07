@@ -1,5 +1,5 @@
 import { createReducer } from "@reduxjs/toolkit"
-import { addTransaction, checkedTransaction, clearAllTransactions, finalizeTransaction, initCrosschains, loadERC20Tokens, loadTransactionsAndUpdateAddressActivityFetch, refreshAddressTimeNodeReward, reloadTransactionsAndSetAddressActivityFetch, removeERC20Token, updateAudit, updateCrosschains, updateERC20Token } from "./actions"
+import { addTransaction, checkedTransaction, cleanAddressActiviesFetch, clearAllTransactions, finalizeTransaction, initCrosschains, loadERC20Tokens, loadTransactionsAndUpdateAddressActivityFetch, refreshAddressTimeNodeReward, reloadTransactionsAndSetAddressActivityFetch, removeERC20Token, updateAudit, updateCrosschains, updateERC20Token } from "./actions"
 import { IPC_CHANNEL } from "../../config"
 import { DBAddressActivitySignal, DB_AddressActivity_Actions, DB_AddressActivity_Methods } from "../../../main/handlers/DBAddressActivitySingalHandler"
 import { CrossChainVO, DateTimeNodeRewardVO, TimeNodeRewardVO } from "../../services"
@@ -21,6 +21,7 @@ export interface SerializableTransactionReceipt {
 }
 
 export interface TransactionDetails {
+  dbId?: number,
   chainId?: number,
   hash: string,
   refFrom: string,
@@ -109,7 +110,9 @@ export interface TokenTransfer {
     symbol: string,
     decimals: number
   },
-  value: string
+  value: string ,
+  input ?: string ,
+  contract ?: string
 }
 
 export interface AddressActivityFetch {
@@ -142,7 +145,7 @@ export const initialState: {
       symbol: string,
       decimals: number,
       chainId: number,
-      props ?: any
+      props?: any
     }
   },
   crosschains: {
@@ -306,12 +309,12 @@ export default createReducer(initialState, (builder) => {
     .addCase(updateERC20Token, (state, { payload }) => {
       const { chainId, address, name, symbol, decimals } = payload;
       state.tokens[address] = {
-        name, symbol, decimals, chainId , props : "{\"hide\":false}"
+        name, symbol, decimals, chainId, props: "{\"hide\":false}"
       }
     })
-    .addCase(removeERC20Token,(state, { payload }) => {
-      const { chainId , address } = payload;
-      if ( state.tokens[address] && state.tokens[address].chainId == chainId ){
+    .addCase(removeERC20Token, (state, { payload }) => {
+      const { chainId, address } = payload;
+      if (state.tokens[address] && state.tokens[address].chainId == chainId) {
         delete state.tokens[address];
       }
     })
@@ -342,6 +345,9 @@ export default createReducer(initialState, (builder) => {
       _audit[chainId] = tokens;
       state.audit = _audit;
     })
+    .addCase(cleanAddressActiviesFetch, (state, { payload }) => {
+      state.addressActivityFetch = undefined;
+    })
 })
 
 export function Transaction2Activity(txn: TransactionDetails) {
@@ -369,6 +375,7 @@ export function Transaction2Activity(txn: TransactionDetails) {
 export function Activity2Transaction(row: any): TransactionDetails {
   const transaction
     = row.transaction_hash ? {
+      dbId: row.id,
       hash: row.transaction_hash,
       refFrom: row.ref_from,
       refTo: row.ref_to,
@@ -380,6 +387,7 @@ export function Activity2Transaction(row: any): TransactionDetails {
       blockNumber: row.block_number,
       eventLogIndex: row.event_log_index
     } : {
+      dbId: row.id,
       hash: row.transactionHash,
       refFrom: row.refFrom,
       refTo: row.refTo,

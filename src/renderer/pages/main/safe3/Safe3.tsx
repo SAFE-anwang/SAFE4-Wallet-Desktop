@@ -92,7 +92,8 @@ export default () => {
   const [redeemTxHashs, setRedeemTxHashs] = useState<{
     avaiable?: TxExecuteStatus,
     locked: TxExecuteStatus[],
-    masternode?: TxExecuteStatus
+    masternode?: TxExecuteStatus,
+    petty?: TxExecuteStatus,
   }>();
   const [redeeming, setRedeeming] = useState<boolean>(false);
 
@@ -127,7 +128,9 @@ export default () => {
       && safe3Asset.locked.unredeem.count > 0;
     const masternode = safe3Asset.masternode
       && safe3Asset.masternode.redeemHeight == 0;
-    return avaiable || locked || masternode;
+    const petty = safe3Asset && safe3Asset.pettyInfo && safe3Asset.pettyInfo.amount.greaterThan(ZERO)
+      && safe3Asset.pettyInfo.redeemHeight == 0;
+    return avaiable || locked || masternode || petty;
   }, [safe3Asset, safe3Wallet, notEnough, inputErrors]);
 
   useEffect(() => {
@@ -390,6 +393,69 @@ export default () => {
       } else {
         console.log("无需执行迁移主节点.")
       }
+
+      // 小额补偿
+      if (
+        safe3Asset.pettyInfo
+        && safe3Asset.pettyInfo.redeemHeight == 0
+      ) {
+        try {
+
+          const data = safe3Contract.interface.encodeFunctionData("batchRedeemPetty", [
+            [ethers.utils.arrayify(publicKey)],
+            [ethers.utils.arrayify(signMsg)],
+            safe4TargetAddress
+          ]);
+          let tx: ethers.providers.TransactionRequest = {
+            to: safe3Contract.address,
+            data,
+            chainId
+          };
+          tx = await EstimateTx(activeAccount, chainId, tx, provider);
+          const { signedTx, error } = await window.electron.wallet.signTransaction(
+            activeAccount,
+            tx
+          );
+          if (error) {
+            _redeemTxHashs.petty = {
+              status: 0,
+              error: error
+            }
+            setRedeemTxHashs({ ..._redeemTxHashs })
+            console.log("执行领取小额补偿,Error:", error)
+            return;
+          }
+          if (signedTx) {
+            const response = await provider.sendTransaction(signedTx);
+            _redeemTxHashs.petty = {
+              status: 1,
+              txHash: response.hash
+            }
+            setRedeemTxHashs({ ..._redeemTxHashs });
+            addTransaction({ to: safe3Contract.address }, response, {
+              call: {
+                from: activeAccount,
+                to: safe3Contract.address,
+                input: response.data,
+                value: "0"
+              }
+            });
+            console.log("执行迁移主节点Hash:", response.hash);
+          }
+        } catch (error: any) {
+          _redeemTxHashs.petty = {
+            status: 0,
+            error: error.toString()
+          }
+          setRedeemTxHashs({ ..._redeemTxHashs })
+          console.log("执行迁移主节点错误,Error:", error)
+          return;
+        }
+      } else {
+        console.log("无需执行迁移主节点.")
+      }
+
+
       setRedeeming(false);
       setFinished(true);
     }
@@ -635,6 +701,25 @@ export default () => {
                                 <Text strong type="danger">
                                   <CloseCircleTwoTone twoToneColor="red" style={{ marginRight: "5px" }} />
                                   {redeemTxHashs.masternode.error.reason}
+                                </Text> <br />
+                              </>
+                            }
+                          </>
+                        }
+                        {
+                          redeemTxHashs?.petty && <>
+                            {
+                              redeemTxHashs.petty.status == 1 && <>
+                                <Text type="secondary">{t("wallet_redeems_petty_txhash")}</Text><br />
+                                <Text strong>{redeemTxHashs.petty.txHash}</Text> <br />
+                              </>
+                            }
+                            {
+                              redeemTxHashs.petty.status == 0 && <>
+                                <Text type="secondary">{t("wallet_redeems_masternode_error")}</Text><br />
+                                <Text strong type="danger">
+                                  <CloseCircleTwoTone twoToneColor="red" style={{ marginRight: "5px" }} />
+                                  {redeemTxHashs.petty.error.reason}
                                 </Text> <br />
                               </>
                             }

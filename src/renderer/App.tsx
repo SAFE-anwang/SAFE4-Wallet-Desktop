@@ -61,6 +61,9 @@ import Crosschain from './pages/main/wallets/crosschain/Crosschain';
 import SafeswapV2 from './pages/main/safeswap/SafeswapV2';
 import IssueIndex from './pages/main/issue/IssueIndex';
 import { useUserInactivityTracker } from './hooks/useUserInactivityTracker';
+import { loadProposalReadedIds } from './state/proposals/actions';
+import { cleanAddressActiviesFetch } from './state/transactions/actions';
+import FarmPools from './pages/main/farm/FarmPools';
 
 const { Text } = Typography;
 
@@ -136,8 +139,10 @@ export default function App() {
           rpc_configs,
           wallet_names,
           app_props,
+          proposal_readed,
           os
         } = data;
+
         const rpcConfigs = rpc_configs.map((rpc_config: any) => {
           const { id, chain_id, endpoint, active } = rpc_config;
           return {
@@ -170,6 +175,16 @@ export default function App() {
           path, rpcConfigs, appProps
         }));
         dispatch(walletsLoadWalletNames(walletNames));
+
+        const proposalReaded = proposal_readed.map((element: any) => {
+          const { chain_id, proposal_ids } = element;
+          return {
+            chainId: Number(chain_id),
+            proposalIds: JSON.parse(proposal_ids)
+          }
+        });
+        dispatch(loadProposalReadedIds(proposalReaded));
+
         if (encrypt) {
           setEncrypt(encrypt);
         } else {
@@ -183,7 +198,8 @@ export default function App() {
   useUserInactivityTracker(() => {
     console.log("10分钟未操作,自动锁钱包");
     dispatch(walletsUpdateLocked(true));
-  }, 10 * 60 * 1000, 200);
+    dispatch(cleanAddressActiviesFetch(true));
+  }, 30 * 60 * 1000, 200);
 
   useEffect(() => {
     const method = ContractCompile_Methods.syncSolcLibrary;
@@ -271,7 +287,9 @@ export default function App() {
                     <MenuComponent />
                   </Col>
                 }
-                <Col id='appContainer' span={18} style={{
+                <Col id='appContainer' onScroll={() => {
+                  console.log(".sadsa")
+                }} span={18} style={{
                   minWidth: "1200px",
                   overflowX: "auto",
                   overflowY: "auto",
@@ -327,6 +345,7 @@ export default function App() {
                     <Route path="/main/crosschain" element={<Crosschain />} />
                     <Route path="/main/swap" element={<SafeswapV2 />} />
                     <Route path="/main/issue" element={<IssueIndex />} />
+                    <Route path="/main/farm" element={<FarmPools />} />
                   </Routes>
                 </Col>
               </Row>

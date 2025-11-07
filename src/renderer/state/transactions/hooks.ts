@@ -120,7 +120,6 @@ export function useTransactions(account?: string) {
       .sort((t0, t1) => {
         return t1.addedTime - t0.addedTime
       })
-      .slice(0, 200);
   }, [account, transactions, chainId]);
   const dateTransactions: {
     [date: string]: {
@@ -216,8 +215,8 @@ export function useWalletTokens(): Token[] | undefined {
     if (!chainId) return [];
     return [
       // TODO USDT DISABLE NOW..
-      // USDT[chainId as Safe4NetworkChainId],
       WSAFE[chainId as Safe4NetworkChainId],
+      USDT[chainId as Safe4NetworkChainId],
     ];
   }, [chainId]);
   const defaultTokenMap = useMemo(() => {

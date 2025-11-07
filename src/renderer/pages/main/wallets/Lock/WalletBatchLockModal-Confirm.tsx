@@ -4,7 +4,7 @@ import { useETHBalances, useWalletsActiveAccount } from "../../../../state/walle
 import { useTransactionAdder } from "../../../../state/transactions/hooks";
 import { SearchOutlined, SendOutlined, QrcodeOutlined, LockOutlined } from '@ant-design/icons';
 import { ethers } from "ethers";
-import { useAccountManagerContract } from "../../../../hooks/useContracts";
+import { useAccountManagerContract, useBatchLockOneCentContract, useBatchLockTenCentsContract } from "../../../../hooks/useContracts";
 import useTransactionResponseRender from "../../../components/useTransactionResponseRender";
 import { BatchLockAert, BatchLockParams } from "./WalletBatchLockModal-Input";
 import { CurrencyAmount, JSBI } from "@uniswap/sdk";
@@ -13,6 +13,7 @@ import AddressComponent from "../../../components/AddressComponent";
 import { useTranslation } from "react-i18next";
 import { useWeb3React } from "@web3-react/core";
 import EstimateTx from "../../../../utils/EstimateTx";
+import { ONE } from "@uniswap/sdk/dist/constants";
 const { Text, Link } = Typography;
 
 export default ({
@@ -29,6 +30,8 @@ export default ({
   const { chainId, provider } = useWeb3React();
   const addTransaction = useTransactionAdder();
   const accountManaggerContract = useAccountManagerContract(true);
+  const batchLockTenCentsContract = useBatchLockTenCentsContract();
+  const batchLockOneCentContract = useBatchLockOneCentContract();
   const [sending, setSending] = useState<boolean>(false);
 
   const {
@@ -45,7 +48,8 @@ export default ({
   }, [batchLockParams])
 
   const doBatchLockTransaction = useCallback(async () => {
-    if (accountManaggerContract && chainId && provider) {
+    if (accountManaggerContract && chainId && provider && batchLockTenCentsContract && batchLockOneCentContract) {
+
       const { startLockMonth, periodMonth, lockTimes, perLockAmount, toAddress } = batchLockParams;
       const _startDay = GetDiffInDays(new Date(`${startLockMonth}-01`));
       const _spaceDay = periodMonth * 30;
@@ -57,10 +61,29 @@ export default ({
        */
       setSending(true);
 
+      const JSBI_ONE_ETHER = JSBI.BigInt(ethers.utils.parseEther("1").toString());
+      const JSBI_TENCENTS_ETHER = JSBI.BigInt(ethers.utils.parseEther("0.1").toString());
+      const JSBI_ONECENTS_ETHER = JSBI.BigInt(ethers.utils.parseEther("0.01").toString());
+
+      let data = undefined;
+      let to = undefined;
+      if (JSBI.GE(JSBI_PerLockAmount, JSBI_ONE_ETHER)) {
+        console.log("执行大于1锁仓");
+        data = accountManaggerContract.interface.encodeFunctionData("batchDeposit4One", [toAddress, _times, _spaceDay, _startDay]);
+        to = accountManaggerContract.address;
+      } else if (JSBI.GE(JSBI_PerLockAmount, JSBI_TENCENTS_ETHER)) {
+        console.log("执行[0.1~1)锁仓");
+        data = batchLockTenCentsContract.interface.encodeFunctionData("batchDeposit4One", [toAddress, _times, _spaceDay, _startDay]);
+        to = batchLockTenCentsContract.address;
+      } else if (JSBI.GE(JSBI_PerLockAmount, JSBI_ONECENTS_ETHER)) {
+        console.log("执行[0.01~0.1)锁仓");
+        data = batchLockOneCentContract.interface.encodeFunctionData("batchDeposit4One", [toAddress, _times, _spaceDay, _startDay]);
+        to = batchLockOneCentContract.address;
+      }
+      if (data == undefined || to == undefined) return;
       const value = JSBI_TotalLockAmount.toString();
-      const data = accountManaggerContract.interface.encodeFunctionData("batchDeposit4One", [toAddress, _times, _spaceDay, _startDay]);
       let tx: ethers.providers.TransactionRequest = {
-        to: accountManaggerContract.address,
+        to,
         data,
         value,
         chainId
@@ -75,10 +98,10 @@ export default ({
           const response = await provider.sendTransaction(signedTx);
           const { hash, data } = response;
           setTransactionResponse(response);
-          addTransaction({ to: accountManaggerContract.address }, response, {
+          addTransaction({ to }, response, {
             call: {
               from: activeAccount,
-              to: accountManaggerContract.address,
+              to,
               input: data,
               value: value.toString()
             }

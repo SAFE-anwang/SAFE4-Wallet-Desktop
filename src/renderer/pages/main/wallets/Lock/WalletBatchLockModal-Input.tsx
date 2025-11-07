@@ -132,9 +132,9 @@ export default ({
           inputErrors.perLockAmount = t("enter_correct") + t("wallet_lock_amount");
         }
         // 锁仓必须大于等于1Safe
-        const ONE = CurrencyAmount.ether(ethers.utils.parseEther("1").toBigInt());
+        const ONE = CurrencyAmount.ether(ethers.utils.parseEther("0.01").toBigInt());
         if (!(_amount.equalTo(ONE) || _amount.greaterThan(ONE))) {
-          inputErrors.perLockAmount = t("wallet_lock_amount_lessthen", { lessLockAmount: "1" });
+          inputErrors.perLockAmount = t("wallet_lock_amount_lessthen", { lessLockAmount: "0.01" });
         }
       } catch (error) {
         inputErrors.perLockAmount = t("enter_correct") + t("wallet_lock_amount");

@@ -11,11 +11,12 @@ import { useWalletsActiveAccount } from "../../../state/wallets/hooks";
 import { formatProposalInfo, ProposalInfo } from "../../../structs/Proposal";
 import { DateTimeFormat } from "../../../utils/DateUtils";
 import AddressComponent from "../../components/AddressComponent";
+import { useReadedProposalIds, useUnreadProposalIds } from "../../../state/proposals/hooks";
 
 const { Text } = Typography;
 const Proposals_Page_Size = 10;
 
-export const RenderProposalState = (state: number, startPayTime: number, latestBlockTimestamp: number, t ?: any) => {
+export const RenderProposalState = (state: number, startPayTime: number, latestBlockTimestamp: number, t?: any) => {
   switch (state) {
     case 0:
       if (latestBlockTimestamp >= startPayTime) {
@@ -71,6 +72,7 @@ export default ({
     current: number | undefined,
     pageSizeOptions: []
   }>();
+  const unreadProposalIds = useUnreadProposalIds();
 
   useEffect(() => {
     if (proposalContract) {
@@ -184,7 +186,7 @@ export default ({
         return <>
           <Row>
             <Col span={24}>
-              {RenderProposalState(state, proposalInfo.startPayTime, timestamp , t)}
+              {RenderProposalState(state, proposalInfo.startPayTime, timestamp, t)}
             </Col>
           </Row>
         </>
@@ -214,9 +216,18 @@ export default ({
         return <>
           <Row>
             <Col span={24}>
-              <Text strong ellipsis style={{ width: "120px", color: RenderTextColor(proposalInfo.state, proposalInfo.startPayTime, timestamp) }}>
-                {title}
-              </Text>
+              {
+                unreadProposalIds && unreadProposalIds.indexOf(proposalInfo.id) > -1 ?
+                  <Badge style={{ marginRight: "3px" }} dot>
+                    <Text strong ellipsis italic style={{ width: "120px", color: "blue" }}>
+                      {title}
+                    </Text>
+                  </Badge>
+                  :
+                  <Text strong ellipsis style={{ width: "120px", color: RenderTextColor(proposalInfo.state, proposalInfo.startPayTime, timestamp) }}>
+                    {title}
+                  </Text>
+              }
             </Col>
           </Row>
         </>
@@ -295,6 +306,9 @@ export default ({
 
     }
   }, [proposalContract, queryKey]);
+
+
+  const readedProposalIds = useReadedProposalIds();
 
   return <>
 

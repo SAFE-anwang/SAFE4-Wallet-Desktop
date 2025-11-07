@@ -5,6 +5,7 @@ import wallets from './wallets/reducer';
 import multicall from './multicall/reducer';
 import transactions from './transactions/reducer';
 import audit from './audit/reducer';
+import proposals from './proposals/reducer';
 
 
 const store = configureStore({
@@ -13,7 +14,8 @@ const store = configureStore({
     wallets,
     multicall,
     transactions,
-    audit
+    audit,
+    proposals
   }
 })
 

@@ -46,6 +46,19 @@ export default ({
   const activeAccount = useWalletsActiveAccount();
   const { t } = useTranslation();
   const support = DecodeSupportFunction(call?.to, call?.input, call?.from);
+
+  // 判断是否为跨链接收 USDT;
+  const crosschainUSDTSupport = useMemo(() => {
+    if (transaction.data
+      && transaction.data.contract
+      && transaction.data.input
+    ) {
+      const { contract, input } = transaction.data;
+      const support = DecodeSupportFunction(contract, input);
+      return support;
+    }
+  }, [transaction]);
+
   return <>
     <Row>
       <Col span={24}>
@@ -85,9 +98,7 @@ export default ({
         }
       </Col>
     </Row>
-
     <Divider />
-
     <Text type="secondary" style={{ fontSize: "12px" }}>{t("wallet_txdetails_details")}</Text><br />
     <Card style={{ marginTop: "8px" }}>
       <Row>
@@ -136,9 +147,14 @@ export default ({
         </Card>
       </>
     }
+
     {
       support && <TransactionDetailsCallSupport support={support} transaction={tx} />
     }
+    {
+      crosschainUSDTSupport && <TransactionDetailsCallSupport support={crosschainUSDTSupport} transaction={tx} />
+    }
+
   </>
 
 }

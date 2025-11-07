@@ -101,8 +101,9 @@ export default ({
         }
       })
       const amountIn = ethers.BigNumber.from(trade.inputAmount.raw.toString());
+      // 更新为最大值授权,避免每次用一点授权一点..
       const data = tokenAContract.interface.encodeFunctionData("approve", [
-        SafeswapV2RouterAddress, amountIn
+        SafeswapV2RouterAddress, ethers.constants.MaxUint256 //amountIn
       ]);
       let tx: ethers.providers.TransactionRequest = {
         to: tokenAContract.address,
