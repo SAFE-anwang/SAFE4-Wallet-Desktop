@@ -1,20 +1,16 @@
 import { Button, Card, Col, Row, Typography, Flex, Avatar, Divider, Modal } from "antd"
 import { ERC20_LOGO, SAFE_LOGO, USDT_LOGO } from "../../../assets/logo/AssetsLogo";
 import TokenLogo from "../../components/TokenLogo";
-import { useTokens, useWalletTokens } from "../../../state/transactions/hooks";
 import { useTokenBalances, useWalletsActiveAccount } from "../../../state/wallets/hooks";
-import { useTranslation } from "react-i18next";
-import { useWeb3React } from "@web3-react/core";
-import { useEffect, useMemo, useState } from "react";
 import { Token } from "@uniswap/sdk";
-import { Safe4NetworkChainId, USDT, WSAFE } from "../../../config";
 import ERC20TokenLogoComponent from "../../components/ERC20TokenLogoComponent";
-import { useAuditTokenList } from "../../../state/audit/hooks";
-import TokenName from "../../components/TokenName";
 import TokenSymbol from "../../components/TokenSymbol";
+import { useWeb3React } from "@web3-react/core";
+import { Safe4NetworkChainId, USDT } from "../../../config";
+import { useSafeswapWalletTokens } from "./hooks";
+
 
 const { Text } = Typography;
-
 
 export default ({
   openTokenSelectModal,
@@ -27,25 +23,10 @@ export default ({
   tokenSelectCallback?: (token: Token | undefined) => void,
   selectedToken?: Token | undefined
 }) => {
-
+  const { chainId } = useWeb3React();
   const activeAccount = useWalletsActiveAccount();
-
-  const walletTokens = useWalletTokens();
-  const tokenAmounts = useTokenBalances(activeAccount, walletTokens);
-  const auditTokens = useAuditTokenList();
-  const tokens = useMemo(() => {
-    const tokens = walletTokens && walletTokens.filter(token => {
-      return token.name != 'Safeswap V2'
-    });
-    if (auditTokens) {
-      const auditMap = auditTokens.reduce((map, token) => {
-        map[token.address] = token;
-        return map;
-      }, {} as { [address: string]: any })
-      return tokens?.filter(token => auditMap[token.address] != undefined)
-    }
-    return tokens;
-  }, [walletTokens, auditTokens]);
+  const tokens = useSafeswapWalletTokens(true);
+  const tokenAmounts = useTokenBalances(activeAccount, tokens);
 
   const onTokenClick = (token: Token | undefined) => {
     setOpenTokenSelectModal(false);
@@ -63,14 +44,14 @@ export default ({
             <Button disabled={selectedToken == undefined} onClick={() => onTokenClick(undefined)} style={{ height: "40px" }} type="default" icon={<TokenLogo />} >
               SAFE
             </Button>
-            {/* {
+            {
               chainId && <Button disabled={selectedToken == USDT[chainId as Safe4NetworkChainId]}
                 onClick={() => onTokenClick(USDT[chainId as Safe4NetworkChainId])} style={{ height: "40px" }} type="default" icon={
                   <Avatar src={USDT_LOGO} />
                 }>
                 USDT
               </Button>
-            } */}
+            }
           </Flex>
         </Col>
         <Divider />

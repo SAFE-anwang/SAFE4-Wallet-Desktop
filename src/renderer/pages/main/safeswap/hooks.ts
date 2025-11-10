@@ -7,11 +7,9 @@ import { useWalletsActiveAccount } from "../../../state/wallets/hooks";
 import { Contract, ethers } from "ethers";
 import { PairABI } from "../../../constants/SafeswapAbiConfig";
 import { Web3Provider } from "@ethersproject/providers";
-import { useTokens, useWalletTokens } from "../../../state/transactions/hooks";
-import { Safe4NetworkChainId, USDT, WSAFE } from "../../../config";
+import { useWalletTokens } from "../../../state/transactions/hooks";
 import { Pair, Token, TokenAmount } from "@uniswap/sdk";
 import { useAuditTokenList } from "../../../state/audit/hooks";
-import { shallowEqual } from "react-redux";
 
 
 async function getSafeswapV2PairAddresses(safeswapV2Factory: Contract, multicallContract: Contract) {
@@ -112,6 +110,38 @@ export interface SafeswapV2Pairs {
   } | undefined
 }
 
+export function useSafeswapWalletTokens(auditLogoFilter: boolean | false): Token[] | undefined {
+  const walletTokens = useWalletTokens();
+  const auditTokens = useAuditTokenList();
+  const erc20Tokens = useMemo(() => {
+    // 过滤掉 Safeswap V2 这种流动性代币;
+    const tokens = walletTokens && walletTokens.filter(token => {
+      return token.name != 'Safeswap V2'
+    });
+    if (auditTokens) {
+      const auditToken = auditTokens.filter(auditToken => {
+        if (auditLogoFilter) {
+          return auditToken.logoURI != undefined && auditToken.logoURI != '';
+        }
+        return true;
+      }).map(token => {
+        const { chainId, address, name, symbol, decimals } = token;
+        return new Token(chainId, address, decimals, symbol, name);
+      });
+      if (tokens) {
+        const walletTokenAddress = tokens.map(token => token.address);
+        return tokens.concat(
+          auditToken.filter(auditToken => !walletTokenAddress.includes(auditToken.address))
+        )
+      } else {
+        return auditToken;
+      }
+    }
+    return tokens;
+  }, [walletTokens, auditTokens, auditLogoFilter]);
+  return erc20Tokens;
+}
+
 export function useSafeswapV2Pairs(): SafeswapV2Pairs {
 
   const blockNumber = useBlockNumber();
@@ -123,23 +153,7 @@ export function useSafeswapV2Pairs(): SafeswapV2Pairs {
     blockNumber: number,
     pairResults: { [address: string]: PairResult }
   }>();
-
-  const walletTokens = useWalletTokens();
-  const auditTokens = useAuditTokenList();
-  const erc20Tokens = useMemo(() => {
-    const tokens = walletTokens && walletTokens.filter(token => {
-      return token.name != 'Safeswap V2'
-    });
-    if (auditTokens) {
-      const auditMap = auditTokens.reduce((map, token) => {
-        map[token.address] = token;
-        return map;
-      }, {} as { [address: string]: any })
-      return tokens?.filter(token => auditMap[token.address] != undefined)
-    }
-    return tokens;
-  }, [walletTokens, auditTokens]);
-
+  const erc20Tokens = useSafeswapWalletTokens(false);
   const [loading, setLoading] = useState<boolean>(false);
   const [result, setResult] = useState<{
     pairsMap: { [address: string]: Pair },
@@ -166,7 +180,6 @@ export function useSafeswapV2Pairs(): SafeswapV2Pairs {
 
   useEffect(() => {
     if (_pairResults && erc20Tokens) {
-
       const tokensMap: { [address: string]: Token } = erc20Tokens.reduce((map, token) => {
         map[token.address] = token;
         return map;
@@ -206,7 +219,7 @@ export function useSafeswapV2Pairs(): SafeswapV2Pairs {
         if (prev != undefined && prev.blockNumber == blockNumber) {
           return prev
         }
-        console.log("-Do Update Pairs Result for blockNumber-" , blockNumber)
+        console.log("-Do Update Pairs Result for blockNumber-", blockNumber)
         return {
           pairsMap,
           pairBalancesMap,

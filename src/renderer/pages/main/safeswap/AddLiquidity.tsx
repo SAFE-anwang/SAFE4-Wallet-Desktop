@@ -10,14 +10,12 @@ import { calculateAmountAdd, calculateAmountIn, calculateAmountOut, calculatePai
 import { useSafeswapTokens } from "../../../state/application/hooks";
 import { useTokens } from "../../../state/transactions/hooks";
 import TokenButtonSelect from "./TokenButtonSelect";
-import { SafeswapV2RouterAddress } from "../../../config";
-import { IERC20_Interface } from "../../../abis";
 import AddLiquidityConfirm from "./AddLiquidityConfirm";
 import { Default_Safeswap_Tokens, isDecimalPrecisionExceeded, parseTokenData, SerializeToken } from "./Swap";
 import { useDispatch } from "react-redux";
 import { applicationUpdateSafeswapTokens } from "../../../state/application/action";
 import { AssetPoolModule } from "./AssetPool";
-import { SafeswapV2Pairs, useSafeswapV2Pairs } from "./hooks";
+import { SafeswapV2Pairs, useSafeswapV2Pairs, useSafeswapWalletTokens } from "./hooks";
 import TokenSymbol from "../../components/TokenSymbol";
 import ViewFiexdAmount from "../../../utils/ViewFiexdAmount";
 const { Text, Link } = Typography;
@@ -37,14 +35,8 @@ export default ({
   const dispatch = useDispatch();
   const safeswapTokens = useSafeswapTokens();
   const Default_Swap_Token = chainId && Default_Safeswap_Tokens(chainId);
-  const tokens = useTokens();
-  const erc20Tokens = Object.keys(tokens).map((address) => {
-    const { name, decimals, symbol } = tokens[address];
-    return new Token(ChainId.MAINNET, address, decimals, symbol, name);
-  })
-  const tokenAmounts = useTokenBalances(activeAccount, erc20Tokens);
+  const tokenAmounts = useTokenBalances(activeAccount, useSafeswapWalletTokens(false));
   const balance = useETHBalances([activeAccount])[activeAccount];
-
   const [tokenA, setTokenA] = useState<Token | undefined>(
     safeswapTokens ? parseTokenData(safeswapTokens.tokenA) : Default_Swap_Token ? Default_Swap_Token[0] : undefined
   );
@@ -53,14 +45,12 @@ export default ({
   );
   const pairAddress = chainId && calculatePairAddress(tokenA, tokenB, chainId);
   const isValidPair = pairAddress != undefined;
-
   const { loading, result } = safeswapV2Pairs;
   const pairsMap = result && result.pairsMap;
   const pairBalancesMap = result && result.pairBalancesMap;
   const pairTotalSuppliesMap = result && result.pairTotalSuppliesMap;
   const pair = pairsMap && pairAddress && pairsMap[pairAddress];
   const liquidityNotFound = !loading && pairsMap && !pair && isValidPair;
-
   const balanceOfTokenA = tokenA ? tokenAmounts[tokenA.address] : balance;
   const balanceOfTokenB = tokenB ? tokenAmounts[tokenB.address] : balance;
   const [tokenAAmount, settokenAAmount] = useState<string>();

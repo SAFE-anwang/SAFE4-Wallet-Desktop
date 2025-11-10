@@ -16,7 +16,7 @@ import SwapConfirm from "./SwapConfirm";
 import { useDispatch } from "react-redux";
 import { applicationUpdateSafeswapTokens } from "../../../state/application/action";
 import ViewFiexdAmount from "../../../utils/ViewFiexdAmount";
-import { SafeswapV2Pairs, useSafeswapV2Pairs } from "./hooks";
+import { SafeswapV2Pairs, useSafeswapV2Pairs, useSafeswapWalletTokens } from "./hooks";
 import ERC20TokenLogoComponent from "../../components/ERC20TokenLogoComponent";
 import TokenSymbol from "../../components/TokenSymbol";
 const { Text, Link } = Typography;
@@ -82,9 +82,11 @@ export default ({
   const dispatch = useDispatch();
 
   const Default_Swap_Token = chainId && Default_Safeswap_Tokens(chainId);
-  const walletTokens = useWalletTokens();
+
+  const walletTokens = useSafeswapWalletTokens(false);
   const tokenAmounts = walletTokens && useTokenBalances(activeAccount, walletTokens);
   const balance = useETHBalances([activeAccount])[activeAccount];
+
   const safeswapTokens = useSafeswapTokens();
   const [tokenA, setTokenA] = useState<Token | undefined>(
     safeswapTokens ? parseTokenData(safeswapTokens.tokenA) : Default_Swap_Token ? Default_Swap_Token[0] : undefined

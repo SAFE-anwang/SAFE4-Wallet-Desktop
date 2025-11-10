@@ -12,6 +12,7 @@ import { useTokens } from "../../../../../state/transactions/hooks";
 import { Safe4NetworkChainId, USDT, WSAFE } from "../../../../../config";
 import { useWalletsActiveAccount } from "../../../../../state/wallets/hooks";
 import { useTranslation } from "react-i18next";
+import { useSafeswapWalletTokens } from "../../../safeswap/hooks";
 
 const { Text } = Typography;
 
@@ -25,14 +26,14 @@ export default ({ transaction, setClickTransaction, support }: {
 }) => {
   const { t } = useTranslation();
   const { chainId } = useWeb3React();
-  const tokens = useTokens();
+  const tokens = useSafeswapWalletTokens(false);
   const tokensMap = useMemo<{ [address: string]: Token } | undefined>(() => {
-    if (chainId) {
-      const tokensMap = Object.keys(tokens).reduce((map, address) => {
-        const { name, symbol, decimals } = tokens[address];
-        map[address] = new Token(chainId, address, decimals, symbol, name);
+    if (chainId && tokens) {
+      const tokensMap = Object.values(tokens).reduce((map, token) => {
+        map[token.address] = token;
         return map;
       }, {} as { [address: string]: Token });
+
       tokensMap[WSAFE[chainId as Safe4NetworkChainId].address] = WSAFE[chainId as Safe4NetworkChainId];
       tokensMap[USDT[chainId as Safe4NetworkChainId].address] = USDT[chainId as Safe4NetworkChainId];
       return tokensMap;

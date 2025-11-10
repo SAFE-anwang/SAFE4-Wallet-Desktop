@@ -25,6 +25,9 @@ export default () => {
     setActiveModule(ActiveModule.AssetsPool);
   }
   const safeswapV2Pairs = useSafeswapV2Pairs();
+
+  console.log("SafeswapV2Pairs =>" , safeswapV2Pairs)
+
   const safeswapAction = useSafeswapAction();
 
   useEffect(() => {

@@ -12,6 +12,7 @@ import { useAuditTokenList } from '../state/audit/hooks';
 import { ChainId, Pair, Token, TokenAmount } from '@uniswap/sdk';
 import { IERC20_Interface } from '../abis';
 import { Safe4NetworkChainId } from '../config';
+import GetToken from '../utils/GetToken';
 
 /**
     /// @notice Info of each MCV2 pool.
@@ -220,33 +221,30 @@ export function useMiniChefV2PoolInfosFilterSafeswap() {
     return undefined;
   }, [safeswapPairs, result]);
   const farm = result?.farm;
-
   const activeAccount = useWalletsActiveAccount();
-  const { provider } = useWeb3React();
+  const { provider, chainId } = useWeb3React();
   const multicallContract = useMulticallContract();
-
   const walletTokens = useWalletTokens();
   const auditTokens = useAuditTokenList();
   const erc20Tokens = useMemo(() => {
+    if (auditTokens) {
+      const audits = auditTokens.map(token => {
+        const { chainId, address, name, symbol, decimals } = token;
+        return new Token(chainId, address, decimals, symbol, name);
+      });
+      return audits;
+    }
     const tokens = walletTokens && walletTokens.filter(token => {
       return token.name != 'Safeswap V2'
     });
-    if (auditTokens) {
-      const auditMap = auditTokens.reduce((map, token) => {
-        map[token.address] = token;
-        return map;
-      }, {} as { [address: string]: any })
-      return tokens?.filter(token => auditMap[token.address] != undefined)
-    }
     return tokens;
   }, [walletTokens, auditTokens]);
-
   const [miniChefV2PoolMap, setMiniChefV2PoolMap] = useState<{
     [lpToken: string]: MiniChefV2PoolInfoWithSafeswapPair
   }>();
 
   useEffect(() => {
-    if (lpTokenPoolInfos && provider && multicallContract && erc20Tokens && farm) {
+    if (lpTokenPoolInfos && provider && multicallContract && erc20Tokens && farm && chainId) {
       setLoading(true);
       const resultMap: {
         [lpToken: string]: MiniChefV2PoolInfoWithSafeswapPair
@@ -259,6 +257,19 @@ export function useMiniChefV2PoolInfosFilterSafeswap() {
         console.log("[wrappMiniChefPoolInfos]");
         const pairAddresses = lpTokenPoolInfos.map(poolInfo => poolInfo.lpToken);
         const pairResults = await getPairCallResults(pairAddresses, provider, activeAccount, multicallContract);
+        const pairTokens = Object.keys(pairResults).flatMap(pairAddress => {
+          const { token0, token1 } = pairResults[pairAddress];
+          return [token0, token1];
+        });
+        const unknownTokens = pairTokens.filter(address => tokensMap[address] == undefined);
+        if (unknownTokens && unknownTokens.length > 0) {
+          const unknownTokenMap = await GetToken(unknownTokens, multicallContract, chainId);
+          Object.keys(unknownTokenMap).forEach(address => {
+            if (unknownTokenMap[address]) {
+              tokensMap[address] = unknownTokenMap[address];
+            }
+          });
+        }
         const pairsMap = Object.keys(pairResults).filter(pairAddress => {
           const { token0, token1 } = pairResults[pairAddress];
           return tokensMap[token0] && tokensMap[token1];
@@ -285,7 +296,6 @@ export function useMiniChefV2PoolInfosFilterSafeswap() {
             pair: pairsMap[lpToken]
           }
         });
-
         // 查询 MiniChefV2 在每一个 LP 上的 balance;
         const calls: CallMulticallAggregateContractCall[] =
           pairAddresses.map(lpToken => {
