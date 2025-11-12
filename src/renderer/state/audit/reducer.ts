@@ -1,6 +1,7 @@
 import { createReducer } from "@reduxjs/toolkit"
 import { updateAuditTokens } from "./actions"
 import { Safe4NetworkChainId, USDT, WSAFE } from "../../config"
+import { ethers } from "ethers"
 
 export interface IAuditState {
   tokens: {
@@ -32,6 +33,7 @@ const initialState: IAuditState = {
 export default createReducer(initialState, (builder) => {
   builder.addCase(updateAuditTokens, (state, { payload }) => {
     const { chainId, tokens } = payload;
+    tokens.forEach( token => token.address = ethers.utils.getAddress(token.address) );
     state.tokens[chainId] = tokens;
   })
 })

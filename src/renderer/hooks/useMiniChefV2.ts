@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useBlockNumber } from '../state/application/hooks';
 import { useMiniChefV2, useMulticallContract } from "./useContracts";
 import { CallMulticallAggregateContractCall, SyncCallMulticallAggregate } from '../state/multicall/CallMulticallAggregate';
-import { BigNumber, Contract } from 'ethers';
+import { BigNumber, Contract, ethers } from 'ethers';
 import useSafeswapV2Pairs from './useSafeswapV2Pairs';
 import { getPairCallResults, PairResult } from '../pages/main/safeswap/hooks';
 import { useTokenBalances, useWalletsActiveAccount } from '../state/wallets/hooks';

@@ -591,6 +591,7 @@ export default {
   wallet_history_redeem_available: "迁移 SAFE",
   wallet_history_redeem_locked: "迁移 锁仓资产",
   wallet_history_redeem_masternode: "迁移 主节点",
+  wallet_history_redeem_petty: "领取小额锁仓补偿",
   wallet_history_crosschain_crosstonetwork: "跨链到 {{network}} 网络",
   wallet_history_crosschain_receivefromnetwork: "从 {{network}} 网络接收",
   wallet_history_clear_tip0: "确认要清空当前地址的历史记录吗?",

@@ -591,6 +591,7 @@ export default {
   wallet_history_redeem_available: "Migrate Available Assets",
   wallet_history_redeem_locked: "Migrate Locked Assets",
   wallet_history_redeem_masternode: "Migrate Masternode",
+  wallet_history_redeem_petty: "领取小额锁仓补偿",
   wallet_history_crosschain_crosstonetwork: "Cross-chain to {{network}} network",
   wallet_history_crosschain_receivefromnetwork: "Receive from {{network}} network",
   wallet_history_clear_tip0: "Are you sure you want to clear the history for the current address?",

@@ -148,6 +148,7 @@ export default ({ transaction, setClickTransaction, support }: {
       case SupportSafe3Functions.BatchRedeemAvailable:
       case SupportSafe3Functions.BatchRedeemLocked:
       case SupportSafe3Functions.BatchRedeemMasterNode:
+      case SupportSafe3Functions.BatchRedeemPetty:
         return <TransactionElementCallSafe3Redeem
           transaction={transaction}
           setClickTransaction={setClickTransaction}

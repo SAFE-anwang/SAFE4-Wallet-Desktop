@@ -30,9 +30,9 @@ export enum PriceType {
 }
 export const Default_Safeswap_Tokens = (chainId: Safe4NetworkChainId) => {
   return [
-    // USDT[chainId],
+    USDT[chainId],
     undefined,
-    WSAFE[chainId],
+    // WSAFE[chainId],
   ]
 }
 

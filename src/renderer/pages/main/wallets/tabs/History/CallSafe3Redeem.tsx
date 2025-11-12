@@ -38,6 +38,8 @@ export default ({
         return t("wallet_history_redeem_locked");
       case SupportSafe3Functions.BatchRedeemMasterNode:
         return t("wallet_history_redeem_masternode");
+      case SupportSafe3Functions.BatchRedeemPetty:
+        return t("wallet_history_redeem_petty");
       default:
     }
     return "";

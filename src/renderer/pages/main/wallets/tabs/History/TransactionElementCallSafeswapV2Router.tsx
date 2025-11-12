@@ -1,10 +1,10 @@
 
-import { Col, Row, Avatar, List, Typography, Modal, Button, Spin } from "antd";
+import { Col, Row, Avatar, List, Typography, Modal, Button, Spin, Badge } from "antd";
 import { useMemo } from "react";
 import { TransactionDetails } from "../../../../../state/transactions/reducer";
 import { SupportSafeswapV2RouterFunctions } from "../../../../../constants/DecodeSupportFunction";
 import ERC20TokenLogoComponent from "../../../../components/ERC20TokenLogoComponent";
-import { LoadingOutlined, LockOutlined } from "@ant-design/icons";
+import { CloseCircleFilled, LoadingOutlined, LockOutlined } from "@ant-design/icons";
 import { SAFE_LOGO } from "../../../../../assets/logo/AssetsLogo";
 import { useWeb3React } from "@web3-react/core";
 import { CurrencyAmount, Token, TokenAmount } from "@uniswap/sdk";
@@ -13,6 +13,7 @@ import { Safe4NetworkChainId, USDT, WSAFE } from "../../../../../config";
 import { useWalletsActiveAccount } from "../../../../../state/wallets/hooks";
 import { useTranslation } from "react-i18next";
 import { useSafeswapWalletTokens } from "../../../safeswap/hooks";
+import { ethers } from "ethers";
 
 const { Text } = Typography;
 
@@ -87,7 +88,7 @@ export default ({ transaction, setClickTransaction, support }: {
       if (tokenBReceives && tokenBReceives.length > 0) {
         if (!tokenB && chainId) {
           const { symbol, name, decimals, address } = tokenBReceives[0].token;
-          tokenB = new Token(chainId, address, decimals, symbol, name);
+          tokenB = new Token(chainId, ethers.utils.getAddress(address), decimals, symbol, name);
         }
         tokenBAmount = tokenB && tokenBReceives.reduce((tokenAmount, tokenTransfer) => {
           const receive = new TokenAmount(tokenAmount.token, tokenTransfer.value);
@@ -171,7 +172,7 @@ export default ({ transaction, setClickTransaction, support }: {
       if (tokenASpents && tokenASpents.length > 0 && chainId) {
         if (!tokenA) {
           const { address, name, symbol, decimals } = tokenASpents[0].token;
-          tokenA = new Token(chainId, address, decimals, symbol, name);
+          tokenA = new Token(chainId, ethers.utils.getAddress(address), decimals, symbol, name);
         }
         tokenAAmount = Object.values(tokenASpents).reduce((tokenAAmount, tokenTransfer) => {
           if (tokenA) {
@@ -186,7 +187,7 @@ export default ({ transaction, setClickTransaction, support }: {
       if (tokenBReceives && tokenBReceives.length > 0 && chainId) {
         if (!tokenB) {
           const { address, name, symbol, decimals } = tokenBReceives[0].token;
-          tokenB = new Token(chainId, address, decimals, symbol, name);
+          tokenB = new Token(chainId, ethers.utils.getAddress(address), decimals, symbol, name);
         }
         tokenBAmount = Object.values(tokenBReceives).reduce((tokenBAmount, tokenTransfer) => {
           if (tokenB) {
@@ -244,13 +245,20 @@ export default ({ transaction, setClickTransaction, support }: {
           <>
             <span>
               {
-                !status && <Spin indicator={<LoadingOutlined style={{ fontSize: "34px", marginLeft: "-17px", marginTop: "-14px" }} />} >
+                status == undefined && <Spin indicator={<LoadingOutlined style={{ fontSize: "34px", marginLeft: "-17px", marginTop: "-14px" }} />} >
                   {RenderTokensForTokens()}
                 </Spin>
               }
               {
-                status && <>
+                status == 1 && <>
                   {RenderTokensForTokens()}
+                </>
+              }
+              {
+                status == 0 && <>
+                  <Badge title="失败" size="default" count={<CloseCircleFilled style={{ color: '#f5222d', top: "12px" }} />}>
+                    {RenderTokensForTokens()}
+                  </Badge>
                 </>
               }
             </span>

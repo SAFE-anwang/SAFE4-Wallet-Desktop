@@ -1,10 +1,10 @@
 
-import { Col, Row, Avatar, List, Typography, Modal, Button, Spin } from "antd";
+import { Col, Row, Avatar, List, Typography, Modal, Button, Spin, Badge } from "antd";
 import { useMemo } from "react";
 import { TransactionDetails } from "../../../../../state/transactions/reducer";
 import { SupportSafeswapV2RouterFunctions } from "../../../../../constants/DecodeSupportFunction";
 import ERC20TokenLogoComponent from "../../../../components/ERC20TokenLogoComponent";
-import { LoadingOutlined, LockOutlined } from "@ant-design/icons";
+import { CloseCircleFilled, LoadingOutlined, LockOutlined } from "@ant-design/icons";
 import { SAFE_LOGO } from "../../../../../assets/logo/AssetsLogo";
 import { useWeb3React } from "@web3-react/core";
 import { CurrencyAmount, Rounding, Token, TokenAmount } from "@uniswap/sdk";
@@ -182,13 +182,20 @@ export default ({ transaction, setClickTransaction, support }: {
           <>
             <span>
               {
-                !status && <Spin indicator={<LoadingOutlined style={{ fontSize: "34px", marginLeft: "-17px", marginTop: "-14px" }} />} >
+                status == undefined && <Spin indicator={<LoadingOutlined style={{ fontSize: "34px", marginLeft: "-17px", marginTop: "-14px" }} />} >
                   {RenderTokensForTokens()}
                 </Spin>
               }
               {
-                status && <>
+                status == 1 && <>
                   {RenderTokensForTokens()}
+                </>
+              }
+              {
+                status == 0 && <>
+                  <Badge title="失败" size="default" count={<CloseCircleFilled style={{ color: '#f5222d', top: "12px" }} />}>
+                    {RenderTokensForTokens()}
+                  </Badge>
                 </>
               }
             </span>

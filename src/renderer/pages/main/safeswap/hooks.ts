@@ -126,7 +126,7 @@ export function useSafeswapWalletTokens(auditLogoFilter: boolean | false): Token
         return true;
       }).map(token => {
         const { chainId, address, name, symbol, decimals } = token;
-        return new Token(chainId, address, decimals, symbol, name);
+        return new Token(chainId, ethers.utils.getAddress(address), decimals, symbol, name);
       });
       if (tokens) {
         const walletTokenAddress = tokens.map(token => token.address);

@@ -53,6 +53,7 @@ export enum SupportSafe3Functions {
   BatchRedeemAvailable = "batchRedeemAvailable",
   BatchRedeemLocked = "batchRedeemLocked",
   BatchRedeemMasterNode = "batchRedeemMasterNode",// function batchRedeemMasterNode(bytes[] memory _pubkeys, bytes[] memory _sigs, string[] memory _enodes)
+  BatchRedeemPetty = "batchRedeemPetty"
 }
 
 export enum SupportCrosschainFunctions {
@@ -354,6 +355,7 @@ function decodeSafe3FunctionData(
     case SupportSafe3Functions.RedeemMasterNode:
     case SupportSafe3Functions.BatchRedeemAvailable:
     case SupportSafe3Functions.BatchRedeemLocked:
+    case SupportSafe3Functions.BatchRedeemPetty:
       const redeem = IContract.decodeFunctionData(fragment, input);
       formatDecodeResult = {
         _pubkeys: redeem[0],

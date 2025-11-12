@@ -110,9 +110,10 @@ export class DBAddressActivitySingalHandler implements ListenSignalHandler {
     } else if (DB_AddressActivity_Methods.loadActivities == method) {
       const address = params[0];
       const chainId = params[1];
-      const txDbId = params[2];
-      data = this.loadActivities(address, chainId, txDbId, (rows: any) => {
-        event.reply(Channel, [this.getSingal(), method, [rows, txDbId]])
+      const blockNumber = params[2];
+      const limit = params[3];
+      data = this.loadActivities(address, chainId, blockNumber, limit, (rows: any) => {
+        event.reply(Channel, [this.getSingal(), method, [rows, blockNumber]])
       });
     } else if (DB_AddressActivity_Methods.saveOrUpdateActivities == method) {
       const [addressActivities, chainId] = params;
@@ -180,17 +181,15 @@ export class DBAddressActivitySingalHandler implements ListenSignalHandler {
     )
   }
 
-  private loadActivities(address: string, chainId: number, txDbId: number, callback: (rows: any) => void) {
-
-    const querySQL = txDbId ?
-      "SELECT * FROM Address_Activities WHERE ID < ? and (ref_from = ? or ref_to = ?) and chain_id = ? order by id desc limit 500"
-      : "SELECT * FROM Address_Activities WHERE (ref_from = ? or ref_to = ?) and chain_id = ? order by id desc limit 500";
-    const params = txDbId ?
-      [txDbId, address, address, chainId]
-      : [address, address, chainId];
-
+  private loadActivities(address: string, chainId: number, blockNumber: number, limit: number, callback: (rows: any) => void) {
+    const _limit = limit && limit > 500 ? limit : 500;
+    const querySQL = blockNumber ?
+      "SELECT * FROM Address_Activities WHERE block_number <= ? and (ref_from = ? or ref_to = ?) and chain_id = ? order by block_number desc limit ?"
+      : "SELECT * FROM Address_Activities WHERE (ref_from = ? or ref_to = ?) and chain_id = ? order by (block_number IS NOT NULL) , block_number desc limit ?";
+    const params = blockNumber ?
+      [blockNumber, address, address, chainId, _limit]
+      : [address, address, chainId, _limit];
     console.log("Execute SQL ==", querySQL)
-
     this.db.all(
       querySQL,
       params,
@@ -230,11 +229,16 @@ export class DBAddressActivitySingalHandler implements ListenSignalHandler {
   }
 
   private saveOrUpdateActivities(addressActivities: AddressActivityVO[], chainId: number) {
-    console.log("saveorupdate transactions.. >>", addressActivities.length)
-    for (let i in addressActivities) {
+    console.log("saveorupdate transactions.. >>", addressActivities.length);
+
+    const orderedAddressActivities = addressActivities.sort((a0, a1) => {
+      return a0.blockNumber - a1.blockNumber;
+    })
+
+    for (let i in orderedAddressActivities) {
       const {
         transactionHash, blockNumber, status, eventLogIndex, action, data, refFrom, refTo, timestamp
-      } = addressActivities[i];
+      } = orderedAddressActivities[i];
       this.db.all(
         "SELECT * FROM Address_Activities WHERE action = ? AND event_log_index = ? AND transaction_hash = ?",
         [action, eventLogIndex, transactionHash],

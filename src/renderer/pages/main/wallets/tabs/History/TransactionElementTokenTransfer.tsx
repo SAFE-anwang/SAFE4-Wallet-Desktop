@@ -54,7 +54,9 @@ export default ({ transaction, tokenTransfer, status }: {
   /** 判断是否为跨链USDT */
   const { input, contract } = tokenTransfer;
   const isCrosschainTransfer =
-    contract && input && chainId && ethers.utils.getAddress(contract) == Application_Crosschain[chainId as Safe4NetworkChainId] && input.startsWith("0x910c0ea6");
+    contract && input && chainId
+    && ethers.utils.getAddress(contract) == Application_Crosschain[chainId as Safe4NetworkChainId]
+    && input.startsWith("0x910c0ea6");
   const support = isCrosschainTransfer && DecodeSupportFunction(ethers.utils.getAddress(contract), input);
   return <>
     {

@@ -41,7 +41,11 @@ export default () => {
 
   const [loadingMore, setLoadingMore] = useState(false);
   const [queryRewardsFlag, setQueryRewardsFlag] = useState(true);
-  const [earliesTx, setEarliesTx] = useState<TransactionDetails>();
+
+  const [dbAddressActivityPage, setDBAddressActivitiyPage] = useState<{
+    earliesTx: TransactionDetails,
+    limit: number
+  }>();
 
   useEffect(() => {
     const addressActivtiesLoadActivities = DB_AddressActivity_Methods.loadActivities;
@@ -56,8 +60,12 @@ export default () => {
       }
       return window.electron.ipcRenderer.on(IPC_CHANNEL, (arg) => {
         if (arg instanceof Array && arg[0] == DBAddressActivitySignal && arg[1] == addressActivtiesLoadActivities) {
-          const [rows, _txDbId] = arg[2];
-          console.log(`Load [${activeAccount}] - [${chainId}] AddressActivities From DB : `, rows, _txDbId);
+          const [rows, _blockNumber] = arg[2];
+          if (_blockNumber) {
+            console.log(`Load [${activeAccount}] - [${chainId}] AddressActivities From DB.BlockNumber=[${_blockNumber}]`);
+          } else {
+            console.log(`Load [${activeAccount}] - [${chainId}] AddressActivities From DB[FirstTime] `);
+          }
           let dbStoredRange = {
             start: latestBlockNumber,
             end: 1
@@ -71,7 +79,7 @@ export default () => {
             return Activity2Transaction(row);
           });
 
-          if (!_txDbId) {
+          if (!_blockNumber) {
             console.log(`DBStoredRange=${JSON.stringify(dbStoredRange)} / latestBlockNumber = ${latestBlockNumber} / chainId = ${chainId}`);
             dispatch(reloadTransactionsAndSetAddressActivityFetch({
               txns,
@@ -93,12 +101,25 @@ export default () => {
             }))
           }
           if (txns.length > 0) {
-            const txn = txns.sort((txn0: TransactionDetails, txn1: TransactionDetails) => {
+            const sortTxns = txns.sort((txn0: TransactionDetails, txn1: TransactionDetails) => {
               const txn0Timestamp = txn0.timestamp ?? txn0.addedTime;
               const txn1Timestamp = txn1.timestamp ?? txn1.addedTime;
               return txn0Timestamp - txn1Timestamp;
-            })[0];
-            setEarliesTx(txn);
+            });
+            const earliesTx = sortTxns[0];
+            let pageSize = sortTxns.length;
+            if (sortTxns.length > 1) {
+              // 检查是不是全是一个区块高度内的数据;
+              const lastTxn = sortTxns[sortTxns.length - 1];
+              if (lastTxn.blockNumber == earliesTx.blockNumber) {
+                pageSize = pageSize * 2;
+                console.log("本次查询地址交易数据全部为一个区块数据,对查询Size进行扩大 : ", pageSize);
+              }
+            }
+            setDBAddressActivitiyPage({
+              earliesTx,
+              limit : pageSize
+            });
           }
           setLoadingMore(false);
         }
@@ -194,7 +215,7 @@ export default () => {
         if (ratio >= 0.9 && !loadingMore) {
           setLoadingMore(true);
           window.electron.ipcRenderer.sendMessage(IPC_CHANNEL, [DBAddressActivitySignal, DB_AddressActivity_Methods.loadActivities,
-            [activeAccount, chainId, earliesTx?.dbId]]
+            [activeAccount, chainId, dbAddressActivityPage?.earliesTx.blockNumber, dbAddressActivityPage?.limit]]
           );
         }
         if (scrollTop == 0) {
@@ -225,8 +246,8 @@ export default () => {
             const rewardsTimestamp = TimestampTheEndOf(date);
 
             let timestamp = undefined;
-            if (earliesTx) {
-              timestamp = earliesTx.timestamp ?? earliesTx.addedTime;
+            if (dbAddressActivityPage?.earliesTx) {
+              timestamp = dbAddressActivityPage.earliesTx.timestamp ?? dbAddressActivityPage.earliesTx.addedTime;
             }
             return (<div key={date}>
               {
