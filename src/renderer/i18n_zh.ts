@@ -625,7 +625,7 @@ export default {
   wallet_tokens_send_tip: "将账户中的代币 {{tokenName}} 发送到指定钱包地址",
 
   wallet_crosschain: "跨链",
-  wallet_crosschain_tip: "将 SAFE4 网络上的资产 SAFE 跨链到其他网络",
+  wallet_crosschain_tip: "将 SAFE4 网络上的资产跨链到其他网络",
   wallet_crosschain_select_token: "选择代币",
   wallet_crosschain_select_network: "选择目标网络",
   wallet_crosschain_target_address: "跨链到账地址",

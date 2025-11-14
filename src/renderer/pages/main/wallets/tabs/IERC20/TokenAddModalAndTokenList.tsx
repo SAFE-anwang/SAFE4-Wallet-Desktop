@@ -124,13 +124,14 @@ export default ({
       const { name, symbol, decimals } = result.token;
       if (name && symbol && decimals) {
         dispatch(updateERC20Token({
-          chainId, address,
+          chainId, address: ethers.utils.getAddress(address),
           name, symbol,
           decimals
         }));
         window.electron.ipcRenderer.sendMessage(
           IPC_CHANNEL, [ERC20TokensSignal, ERC20Tokens_Methods.save, [{
-            chainId, address, name, symbol, decimals,
+            chainId, address: ethers.utils.getAddress(address),
+            name, symbol, decimals,
             props: { hide: false }
           }]]
         );

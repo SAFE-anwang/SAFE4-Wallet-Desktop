@@ -3,8 +3,8 @@ import { Contract } from "ethers";
 import { CallMulticallAggregateContractCall, SyncCallMulticallAggregate } from "../state/multicall/CallMulticallAggregate";
 import { IERC20_Interface } from "../abis";
 
-
 export default async (tokenAddresses: string[], multicall: Contract, chainId: number) => {
+  console.log("Get Token For" , tokenAddresses);
   const addresses = [...new Set(tokenAddresses)];
   const tokenMap: {
     [address: string]: Token | undefined

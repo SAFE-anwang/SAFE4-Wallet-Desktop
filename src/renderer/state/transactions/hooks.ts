@@ -214,7 +214,6 @@ export function useWalletTokens(): Token[] | undefined {
   const defaultTokens = useMemo(() => {
     if (!chainId) return [];
     return [
-      // TODO USDT DISABLE NOW..
       WSAFE[chainId as Safe4NetworkChainId],
       USDT[chainId as Safe4NetworkChainId],
     ];
@@ -236,7 +235,6 @@ export function useWalletTokens(): Token[] | undefined {
       return map;
     }, {} as { [address: string]: any });
   }, [_auditTokens]);
-
   const extraTokens = useMemo(() => {
     if (!chainId || !_walletTokens) return [];
     return Object.keys(_walletTokens)

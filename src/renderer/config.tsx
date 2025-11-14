@@ -42,7 +42,7 @@ export const USDT: { [chainId in Safe4NetworkChainId]: Token } = {
 };
 // MiniChefV2 合约地址
 export const MiniChefV2: { [chainId in Safe4NetworkChainId]: string } = {
-  [Safe4NetworkChainId.Testnet]: "0x15855EebD86E37439c3546FcEDb9577447415c3b",
+  [Safe4NetworkChainId.Testnet]: "0xCc73d27DB16C074ecc552fB593F4A6A83C08837C",
   [Safe4NetworkChainId.Mainnet]: "",
 }
 
@@ -114,4 +114,4 @@ const Config = {
   }
 }
 
-export default Config["test"]
+export default Config["prod"]

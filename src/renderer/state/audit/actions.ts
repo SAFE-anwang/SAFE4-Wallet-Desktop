@@ -7,7 +7,7 @@ export const updateAuditTokens = createAction<{
     address: string,
     decimals: number,
     chainId: number,
-    creator ?: string,
-    logoURI ?: string
+    creator?: string,
+    logoURI?: string
   }[]
 }>("transactions/updateAuditTokens");

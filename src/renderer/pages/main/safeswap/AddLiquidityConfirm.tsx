@@ -117,8 +117,8 @@ export default ({
       });
       setWaitApprove(true);
       const data = tokenAContract.interface.encodeFunctionData("approve", [
-        SafeswapV2RouterAddress, 
-        ethers.constants.MaxUint256 , // ethers.utils.parseUnits(tokenAAmount, tokenA.decimals)
+        SafeswapV2RouterAddress,
+        ethers.constants.MaxUint256, // ethers.utils.parseUnits(tokenAAmount, tokenA.decimals)
       ]);
       let tx: ethers.providers.TransactionRequest = {
         to: tokenAContract.address,
@@ -163,7 +163,7 @@ export default ({
       })
       setWaitApprove(true);
       const data = tokenBContract.interface.encodeFunctionData("approve", [
-        SafeswapV2RouterAddress, 
+        SafeswapV2RouterAddress,
         ethers.constants.MaxUint256  //ethers.utils.parseUnits(tokenBAmount, tokenB.decimals)
       ]);
       let tx: ethers.providers.TransactionRequest = {
@@ -205,6 +205,10 @@ export default ({
       setSending(true);
       const deadline = timestamp + 60 * 10;
       const to = activeAccount;
+
+      let data = undefined;
+      let tx: ethers.providers.TransactionRequest | undefined = undefined;
+
       if (tokenA == undefined && tokenB) {
         const amountTokenDesired = ethers.utils.parseUnits(tokenBAmount, tokenB.decimals);
         const amountTokenMin = amountTokenDesired.mul(
@@ -215,7 +219,7 @@ export default ({
           getSlippageToleranceBigInteger(slippageTolerance)
         ).div(10000);
 
-        const data = SwapV2RouterContract.interface.encodeFunctionData("addLiquidityETH", [
+        data = SwapV2RouterContract.interface.encodeFunctionData("addLiquidityETH", [
           tokenB.address,
           amountTokenDesired,
           amountTokenMin,
@@ -223,41 +227,13 @@ export default ({
           to,
           deadline
         ]);
-        let tx: ethers.providers.TransactionRequest = {
+        tx = {
           to: SwapV2RouterContract.address,
           data,
           chainId,
           value
         };
-        tx = await EstimateTx(activeAccount, chainId, tx, provider);
-        const { signedTx, error } = await window.electron.wallet.signTransaction(
-          activeAccount,
-          tx
-        );
-        if (signedTx) {
-          try {
-            const response = await provider.sendTransaction(signedTx);
-            const { hash, data } = response;
-            setTransactionResponse(response);
-            addTransaction({ to: SwapV2RouterContract.address }, response, {
-              call: {
-                from: activeAccount,
-                to: SwapV2RouterContract.address,
-                input: data,
-                value: "0"
-              }
-            });
-            setTxHash(hash);
-          } catch (err) {
-            setErr(err)
-          } finally {
-            setSending(false);
-          }
-        }
-        if (error) {
-          setSending(false);
-          setErr(error)
-        }
+
       } else if (tokenA && tokenB == undefined) {
         const amountTokenDesired = ethers.utils.parseUnits(tokenAAmount, tokenA.decimals);
         const amountTokenMin = amountTokenDesired.mul(
@@ -268,7 +244,7 @@ export default ({
           getSlippageToleranceBigInteger(slippageTolerance)
         ).div(10000);
 
-        const data = SwapV2RouterContract.interface.encodeFunctionData("addLiquidityETH", [
+        data = SwapV2RouterContract.interface.encodeFunctionData("addLiquidityETH", [
           tokenA.address,
           amountTokenDesired,
           amountTokenMin,
@@ -276,41 +252,12 @@ export default ({
           to,
           deadline
         ]);
-        let tx: ethers.providers.TransactionRequest = {
+        tx = {
           to: SwapV2RouterContract.address,
           data,
           chainId,
           value
         };
-        tx = await EstimateTx(activeAccount, chainId, tx, provider);
-        const { signedTx, error } = await window.electron.wallet.signTransaction(
-          activeAccount,
-          tx
-        );
-        if (signedTx) {
-          try {
-            const response = await provider.sendTransaction(signedTx);
-            const { hash, data } = response;
-            setTransactionResponse(response);
-            addTransaction({ to: SwapV2RouterContract.address }, response, {
-              call: {
-                from: activeAccount,
-                to: SwapV2RouterContract.address,
-                input: data,
-                value: "0"
-              }
-            });
-            setTxHash(hash);
-          } catch (err) {
-            setErr(err)
-          } finally {
-            setSending(false);
-          }
-        }
-        if (error) {
-          setSending(false);
-          setErr(error)
-        }
       } else if (tokenA && tokenB) {
         const amountADesired = ethers.utils.parseUnits(tokenAAmount, tokenA.decimals);
         const amountBDesired = ethers.utils.parseUnits(tokenBAmount, tokenB.decimals);
@@ -321,7 +268,7 @@ export default ({
           getSlippageToleranceBigInteger(slippageTolerance)
         ).div(10000);
 
-        const data = SwapV2RouterContract.interface.encodeFunctionData("addLiquidity", [
+        data = SwapV2RouterContract.interface.encodeFunctionData("addLiquidity", [
           tokenA.address,
           tokenB.address,
           amountADesired,
@@ -331,40 +278,40 @@ export default ({
           to,
           deadline
         ]);
-        let tx: ethers.providers.TransactionRequest = {
+        tx = {
           to: SwapV2RouterContract.address,
           data,
           chainId
         };
+      }
+      if (!tx) return;
+      try {
         tx = await EstimateTx(activeAccount, chainId, tx, provider);
         const { signedTx, error } = await window.electron.wallet.signTransaction(
           activeAccount,
           tx
         );
         if (signedTx) {
-          try {
-            const response = await provider.sendTransaction(signedTx);
-            const { hash, data } = response;
-            setTransactionResponse(response);
-            addTransaction({ to: SwapV2RouterContract.address }, response, {
-              call: {
-                from: activeAccount,
-                to: SwapV2RouterContract.address,
-                input: data,
-                value: "0"
-              }
-            });
-            setTxHash(hash);
-          } catch (err) {
-            setErr(err)
-          } finally {
-            setSending(false);
-          }
+          const response = await provider.sendTransaction(signedTx);
+          const { hash, data } = response;
+          setTransactionResponse(response);
+          addTransaction({ to: SwapV2RouterContract.address }, response, {
+            call: {
+              from: activeAccount,
+              to: SwapV2RouterContract.address,
+              input: data,
+              value: "0"
+            }
+          });
+          setTxHash(hash);
         }
         if (error) {
-          setSending(false);
           setErr(error)
         }
+      } catch (err) {
+        setErr(err);
+      } finally {
+        setSending(false);
       }
     }
   }

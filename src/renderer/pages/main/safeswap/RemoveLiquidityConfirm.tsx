@@ -97,6 +97,9 @@ export default ({
       };
       const signature = await window.electron.wallet.signTypedData(activeAccount, domain, types, message);
       const { v, r, s } = splitSignature(signature);
+
+      let data = undefined;
+      setSending(true);
       if (token0 && token1) {
         const amount0Desire = ethers.utils.parseUnits(token0Amount, token0?.decimals);
         const amount1Desire = ethers.utils.parseUnits(token1Amount, token1?.decimals);
@@ -106,9 +109,7 @@ export default ({
         const amount1Min = amount1Desire.mul(
           getSlippageToleranceBigInteger(slippageTolerance)
         ).div(10000);
-        setSending(true);
-
-        const data = safeswapV2Router.interface.encodeFunctionData("removeLiquidityWithPermit", [
+        data = safeswapV2Router.interface.encodeFunctionData("removeLiquidityWithPermit", [
           token0?.address,
           token1?.address,
           removeLpAmount,
@@ -121,40 +122,6 @@ export default ({
           r,
           s
         ]);
-        let tx: ethers.providers.TransactionRequest = {
-          to: safeswapV2Router.address,
-          data,
-          chainId
-        };
-        tx = await EstimateTx(activeAccount, chainId, tx, provider);
-        const { signedTx, error } = await window.electron.wallet.signTransaction(
-          activeAccount,
-          tx
-        );
-        if (signedTx) {
-          try {
-            const response = await provider.sendTransaction(signedTx);
-            const { hash, data } = response;
-            setTransactionResponse(response);
-            addTransaction({ to: safeswapV2Router.address }, response, {
-              call: {
-                from: activeAccount,
-                to: safeswapV2Router.address,
-                input: data,
-                value: "0",
-              }
-            });
-            setTxHash(hash);
-          } catch (err) {
-            setErr(err)
-          } finally {
-            setSending(false);
-          }
-        }
-        if (error) {
-          setErr(error);
-          setSending(false);
-        }
       } else if (token0 == undefined || token1 == undefined) {
         const token = token0 ? token0.address : token1?.address;
         const liquidity = removeLpAmount;
@@ -168,9 +135,7 @@ export default ({
         ).div(10000);
         const amountTokenMin = token0 ? amount0Min : amount1Min;
         const amountETHMin = token0 ? amount1Min : amount0Min;
-        setSending(true);
-
-        const data = safeswapV2Router.interface.encodeFunctionData("removeLiquidityETHWithPermit", [
+        data = safeswapV2Router.interface.encodeFunctionData("removeLiquidityETHWithPermit", [
           token, liquidity, amountTokenMin, amountETHMin,
           message.owner,
           message.deadline,
@@ -179,40 +144,39 @@ export default ({
           r,
           s
         ]);
-        let tx: ethers.providers.TransactionRequest = {
-          to: safeswapV2Router.address,
-          data,
-          chainId
-        };
+      }
+      let tx: ethers.providers.TransactionRequest = {
+        to: safeswapV2Router.address,
+        data,
+        chainId
+      };
+      try {
         tx = await EstimateTx(activeAccount, chainId, tx, provider);
         const { signedTx, error } = await window.electron.wallet.signTransaction(
           activeAccount,
           tx
         );
         if (signedTx) {
-          try {
-            const response = await provider.sendTransaction(signedTx);
-            const { hash, data } = response;
-            setTransactionResponse(response);
-            addTransaction({ to: safeswapV2Router.address }, response, {
-              call: {
-                from: activeAccount,
-                to: safeswapV2Router.address,
-                input: data,
-                value: "0",
-              }
-            });
-            setTxHash(hash);
-          } catch (err) {
-            setErr(err)
-          } finally {
-            setSending(false);
-          }
+          const response = await provider.sendTransaction(signedTx);
+          const { hash, data } = response;
+          setTransactionResponse(response);
+          addTransaction({ to: safeswapV2Router.address }, response, {
+            call: {
+              from: activeAccount,
+              to: safeswapV2Router.address,
+              input: data,
+              value: "0",
+            }
+          });
+          setTxHash(hash);
         }
         if (error) {
           setErr(error);
-          setSending(false);
         }
+      } catch (err) {
+        setErr(err);
+      } finally {
+        setSending(false);
       }
     }
   }

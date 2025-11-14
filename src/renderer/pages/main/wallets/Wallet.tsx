@@ -144,17 +144,18 @@ export default () => {
               symbol: string,
               decimals: number,
               chainId: number,
-              props?: any
+              props?: any | undefined,
             }
-          } = {}
+          } = {};
           data.forEach((erc20Token: any) => {
             const { address, name, symbol, decims, chain_id, props } = erc20Token;
             tokens[ethers.utils.getAddress(address)] = {
-              name, symbol, decimals: decims, chainId: chain_id, props
+              name, symbol, decimals: decims, chainId: chain_id,
+              props: (props && props != null) ? props : undefined,
             }
           });
           if (Object.keys(tokens).length > 0) {
-            dispatch(loadERC20Tokens(tokens))
+            dispatch(loadERC20Tokens(tokens));
           }
         }
       });

@@ -1,6 +1,6 @@
 
 import { Col, Row, Avatar, List, Typography, Modal, Button, Spin, Badge } from "antd";
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { TransactionDetails } from "../../../../../state/transactions/reducer";
 import { SupportSafeswapV2RouterFunctions } from "../../../../../constants/DecodeSupportFunction";
 import ERC20TokenLogoComponent from "../../../../components/ERC20TokenLogoComponent";
@@ -8,12 +8,14 @@ import { CloseCircleFilled, LoadingOutlined, LockOutlined } from "@ant-design/ic
 import { SAFE_LOGO } from "../../../../../assets/logo/AssetsLogo";
 import { useWeb3React } from "@web3-react/core";
 import { CurrencyAmount, Token, TokenAmount } from "@uniswap/sdk";
-import { useTokens } from "../../../../../state/transactions/hooks";
 import { Safe4NetworkChainId, USDT, WSAFE } from "../../../../../config";
 import { useWalletsActiveAccount } from "../../../../../state/wallets/hooks";
 import { useTranslation } from "react-i18next";
 import { useSafeswapWalletTokens } from "../../../safeswap/hooks";
 import { ethers } from "ethers";
+import GetToken from "../../../../../utils/GetToken";
+import { useMulticallContract } from "../../../../../hooks/useContracts";
+import { useTokens, useWalletTokens } from "../../../../../state/transactions/hooks";
 
 const { Text } = Typography;
 
@@ -27,22 +29,22 @@ export default ({ transaction, setClickTransaction, support }: {
 }) => {
   const { t } = useTranslation();
   const { chainId } = useWeb3React();
-  const tokens = useSafeswapWalletTokens(false);
+  const tokens = useTokens();
   const tokensMap = useMemo<{ [address: string]: Token } | undefined>(() => {
-    if (chainId && tokens) {
-      const tokensMap = Object.values(tokens).reduce((map, token) => {
-        map[token.address] = token;
+    if (chainId) {
+      const tokensMap = Object.keys(tokens).reduce((map, address) => {
+        const { name, symbol, decimals } = tokens[address];
+        map[address] = new Token(chainId, address, decimals, symbol, name);
         return map;
       }, {} as { [address: string]: Token });
-
       tokensMap[WSAFE[chainId as Safe4NetworkChainId].address] = WSAFE[chainId as Safe4NetworkChainId];
       tokensMap[USDT[chainId as Safe4NetworkChainId].address] = USDT[chainId as Safe4NetworkChainId];
       return tokensMap;
     }
     return undefined;
   }, [tokens, chainId]);
-  const activeAccount = useWalletsActiveAccount();
 
+  const activeAccount = useWalletsActiveAccount();
   const {
     status,
     call,
@@ -58,15 +60,19 @@ export default ({ transaction, setClickTransaction, support }: {
   }, [transaction, call, support]);
 
   const { supportFuncName, inputDecodeResult } = support;
-  const { tokenA, tokenB, tokenAAmount, tokenBAmount, to } = useMemo<{
+  const { tokenA, tokenB, tokenAAmount, tokenBAmount, tokenAAddress, tokenBAddress, to } = useMemo<{
     tokenA: Token | undefined,
     tokenB: Token | undefined,
+    tokenAAddress: string | undefined,
+    tokenBAddress: string | undefined,
     tokenAAmount: CurrencyAmount | undefined,
     tokenBAmount: CurrencyAmount | undefined,
     to: string | undefined
   }>(() => {
     let tokenA: Token | undefined = undefined;
     let tokenB: Token | undefined = undefined;
+    let tokenAAddress: string | undefined = undefined;
+    let tokenBAddress: string | undefined = undefined;
     let tokenAAmount: CurrencyAmount | undefined = undefined;
     let tokenBAmount: CurrencyAmount | undefined = undefined;
     let swapTo: string | undefined = undefined;
@@ -78,12 +84,12 @@ export default ({ transaction, setClickTransaction, support }: {
       let path = inputDecodeResult[1];
       let to = inputDecodeResult[2];
       swapTo = to;
-      const tokenBAddress: string = path[path.length - 1];
+      tokenBAddress = path[path.length - 1] + "";
       tokenB = tokensMap && tokensMap[tokenBAddress];
       let tokenAInput = call?.value;
       tokenAAmount = tokenAInput ? CurrencyAmount.ether(tokenAInput) : undefined;
       const tokenBReceives = tokenTransfers && Object.values(tokenTransfers).filter(tokenTransfer => {
-        return tokenTransfer.to == to && tokenTransfer.token.address.toLocaleLowerCase() == tokenBAddress.toLocaleLowerCase();
+        return tokenTransfer.to == to && tokenBAddress && tokenTransfer.token.address.toLocaleLowerCase() == tokenBAddress.toLocaleLowerCase();
       });
       if (tokenBReceives && tokenBReceives.length > 0) {
         if (!tokenB && chainId) {
@@ -111,7 +117,7 @@ export default ({ transaction, setClickTransaction, support }: {
       || supportFuncName == SupportSafeswapV2RouterFunctions.SwapTokensForExactETH
     ) {
       let path = inputDecodeResult[2];
-      const tokenAAddress: string = path[0];
+      tokenAAddress = path[0] + "";
       let to = inputDecodeResult[3];
       swapTo = to;
       tokenA = tokensMap && tokensMap[tokenAAddress];
@@ -152,8 +158,8 @@ export default ({ transaction, setClickTransaction, support }: {
       supportFuncName == SupportSafeswapV2RouterFunctions.SwapTokensForExactTokens
     ) {
       let path = inputDecodeResult[2];
-      const tokenAAddress: string = path[0];
-      const tokenBAddress: string = path[path.length - 1];
+      tokenAAddress = path[0] + "";
+      tokenBAddress = path[path.length - 1] + "";
       let to = inputDecodeResult[3];
       swapTo = to;
       tokenA = tokensMap && tokensMap[tokenAAddress];
@@ -167,7 +173,7 @@ export default ({ transaction, setClickTransaction, support }: {
         tokenAAmount = tokenA && new TokenAmount(tokenA, inputDecodeResult[1]);
       }
       const tokenASpents = tokenTransfers && Object.values(tokenTransfers).filter(tokenTransfer => {
-        return tokenTransfer.from == activeAccount && tokenTransfer.token.address.toLocaleLowerCase() == tokenAAddress.toLocaleLowerCase();
+        return tokenAAddress && tokenTransfer.from == activeAccount && tokenTransfer.token.address.toLocaleLowerCase() == tokenAAddress.toLocaleLowerCase();
       });
       if (tokenASpents && tokenASpents.length > 0 && chainId) {
         if (!tokenA) {
@@ -197,9 +203,9 @@ export default ({ transaction, setClickTransaction, support }: {
         }, new TokenAmount(tokenB, "0"))
       }
     }
-
     return {
       tokenA, tokenB,
+      tokenAAddress, tokenBAddress,
       tokenAAmount, tokenBAmount,
       to: swapTo
     };
@@ -222,7 +228,6 @@ export default ({ transaction, setClickTransaction, support }: {
           address={tokenB.address} chainId={chainId} />
       }
     </>
-
   }
 
   const RenderSwapAmount = () => {
