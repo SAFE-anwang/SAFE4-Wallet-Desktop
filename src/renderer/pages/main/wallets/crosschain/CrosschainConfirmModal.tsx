@@ -83,33 +83,29 @@ export default ({
           setErr(error)
         }
         if (signedTx) {
-          try {
-            const response = await provider.sendTransaction(signedTx);
-            const { hash, data } = response;
-            setTransactionResponse(response);
-            addTransaction({ to: CrossChain_Contract.address }, response, {
-              call: {
+          const response = await provider.sendTransaction(signedTx);
+          const { hash, data } = response;
+          setTransactionResponse(response);
+          addTransaction({ to: CrossChain_Contract.address }, response, {
+            call: {
+              from: activeAccount,
+              to: CrossChain_Contract.address,
+              input: data,
+              value: "0",
+              tokenTransfer: {
                 from: activeAccount,
-                to: CrossChain_Contract.address,
-                input: data,
-                value: "0",
-                tokenTransfer: {
-                  from: activeAccount,
-                  to: EmptyContract.EMPTY,
-                  value,
-                  token: {
-                    address: Token_USDT.address,
-                    name: Token_USDT.name ? Token_USDT.name : "",
-                    symbol: Token_USDT.symbol ? Token_USDT.symbol : "",
-                    decimals: Token_USDT.decimals
-                  }
+                to: EmptyContract.EMPTY,
+                value,
+                token: {
+                  address: Token_USDT.address,
+                  name: Token_USDT.name ? Token_USDT.name : "",
+                  symbol: Token_USDT.symbol ? Token_USDT.symbol : "",
+                  decimals: Token_USDT.decimals
                 }
               }
-            });
-            setTxHash(hash);
-          } catch (err) {
-            setErr(err)
-          }
+            }
+          });
+          setTxHash(hash);
         }
       } catch (err) {
         setErr(err)
@@ -141,16 +137,16 @@ export default ({
             value,
             chainId
           };
-          tx = await EstimateTx(activeAccount, chainId, tx, provider);
-          const { signedTx, error } = await window.electron.wallet.signTransaction(
-            activeAccount,
-            tx
-          );
-          if (error) {
-            setErr(error)
-          }
-          if (signedTx) {
-            try {
+          try {
+            tx = await EstimateTx(activeAccount, chainId, tx, provider);
+            const { signedTx, error } = await window.electron.wallet.signTransaction(
+              activeAccount,
+              tx
+            );
+            if (error) {
+              setErr(error)
+            }
+            if (signedTx) {
               const response = await provider.sendTransaction(signedTx);
               const { hash, data } = response;
               setTransactionResponse(response);
@@ -163,11 +159,12 @@ export default ({
                 }
               });
               setTxHash(hash);
-            } catch (err) {
-              setErr(err)
             }
+          } catch (err: any) {
+            setErr(err)
+          } finally {
+            setSending(false);
           }
-          setSending(false);
         }
       }
     }

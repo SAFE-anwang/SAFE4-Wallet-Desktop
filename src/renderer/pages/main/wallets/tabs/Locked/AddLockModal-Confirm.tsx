@@ -50,7 +50,6 @@ export default ({
   const doAddLockDay = useCallback(async (id: number, addLockDay: number) => {
     if (accountManaggerContract && provider && chainId) {
       setSending(true);
-
       const data = accountManaggerContract.interface.encodeFunctionData("addLockDay", [
         id, addLockDay
       ]);
@@ -59,17 +58,16 @@ export default ({
         data,
         chainId
       };
-      tx = await EstimateTx(activeAccount, chainId, tx, provider, { doubleGasLimit: true });
-      const { signedTx, error } = await window.electron.wallet.signTransaction(
-        activeAccount,
-        tx
-      );
-      if (error) {
-        setSending(false);
-        setErr(error)
-      }
-      if (signedTx) {
-        try {
+      try {
+        tx = await EstimateTx(activeAccount, chainId, tx, provider, { doubleGasLimit: true });
+        const { signedTx, error } = await window.electron.wallet.signTransaction(
+          activeAccount,
+          tx
+        );
+        if (error) {
+          setErr(error)
+        }
+        if (signedTx) {
           const response = await provider.sendTransaction(signedTx);
           const { hash, data } = response;
           setTransactionResponse(response);
@@ -82,11 +80,11 @@ export default ({
             }
           });
           setTxHash(hash);
-        } catch (err) {
-          setErr(err)
-        } finally {
-          setSending(false);
         }
+      } catch (err: any) {
+        setErr(err);
+      } finally {
+        setSending(false);
       }
     }
   }, [accountManaggerContract, activeAccount]);

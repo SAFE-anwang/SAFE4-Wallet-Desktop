@@ -51,20 +51,16 @@ export default ({
           data,
           chainId
         };
-        tx = await EstimateTx(activeAccount, chainId, tx, provider);
-        const { signedTx, error } = await window.electron.wallet.signTransaction(
-          activeAccount,
-          tx
-        );
-
-        if (error) {
-          setSending(false);
-          setErr(error);
-          return;
-        }
-
-        if (signedTx) {
-          try {
+        try {
+          tx = await EstimateTx(activeAccount, chainId, tx, provider);
+          const { signedTx, error } = await window.electron.wallet.signTransaction(
+            activeAccount,
+            tx
+          );
+          if (error) {
+            setErr(error);
+          }
+          if (signedTx) {
             const response = await provider.sendTransaction(signedTx);
             const { hash, data } = response;
             setTransactionResponse(response);
@@ -78,13 +74,12 @@ export default ({
               withdrawAmount: withdrawAmount && ethers.utils.parseEther(withdrawAmount).toString()
             });
             setTxHash(hash);
-          } catch (err) {
-            setErr(err)
-          } finally {
-            setSending(false);
           }
+        } catch (err: any) {
+          setErr(err);
+        } finally {
+          setSending(false);
         }
-
       } else {
         const data = accountManaggerContract.interface.encodeFunctionData("withdraw", []);
         let tx: ethers.providers.TransactionRequest = {
@@ -92,13 +87,13 @@ export default ({
           data,
           chainId
         };
-        tx = await EstimateTx(activeAccount, chainId, tx, provider);
-        const { signedTx, error } = await window.electron.wallet.signTransaction(
-          activeAccount,
-          tx
-        );
-        if (signedTx) {
-          try {
+        try {
+          tx = await EstimateTx(activeAccount, chainId, tx, provider);
+          const { signedTx, error } = await window.electron.wallet.signTransaction(
+            activeAccount,
+            tx
+          );
+          if (signedTx) {
             const response = await provider.sendTransaction(signedTx);
             const { hash, data } = response;
             setTransactionResponse(response);
@@ -112,16 +107,17 @@ export default ({
               withdrawAmount: withdrawAmount && ethers.utils.parseEther(withdrawAmount).toString()
             });
             setTxHash(hash);
-          } catch (err) {
-            setErr(err)
-          } finally {
-            setSending(false);
           }
-        }
-        if (error) {
+          if (error) {
+            setSending(false);
+            setErr(error)
+          }
+        } catch (err: any) {
+          setErr(err)
+        } finally {
           setSending(false);
-          setErr(error)
         }
+
       }
     }
   }, [activeAccount, accountManaggerContract, withdrawAmount, chainId, provider]);

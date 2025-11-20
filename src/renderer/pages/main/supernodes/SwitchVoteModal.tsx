@@ -75,13 +75,13 @@ export default ({
         data,
         chainId
       };
-      tx = await EstimateTx(activeAccount, chainId, tx, provider);
-      const { signedTx, error } = await window.electron.wallet.signTransaction(
-        activeAccount,
-        tx
-      );
-      if (signedTx) {
-        try {
+      try {
+        tx = await EstimateTx(activeAccount, chainId, tx, provider);
+        const { signedTx, error } = await window.electron.wallet.signTransaction(
+          activeAccount,
+          tx
+        );
+        if (signedTx) {
           const response = await provider.sendTransaction(signedTx);
           const { hash, data } = response;
           addTransaction({ to: supernodeVoteContract.address }, response, {
@@ -98,22 +98,22 @@ export default ({
           });
           usedVotedIdsCache.push(...selectAccountRecordIds);
           setUsedVotedIdsCache([...usedVotedIdsCache]);
-        } catch (err) {
+        }
+        if (error) {
           setTxStatus({
             status: 0,
-            error: err
+            error
           })
-        } finally {
-          setSending(false);
         }
-      }
-      if (error) {
-        setSending(false);
+      } catch (err: any) {
         setTxStatus({
           status: 0,
-          error
+          error: err
         })
+      } finally {
+        setSending(false);
       }
+
     }
   }
 

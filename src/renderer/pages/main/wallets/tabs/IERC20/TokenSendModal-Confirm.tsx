@@ -50,24 +50,21 @@ export default ({
       let data = IERC20Contract.interface.encodeFunctionData("transfer", [
         to, transferAmount
       ]);
-      data = data + "00112233";
       let tx: ethers.providers.TransactionRequest = {
         to: IERC20Contract.address,
         data,
         chainId,
       };
-      tx = await EstimateTx(activeAccount, chainId, tx, provider);
-      const { signedTx, error } = await window.electron.wallet.signTransaction(
-        activeAccount,
-        tx
-      );
-      console.log("Sign Transaction:", signedTx)
-      console.log("Sign Error:", error)
-      if (error) {
-        setErr(error);
-      }
-      if (signedTx) {
-        try {
+      try {
+        tx = await EstimateTx(activeAccount, chainId, tx, provider);
+        const { signedTx, error } = await window.electron.wallet.signTransaction(
+          activeAccount,
+          tx
+        );
+        if (error) {
+          setErr(error);
+        }
+        if (signedTx) {
           const response = await provider.sendTransaction(signedTx);
           const { hash, data } = response;
           setTxHash(hash);
@@ -91,11 +88,12 @@ export default ({
               }
             }
           });
-        } catch (err: any) {
-          setErr(err)
         }
+      } catch (err: any) {
+        setErr(err)
+      } finally {
+        setSending(false);
       }
-      setSending(false);
     }
   }, [provider, IERC20Contract]);
 

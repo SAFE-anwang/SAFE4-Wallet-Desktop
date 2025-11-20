@@ -135,50 +135,58 @@ export default () => {
           data,
           chainId
         };
-        tx = await EstimateTx( activeAccount , chainId , tx , provider );
-        const { signedTx, error } = await window.electron.wallet.signTransaction(
-          activeAccount,
-          tx
-        );
-        if (error) {
-          setDeployError(error.reason);
-        }
-        if (signedTx) {
-          const response = await provider.sendTransaction(signedTx);
-          const { hash, data, from } = response;
-          const contractAddress = ethers.utils.getContractAddress(response);
-          addTransaction({ to: contractAddress }, response, {
-            call: {
-              from: activeAccount,
-              to: contractAddress,
-              input: data,
-              value: "0",
-              type: DB_AddressActivity_Actions.Create
-            }
-          });
-          // 合约部署成功后,将交易哈希以及相关信息存储到 Contracts 表中.
-          const method = ContractCompile_Methods.save;
-          window.electron.ipcRenderer.sendMessage(IPC_CHANNEL, [ContractCompileSignal, method, [
-            {
-              address: contractAddress,
-              creator: activeAccount,
-              chainId: chainId,
-              name,
-              bytecode,
-              abi,
-              sourceCode,
-              compileOption: JSON.stringify(compileOption),
-              hash,
-              addedTime: now()
-            }
-          ]]);
-          setDeployHash(hash);
+
+        try {
+          tx = await EstimateTx(activeAccount, chainId, tx, provider);
+          const { signedTx, error } = await window.electron.wallet.signTransaction(
+            activeAccount,
+            tx
+          );
+          if (error) {
+            setDeployError(error.reason);
+          }
+          if (signedTx) {
+            const response = await provider.sendTransaction(signedTx);
+            const { hash, data, from } = response;
+            const contractAddress = ethers.utils.getContractAddress(response);
+            addTransaction({ to: contractAddress }, response, {
+              call: {
+                from: activeAccount,
+                to: contractAddress,
+                input: data,
+                value: "0",
+                type: DB_AddressActivity_Actions.Create
+              }
+            });
+            // 合约部署成功后,将交易哈希以及相关信息存储到 Contracts 表中.
+            const method = ContractCompile_Methods.save;
+            window.electron.ipcRenderer.sendMessage(IPC_CHANNEL, [ContractCompileSignal, method, [
+              {
+                address: contractAddress,
+                creator: activeAccount,
+                chainId: chainId,
+                name,
+                bytecode,
+                abi,
+                sourceCode,
+                compileOption: JSON.stringify(compileOption),
+                hash,
+                addedTime: now()
+              }
+            ]]);
+            setDeployHash(hash);
+          }
+        } catch (err: any) {
+          setDeployError(err.body);
+        } finally {
+          setDeploying(false);
         }
       } catch (err: any) {
-        console.log( err )
-        setDeployError(err.reason);
+        console.log(err);
+        setDeployError(err.message);
+      } finally {
+        setDeploying(false);
       }
-      setDeploying(false);
     }
   }
 
