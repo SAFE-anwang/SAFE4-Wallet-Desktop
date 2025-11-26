@@ -84,6 +84,9 @@ export enum SupportSafeswapV2RouterFunctions {
 
   RemoveLiquidityETHWithPermit = "removeLiquidityETHWithPermit", // removeLiquidityETHWithPermit( address token, uint256 liquidity, uint256 amountTokenMin, uint256 amountETHMin, address to, uint256 deadline, bool approveMax, uint8 v, bytes32 r, bytes32 s )
   RemoveLiquidityWithPermit = "removeLiquidityWithPermit", // removeLiquidityWithPermit( address tokenA, address tokenB, uint256 liquidity, uint256 amountAMin, uint256 amountBMin, address to, uint256 deadline, bool approveMax, uint8 v, bytes32 r, bytes32 s )
+  RemoveLiquidityETH = "removeLiquidityETH", // removeLiquidityETHWithPermit( address token, uint256 liquidity, uint256 amountTokenMin, uint256 amountETHMin, address to, uint256 deadline, bool approveMax, uint8 v, bytes32 r, bytes32 s )
+  RemoveLiquidity = "removeLiquidity", // removeLiquidityWithPermit( address tokenA, address tokenB, uint256 liquidity, uint256 amountAMin, uint256 amountBMin, address to, uint256 deadline, bool approveMax, uint8 v, bytes32 r, bytes32 s )
+
 }
 
 export enum SupportSafeswapV2FacotryFunctions {
@@ -398,6 +401,8 @@ function decodeSafeswapV2RouterData(
     case SupportSafeswapV2RouterFunctions.AddLiquidity:
     case SupportSafeswapV2RouterFunctions.RemoveLiquidityETHWithPermit:
     case SupportSafeswapV2RouterFunctions.RemoveLiquidityWithPermit:
+    case SupportSafeswapV2RouterFunctions.RemoveLiquidityETH:
+    case SupportSafeswapV2RouterFunctions.RemoveLiquidity:
       const swap = IContract.decodeFunctionData(fragment, input);
       formatDecodeResult = swap;
     default:
@@ -497,8 +502,8 @@ export default (address: string | undefined, input: string | undefined, from?: s
   if (isCrosschainPoolTransaction(address, from)) {
     return decodeCrosschainPoolFunctionData(input);
   }
-  if (address == Application_Crosschain[Safe4NetworkChainId.Testnet]
-    || address == Application_Crosschain[Safe4NetworkChainId.Mainnet]
+  if (address && (ethers.utils.getAddress(address) == Application_Crosschain[Safe4NetworkChainId.Testnet]
+    || ethers.utils.getAddress(address) == Application_Crosschain[Safe4NetworkChainId.Mainnet])
   ) {
     return decodeCrosschainFunctionData(input);
   }

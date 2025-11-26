@@ -55,6 +55,9 @@ export default ({
     ) {
       const { contract, input } = transaction.data;
       const support = DecodeSupportFunction(contract, input);
+      console.log({
+        contract, input, support
+      })
       return support;
     }
   }, [transaction]);
@@ -147,14 +150,12 @@ export default ({
         </Card>
       </>
     }
-
     {
       support && <TransactionDetailsCallSupport support={support} transaction={tx} />
     }
     {
-      crosschainUSDTSupport && <TransactionDetailsCallSupport support={crosschainUSDTSupport} transaction={tx} />
+      crosschainUSDTSupport && !support && <TransactionDetailsCallSupport support={crosschainUSDTSupport} transaction={tx} />
     }
-
   </>
 
 }

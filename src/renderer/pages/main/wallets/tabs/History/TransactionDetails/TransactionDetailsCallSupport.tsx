@@ -27,6 +27,8 @@ export default ({
         return <></>
       case Application_Crosschain[Safe4NetworkChainId.Testnet]:
       case Application_Crosschain[Safe4NetworkChainId.Mainnet]:
+      case Application_Crosschain[Safe4NetworkChainId.Testnet].toLowerCase():
+      case Application_Crosschain[Safe4NetworkChainId.Mainnet].toLowerCase():
         return <CrosschainDetails support={support} transaction={transaction} />;
       default:
         if (isCrosschainPoolTransaction(to, from)) {

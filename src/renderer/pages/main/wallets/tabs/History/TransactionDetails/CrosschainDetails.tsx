@@ -74,7 +74,7 @@ export default ({
       return {
         from: "",
         to: support.inputDecodeResult._to,
-        srcTxHash : _txId,
+        srcTxHash: _txId,
         networkCoin: support.inputDecodeResult._network,
         amount: new TokenAmount(
           USDT[Safe4NetworkChainId.Mainnet],
@@ -220,7 +220,6 @@ export default ({
           </Text>
         </Col>
       </Row>
-
       {
         crosschainDirection == CrosschainDirection.NETWORKS_SAFE4 &&
         <Row style={{ marginTop: "15px" }}>

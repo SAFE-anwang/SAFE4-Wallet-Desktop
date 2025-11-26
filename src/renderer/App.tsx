@@ -199,7 +199,7 @@ export default function App() {
     console.log("10分钟未操作,自动锁钱包");
     dispatch(walletsUpdateLocked(true));
     dispatch(cleanAddressActiviesFetch(true));
-  }, 30 * 60 * 1000, 200);
+  }, 10 * 60 * 1000, 200);
 
   useEffect(() => {
     const method = ContractCompile_Methods.syncSolcLibrary;

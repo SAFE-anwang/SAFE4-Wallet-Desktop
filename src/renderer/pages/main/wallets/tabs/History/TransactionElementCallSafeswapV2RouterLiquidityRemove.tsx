@@ -69,7 +69,9 @@ export default ({ transaction, setClickTransaction, support }: {
     let tokenBAmount: CurrencyAmount | undefined = undefined;
     let swapTo: string | undefined = undefined;
 
-    if (supportFuncName == SupportSafeswapV2RouterFunctions.RemoveLiquidityETHWithPermit) {
+    if (supportFuncName == SupportSafeswapV2RouterFunctions.RemoveLiquidityETHWithPermit
+        || supportFuncName == SupportSafeswapV2RouterFunctions.RemoveLiquidityETH
+    ) {
       // removeLiquidityETHWithPermit( address token, uint256 liquidity, uint256 amountTokenMin, uint256 amountETHMin, address to, uint256 deadline, bool approveMax, uint8 v, bytes32 r, bytes32 s )
       const tokenAddress = inputDecodeResult[0];
       const amount = inputDecodeResult[2];
@@ -100,7 +102,9 @@ export default ({ transaction, setClickTransaction, support }: {
           return amount.add(CurrencyAmount.ether(internalTransfer.value))
         }, CurrencyAmount.ether("0"));
       }
-    } else if (supportFuncName == SupportSafeswapV2RouterFunctions.RemoveLiquidityWithPermit) {
+    } else if (supportFuncName == SupportSafeswapV2RouterFunctions.RemoveLiquidityWithPermit
+      || supportFuncName == SupportSafeswapV2RouterFunctions.RemoveLiquidity
+    ) {
       // removeLiquidityWithPermit( address tokenA, address tokenB, uint256 liquidity, uint256 amountAMin, uint256 amountBMin, address to, uint256 deadline, bool approveMax, uint8 v, bytes32 r, bytes32 s )
       const tokenAAddress = inputDecodeResult[0];
       const tokenBAddress = inputDecodeResult[1];
