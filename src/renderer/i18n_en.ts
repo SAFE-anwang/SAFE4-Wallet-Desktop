@@ -204,6 +204,7 @@ export default {
   wallet_supernodes_state_online: "Online",
   wallet_supernodes_state_init: "Init",
   wallet_supernodes_state_error: "Exception",
+  wallet_supernodes_state_forbidden: "Forbidden",
   wallet_supernodes_state_unknown: "Unknown",
   wallet_supernodes_voted: "Votes Received",
   wallet_supernodes_name: "Name",

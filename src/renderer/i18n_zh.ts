@@ -204,6 +204,7 @@ export default {
   wallet_supernodes_state_online: "在线",
   wallet_supernodes_state_init: "初始化",
   wallet_supernodes_state_error: "异常",
+  wallet_supernodes_state_forbidden: "禁用",
   wallet_supernodes_state_unknown: "未知",
   wallet_supernodes_voted: "得票数",
   wallet_supernodes_name: "名称",

@@ -25,8 +25,10 @@ export const RenderNodeState = (state: number, t?: any) => {
       return <Badge status="processing" text={t ? t("wallet_supernodes_state_online") : "在线"} />
     case 2:
       return <Badge status="error" text={<Text type='danger'>{t ? t("wallet_supernodes_state_error") : "异常"}</Text>} />
+    case 3:
+      return <Badge status="warning" text={<Text type='warning'>{t ? t("wallet_supernodes_state_forbidden") : "禁用"}</Text>} />
     default:
-      return <Badge status="default" text={t ? t("wallet_supernodes_state_known") : "未知"} />
+      return <Badge status="default" text={<Text type='secondary'>{t ? t("wallet_supernodes_state_unknown") : "未知"}</Text>} />
   }
 }
 
