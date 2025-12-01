@@ -33,8 +33,6 @@ export default ({
   const balance = useETHBalances([activeAccount])[activeAccount];
   const addTransaction = useTransactionAdder();
 
-
-
   const inputRefs: {
     [inputName: string]: RefObject<{ input: HTMLInputElement }>
   } = {};
@@ -88,7 +86,7 @@ export default ({
       encodeFunctionData: encodeFunctionData
     });
     console.log(`Function-${functionFragment.name} :: ${encodeFunctionData}`);
-    let tx : ethers.providers.TransactionRequest = {
+    let tx: ethers.providers.TransactionRequest = {
       to: address,
       data: encodeFunctionData,
       value
@@ -99,18 +97,18 @@ export default ({
       setSending(true);
       const { constant } = functionFragment;
       if (!constant) {
-        tx = await EstimateTx(activeAccount , chainId , tx , provider);
-        const { signedTx, error } = await window.electron.wallet.signTransaction(
-          activeAccount,
-          tx
-        );
-        if (error) {
-          setContractCallError({
-            returnError: error.reason
-          })
-        }
-        if (signedTx) {
-          try {
+        try {
+          tx = await EstimateTx(activeAccount, chainId, tx, provider);
+          const { signedTx, error } = await window.electron.wallet.signTransaction(
+            activeAccount,
+            tx
+          );
+          if (error) {
+            setContractCallError({
+              returnError: error.reason
+            })
+          }
+          if (signedTx) {
             const response = await provider.sendTransaction(signedTx);
             const { hash } = response;
             setContractCall({
@@ -125,11 +123,12 @@ export default ({
                 value: value.toString()
               }
             });
-          } catch (err: any) {
-            setContractCallError({
-              returnError: err.reason
-            })
           }
+        } catch (err: any) {
+          console.log("Call Contract Error:", err)
+          setContractCallError({
+            returnError: err.reason
+          })
         }
       } else {
         provider.call(tx).then((returnOutputRaw: any) => {
