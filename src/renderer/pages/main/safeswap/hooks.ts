@@ -75,7 +75,7 @@ export async function getPairCallResults(pairAddresses: string[], provider: Web3
       token0_call, token1_call, totalSupply_call, balanceOf_call, reservers_call
     )
   });
-  await SyncCallMulticallAggregate(multicallContract, calls);
+  await SyncCallMulticallAggregate(multicallContract, calls, { blockTag: "pending" });
   const pairResult: {
     [address: string]: PairResult
   } = {};

@@ -10,7 +10,10 @@ export interface CallMulticallAggregateContractCall {
 
 export function SyncCallMulticallAggregate(
   multicallContract: any,
-  contractCalls: CallMulticallAggregateContractCall[]
+  contractCalls: CallMulticallAggregateContractCall[],
+  option ?: {
+    blockTag : "pending"
+  }
 ) {
   const calls = contractCalls.map(contractCall => {
     const { contract, functionName, params } = contractCall;
@@ -22,7 +25,8 @@ export function SyncCallMulticallAggregate(
     return call;
   });
   return new Promise(async (resolve, reject) => {
-    const data = await multicallContract.callStatic.aggregate(calls);
+    const data = await multicallContract.callStatic.aggregate(calls, option ? {...option} : {});
+    // const data = await multicallContract.callStatic.aggregate(calls);
     const { blockNumber, returnData } = data;
     contractCalls.forEach((contractCall, index) => {
       const raw = returnData[index];
