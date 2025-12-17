@@ -28,9 +28,6 @@ export default () => {
     setActiveModule(ActiveModule.AssetsPool);
   }
   const safeswapV2Pairs = useSafeswapV2Pairs();
-
-  console.log("SafeswapV2Pairs =>", safeswapV2Pairs)
-
   const safeswapAction = useSafeswapAction();
 
   useEffect(() => {
@@ -49,52 +46,54 @@ export default () => {
         </Title>
       </Col>
     </Row>
-    <div style={{ width: "100%", paddingTop: "40px" }}>
-      <div style={{ margin: "auto", width: "90%" }}>
-        <Card style={{ marginBottom: "20px" }}>
-          <Row style={{ marginBottom: "20px" }}>
+    <div style={{ width: "100%", paddingTop: "60px" }}>
+      <div style={{ margin: "auto", width: "100%" }}>
+        {/* <Row style={{ marginBottom: "20px" }}>
             <div style={{ width: "50%", margin: "auto" }}>
               <Alert style={{ margin: "auto" }} type="info" message={<>
                 {t("wallet_safeswap_swap_tip0")}
               </>}></Alert>
             </div>
           </Row>
-          <Divider />
-          <Card style={{ width: "50%", margin: "auto" }}>
-            <Row style={{ marginBottom: "20px" }}>
-              <Col span={12} style={{ textAlign: "center" }}>
-                <Button onClick={() => setActiveModule(ActiveModule.Swap)}
-                  style={{ fontSize: "28px", height: "60px", color: activeModule == ActiveModule.Swap ? "black" : "#b9a4a4" }} type="text">
-                  {t("wallet_safeswap_swap")}
-                </Button>
-              </Col>
-              <Col span={12} style={{ textAlign: "center" }}>
-                <Button onClick={() => setActiveModule(ActiveModule.AssetsPool)}
-                  style={{ fontSize: "28px", height: "60px", color: activeModule == ActiveModule.AssetsPool ? "black" : "#b9a4a4" }} type="text">
-                  {t("wallet_safeswap_liquiditypool")}
-                </Button>
-                <Popover placement="rightTop" content={<>
-                  <div style={{ width: "300px" }}>
-                    <SlippageSetting />
-                  </div>
-                </>} title={t("wallet_safeswap_settings")} trigger="click">
-                  <SettingOutlined style={{ float: "right" }} />
-                </Popover>
-              </Col>
-            </Row>
-            {
-              activeModule == ActiveModule.Swap && <Swap safeswapV2Pairs={safeswapV2Pairs} goToAddLiquidity={goToAddLiquidity} />
-            }
-            {
-              activeModule == ActiveModule.AssetsPool && <AssetPool
-                safeswapV2Pairs={safeswapV2Pairs}
-                _assetPoolModule={_assetPoolModule} />
-            }
-          </Card>
-        </Card>
-
-        {TokensKLine()}
-
+          <Divider /> */}
+        <Row>
+          <Col span={14}>
+            {TokensKLine()}
+          </Col>
+          <Col span={8} offset={2}>
+            <Card style={{ width: "100%", boxShadow: "0 4px 8px 0 rgba(0, 0, 0, 0.2)" }}>
+              <Row style={{ marginBottom: "20px" }}>
+                <Col span={12} style={{ textAlign: "center" }}>
+                  <Button onClick={() => setActiveModule(ActiveModule.Swap)}
+                    style={{ fontSize: "28px", height: "60px", color: activeModule == ActiveModule.Swap ? "black" : "#b9a4a4" }} type="text">
+                    {t("wallet_safeswap_swap")}
+                  </Button>
+                </Col>
+                <Col span={12} style={{ textAlign: "center" }}>
+                  <Button onClick={() => setActiveModule(ActiveModule.AssetsPool)}
+                    style={{ fontSize: "28px", height: "60px", color: activeModule == ActiveModule.AssetsPool ? "black" : "#b9a4a4" }} type="text">
+                    {t("wallet_safeswap_liquiditypool")}
+                  </Button>
+                  <Popover placement="rightTop" content={<>
+                    <div style={{ width: "300px" }}>
+                      <SlippageSetting />
+                    </div>
+                  </>} title={t("wallet_safeswap_settings")} trigger="click">
+                    <SettingOutlined style={{ float: "right" }} />
+                  </Popover>
+                </Col>
+              </Row>
+              {
+                activeModule == ActiveModule.Swap && <Swap safeswapV2Pairs={safeswapV2Pairs} goToAddLiquidity={goToAddLiquidity} />
+              }
+              {
+                activeModule == ActiveModule.AssetsPool && <AssetPool
+                  safeswapV2Pairs={safeswapV2Pairs}
+                  _assetPoolModule={_assetPoolModule} />
+              }
+            </Card>
+          </Col>
+        </Row>
       </div>
     </div>
   </>

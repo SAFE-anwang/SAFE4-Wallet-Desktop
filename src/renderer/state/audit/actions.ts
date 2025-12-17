@@ -11,3 +11,16 @@ export const updateAuditTokens = createAction<{
     logoURI?: string
   }[]
 }>("transactions/updateAuditTokens");
+
+export const updateTokenPrices = createAction<{
+  chainId: number, tokens: {
+    name: string,
+    symbol: string,
+    address: string,
+    decimals: number,
+    usdtReserves: string,
+    change: string,
+    logoURI: string,
+    price: string
+  }[]
+}>("audit/updateTokenPrices");

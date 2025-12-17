@@ -195,12 +195,12 @@ export interface CrossChainVO {
 }
 
 export interface WalletVersionVO {
-  appName : string ,
-  appOS   : string ,
-  version : string ,
-  url     : string ,
-  updates : string ,
-  versionCode : number ,
+  appName: string,
+  appOS: string,
+  version: string,
+  url: string,
+  updates: string,
+  versionCode: number,
 }
 
 export function AddressActivityFormat(activity: AddressActivityVO): AddressActivityVO {
@@ -226,6 +226,26 @@ export function ContractVOFormat(contractVO: ContractVO): ContractVO {
     address: ethers.utils.isAddress(contractVO.address) ? ChecksumAddress(contractVO.address) : "",
     creator: ethers.utils.isAddress(contractVO.creator) ? ChecksumAddress(contractVO.creator) : "",
   }
+}
+
+export interface StockKLineVO {
+  open : string,
+  close : string,
+  high : string,
+  low : string,
+  volume : string,
+  timestamp : number
+}
+
+export interface TokenPriceVO {
+  address: string,
+  decimals: number,
+  name: string,
+  symbol: string,
+  price: string,
+  change: string,
+  logoURI: string,
+  usdtReserves: string
 }
 
 
