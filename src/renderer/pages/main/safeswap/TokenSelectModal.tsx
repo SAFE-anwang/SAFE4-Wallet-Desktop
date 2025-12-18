@@ -8,6 +8,8 @@ import TokenSymbol from "../../components/TokenSymbol";
 import { useWeb3React } from "@web3-react/core";
 import { Safe4NetworkChainId, USDT } from "../../../config";
 import { useSafeswapWalletTokens } from "./hooks";
+import { useMarketTokenPrices } from "../../../state/audit/hooks";
+import { TokenPriceVO } from "../../../services";
 
 
 const { Text } = Typography;
@@ -27,6 +29,11 @@ export default ({
   const activeAccount = useWalletsActiveAccount();
   const tokens = useSafeswapWalletTokens(true);
   const tokenAmounts = useTokenBalances(activeAccount, tokens);
+  const tokenPrices = useMarketTokenPrices();
+  const tokenPricesMap = tokenPrices?.reduce((map, tokenPrice) => {
+    map[tokenPrice.address] = tokenPrice;
+    return map;
+  }, {} as { [address: string]: TokenPriceVO });
 
   const onTokenClick = (token: Token | undefined) => {
     setOpenTokenSelectModal(false);
@@ -63,6 +70,19 @@ export default ({
             {
               tokens.map((erc20Token, index) => {
                 const { address, name, symbol, chainId } = erc20Token;
+                let price = undefined;
+                let change = "";
+                let trend = 0;
+                const priceStr = tokenPricesMap && tokenPricesMap[address] && tokenPricesMap[address].price;
+                const changeStr = tokenPricesMap && tokenPricesMap[address] && tokenPricesMap[address].change;
+                if (priceStr) {
+                  price = parseFloat(priceStr).toFixed(4);
+                }
+                if (changeStr) {
+                  let changeValue = parseFloat(changeStr);
+                  trend = changeValue == 0 ? 0 : changeValue > 0 ? 1 : -1;
+                  change = (parseFloat(changeStr) * 100).toFixed(2) + "%";
+                }
                 return <>
                   {
                     index > 0 && <>
@@ -80,14 +100,25 @@ export default ({
                     </Col>
                     <Col span={20}>
                       <Row>
-                        <Col span={10} style={{}}>
-                          <Text style={{ fontSize: "14px", height: "30px" }} strong>
+                        <Col span={14} style={{ lineHeight: price ? "30px" : "" }}>
+                          <Text style={{ fontSize: "14px" }} strong>
                             {TokenSymbol(erc20Token)}
                           </Text>
-                          <Text code>SRC20</Text>
+                          <Text code style={{ fontSize: "10px" }}>SRC20</Text>
+                          {
+                            price && <>
+                              <br />
+                              <Text type={trend > 0 ? "success" : trend < 0 ? "danger" : "secondary"} strong>
+                                ${price}
+                              </Text>
+                              <Text type={trend > 0 ? "success" : trend < 0 ? "danger" : "secondary"}>
+                                {price && <> ({trend == 1 && "+"}{change})</>}
+                              </Text>
+                            </>
+                          }
                         </Col>
-                        <Col span={14} style={{ lineHeight: "60px", textAlign: "right" }}>
-                          <Text strong style={{ marginRight: "20px" }}>{tokenAmounts && tokenAmounts[address]?.toSignificant()} </Text>
+                        <Col span={10} style={{ lineHeight: "60px", textAlign: "right" }}>
+                          <Text strong style={{ marginRight: "20px" }}>{tokenAmounts && tokenAmounts[address]?.toSignificant()}</Text>
                         </Col>
                       </Row>
                     </Col>

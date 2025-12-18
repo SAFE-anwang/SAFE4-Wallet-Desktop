@@ -18,7 +18,7 @@ const { Text } = Typography;
 
 
 // 定义一个极小的浮点数常量，用于微量振幅
-const EPSILON_FLOAT = 0.001;
+const EPSILON_FLOAT = 0.002;
 // BigNumber 精度常量
 const EtherONE = ethers.utils.parseEther("1"); // 1 * 10^18
 // 精度因子：10^18 * 10^18 = 10^36，用于精确倒数运算
@@ -26,10 +26,10 @@ const PRECISION_FACTOR = EtherONE.mul(EtherONE);
 // KLine 数据结构接口（可选，用于增强类型安全）
 interface KLineData {
   DateTime: string;
-  Open: number;
-  Close: number;
-  High: number;
-  Low: number;
+  Open: number | undefined;
+  Close: number | undefined;
+  High: number | undefined;
+  Low: number | undefined;
 }
 
 const options: CheckboxGroupProps<string>['options'] = [
@@ -39,15 +39,17 @@ const options: CheckboxGroupProps<string>['options'] = [
 ];
 
 const fetchData = async (safescanUrl: string, token0: string, token1: string, interval: string) => {
-  const response = await fetchMarketStockKLines(safescanUrl, { token0, token1, interval });
-  let rawData = response;
-  rawData = rawData.filter((d: any) => rawData.indexOf(d) > rawData.length - 120);
+  let response = await fetchMarketStockKLines(safescanUrl, { token0, token1, interval });
+  response = response && response.filter && response.filter((d: any) => response.indexOf(d) > response.length - 140);
+  if (!response) {
+    return;
+  }
   // 当希望以 token1 计价时, 需要对 OHLC 价格进行倒置处理
   const isInverted = true;
   // 强制连续性处理,以上一个时间段的收盘价作为当前时间段的开盘价
   let previousClose: number | null = null;
   // 过滤掉零价格的原始数据
-  const validRawData = rawData.filter((d: any) =>
+  const validRawData = response.filter((d: any) =>
     parseFloat(d.open) !== 0 && parseFloat(d.close) !== 0
   );
   const transformedData: KLineData[] = validRawData.map((d: any) => {
@@ -122,15 +124,49 @@ const fetchData = async (safescanUrl: string, token0: string, token1: string, in
     // 7. 最终数据结构
     // ----------------------------------------------------
     const transformed: KLineData = {
-      Open: finalOpen,
-      High: finalHigh,
-      Low: finalLow,
-      Close: finalClose,
+      Open: parseFloat(finalOpen.toFixed(4)),
+      High: parseFloat(finalHigh.toFixed(4)),
+      Low: parseFloat(finalLow.toFixed(4)),
+      Close: parseFloat(finalClose.toFixed(4)),
       DateTime: DateTimeFormat(d.timestamp * 1000, "yyyy-MM-dd HH:mm:ss"),
     };
     return transformed;
   });
+
+
+  // ----------------------------------------------------
+  // 8. 留白处理：在末尾追加空数据
+  // ----------------------------------------------------
+  const PADDING_COUNT = 6; // 想要右侧留出的空位数量
+  const intervalSeconds = getIntervalSeconds(interval); // 获取当前周期的秒数
+  if (transformedData.length > 0) {
+    const lastPoint = response[response.length - 1]; // 获取原始数据中的最后一个点
+    let lastTimestamp = lastPoint.timestamp;
+    for (let i = 1; i <= PADDING_COUNT; i++) {
+      const futureTimestamp = (lastTimestamp + intervalSeconds * i) * 1000;
+      transformedData.push({
+        DateTime: DateTimeFormat(futureTimestamp, "yyyy-MM-dd HH:mm:ss"),
+        Open: undefined,
+        High: undefined,
+        Low: undefined,
+        Close: undefined,
+      });
+    }
+  }
   return transformedData;
+};
+
+const getIntervalSeconds = (interval: string): number => {
+  const normalized = (interval || "30M").toUpperCase();
+  const map: {
+    [interval: string]: number
+  } = {
+    "30M": 30 * 60,          // 1,800s
+    "4H": 4 * 60 * 60,       // 14,400s
+    "1D": 24 * 60 * 60,      // 86,400s
+  }
+  // 如果找不到匹配项，默认返回 30M 的秒数
+  return map[normalized] || 1800;
 };
 
 export default () => {
@@ -173,16 +209,21 @@ export default () => {
   useEffect(() => {
     if (token0 && token1) {
       const fetchKLineData = async () => {
-        setStockLoading(true);
         const transformedData = await fetchData(URL, token0.address, token1.address, interval);
-        setData(transformedData);
-        setStockLoading(false);
+        if ( transformedData ) {
+          setData(transformedData)
+        }
       }
       fetchKLineData();
     }
   }, [blockNumber, token0, token1, interval]);
 
   const StocKlines = () => {
+
+    const lastValidItem = [...data].filter(d => d.Close !== undefined && d.Close !== null).pop();
+    const lastPrice = lastValidItem ? lastValidItem.Close : 0;
+
+
     const config = {
       data: data,
       axis: {
@@ -194,13 +235,48 @@ export default () => {
           grid: true,
           gridLineWidth: 1,
           line: true,
-          tick: true,
-          label: true
+          labelFormatter: (val: any) => {
+            const price = parseFloat(val);
+            // 计算当前刻度与最新价的距离
+            // 如果差值小于最新价的 0.1%（或者一个固定阈值），则隐藏该刻度
+            const diff = Math.abs(price - lastPrice);
+            const threshold = lastPrice * 0.10; // 0.5% 的间距，可以根据效果调整
+            if (diff < threshold) {
+              return ""; // 距离太近，返回空字符串，隐藏该刻度标签
+            }
+            return val; // 正常显示
+          }
         }
       },
       lineStyle: {
         stroke: 'black',
       },
+
+      // 最终收盘价价格辅助虚线
+      annotations: [
+        {
+          type: 'lineY',              // 绘制水平线
+          data: [lastPrice],          // 所在的 Y 轴数值
+          style: {
+            stroke: '#0234b0ff',    // 虚线颜色
+            lineDash: [4, 4],         // 虚线样式 [实线长度, 间隙长度]
+            lineWidth: 1,
+            zIndex: 100,               // 确保在 K 线图层之上
+          },
+          label: {
+            text: lastPrice,
+            position: 'right',
+            dx: 40,
+            style: {
+              fill: '#0234b0ff',
+              padding: [0, 0],
+              fontSize: 10,
+              fontWeight: 'bold',
+              // overflow: 'visible',
+            },
+          },
+        },
+      ],
       xField: 'DateTime',
       yField: ['Open', 'Close', 'Low', 'High'],
       colorField: (d: any) => {
@@ -210,7 +286,7 @@ export default () => {
       scale: {
         color: {
           domain: ['  ', '', ' '],
-          range: ['#c11304ff', '#999999', '#21b80dff'],
+          range: ['#d71706ff', '#999999', '#22ca0cff'],
         }
       },
       tooltip: {
@@ -260,7 +336,7 @@ export default () => {
             {price}
           </Text>
           <Text type={trend > 0 ? "success" : trend < 0 ? "danger" : "secondary"}>
-            ({trend == 1 && "+"}{change})
+            {price && <> ({trend == 1 && "+"}{change})</>}
           </Text>
         </Col>
         <Col span={12}>

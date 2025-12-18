@@ -8,7 +8,7 @@ import { useWalletTokens } from "../../../../../state/transactions/hooks";
 import AddressComponent from "../../../../components/AddressComponent";
 import { useTranslation } from "react-i18next";
 import ERC20TokenLogoComponent from "../../../../components/ERC20TokenLogoComponent";
-import { useAuditTokenList } from "../../../../../state/audit/hooks";
+import { useAuditTokenList, useMarketTokenPrices } from "../../../../../state/audit/hooks";
 import TokenName from "../../../../components/TokenName";
 import TokenSymbol from "../../../../components/TokenSymbol";
 import TokenAddModalAndTokenList from "./TokenAddModalAndTokenList";
@@ -17,6 +17,7 @@ import { useDispatch } from "react-redux";
 import { removeERC20Token } from "../../../../../state/transactions/actions";
 import { ERC20Tokens_Methods, ERC20TokensSignal } from "../../../../../../main/handlers/ERC20TokenSignalHandler";
 import VIewTokenModal from "./VIewTokenModal";
+import { TokenPriceVO } from "../../../../../services";
 const { Text } = Typography;
 
 export default () => {
@@ -57,6 +58,12 @@ export default () => {
     }
     return tokens;
   }, [walletTokens, auditTokens]);
+  const tokenPrices = useMarketTokenPrices();
+  const tokenPricesMap = tokenPrices?.reduce((map, tokenPrice) => {
+    map[tokenPrice.address] = tokenPrice;
+    return map;
+  }, {} as { [address: string]: TokenPriceVO });
+
 
   const disalbeHide = (address: string) => {
     if (address.toLocaleLowerCase() == WSAFE[Safe4NetworkChainId.Testnet].address.toLocaleLowerCase()
@@ -91,6 +98,19 @@ export default () => {
         {
           tokens.map((erc20Token, index) => {
             const { address, name, symbol, chainId } = erc20Token;
+            let price = undefined;
+            let change = "";
+            let trend = 0;
+            const priceStr = tokenPricesMap && tokenPricesMap[address] && tokenPricesMap[address].price;
+            const changeStr = tokenPricesMap && tokenPricesMap[address] && tokenPricesMap[address].change;
+            if (priceStr) {
+              price = parseFloat(priceStr).toFixed(4);
+            }
+            if (changeStr) {
+              let changeValue = parseFloat(changeStr);
+              trend = changeValue == 0 ? 0 : changeValue > 0 ? 1 : -1;
+              change = (parseFloat(changeStr) * 100).toFixed(2) + "%";
+            }
             return <>
               {
                 index > 0 && <>
@@ -112,6 +132,17 @@ export default () => {
                     <Col span={24} style={{ lineHeight: "35px", marginTop: "5px" }}>
                       <Text strong>{TokenName(erc20Token)}</Text>
                       <Text style={{ fontSize: "14px", marginLeft: "2px" }} code>SRC20</Text>
+                      {
+                        price && <>
+                          <Divider type="vertical" />
+                          <Text type={trend > 0 ? "success" : trend < 0 ? "danger" : "secondary"} strong>
+                            ${price}
+                          </Text>
+                          <Text type={trend > 0 ? "success" : trend < 0 ? "danger" : "secondary"}>
+                            {price && <> ({trend == 1 && "+"}{change})</>}
+                          </Text>
+                        </>
+                      }
                     </Col>
                     <Col span={24} style={{ lineHeight: "35px" }}>
                       <Text strong>{tokenAmounts && tokenAmounts[address]?.toFixed(6)} </Text>
