@@ -37,7 +37,7 @@ const fetchData = async (
   // 1. 获取原始数据并进行初步清洗
   let response = await fetchMarketStockKLines(safescanUrl, { token0, token1, interval });
   if (!response || !Array.isArray(response)) return [];
-  const MAX_KLINES = 140;
+  const MAX_KLINES = 120;
   // 过滤掉开盘/收盘为 0 的异常原始数据
   const validRawData = response
     .filter((d: any) => parseFloat(d.open) > 0 && parseFloat(d.close) > 0)
@@ -123,9 +123,10 @@ const fetchData = async (
       DateTime: DateTimeFormat(d.timestamp * 1000, "yyyy-MM-dd HH:mm:ss"),
     };
   });
+
   // 5. 留白逻辑：根据当前数据量动态计算右侧填充
   // 数据越多留白越少，保持图表比例和谐
-  const PADDING_COUNT = transformedData.length >= 120 ? 12 : 80 - transformedData.length;
+  const PADDING_COUNT = transformedData.length >= 80 ? 20 : 100 - transformedData.length;
   const intervalSeconds = getIntervalSeconds(interval);
   if (transformedData.length > 0) {
     const lastTs = baseData[baseData.length - 1].timestamp;
@@ -226,7 +227,7 @@ export default () => {
             // 计算当前刻度与最新价的距离
             // 如果差值小于最新价的 0.1%（或者一个固定阈值），则隐藏该刻度
             const diff = Math.abs(price - lastPrice);
-            const threshold = lastPrice * 0.10; // 0.5% 的间距，可以根据效果调整
+            const threshold = lastPrice * 0.005; // 0.5% 的间距，可以根据效果调整
             if (diff < threshold) {
               return ""; // 距离太近，返回空字符串，隐藏该刻度标签
             }
