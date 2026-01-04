@@ -26,11 +26,7 @@
     "url": "https://electron-react-boilerplate.js.org"
   },
   "contributors": [
-    {
-      "name": "Amila Welihinda",
-      "email": "amilajack@gmail.com",
-      "url": "https://github.com/amilajack"
-    }
+
   ],
   "main": "./src/main/main.ts",
   "scripts": {
