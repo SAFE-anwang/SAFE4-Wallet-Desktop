@@ -155,21 +155,39 @@ export default () => {
       }
       // Check Enode
       if (enode != masternodeInfo.enode) {
-        const enodeExistCall: CallMulticallAggregateContractCall = {
+        // const enodeExistCall: CallMulticallAggregateContractCall = {
+        //   contract: masternodeStorageContract,
+        //   functionName: "existEnode",
+        //   params: [enode]
+        // };
+        const isValidEnodeCall: CallMulticallAggregateContractCall = {
           contract: masternodeStorageContract,
-          functionName: "existEnode",
+          functionName: "isValidEnode",
+          params: [enode]
+        };
+        const getIDsByEnodeCall: CallMulticallAggregateContractCall = {
+          contract: masternodeStorageContract,
+          functionName: "getIDsByEnode",
           params: [enode]
         };
         const enodeExistInSupernodesCall: CallMulticallAggregateContractCall = {
           contract: supernodeStorageContract,
           functionName: "existEnode",
           params: [enode]
-        }
-        await SyncCallMulticallAggregate(multicallContract, [enodeExistCall, enodeExistInSupernodesCall]);
-        const enodeExistsInMasternodes: boolean = enodeExistCall.result;
+        };
+
+        await SyncCallMulticallAggregate(multicallContract, [isValidEnodeCall, enodeExistInSupernodesCall, getIDsByEnodeCall]);
+        const isValidEncode: boolean = isValidEnodeCall.result;
         const enodeExistsInSupernodes: boolean = enodeExistInSupernodesCall.result;
-        if (enodeExistsInMasternodes || enodeExistsInSupernodes) {
-          inputErrors.enode = t("wallet_masternodes_enodeexist");
+        const getIDsByEnode: number[] = getIDsByEnodeCall.result;
+        if (!isValidEncode) {
+          if (enodeExistsInSupernodes) {
+            inputErrors.enode = t("wallet_masternodes_enodeexistinsupernode");
+          } else if (getIDsByEnode.length > 0) {
+            inputErrors.enode = t("wallet_masternodes_enodegelimits", { count: getIDsByEnode.length });
+          } else {
+            inputErrors.enode = t("wallet_masternodes_enodeisinvalid");
+          }
         }
       }
       if (inputErrors.address || inputErrors.enode) {
@@ -287,7 +305,7 @@ export default () => {
             data,
             chainId
           };
-          tx = await EstimateTx(activeAccount, chainId, tx, provider , {doubleGasLimit:true});
+          tx = await EstimateTx(activeAccount, chainId, tx, provider, { doubleGasLimit: true });
           const { signedTx, error } = await window.electron.wallet.signTransaction(
             activeAccount,
             tx

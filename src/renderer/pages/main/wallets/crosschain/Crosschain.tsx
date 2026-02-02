@@ -33,6 +33,7 @@ export default () => {
     NetworkType.BSC, NetworkType.ETH,
     // NetworkType.SOL, NetworkType.TRX
   ];
+
   const Token_USDT = chainId && USDT[chainId as Safe4NetworkChainId];
   const tokenUSDTBalance = Token_USDT && useTokenBalances(activeAccount, [Token_USDT])[Token_USDT.address];
 
@@ -105,7 +106,7 @@ export default () => {
         <Text style={{ marginLeft: "5px" }} strong>SAFE</Text>
       </Option>
       {
-        chainId && Token_USDT &&
+        chainId && Token_USDT && tokenUSDTBalance &&
         <Option key={Token_USDT.address} value={Token_USDT.symbol}>
           <ERC20TokenLogoComponent style={{ width: "30px", height: "30px" }} chainId={chainId} address={Token_USDT.address} />
           <Text style={{ marginLeft: "5px" }} strong>{Token_USDT.symbol}</Text>

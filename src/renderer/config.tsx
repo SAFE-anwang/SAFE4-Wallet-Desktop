@@ -35,11 +35,13 @@ export const WSAFE: { [chainId in Safe4NetworkChainId]: Token } = {
   [Safe4NetworkChainId.Testnet]: new Token(Safe4NetworkChainId.Testnet as number, "0x0000000000000000000000000000000000001101", 18, "WSAFE", "Wrapped SAFE"),
   [Safe4NetworkChainId.Mainnet]: new Token(Safe4NetworkChainId.Mainnet as number, "0x0000000000000000000000000000000000001101", 18, "WSAFE", "Wrapped SAFE"),
 };
+
 // USDT 合约地址
 export const USDT: { [chainId in Safe4NetworkChainId]: Token } = {
-  [Safe4NetworkChainId.Testnet]: new Token(Safe4NetworkChainId.Testnet as number, "0x5a9187804AE46C9809696A9c64c7D3D42307Fef3", 6, "USDT", "Safe4-USDT"),
-  [Safe4NetworkChainId.Mainnet]: new Token(Safe4NetworkChainId.Mainnet as number, "0x9C1246a4BB3c57303587e594a82632c3171662C9", 6, "USDT", "Safe4-USDT"),
+  [Safe4NetworkChainId.Testnet]: new Token(Safe4NetworkChainId.Testnet as number, "0x0000000000000000000000000000000000000000", 6, "USDT", "Safe4-USDT"),
+  [Safe4NetworkChainId.Mainnet]: new Token(Safe4NetworkChainId.Mainnet as number, "0x0000000000000000000000000000000000000000", 6, "USDT", "Safe4-USDT"),
 };
+
 // MiniChefV2 合约地址
 export const MiniChefV2: { [chainId in Safe4NetworkChainId]: string } = {
   [Safe4NetworkChainId.Testnet]: "0xCc73d27DB16C074ecc552fB593F4A6A83C08837C",

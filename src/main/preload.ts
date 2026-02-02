@@ -67,11 +67,11 @@ const electronHandler = {
   },
 
   sshs: {
-    connect(host: string, port: number, username: string, password: string) {
-      return ipcRenderer.invoke('sshs-connect-ssh', { host, username, password });
+    connect(host: string, port: number, username: string, password: string , nodeAddress ?: string) {
+      return ipcRenderer.invoke('sshs-connect-ssh', { host, username, password , nodeAddress });
     },
-    execute(host: string, command: string) {
-      return ipcRenderer.invoke('sshs-exec-command', { host, command })
+    execute(host: string, command: string , lockIp ?: boolean ) {
+      return ipcRenderer.invoke('sshs-exec-command', { host, command, lockIp })
     },
     shell(command: string) {
       return ipcRenderer.invoke('sshs-shell-command', { command })

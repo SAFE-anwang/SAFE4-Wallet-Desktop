@@ -24,23 +24,21 @@ export function formatStateInfo(stateInfo: any): StateInfo {
         uint lockID; // lock id
         address addr; // member address
         uint amount; // lock amount
-        uint height; // add height
+        uint height; // add height   [remove...]
     }
  */
 export interface MemberInfo {
     lockID: number,
     addr: string,
     amount: CurrencyAmount,
-    height: number,
     accountRecord ?: AccountRecord
 }
 export function formatMemberInfo(memberInfo: any): MemberInfo {
-    const { lockID, addr, amount, height } = memberInfo;
+    const { lockID, addr, amount } = memberInfo;
     return {
         lockID: lockID.toNumber(),
         addr,
         amount: CurrencyAmount.ether(JSBI.BigInt(amount.toString())),
-        height: height.toNumber()
     }
 }
 
@@ -135,6 +133,9 @@ export function formatSupernodeInfo(supernodeInfo: any) : SupernodeInfo {
         id, addr, creator, enode, isOfficial, lastRewardHeight, createHeight, updateHeight,
         state, founders, incentivePlan ,
     } = supernodeInfo;
+
+    console.log("SupernodeInfo raw:", supernodeInfo);
+
     let name = "";
     let description = "";
     try {
@@ -147,6 +148,9 @@ export function formatSupernodeInfo(supernodeInfo: any) : SupernodeInfo {
     }catch(err){
 
     }
+
+    console.log("founders :", founders);
+
     return {
         id: id.toNumber(),
         name,
@@ -160,6 +164,7 @@ export function formatSupernodeInfo(supernodeInfo: any) : SupernodeInfo {
         updateHeight: updateHeight.toNumber(),
         state: state.toNumber(),
         founders: founders.map(formatMemberInfo),
-        incentivePlan: formatIncentivePlan(incentivePlan),
+        // incentivePlan: formatIncentivePlan(incentivePlan),
+        incentivePlan: { creator: 0, partner: 0, voter: 0 },
     };
 }

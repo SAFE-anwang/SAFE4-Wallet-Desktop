@@ -159,11 +159,18 @@ export default () => {
         functionName: "existFounder",
         params: [address]
       };
-      const enodeExistCall: CallMulticallAggregateContractCall = {
+
+      const isValidEncodeCall: CallMulticallAggregateContractCall = {
         contract: masternodeStorageContract,
-        functionName: "existEnode",
+        functionName: "isValidEnode",
         params: [enode]
       };
+      const getIDsByEnodeCall: CallMulticallAggregateContractCall = {
+        contract: masternodeStorageContract,
+        functionName: "getIDsByEnode",
+        params: [enode]
+      };
+
       const enodeExistInSupernodesCall: CallMulticallAggregateContractCall = {
         contract: supernodeStorageContract,
         functionName: "existEnode",
@@ -171,11 +178,12 @@ export default () => {
       }
       CallMulticallAggregate(multicallContract, [
         addrExistCall, addrIsFounderCall, addrExistInSupernodesCall, addrIsSupernodeFounderCall,
-        enodeExistCall, enodeExistInSupernodesCall
+        isValidEncodeCall, getIDsByEnodeCall , enodeExistInSupernodesCall
       ], () => {
         const addrExistsInMasternodes: boolean = addrExistCall.result;
         const addrExistsInSupernodes: boolean = addrExistInSupernodesCall.result;
-        const enodeExistsInMasternodes: boolean = enodeExistCall.result;
+        const isValidEncode: boolean = isValidEncodeCall.result;
+        const getIDsByEnode: number[] = getIDsByEnodeCall.result;
         const enodeExistsInSupernodes: boolean = enodeExistInSupernodesCall.result;
         const addrIsFounder: boolean = addrIsFounderCall.result;
         const addrIsSupernodeFounder: boolean = addrExistInSupernodesCall.result;
@@ -200,8 +208,14 @@ export default () => {
           setInputErrors({ ...inputErrors });
           return;
         }
-        if (enodeExistsInMasternodes || enodeExistsInSupernodes) {
-          inputErrors.enode = t("wallet_masternodes_enodeexist");
+        if (!isValidEncode) {
+          if (enodeExistsInSupernodes) {
+            inputErrors.enode = t("wallet_masternodes_enodeexistinsupernode");
+          } else if (getIDsByEnode.length >= 0) {
+            inputErrors.enode = t("wallet_masternodes_enodegelimits", { count: getIDsByEnode.length });
+          } else {
+            inputErrors.enode = t("wallet_masternodes_enodeisinvalid");
+          }
           setInputErrors({ ...inputErrors });
           return;
         }

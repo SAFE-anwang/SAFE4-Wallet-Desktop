@@ -29,16 +29,20 @@ export class SSHSIpc {
 
   commandWaitingLine: string = '';
 
-  sshConnectionMap : {
-    [ host : string ] : any
+  sshConnectionMap: {
+    [host: string]: any
+  } = {};
+  ipLockMap: {
+    [ip: string]: boolean
   } = {};
 
   constructor(ipcMain: any) {
 
-    ipcMain.handle('sshs-connect-ssh', async (event: any, { host, username, password }: { host: string, port: number, username: string, password: string }) => {
+    ipcMain.handle('sshs-connect-ssh', async (event: any, { host, username, password, nodeAddress }: { host: string, port: number, username: string, password: string, nodeAddress?: string }) => {
       return new Promise((resolve, reject) => {
         const conn = new ssh2.Client();
-        console.log(`[sshs-ssh2] Connect to ${host} / ${username}`)
+        console.log(`[sshs-ssh2] Connect to ${host} / ${username}`);
+        const hostKey = nodeAddress ? host + "_" + nodeAddress : host;
         conn.on('ready', () => {
           this.sshConnection = conn;
           console.log(`[sshs-ssh2] Connect ${host} success!`);
@@ -69,16 +73,16 @@ export class SSHSIpc {
                     && line.trim() != "exit" && line.trim() != "logout") {
                     if (this.commandWaitingLine != '' && line.trim().indexOf(this.commandWaitingLine) == 0) {
 
-                    }else{
-                      event.sender.send('sshs-ssh2-stderr', [host , line + "\n"]);
-                      this.sshConnectionMap[host] = conn;
+                    } else {
+                      event.sender.send('sshs-ssh2-stderr', [hostKey, line + "\n"]);
+                      this.sshConnectionMap[hostKey] = conn;
                     }
                   }
                 });
               }
             });
             stream.on("close", () => {
-              event.sender.send('sshs-ssh2-stderr', [host , this.commandWaitingLine + " "]);
+              event.sender.send('sshs-ssh2-stderr', [hostKey, this.commandWaitingLine + " "]);
               resolve(chunkBuffer);
               console.log(`[sshs-ssh2-shell/${command}] close;`)
             });
@@ -88,12 +92,12 @@ export class SSHSIpc {
         }).on('error', (err: any) => {
           console.log("[sshs-ssh2] connect error:", err);
           reject(err);
-        }).connect({ host, username, password , readyTimeout:120000 });
+        }).connect({ host, username, password, readyTimeout: 120000 });
 
       });
     });
 
-    ipcMain.handle("sshs-connect-close", ( event : any , {host} : {host : string}) => {
+    ipcMain.handle("sshs-connect-close", (event: any, { host }: { host: string }) => {
       console.log(`[sshs] handle ${host} connection close;`);
       if (this.sshConnectionMap[host]) {
         this.sshConnectionMap[host].end();
@@ -102,9 +106,20 @@ export class SSHSIpc {
       this.commandWaitingLine = '';
     });
 
-    ipcMain.handle('sshs-exec-command', async (event: any, { host , command }: { host : string, command: string }) => {
+    ipcMain.handle('sshs-exec-command', async (event: any, { host, command, lockIp }: { host: string, command: string, lockIp?: boolean }) => {
       if (!this.sshConnectionMap[host]) {
         throw new Error(`Connection not found`);
+      }
+      if (lockIp && host.indexOf("_") > 0) {
+        var ip = host.substring(0, host.indexOf("_"));
+        if (this.ipLockMap[ip]) {
+          return new Promise((resolve, reject) => {
+            resolve("Ip Locked");
+          });
+        } else {
+          console.log("Locked Ip :", ip);
+          this.ipLockMap[ip] = true;
+        }
       }
       return new Promise((resolve, reject) => {
         console.log(`[sshs-ssh2-exec-${command}] >>> ${host}`);
@@ -126,14 +141,17 @@ export class SSHSIpc {
               // Process each line
               lines.forEach(line => {
                 console.log(`[sshs-ssh2-exec-${command}] ${host} <<< ${line}`);
-                event.sender.send('sshs-ssh2-stderr', [host ,line + "\r\n"]);
+                event.sender.send('sshs-ssh2-stderr', [host, line + "\r\n"]);
               });
             }
           })
             .on("close", () => {
               resolve(chunkBuffer);
               console.log(`[sshs-ssh2-exec-${command} ${host} |end ::]`);
-              event.sender.send('sshs-ssh2-stderr', [host , this.commandWaitingLine.trim() + " "]);
+              event.sender.send('sshs-ssh2-stderr', [host, this.commandWaitingLine.trim() + " "]);
+              if (lockIp && host.indexOf("_") > 0) {
+                this.ipLockMap[ip] = false;
+              }
             });
           stream.stderr.on("data", (chunk: any) => {
             chunkBuffer += chunk;
@@ -145,7 +163,7 @@ export class SSHSIpc {
               // Process each line
               lines.forEach(line => {
                 console.log(`[sshs-ssh2-exec-${command}] ${host} <<< ${line}`);
-                event.sender.send('sshs-ssh2-stderr', [host , line + "\r\n"]);
+                event.sender.send('sshs-ssh2-stderr', [host, line + "\r\n"]);
               });
             }
           })

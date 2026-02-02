@@ -4,7 +4,7 @@ import { LeftOutlined, QuestionCircleOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { CurrencyAmount, JSBI } from '@uniswap/sdk';
 import { ethers } from 'ethers';
-import { useETHBalances, useWalletsActiveAccount,useWalletsActiveWallet } from '../../../../state/wallets/hooks';
+import { useETHBalances, useWalletsActiveAccount, useWalletsActiveWallet } from '../../../../state/wallets/hooks';
 import { useMasternodeStorageContract, useMulticallContract, useSupernodeStorageContract } from '../../../../hooks/useContracts';
 import RegisterModalConfirm from './RegisterModal-Confirm';
 import NumberFormat from '../../../../utils/NumberFormat';
@@ -80,7 +80,7 @@ export default () => {
       const enodeRegex = /^enode:\/\/[0-9a-fA-F]{128}@(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}):(\d+)$/;
       const isMatch = enodeRegex.test(enode);
       if (!isMatch) {
-        inputErrors.enode = t("enter_correct")+t("wallet_masternodes_enode");
+        inputErrors.enode = t("enter_correct") + t("wallet_masternodes_enode");
       }
     }
     if (!address) {
@@ -94,7 +94,7 @@ export default () => {
       inputErrors.description = t("please_enter") + t("wallet_masternodes_description")
     };
     if (description && (description.length < InputRules.description.min || description.length > InputRules.description.max)) {
-      inputErrors.description = t("wallet_masternodes_description_lengthrule" , {min: InputRules.description.min, max:InputRules.description.max})
+      inputErrors.description = t("wallet_masternodes_description_lengthrule", { min: InputRules.description.min, max: InputRules.description.max })
     }
     if (registerParams.registerType == Masternode_Create_Type_NoUnion
       && !balance?.greaterThan(CurrencyAmount.ether(JSBI.BigInt(ethers.utils.parseEther(
@@ -137,9 +137,14 @@ export default () => {
         functionName: "existFounder",
         params: [address]
       };
-      const enodeExistCall: CallMulticallAggregateContractCall = {
+      const isValidEncodeCall: CallMulticallAggregateContractCall = {
         contract: masternodeStorageContract,
-        functionName: "existEnode",
+        functionName: "isValidEnode",
+        params: [enode]
+      };
+      const getIDsByEnodeCall: CallMulticallAggregateContractCall = {
+        contract: masternodeStorageContract,
+        functionName: "getIDsByEnode",
         params: [enode]
       };
       const enodeExistInSupernodesCall: CallMulticallAggregateContractCall = {
@@ -149,11 +154,12 @@ export default () => {
       }
       CallMulticallAggregate(multicallContract, [
         addrExistCall, addrIsFounderCall, addrExistInSupernodesCall, addrIsSupernodeFounderCall,
-        enodeExistCall, enodeExistInSupernodesCall
+        isValidEncodeCall, getIDsByEnodeCall, enodeExistInSupernodesCall
       ], () => {
         const addrExistsInMasternodes: boolean = addrExistCall.result;
         const addrExistsInSupernodes: boolean = addrExistInSupernodesCall.result;
-        const enodeExistsInMasternodes: boolean = enodeExistCall.result;
+        const isValidEncode: boolean = isValidEncodeCall.result;
+        const getIDsByEnode: number[] = getIDsByEnodeCall.result;
         const enodeExistsInSupernodes: boolean = enodeExistInSupernodesCall.result;
         const addrIsFounder: boolean = addrIsFounderCall.result;
         const addrIsSupernodeFounder: boolean = addrExistInSupernodesCall.result;
@@ -178,8 +184,14 @@ export default () => {
           setInputErrors({ ...inputErrors });
           return;
         }
-        if (enodeExistsInMasternodes || enodeExistsInSupernodes) {
-          inputErrors.enode = t("wallet_masternodes_enodeexist");
+        if (!isValidEncode) {
+          if (enodeExistsInSupernodes) {
+            inputErrors.enode = t("wallet_masternodes_enodeexistinsupernode");
+          } else if (getIDsByEnode.length >= 0) {
+            inputErrors.enode = t("wallet_masternodes_enodegelimits", { count: getIDsByEnode.length });
+          } else {
+            inputErrors.enode = t("wallet_masternodes_enodeisinvalid");
+          }
           setInputErrors({ ...inputErrors });
           return;
         }
@@ -366,9 +378,9 @@ export default () => {
           <Row style={{ width: "100%", textAlign: "right" }}>
             <Col span={24}>
               {
-                activeAccountNodeInfo?.isNode && <div style={{ textAlign: "left"  , marginBottom : "20px"}}>
+                activeAccountNodeInfo?.isNode && <div style={{ textAlign: "left", marginBottom: "20px" }}>
                   <Alert type='warning' showIcon message={<>
-                    {`当前账户已经是${ activeAccountNodeInfo.isMN ? '主节点' : '超级节点' },不可再创建节点`}
+                    {`当前账户已经是${activeAccountNodeInfo.isMN ? '主节点' : '超级节点'},不可再创建节点`}
                   </>} />
                 </div>
               }

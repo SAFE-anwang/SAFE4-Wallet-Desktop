@@ -57,11 +57,11 @@ export default ({ nodeSSHConfigMap, nodeSSHConfigValidateCheckMap, nodeSSHConfig
           }
           hostIdMap[ host ] = id;
         } else {
-          const _id = hostIdMap[ host ];
-          nodeSSHConfigValidateCheckMap[(id)] = {
-            isValid: false,
-            errMsg: `IP错误,与主节点-${_id.split(":")[1]}重复`
-          }
+          // const _id = hostIdMap[ host ];
+          // nodeSSHConfigValidateCheckMap[(id)] = {
+          //   isValid: false,
+          //   errMsg: `IP错误,与主节点-${_id.split(":")[1]}重复`
+          // }
         }
       }
     });

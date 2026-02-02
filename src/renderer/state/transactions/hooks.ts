@@ -215,7 +215,7 @@ export function useWalletTokens(): Token[] | undefined {
     if (!chainId) return [];
     return [
       WSAFE[chainId as Safe4NetworkChainId],
-      USDT[chainId as Safe4NetworkChainId],
+      // USDT[chainId as Safe4NetworkChainId],
     ];
   }, [chainId]);
   const defaultTokenMap = useMemo(() => {
