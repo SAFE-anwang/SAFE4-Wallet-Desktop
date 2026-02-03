@@ -666,9 +666,10 @@ export default ({
                     sshConfig={nodeSSHConfigMap[task.id]}
                     addressConfig={nodeAddressConfigMap[task.id]}
                     successCallback={(finishedTask, enode: string, nodeAddress: string) => {
-                      addNewAddressEnode(task.id, { address: nodeAddress, enode });
-                      console.log("Add New Address Enode:", task.id, nodeAddress, enode);
+
                       setPool(prevPool => {
+                        addNewAddressEnode(task.id, { address: nodeAddress, enode });
+                        console.log("Add New Address Enode:", task.id, nodeAddress, enode);
                         if (!prevPool) return prevPool;
                         const { pendings, executings, completeds } = prevPool;
                         // 从执行数组中移除
@@ -706,7 +707,7 @@ export default ({
                         };
                       });
                     }}
-                    failedCallback={(finishedTask) => { }}
+                    failedCallback={(finishedTask) => {}}
                   />
                 </div>
               );

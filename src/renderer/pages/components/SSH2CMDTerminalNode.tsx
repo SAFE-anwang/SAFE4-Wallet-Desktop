@@ -511,9 +511,9 @@ export default ({
           // 需要从官网下载 Safe4 节点程序;
           updateSteps(0, t("ssh2_connect_exeucte_steps_downloadsafe4file"));
           const CMD_download_success = await CMD_download.execute(term, undefined, true);
-          if (! CMD_download_success ) {
+          if (!CMD_download_success) {
             let CMD_checkDownloading_success = await CMD_checkDownloading.execute(term);
-            while ( CMD_checkDownloading_success ) {
+            while (CMD_checkDownloading_success) {
               updateSteps(0, t("等待正在执行的下载任务完成..."));
               await new Promise(resolve => setTimeout(resolve, 3000));
               CMD_checkDownloading_success = await CMD_checkDownloading.execute(term);
@@ -709,7 +709,16 @@ export default ({
           const CMD_attach_start = await CMD_attachMinderStart.execute(term);
         }
       }
-      const CMD_catNodeKey_success = await CMD_exportEnode.execute(term);
+
+      await new Promise(resolve => setTimeout(resolve, 3000));
+      let CMD_catNodeKey_success = await CMD_exportEnode.execute(term);
+      let maxTryGetNodeKey = 10;
+      let tryGetNodeKeyCount = 0;
+      while (!CMD_catNodeKey_success && tryGetNodeKeyCount < maxTryGetNodeKey) {
+        await new Promise(resolve => setTimeout(resolve, 3000));
+        CMD_catNodeKey_success = await CMD_exportEnode.execute(term);
+        tryGetNodeKeyCount++;
+      }
       if (CMD_catNodeKey_success) {
         updateSteps(3);
       } else {

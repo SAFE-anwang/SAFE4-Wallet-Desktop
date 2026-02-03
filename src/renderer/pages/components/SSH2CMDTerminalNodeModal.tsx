@@ -656,7 +656,17 @@ export default ({
           const CMD_attach_start = await CMD_attachMinderStart.execute(term);
         }
       }
-      const CMD_catNodeKey_success = await CMD_exportEnode.execute(term);
+
+      await new Promise(resolve => setTimeout(resolve, 3000));
+      let CMD_catNodeKey_success = await CMD_exportEnode.execute(term);
+      let maxTryGetNodeKey = 10;
+      let tryGetNodeKeyCount = 0;
+      while (!CMD_catNodeKey_success && tryGetNodeKeyCount < maxTryGetNodeKey) {
+        await new Promise(resolve => setTimeout(resolve, 3000));
+        CMD_catNodeKey_success = await CMD_exportEnode.execute(term);
+        tryGetNodeKeyCount++;
+      }
+
       if (CMD_catNodeKey_success) {
         updateSteps(3);
       } else {
