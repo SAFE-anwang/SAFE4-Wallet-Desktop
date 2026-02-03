@@ -25,7 +25,7 @@ import { LockOutlined, UnlockOutlined } from '@ant-design/icons';
 import BatchSyncNodeModal from './BatchSyncNodeModal';
 import { set } from 'date-fns';
 
-const { Text } = Typography;
+const { Text, Link } = Typography;
 const Masternodes_Page_Size = 10;
 
 export default ({
@@ -405,6 +405,10 @@ export default ({
 
   const hasMnemonic = useWalletsActiveWallet()?.path != undefined;
 
+  useEffect(() => {
+    setCheckedMNIds([]);
+  }, [activeAccount])
+
   return <>
     {
       <Row style={{ marginBottom: "20px" }}>
@@ -424,7 +428,7 @@ export default ({
           <Space>
             {
               checkedMNIds && checkedMNIds.length > 0 && <>
-                <Text>(已选 {checkedMNIds.length} 个主节点)</Text>
+                <Link onClick={() => { setCheckedMNIds([]) }}>(已选 {checkedMNIds.length} 个主节点)</Link>
               </>
             }
             {
