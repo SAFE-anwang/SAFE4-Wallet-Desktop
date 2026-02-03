@@ -47,13 +47,15 @@ enum PendingFilterType {
 
 export default ({
   finishCallback,
+  checkedMNIds
 }: {
-  finishCallback: () => void
+  finishCallback: () => void,
+  checkedMNIds?: number[]
 }) => {
 
   const [step, setStep] = useState<number>(-1);
   const activeAccount = useWalletsActiveAccount();
-  const masternodesResult = useMasternodesForCreator({ creator: activeAccount });
+  const masternodesResult = useMasternodesForCreator({ creator: activeAccount, checkedMNIds: checkedMNIds });
   const masternodeLogicContract = useMasternodeLogicContract(true);
   const addTransaction = useTransactionAdder();
   const dispatch = useDispatch();
@@ -294,7 +296,7 @@ export default ({
                 data,
                 chainId,
               };
-              tx = await EstimateTx(activeAccount , chainId , tx , provider);
+              tx = await EstimateTx(activeAccount, chainId, tx, provider);
               const { signedTx, error } = await window.electron.wallet.signTransaction(
                 activeAccount,
                 tx
@@ -346,7 +348,7 @@ export default ({
                 data,
                 chainId,
               };
-              tx = await EstimateTx(activeAccount , chainId , tx , provider);
+              tx = await EstimateTx(activeAccount, chainId, tx, provider);
               const { signedTx, error } = await window.electron.wallet.signTransaction(
                 activeAccount,
                 tx
@@ -418,7 +420,21 @@ export default ({
       })
       setNodeSSHConfigMap(_nodeSSHConfigMap)
     }
-  }, [commonUsername, nodeSSHConfigMap])
+  }, [commonUsername, nodeSSHConfigMap]);
+
+  const [commonIp, setCommonIp] = useState<string>();
+  const applyCommonIpForAll = useCallback(() => {
+    if (commonIp) {
+      const _nodeSSHConfigMap = {
+        ...nodeSSHConfigMap
+      };
+      Object.keys(_nodeSSHConfigMap).forEach(ID => {
+        _nodeSSHConfigMap[ID].host = commonIp;
+      })
+      setNodeSSHConfigMap(_nodeSSHConfigMap)
+    }
+  }, [commonIp, nodeSSHConfigMap]);
+
 
   return <>
     <Row>
@@ -585,6 +601,16 @@ export default ({
                 }}
               />
               <br />
+              <Row style={{ marginTop: "10px" }}>
+                <Col span={8}>
+                  <Input value={commonIp} placeholder="为所有节点设置相同IP" onChange={(event) => {
+                    setCommonIp(event.target.value)
+                  }} />
+                </Col>
+                <Col span={2} style={{ marginLeft: "5px" }}>
+                  <Button onClick={applyCommonIpForAll}>确认</Button>
+                </Col>
+              </Row>
               <Row style={{ marginTop: "10px" }}>
                 <Col span={8}>
                   <Input value={commonUsername} placeholder="为所有节点设置相同用户名" onChange={(event) => {

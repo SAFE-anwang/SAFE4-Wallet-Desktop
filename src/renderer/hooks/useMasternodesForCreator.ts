@@ -5,9 +5,10 @@ import { formatMasternode, MasternodeInfo } from "../structs/Masternode";
 
 
 export default ({
-  creator
+  creator, checkedMNIds
 }: {
-  creator: string
+  creator: string,
+  checkedMNIds?: number[]
 }) => {
   const masternodeStorageContract = useMasternodeStorageContract();
   const multilcallContract = useMulticallContract();
@@ -33,7 +34,7 @@ export default ({
           num: num
         });
         const addresses: string[] = [];
-        const masternodes: MasternodeInfo[] = [];
+        let masternodes: MasternodeInfo[] = [];
         const offset = 50;
         for (let i = 0; i < Math.ceil(num / offset); i++) {
           const _addr = await masternodeStorageContract.callStatic.getAddrs4Creator(creator, i * offset, offset);
@@ -56,9 +57,12 @@ export default ({
             masternodes: masternodes
           });
         }
+        if (checkedMNIds && checkedMNIds.length > 0) {
+          masternodes = masternodes.filter(mn => checkedMNIds.includes(mn.id));
+        }
         setResult({
           ...result,
-          num,
+          num : masternodes.length,
           masternodes,
           loading: false,
           finished: true

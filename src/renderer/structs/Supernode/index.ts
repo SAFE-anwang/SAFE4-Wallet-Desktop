@@ -149,7 +149,7 @@ export function formatSupernodeInfo(supernodeInfo: any) : SupernodeInfo {
 
     }
 
-    console.log("founders :", founders);
+    // console.log("founders :", founders);
 
     return {
         id: id.toNumber(),
@@ -164,7 +164,6 @@ export function formatSupernodeInfo(supernodeInfo: any) : SupernodeInfo {
         updateHeight: updateHeight.toNumber(),
         state: state.toNumber(),
         founders: founders.map(formatMemberInfo),
-        // incentivePlan: formatIncentivePlan(incentivePlan),
-        incentivePlan: { creator: 0, partner: 0, voter: 0 },
+        incentivePlan: formatIncentivePlan(incentivePlan),
     };
 }

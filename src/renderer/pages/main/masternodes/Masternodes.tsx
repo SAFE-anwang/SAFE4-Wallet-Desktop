@@ -20,7 +20,7 @@ export default () => {
   const navigate = useNavigate();
   const activeAccount = useWalletsActiveAccount();
   const activeAccountNodeInfo = useAddrNodeInfo(activeAccount);
-  const [activeItemKey, setActiveItemKey] = useState("list");
+  const [activeItemKey, setActiveItemKey] = useState("myMasternodes");
   const dispatch = useDispatch();
 
   const items = useMemo<TabsProps['items']>(() => {

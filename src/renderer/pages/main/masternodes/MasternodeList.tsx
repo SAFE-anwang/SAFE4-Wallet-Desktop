@@ -1,7 +1,7 @@
 
 
 
-import { Typography, Button, Row, Col, Modal, Space, Alert, Input } from 'antd';
+import { Typography, Button, Row, Col, Modal, Space, Alert, Input, Checkbox } from 'antd';
 import { useAccountManagerContract, useMasternodeStorageContract, useMulticallContract } from '../../../hooks/useContracts';
 import { useCallback, useEffect, useState } from 'react';
 import { MasternodeInfo, formatMasternode } from '../../../structs/Masternode';
@@ -23,6 +23,7 @@ import { AccountRecord, formatAccountRecord, formatRecordUseInfo } from '../../.
 import { DateTimeFormat } from '../../../utils/DateUtils';
 import { LockOutlined, UnlockOutlined } from '@ant-design/icons';
 import BatchSyncNodeModal from './BatchSyncNodeModal';
+import { set } from 'date-fns';
 
 const { Text } = Typography;
 const Masternodes_Page_Size = 10;
@@ -110,6 +111,7 @@ export default ({
     }
   }, [masternodeStorageContract, activeAccount, blockNumber, queryKey]);
 
+  const [checkedMNIds, setCheckedMNIds] = useState<number[]>([]);
 
   useEffect(() => {
     if (pagination && masternodeStorageContract && multicallContract) {
@@ -240,7 +242,7 @@ export default ({
                 locked && <LockOutlined style={{ float: "right", marginTop: "4px" }} />
               }
               {
-                !locked && <UnlockOutlined style={{ float: "right", marginTop: "4px" , color:"#9c9c9c" , fontSize:"18px" }} />
+                !locked && <UnlockOutlined style={{ float: "right", marginTop: "4px", color: "#9c9c9c", fontSize: "18px" }} />
               }
             </Col>
           </Row>
@@ -271,6 +273,24 @@ export default ({
             <Col span={24}>
               <Text strong>
                 <AddressComponent address={addr} qrcode copyable />
+              </Text>
+            </Col>
+          </Row>
+        </>
+      },
+    },
+    {
+      title: "IP",
+      dataIndex: 'enode',
+      key: 'enode',
+      render: (enode) => {
+        const IP_MATCH = enode.match(/@([\d.]+):\d+/);
+        const IP = IP_MATCH ? IP_MATCH[1] : null;
+        return <>
+          <Row>
+            <Col span={24}>
+              <Text strong>
+                {IP}
               </Text>
             </Col>
           </Row>
@@ -311,13 +331,25 @@ export default ({
                 </Button>
                 {
                   queryMyMasternodes &&
-                  <Button type={masternodeInfo.state != 1 ? "primary" : "default"} size='small' style={{ float: "right" }}
-                    onClick={() => {
-                      dispatch(applicationControlUpdateEditMasternodeId(masternodeInfo.id));
-                      navigate("/main/masternodes/selectSyncMode")
-                    }}>
-                    {t("sync")}
-                  </Button>
+                  <>
+                    <Button type={masternodeInfo.state != 1 ? "primary" : "default"} size='small' style={{ float: "right" }}
+                      onClick={() => {
+                        dispatch(applicationControlUpdateEditMasternodeId(masternodeInfo.id));
+                        navigate("/main/masternodes/selectSyncMode")
+                      }}>
+                      {t("sync")}
+                    </Button>
+                    <Checkbox
+                      checked={checkedMNIds.includes(masternodeInfo.id)}
+                      style={{ float: "right" }} onChange={() => {
+                        if (checkedMNIds.includes(masternodeInfo.id)) {
+                          setCheckedMNIds([...checkedMNIds.filter(id => id != masternodeInfo.id)]);
+                        } else {
+                          checkedMNIds.push(masternodeInfo.id);
+                          setCheckedMNIds([...checkedMNIds]);
+                        }
+                      }} />
+                  </>
                 }
               </Space>
             </Col>
@@ -391,6 +423,11 @@ export default ({
         <Col span={12} style={{ textAlign: "right" }}>
           <Space>
             {
+              checkedMNIds && checkedMNIds.length > 0 && <>
+                <Text>(已选 {checkedMNIds.length} 个主节点)</Text>
+              </>
+            }
+            {
               queryMyMasternodes && <Button disabled={!((masternodes && masternodes.length > 0) && hasMnemonic)} onClick={() => setOpenBatchNodeModal(true)}>批量同步</Button>
             }
           </Space>
@@ -424,7 +461,11 @@ export default ({
       }
     </Modal>
     {
-      openBatchNodeModal && <BatchSyncNodeModal openBatchNodeModal={openBatchNodeModal} setOpenBatchNodeModal={setOpenBatchNodeModal} />
+      openBatchNodeModal && <BatchSyncNodeModal
+        openBatchNodeModal={openBatchNodeModal}
+        setOpenBatchNodeModal={setOpenBatchNodeModal}
+        checkedMNIds={checkedMNIds}
+      />
     }
   </>
 }
