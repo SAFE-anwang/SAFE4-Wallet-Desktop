@@ -280,12 +280,11 @@ export default ({
           const nodeNewEnode = nodeNewAddressEncode.enode;
           const nodeOldAddress = mnMap[IDS[i]].addr;
           const nodeOldEnode = mnMap[IDS[i]].enode;
-
           const UpdateResult: {
             updateAddress?: TxExecuteStatus,
             updateEnode?: TxExecuteStatus
           } = {};
-
+          console.log("Check MN Update:", IDS[i])
           if (nodeOldAddress != nodeNewAddressEncode.address) {
             try {
               const data = masternodeLogicContract.interface.encodeFunctionData("changeAddress", [
@@ -668,6 +667,7 @@ export default ({
                     addressConfig={nodeAddressConfigMap[task.id]}
                     successCallback={(finishedTask, enode: string, nodeAddress: string) => {
                       addNewAddressEnode(task.id, { address: nodeAddress, enode });
+                      console.log("Add New Address Enode:", task.id, nodeAddress, enode);
                       setPool(prevPool => {
                         if (!prevPool) return prevPool;
                         const { pendings, executings, completeds } = prevPool;
@@ -677,8 +677,10 @@ export default ({
                         const newCompleted = [finishedTask, ...completeds.filter(task => task.id != finishedTask.id)]
                           .sort((taskA, taskB) => Number(taskA.id.split(":")[1]) - Number(taskB.id.split(":")[1]));
                         if (newCompleted.length == Object.keys(nodeSSHConfigMap).length) {
-                          doTxUpdate();
-                          console.log("Done!!")
+                          setTimeout(() => {
+                            doTxUpdate();
+                            console.log("Done!!")
+                          }, 200);
                         }
                         // 如果还有等待任务
                         if (pendings.length > 0 && executings.length <= concurrency) {
