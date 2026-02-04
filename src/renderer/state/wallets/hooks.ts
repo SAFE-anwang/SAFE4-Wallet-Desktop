@@ -504,7 +504,7 @@ export function useTokenBalance(account?: string, token?: Token): TokenAmount | 
  */
 export function useActiveAccountChildWallets(type: SupportChildWalletType, initSize?: number) {
   // 每一批检查多少个子钱包
-  const size = initSize ? initSize : 50;
+  const size = initSize ? initSize < 50 ? 50 : initSize : 50;
   const activeWallet = useWalletsActiveWallet();
   if (!activeWallet?.path) {
     return;
