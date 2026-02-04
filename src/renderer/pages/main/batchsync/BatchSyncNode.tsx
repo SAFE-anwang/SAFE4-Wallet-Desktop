@@ -649,7 +649,7 @@ export default ({
           <>
 
             <Text type="secondary">
-              { JSON.stringify(nodeAddressConfigMap) }
+              {JSON.stringify(nodeAddressConfigMap)}
             </Text>
 
             {

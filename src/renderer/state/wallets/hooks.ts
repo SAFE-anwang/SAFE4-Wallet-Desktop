@@ -506,6 +506,8 @@ export function useActiveAccountChildWallets(type: SupportChildWalletType, initS
   // 每一批检查多少个子钱包
   const size = initSize ? initSize : 50;
 
+  console.log("useActiveAccountChildWallets.size ==" , size)
+
   const activeWallet = useWalletsActiveWallet();
   if (!activeWallet?.path) {
     return;
@@ -568,7 +570,7 @@ export function useActiveAccountChildWallets(type: SupportChildWalletType, initS
             });
             // 判断是否需要继续加载子钱包并验证 loading;
             const loading = (notExistCount + _notExistCount) < size / 2;
-            console.log("need loading ?? >> ", (notExistCount + _notExistCount), loading)
+            console.log("Need loading ? > ", (notExistCount + _notExistCount) , size / 2 , loading)
             dispatch(walletsUpdateWalletChildWallets({
               address: activeWallet.address,
               type,

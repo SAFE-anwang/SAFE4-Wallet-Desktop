@@ -26,35 +26,50 @@ export default ({
   }) => void,
   finishCallback: () => void
 }) => {
-  const childWalletResult = useActiveAccountChildWallets(SupportChildWalletType.MN, Object.keys(nodeAddressConfigMap).length);
+  const childWalletResult = useActiveAccountChildWallets(SupportChildWalletType.MN, Object.keys(nodeAddressConfigMap).length * 4);
   useEffect(() => {
-    if (childWalletResult && childWalletResult.loading == false) {
-      const load = async () => {
-        const unusedAddresses = Object.keys(childWalletResult.wallets).filter(
-          address => !childWalletResult.wallets[address].exist
-        );
-        Object.keys(nodeAddressConfigMap).forEach(id => {
-          const { addr } = nodeAddressConfigMap[id];
-          if (childWalletResult.wallets[addr]) {
-            nodeAddressConfigMap[id].address = addr;
-            nodeAddressConfigMap[id].privKey = childWalletResult.wallets[addr].path;
-          } else {
-            const unusedAddr = unusedAddresses.shift();
-            if (unusedAddr) {
-              nodeAddressConfigMap[id] = {
-                addr: addr,
-                address: unusedAddr,
-                privKey: childWalletResult.wallets[unusedAddr].path
-              }
-            }
-          }
-        })
-        setNodeAddressConfigMap({ ...nodeAddressConfigMap });
-        finishCallback();
+
+    if (!childWalletResult || childWalletResult.loading) return;
+    console.log("[childWalletResult] :: >>", childWalletResult);
+
+    const wallets = childWalletResult.wallets;
+    const unusedAddresses = Object.keys(wallets).filter(
+      a => !wallets[a].exist
+    );
+
+    let unusedIndex = 0;
+    const newMap = { ...nodeAddressConfigMap };
+
+    Object.keys(newMap).forEach(id => {
+      const configAddr = newMap[id].addr;
+
+      if (wallets[configAddr]) {
+        newMap[id] = {
+          ...newMap[id],
+          address: configAddr,
+          privKey: wallets[configAddr].path
+        };
+      } else {
+        const unusedAddr = unusedAddresses[unusedIndex++];
+        if (unusedAddr) {
+          newMap[id] = {
+            ...newMap[id],
+            address: unusedAddr,
+            privKey: wallets[unusedAddr].path
+          };
+        }
       }
-      load();
-    }
-  }, [childWalletResult, nodeAddressConfigMap])
+    });
+    console.log("setNodeAddressConfigMap :: >>", newMap)
+    setNodeAddressConfigMap(newMap);
+    finishCallback();
+
+  }, [
+    childWalletResult?.loading,
+    childWalletResult?.wallets,
+    nodeAddressConfigMap,
+    finishCallback
+  ]);
 
   return <>
 
