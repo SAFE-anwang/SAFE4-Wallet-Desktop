@@ -3,6 +3,9 @@ import SSH2CMDTerminalNode from "../../components/SSH2CMDTerminalNode";
 import { SSH2ConnectConfig } from "../../../../main/SSH2Ipc";
 import { useEffect, useState } from "react";
 import { useWalletsActiveAccount } from "../../../state/wallets/hooks";
+import { Typography } from "antd";
+
+const { Text } = Typography;
 
 
 export default ({
@@ -32,16 +35,20 @@ export default ({
   return <>
     {
       privateKey &&
-      <SSH2CMDTerminalNode
-        nodeAddress={addressConfig.address ? addressConfig.address : ""}
-        nodeAddressPrivateKey={privateKey}
-        isSupernode={false}
-        sshConfig={sshConfig}
-        onSuccess={(enode: string, nodeAddress) => {
-          successCallback(task, enode, nodeAddress);
-        }}
-        onError={() => { }}
-      />
+      <>
+        <Text strong italic>SSH2CMDTerminalNode</Text>
+        <SSH2CMDTerminalNode
+          nodeAddress={addressConfig.address ? addressConfig.address : ""}
+          nodeAddressPrivateKey={privateKey}
+          isSupernode={false}
+          sshConfig={sshConfig}
+          onSuccess={(enode: string, nodeAddress) => {
+            successCallback(task, enode, nodeAddress);
+          }}
+          onError={() => { }}
+        />
+      </>
+
     }
 
 

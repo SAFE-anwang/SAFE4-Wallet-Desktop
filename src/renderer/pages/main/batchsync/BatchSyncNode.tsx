@@ -652,7 +652,13 @@ export default ({
                 {
                   pool?.executings.map((node, i) => {
                     return (
-                      <TabPane key={String(node.id)} tab={<><SyncOutlined spin /> {`${pool.executings[i].title}`} </>} />
+                      <TabPane key={String(node.id)} tab={<>
+                        <SyncOutlined spin /> {`${pool.executings[i].title}`}
+                        <Divider type="horizontal" />
+                        {
+                          pool.executings.map( task => <>{task.id} <Divider type="vertical" /> </> )
+                        }
+                      </>} />
                     )
                   })
                 }
@@ -661,6 +667,8 @@ export default ({
             {nodeAddressConfigMap && pool?.executings.map((task, i) => {
               return (
                 <div key={task.id} style={{ display: activeKey == String(task.id) ? 'block' : 'none' }}>
+                  <Text strong>[SyncNode]</Text>
+                  <br />
                   <SyncNode
                     task={task}
                     sshConfig={nodeSSHConfigMap[task.id]}
@@ -707,7 +715,7 @@ export default ({
                         };
                       });
                     }}
-                    failedCallback={(finishedTask) => {}}
+                    failedCallback={(finishedTask) => { }}
                   />
                 </div>
               );
