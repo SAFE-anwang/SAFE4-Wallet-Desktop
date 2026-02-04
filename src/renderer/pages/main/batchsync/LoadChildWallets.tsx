@@ -60,7 +60,6 @@ export default ({
         }
       }
     });
-    console.log("setNodeAddressConfigMap :: >>", newMap)
     setNodeAddressConfigMap(newMap);
     finishCallback( childWalletResult.wallets );
 
@@ -72,9 +71,7 @@ export default ({
   ]);
 
   return <>
-
-    <Text>正在加载子钱包，请稍候...</Text>
-
+    <Text>正在加载主节点子钱包，请稍候...</Text>
   </>
 
 }

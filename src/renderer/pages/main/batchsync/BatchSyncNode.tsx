@@ -261,10 +261,8 @@ export default ({
     nodeTxUpdates[id] = newTxUpdate;
     setNodeTxUpdates({ ...nodeTxUpdates });
   }
-
   const [txUpdating, setTxUpdating] = useState<boolean>();
 
-  const [childWalletResultWallet, setChildWalletResultWallet] = useState<any>(undefined);
 
   const doTxUpdate = () => {
     const mnMap = masternodesResult.masternodes.reduce((map, mn) => {
@@ -590,7 +588,6 @@ export default ({
           step == BatchSyncStep.LoadNodes && nodeAddressConfigMap && <>
             <LoadChildWallets nodeAddressConfigMap={nodeAddressConfigMap} setNodeAddressConfigMap={setNodeAddressConfigMap}
               finishCallback={(childWalletResultWallet) => {
-                setChildWalletResultWallet(childWalletResultWallet);
                 setStep(BatchSyncStep.CheckSSH);
               }} />
           </>
@@ -649,17 +646,9 @@ export default ({
           </>
         }
 
-        <Text strong italic>
-          {childWalletResultWallet && JSON.stringify(childWalletResultWallet)}
-        </Text>
-
         {
           step == BatchSyncStep.BatchSync &&
           <>
-            <Text type="secondary">
-              {JSON.stringify(nodeAddressConfigMap)}
-            </Text>
-
             {
               pool && pool.executings.length > 0 &&
               <Tabs type="card" activeKey={activeKey} onChange={(key) => { setActiveKey(key) }}>
@@ -668,10 +657,6 @@ export default ({
                     return (
                       <TabPane key={String(node.id)} tab={<>
                         <SyncOutlined spin /> {`${pool.executings[i].title}`}
-                        <Divider type="horizontal" />
-                        {
-                          pool.executings.map(task => <>{task.id} <Divider type="vertical" /> </>)
-                        }
                       </>} />
                     )
                   })
@@ -681,8 +666,6 @@ export default ({
             {nodeAddressConfigMap && pool?.executings.map((task, i) => {
               return (
                 <div key={task.id} style={{ display: activeKey == String(task.id) ? 'block' : 'none' }}>
-                  <Text strong>[SyncNode]</Text>
-                  <br />
                   <SyncNode
                     task={task}
                     sshConfig={nodeSSHConfigMap[task.id]}

@@ -47,11 +47,6 @@ export default ({
 
   return <>
     {
-      <>
-        {JSON.stringify(addressConfig)}
-      </>
-    }
-    {
       err && <>
         <Text strong italic>错误获取节点地址私钥 : {JSON.stringify(err)}</Text>
       </>
@@ -59,8 +54,6 @@ export default ({
     {
       privateKey &&
       <>
-        <br />
-        <Text strong italic>SSH2CMDTerminalNode</Text>
         <SSH2CMDTerminalNode
           nodeAddress={addressConfig.address ? addressConfig.address : ""}
           nodeAddressPrivateKey={privateKey}
@@ -72,10 +65,7 @@ export default ({
           onError={() => { }}
         />
       </>
-
     }
-
-
   </>
 
 }
