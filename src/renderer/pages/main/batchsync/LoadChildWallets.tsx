@@ -24,9 +24,9 @@ export default ({
       privKey?: string
     }
   }) => void,
-  finishCallback: () => void
+  finishCallback: ( childWalletResultWallet : any ) => void
 }) => {
-  const childWalletResult = useActiveAccountChildWallets(SupportChildWalletType.MN, Object.keys(nodeAddressConfigMap).length * 4);
+  const childWalletResult = useActiveAccountChildWallets(SupportChildWalletType.MN, Object.keys(nodeAddressConfigMap).length * 2 );
   useEffect(() => {
 
     if (!childWalletResult || childWalletResult.loading) return;
@@ -62,7 +62,7 @@ export default ({
     });
     console.log("setNodeAddressConfigMap :: >>", newMap)
     setNodeAddressConfigMap(newMap);
-    finishCallback();
+    finishCallback( childWalletResult.wallets );
 
   }, [
     childWalletResult?.loading,
@@ -72,6 +72,8 @@ export default ({
   ]);
 
   return <>
+
+    <Text>正在加载子钱包，请稍候...</Text>
 
   </>
 

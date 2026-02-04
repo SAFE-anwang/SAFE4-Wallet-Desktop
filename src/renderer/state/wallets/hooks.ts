@@ -505,9 +505,6 @@ export function useTokenBalance(account?: string, token?: Token): TokenAmount | 
 export function useActiveAccountChildWallets(type: SupportChildWalletType, initSize?: number) {
   // 每一批检查多少个子钱包
   const size = initSize ? initSize : 50;
-
-  console.log("useActiveAccountChildWallets.size ==" , size)
-
   const activeWallet = useWalletsActiveWallet();
   if (!activeWallet?.path) {
     return;
@@ -569,8 +566,8 @@ export function useActiveAccountChildWallets(type: SupportChildWalletType, initS
               notExistCount += exist ? 0 : 1;
             });
             // 判断是否需要继续加载子钱包并验证 loading;
-            const loading = (notExistCount + _notExistCount) < size / 2;
-            console.log("Need loading ? > ", (notExistCount + _notExistCount) , size / 2 , loading)
+            const loading = (notExistCount + _notExistCount) < size ;
+            console.log(`Need loading :: ${(notExistCount + _notExistCount)} <  ${size} ? =` , loading)
             dispatch(walletsUpdateWalletChildWallets({
               address: activeWallet.address,
               type,
@@ -583,7 +580,7 @@ export function useActiveAccountChildWallets(type: SupportChildWalletType, initS
         })
       } else {
         // 随着用户的使用,导致当前列表的可使用数量低于 size 时,变更状态让它继续加载可用子钱包;
-        if (_notExistCount < size / 2) {
+        if (_notExistCount < size) {
           console.log("通知需要更新:: >>", _notExistCount)
           dispatch(walletsUpdateWalletChildWallets({
             address: activeWallet.address,

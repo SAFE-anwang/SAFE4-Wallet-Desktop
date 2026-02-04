@@ -264,6 +264,8 @@ export default ({
 
   const [txUpdating, setTxUpdating] = useState<boolean>();
 
+  const [childWalletResultWallet, setChildWalletResultWallet] = useState<any>(undefined);
+
   const doTxUpdate = () => {
     const mnMap = masternodesResult.masternodes.reduce((map, mn) => {
       map["MN:" + mn.id] = mn;
@@ -587,7 +589,10 @@ export default ({
         {
           step == BatchSyncStep.LoadNodes && nodeAddressConfigMap && <>
             <LoadChildWallets nodeAddressConfigMap={nodeAddressConfigMap} setNodeAddressConfigMap={setNodeAddressConfigMap}
-              finishCallback={() => setStep(BatchSyncStep.CheckSSH)} />
+              finishCallback={(childWalletResultWallet) => {
+                setChildWalletResultWallet(childWalletResultWallet);
+                setStep(BatchSyncStep.CheckSSH);
+              }} />
           </>
         }
         {
@@ -644,10 +649,13 @@ export default ({
           </>
         }
 
+        <Text strong italic>
+          {childWalletResultWallet && JSON.stringify(childWalletResultWallet)}
+        </Text>
+
         {
           step == BatchSyncStep.BatchSync &&
           <>
-
             <Text type="secondary">
               {JSON.stringify(nodeAddressConfigMap)}
             </Text>
