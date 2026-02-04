@@ -24,6 +24,8 @@ export class WalletIpc {
     [address: string]: WalletKeystore
   } = {};
 
+  private driveLock = false;
+
   constructor(ipcMain: any, kysDB: any, safeStorage: Electron.SafeStorage) {
     ipcMain.handle("wallet-signTransaction", async (event: any, _params: any) => {
       const [activeAccount, tx] = _params;
@@ -75,7 +77,16 @@ export class WalletIpc {
 
     ipcMain.handle("wallet-drive-pkbypath", async (event: any, _params: any) => {
       const [activeAccount, path] = _params;
-      return this.drivePrivateKeyByPath(activeAccount, path);
+      try {
+        if (!this.driveLock) {
+          this.driveLock = true;
+          return this.drivePrivateKeyByPath(activeAccount, path);
+        }
+        return false;
+      } finally {
+        this.driveLock = false;
+      }
+      // return this.drivePrivateKeyByPath(activeAccount, path);
     })
 
     this.safeStorage = safeStorage;

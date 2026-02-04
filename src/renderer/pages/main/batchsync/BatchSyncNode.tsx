@@ -177,6 +177,7 @@ export default ({
             addr: addr
           }
         })
+
         setNodeAddressConfigMap(_nodeAddressConfigMap);
         setStep(BatchSyncStep.LoadNodes);
         setCommonPWD(undefined);
@@ -646,6 +647,11 @@ export default ({
         {
           step == BatchSyncStep.BatchSync &&
           <>
+
+            <Text type="secondary">
+              { JSON.stringify(nodeAddressConfigMap) }
+            </Text>
+
             {
               pool && pool.executings.length > 0 &&
               <Tabs type="card" activeKey={activeKey} onChange={(key) => { setActiveKey(key) }}>
@@ -656,7 +662,7 @@ export default ({
                         <SyncOutlined spin /> {`${pool.executings[i].title}`}
                         <Divider type="horizontal" />
                         {
-                          pool.executings.map( task => <>{task.id} <Divider type="vertical" /> </> )
+                          pool.executings.map(task => <>{task.id} <Divider type="vertical" /> </>)
                         }
                       </>} />
                     )
@@ -674,7 +680,6 @@ export default ({
                     sshConfig={nodeSSHConfigMap[task.id]}
                     addressConfig={nodeAddressConfigMap[task.id]}
                     successCallback={(finishedTask, enode: string, nodeAddress: string) => {
-
                       setPool(prevPool => {
                         addNewAddressEnode(task.id, { address: nodeAddress, enode });
                         console.log("Add New Address Enode:", task.id, nodeAddress, enode);
