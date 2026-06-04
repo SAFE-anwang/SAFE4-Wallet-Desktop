@@ -57,6 +57,6 @@ export default ({ chainId, address, style, hex, logoURI }: {
       const URI = logoURI ? logoURI : auditTokenLogoURI;
       return <Avatar src={URI} style={style ? { width: "48px", height: "48px", ...style } : { width: "48px", height: "48px" }} />
     }
-    return <Avatar src={ERC20_LOGO} style={style ? { padding: "4px", width: "48px", height: "48px", background: "#efefef", ...style } : { padding: "8px", width: "48px", height: "48px", background: "#efefef" }} />
+    return <Avatar src={ERC20_LOGO} style={style ? { padding: "4px", width: "48px", height: "48px", background: "#a5a1a1ff", ...style } : { padding: "8px", width: "48px", height: "48px", background: "#a5a1a1ff" }} />
   }
 }

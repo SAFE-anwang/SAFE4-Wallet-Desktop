@@ -45,8 +45,8 @@ export default ({
           setPagination({ current, pageSize, total });
         })
     } else {
-      setContractVOs(contracts.filter(localContract => {
-        return localContract.addedTime && localContract.transactionHash
+      const localContractVOs = contracts.filter(localContract => {
+        return localContract.addedTime;
       }).sort((c0, c1) => {
         return c1.addedTime - c0.addedTime;
       }).map(localContract => {
@@ -54,7 +54,8 @@ export default ({
           ...localContract,
           creatorTimestamp: localContract.addedTime / 1000
         }
-      }));
+      })
+      setContractVOs(localContractVOs);
     }
   }, [contracts, queryContracts]);
 

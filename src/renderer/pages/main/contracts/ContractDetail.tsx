@@ -126,6 +126,22 @@ export default () => {
     ];
   }, [contractCompileVO, contractLocal, contractVO]);
 
+  const RenderContractName = () => {
+
+    if (!contractCompileVO?.abi && contractLocal && contractLocal.sourceCode) {
+      return <>
+        <Tooltip title={t("wallet_contracts_updatetoverifytip")}>
+          <QuestionCircleTwoTone style={{ cursor: "pointer" }} twoToneColor='#7e7e7e' />
+        </Tooltip>
+        <Text style={{ marginLeft: "6px" }} type='secondary' italic>{contractLocal.name}</Text>
+        <Button onClick={doVerifyContractLocal} size='small' type='primary' style={{ float: "right", marginRight: "12px" }}>{t("wallet_contracts_uploadtoverify")}</Button>
+      </>
+    }
+    return <>
+      <Text strong>{contractVO?.name}</Text>
+    </>
+  }
+
   return <>
     <Row style={{ height: "50px" }}>
       <Col span={12}>
@@ -194,18 +210,7 @@ export default () => {
 
               <Col span={24}>
                 <Spin spinning={verifying}>
-                  {
-                    !contractVO?.name && contractLocal && contractLocal.sourceCode && <>
-                      <Tooltip title={t("wallet_contracts_updatetoverifytip")}>
-                        <QuestionCircleTwoTone style={{ cursor: "pointer" }} twoToneColor='#7e7e7e' />
-                      </Tooltip>
-                      <Text style={{ marginLeft: "6px" }} type='secondary' italic>{contractLocal.name}</Text>
-                      <Button onClick={doVerifyContractLocal} size='small' type='primary' style={{ float: "right", marginRight: "12px" }}>{t("wallet_contracts_uploadtoverify")}</Button>
-                    </>
-                  }
-                  {
-                    contractVO?.name && <Text strong>{contractVO?.name}</Text>
-                  }
+                  { RenderContractName() }
                 </Spin>
               </Col>
             </Row>

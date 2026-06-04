@@ -1,6 +1,6 @@
-import { SRC20_ABI, SRC20_Bytecode, SRC20_Sourcecode } from "./SRC20"
-import { SRC20_Burnable_Abi, SRC20_Burnable_Bytecode, SRC20_Burnable_SourceCode } from "./SRC20-burnable"
-import { SRC20_Mintable_Abi, SRC20_Mintable_Bytecode, SRC20_Mintable_SourceCode } from "./SRC20-mintable"
+import { SRC20_ABI, SRC20_Bytecode, SRC20_Sourcecode } from "./SRC20_0.0.2"
+import { SRC20_Burnable_Abi, SRC20_Burnable_Bytecode, SRC20_Burnable_SourceCode } from "./SRC20-burnable_0.0.2"
+import { SRC20_Mintable_Abi, SRC20_Mintable_Bytecode, SRC20_Mintable_SourceCode } from "./SRC20-mintable_0.0.2"
 import { SRC20_Pausable_Abi, SRC20_Pausable_Bytecode, SRC20_Pausable_SourceCode } from "./SRC20-pausable"
 
 export enum SRC20_Template_Option {
