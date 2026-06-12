@@ -25,9 +25,7 @@
     "email": "electronreactboilerplate@gmail.com",
     "url": "https://electron-react-boilerplate.js.org"
   },
-  "contributors": [
-
-  ],
+  "contributors": [],
   "main": "./src/main/main.ts",
   "scripts": {
     "build": "concurrently \"npm run build:main\" \"npm run build:renderer\"",
@@ -224,6 +222,7 @@
   },
   "build": {
     "productName": "SAFE4-Wallet-Desktop",
+    "npmRebuild":false,
     "appId": "safe4.wallet.anwang",
     "asar": true,
     "asarUnpack": "**\\*.{node,dll}",
