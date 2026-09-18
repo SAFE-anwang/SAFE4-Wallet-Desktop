@@ -244,8 +244,7 @@ export interface TokenPriceVO {
   symbol: string,
   price: string,
   change: string,
-  logoURI: string,
-  usdtReserves: string
+  logoURI: string
 }
 
 

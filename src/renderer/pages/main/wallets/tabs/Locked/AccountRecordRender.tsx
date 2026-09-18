@@ -230,7 +230,7 @@ export default ({
               }}>{t("wallet_withdraw")}</Button>
             }
             <br />
-            <Text strong>{amount.toSignificant(4)} SAFE</Text>
+            <Text strong>{amount.toFixed(4)} SAFE</Text>
             <Divider style={{ margin: "4px 0" }} />
             <Text strong type="secondary">{t("wallet_locked_unlockHeight")}</Text>
             {

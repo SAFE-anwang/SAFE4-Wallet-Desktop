@@ -48,6 +48,7 @@ export default () => {
     </Row>
     <div style={{ width: "100%", paddingTop: "60px" }}>
       <div style={{ margin: "auto", width: "100%" }}>
+
         {/* <Row style={{ marginBottom: "20px" }}>
             <div style={{ width: "50%", margin: "auto" }}>
               <Alert style={{ margin: "auto" }} type="info" message={<>

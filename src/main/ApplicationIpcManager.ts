@@ -2,7 +2,7 @@ import { DBAddressActivitySingalHandler } from "./handlers/DBAddressActivitySing
 import { IndexSingalHandler } from "./handlers/IndexSingalHandler";
 import { ListenSignalHandler } from "./handlers/ListenSignalHandler";
 import { WalletSignalHandler } from "./handlers/WalletSignalHandler";
-import { Channels } from "./preload";
+
 import { Context } from "./handlers/Context";
 import { RpcConfigSingalHandler } from "./handlers/RpcConfigSignalHandler";
 import { ContractCompileHandler } from "./handlers/ContractCompileHandler";
@@ -17,8 +17,13 @@ import { SSHSIpc } from "./SSHSIpc";
 import { SSHConfigSignalHandler } from "./handlers/SSHConfigSignalHandler";
 import { WalletIpc } from "./WalletIpc";
 import { ProposalReadedSignalHandler } from "./handlers/ProposalReadedSignalHandler";
+import { DAppRequestIpc } from "./DappRequestIpc";
+import { BrowserWindow } from "electron";
 
+export type Channels = 'ipc-example';
+export type Channels_Dapp = 'channels-dapp';
 export const Channel: Channels = "ipc-example";
+export const Channel_Dapp : Channels_Dapp = 'channels-dapp';
 
 export class ApplicationIpcManager {
 
@@ -75,4 +80,9 @@ export class ApplicationIpcManager {
     new WalletIpc(ipcMain, this.indexSignalHandler.getSqliteKys(), safeStorage);
     return this;
   }
+
+  public registerDAppRequestIpc(ipcMain: Electron.IpcMain , mainWindow: BrowserWindow){
+    new DAppRequestIpc(ipcMain,mainWindow);
+  }
+
 }

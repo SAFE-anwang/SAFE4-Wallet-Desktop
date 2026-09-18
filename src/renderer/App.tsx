@@ -64,6 +64,8 @@ import { useUserInactivityTracker } from './hooks/useUserInactivityTracker';
 import { loadProposalReadedIds } from './state/proposals/actions';
 import { cleanAddressActiviesFetch } from './state/transactions/actions';
 import FarmPools from './pages/main/farm/FarmPools';
+import Dapps from './pages/main/dapps';
+import DAppRegister from './pages/main/dapps/DAppRegister';
 
 const { Text } = Typography;
 
@@ -199,7 +201,7 @@ export default function App() {
     console.log("10分钟未操作,自动锁钱包");
     dispatch(walletsUpdateLocked(true));
     dispatch(cleanAddressActiviesFetch(true));
-  }, 10 * 60 * 1000, 200);
+  }, 30 * 60 * 1000, 200);
 
   useEffect(() => {
     const method = ContractCompile_Methods.syncSolcLibrary;
@@ -346,6 +348,8 @@ export default function App() {
                     <Route path="/main/swap" element={<SafeswapV2 />} />
                     <Route path="/main/issue" element={<IssueIndex />} />
                     <Route path="/main/farm" element={<FarmPools />} />
+                    <Route path="/main/dapps" element={<Dapps />} />
+                    <Route path="/main/dapps/register" element={<DAppRegister />} />
                   </Routes>
                 </Col>
               </Row>

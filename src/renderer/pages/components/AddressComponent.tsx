@@ -59,13 +59,13 @@ export default ({
       }
       {
         isLocal && !isActive &&
-        <Tooltip title={`${t("wallet_address_local")}:${name}`}>
+        <Tooltip placement="right" title={`${t("wallet_address_local")}:${name}`}>
           <WalletTwoTone twoToneColor={walletColor} style={{ float: "right", marginTop: "4px", marginRight: "6px" }} />
         </Tooltip>
       }
       {
         isActive &&
-        <Tooltip title={`${t("wallet_address_current")}:${name}`}>
+        <Tooltip placement="right" title={`${t("wallet_address_current")}:${name}`}>
           <WalletTwoTone twoToneColor={walletColor} style={{ float: "right", marginTop: "4px", marginRight: "6px" }} />
         </Tooltip>
       }

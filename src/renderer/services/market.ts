@@ -6,8 +6,8 @@ export async function fetchMarketStockKLines(Safescan_URL: string, params: { tok
   return serverResponse;
 }
 
-export async function fetchMarketPrices(Safescan_URL: string) : Promise<TokenPriceVO[]>  {
-  const url = `${Safescan_URL}/list/market/prices`;
+export async function fetchMarketPrices(Safescan_URL: string , quote ?: string) : Promise<TokenPriceVO[]>  {
+  const url =  `${Safescan_URL}/list/market/prices${quote ? `?quote=${quote}` : ''}`;
   const serverResponse = await GET(url);
   return serverResponse;
 }

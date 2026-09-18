@@ -358,10 +358,7 @@ export default ({
         <Col span={8}>
           <Row style={{ marginTop: "24px" }}>
             <Col span={4}>
-              {/* <div style={{ marginTop: "4px" }}>
-              <Link>{t("wallet_send_max")}</Link>
-              <Divider type="vertical" />
-            </div> */}
+
             </Col>
             <Col span={20}>
               <div style={{ float: "right", paddingRight: "5px" }}>

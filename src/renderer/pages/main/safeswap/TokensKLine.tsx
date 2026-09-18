@@ -32,10 +32,11 @@ const fetchData = async (
   token0: string,
   token1: string,
   interval: string,
-  isInverted: boolean = true // 默认为以 token1 计价的倒置模式
+  isInverted: boolean = false // 默认为以 token1 计价的倒置模式
 ) => {
   // 1. 获取原始数据并进行初步清洗
-  let response = await fetchMarketStockKLines(safescanUrl, { token0, token1, interval });
+  console.log("Safescan URL:", safescanUrl, "Token0:", token0, "Token1:", token1, "Interval:", interval);
+  let response = await fetchMarketStockKLines(safescanUrl, { token1, token0, interval });
   if (!response || !Array.isArray(response)) return [];
   const MAX_KLINES = 120;
   // 过滤掉开盘/收盘为 0 的异常原始数据
@@ -44,7 +45,7 @@ const fetchData = async (
     .slice(-MAX_KLINES);
   if (validRawData.length === 0) return [];
 
-  // 2. 第一遍循环：数值转换、处理倒置逻辑并统计全局极值
+  // 2. 第一遍循环：数值转换、处理倒置逻辑并统计全局极值;
   let globalHigh = 0;
   let globalLow = Number.MAX_SAFE_INTEGER;
   const baseData = validRawData.map((d: any) => {
@@ -165,20 +166,20 @@ export default () => {
   const [data, setData] = useState<any[]>([]);
   const safeswapTokens = useSafeswapTokens();
   const { URL, API } = useSafeScan();
-  const tokenPrices = useMarketTokenPrices();
-  const tokenPricesMap = tokenPrices?.reduce((map, tokenPrice) => {
-    map[tokenPrice.address] = tokenPrice;
-    return map;
-  }, {} as { [address: string]: TokenPriceVO });
-  const [interval, setInterval] = useState<string>("4H");
-  const [lastPrice,setLastPrice] = useState<string | undefined>(undefined);
 
+  // 当 USDT 作为计价资产时，确保 token0 始终是非 USDT 代币，token1 始终是 USDT
+  // 当 WSAFE 作为计价资产时，确保 token0 始终是非 WSAFE 代币，token1 始终是 WSAFE
   const { token0, token1 } = useMemo(() => {
     if (safeswapTokens && chainId) {
       const { tokenA, tokenB } = safeswapTokens;
       if (tokenA || tokenB) {
         let token0 = tokenA ? parseTokenData(tokenA) : WSAFE[chainId as Safe4NetworkChainId];
         let token1 = tokenB ? parseTokenData(tokenB) : WSAFE[chainId as Safe4NetworkChainId];
+        // 如果两个币有一个是 WSAFE,那么就一定要保证 token0 是普通币, WSAFE 作为计价资产;
+        if (token0?.address === WSAFE[chainId as Safe4NetworkChainId].address) {
+          token0 = token1;
+          token1 = WSAFE[chainId as Safe4NetworkChainId];
+        }
         // 如果 Token1 是 USDT，则交换位置，确保 Token0 始终是 USDT
         if (token0?.address === USDT[chainId as Safe4NetworkChainId].address) {
           token0 = token1;
@@ -195,10 +196,17 @@ export default () => {
     }
   }, [safeswapTokens, chainId]);
 
+  const tokenPrices = useMarketTokenPrices(token1?.address);
+  const tokenPricesMap = tokenPrices?.reduce((map, tokenPrice) => {
+    map[tokenPrice.address] = tokenPrice;
+    return map;
+  }, {} as { [address: string]: TokenPriceVO });
+  const [interval, setInterval] = useState<string>("4H");
+
   useEffect(() => {
     if (token0 && token1) {
       const fetchKLineData = async () => {
-        const transformedData = await fetchData(URL, token0.address, token1.address, interval);
+        const transformedData = await fetchData(API, token0.address, token1.address, interval);
         if (transformedData) {
           setData(transformedData)
         }
@@ -298,17 +306,15 @@ export default () => {
     let price = "";
     let change = "";
     let trend = 0
-    if (token1.address === USDT[chainId as Safe4NetworkChainId].address) {
-      const priceStr = tokenPricesMap && token0 && tokenPricesMap[token0.address]?.price;
-      const changeStr = tokenPricesMap && token0 && tokenPricesMap[token0.address]?.change;
-      if (priceStr) {
-        price = parseFloat(priceStr).toFixed(4);
-      }
-      if (changeStr) {
-        let changeValue = parseFloat(changeStr);
-        trend = changeValue == 0 ? 0 : changeValue > 0 ? 1 : -1;
-        change = (parseFloat(changeStr) * 100).toFixed(2) + "%";
-      }
+    const priceStr = tokenPricesMap && token0 && tokenPricesMap[token0.address]?.price;
+    const changeStr = tokenPricesMap && token0 && tokenPricesMap[token0.address]?.change;
+    if (priceStr) {
+      price = parseFloat(priceStr).toFixed(4);
+    }
+    if (changeStr) {
+      let changeValue = parseFloat(changeStr);
+      trend = changeValue == 0 ? 0 : changeValue > 0 ? 1 : -1;
+      change = (parseFloat(changeStr) * 100).toFixed(2) + "%";
     }
     return <>
       <Row>

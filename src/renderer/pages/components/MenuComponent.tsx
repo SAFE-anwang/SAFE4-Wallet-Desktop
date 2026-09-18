@@ -46,7 +46,7 @@ const MenuComponent: React.FC = () => {
   const unreadProposalIds = useUnreadProposalIds();
 
   const items: MenuItem[] = useMemo(() => {
-    if ( chainId == Safe4NetworkChainId.Testnet ){
+    if (chainId == Safe4NetworkChainId.Testnet) {
       // 测试网菜单
       return [
         getItem(t("wallet"), '/main/wallet', <WalletOutlined />),
@@ -72,6 +72,7 @@ const MenuComponent: React.FC = () => {
         getItem("流动性挖矿", '/main/farm', <ExperimentOutlined />),
         getItem(t("wallet_issue"), '/main/issue', <BankOutlined />),
         getItem(t("contract"), '/main/contracts', <FileZipOutlined />),
+        getItem(t("探索 dApps"), '/main/dapps', <AppstoreOutlined />),
         getItem(t("getTestCoin"), '/main/gettestcoin', <GiftOutlined />),
       ]
     } else {
@@ -99,10 +100,11 @@ const MenuComponent: React.FC = () => {
         getItem(t("wallet_safeswap"), '/main/swap', <SwapOutlined />),
         getItem(t("wallet_issue"), '/main/issue', <BankOutlined />),
         getItem(t("contract"), '/main/contracts', <FileZipOutlined />),
+        getItem(t("探索 dApps"), '/main/dapps', <AppstoreOutlined />),
         getItem(t("getTestCoin"), '/main/gettestcoin', <GiftOutlined />),
       ]
     }
-  }, [t, unreadProposalIds,chainId]);
+  }, [t, unreadProposalIds, chainId]);
 
   const onClick: MenuProps['onClick'] = (e) => {
     setCurrent(e.key);

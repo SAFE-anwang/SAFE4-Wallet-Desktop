@@ -9,6 +9,7 @@ import { clearMulticallState } from "./state/multicall/actions";
 import CrosschainUpdater from "./state/transactions/CrosschainUpdater";
 import AuditUpdater from "./state/audit/AuditUpdater";
 import ProposalUpdater from "./state/proposals/ProposalUpdater";
+import DAppUpdater from "./state/dApp/DAppUpdater";
 
 export default () => {
   const dispatch = useDispatch();
@@ -25,6 +26,8 @@ export default () => {
     <CrosschainUpdater />
     <AuditUpdater />
     <ProposalUpdater />
+    <DAppUpdater onlyWithLogo />
+    <DAppUpdater queryMyDAppList />
   </>)
 
 }

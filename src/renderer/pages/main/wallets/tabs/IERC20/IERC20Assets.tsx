@@ -135,12 +135,14 @@ export default () => {
                       {
                         price && <>
                           <Divider type="vertical" />
-                          <Text type={trend > 0 ? "success" : trend < 0 ? "danger" : "secondary"} strong>
-                            ${price}
-                          </Text>
-                          <Text type={trend > 0 ? "success" : trend < 0 ? "danger" : "secondary"}>
-                            {price && <> ({trend == 1 && "+"}{change})</>}
-                          </Text>
+                          <span>
+                            <Text type={trend > 0 ? "success" : trend < 0 ? "danger" : "secondary"} strong>
+                              ${price}
+                            </Text>
+                            <Text type={trend > 0 ? "success" : trend < 0 ? "danger" : "secondary"}>
+                              {price && <> ({trend == 1 && "+"}{change})</>}
+                            </Text>
+                          </span>
                         </>
                       }
                     </Col>

@@ -5,7 +5,7 @@ export default async (
   activeAccount: string,
   chainId: number,
   tx: ethers.providers.TransactionRequest,
-  provider: ethers.providers.Web3Provider,
+  provider: ethers.providers.JsonRpcProvider,
   extra?: {
     doubleGasLimit: boolean
   }

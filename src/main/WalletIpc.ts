@@ -74,6 +74,10 @@ export class WalletIpc {
       const [activeAccount, domain, types, message] = _params;
       return this.signTypedData(activeAccount, domain, types, message);
     })
+    ipcMain.handle("wallet-sign-message", async (event: any, _params: any) => {
+      const [activeAccount, message] = _params;
+      return this.signMessage(activeAccount, message);
+    })
 
     ipcMain.handle("wallet-drive-pkbypath", async (event: any, _params: any) => {
       const [activeAccount, path] = _params;
@@ -247,6 +251,16 @@ export class WalletIpc {
       return { signedTx };
     } catch (err) {
       return { error: wrapEthersError(err) };
+    }
+  }
+
+  private async signMessage(activeAccount: string, message: any) {
+    let decrypted = this.getActiveAccountPrivateKey(activeAccount);
+    const signer = new ethers.Wallet(decrypted, undefined);
+    try {
+      return await signer.signMessage(message);
+    } finally {
+      decrypted = '';
     }
   }
 

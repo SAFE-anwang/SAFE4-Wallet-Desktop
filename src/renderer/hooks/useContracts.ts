@@ -4,11 +4,12 @@ import { useWalletsActiveWallet } from "../state/wallets/hooks";
 import { SysContractABI, SystemContract } from "../constants/SystemContracts";
 import { useWeb3React } from "@web3-react/core";
 import { IERC20_Interface } from "../abis";
-import { Application_Crosschain, MiniChefV2, Safe4NetworkChainId, SafeswapV2FactoryAddreess, SafeswapV2RouterAddress, WSAFE } from "../config";
+import { Application_Crosschain, DAppManager, MiniChefV2, Safe4NetworkChainId, SafeswapV2FactoryAddreess, SafeswapV2RouterAddress, WSAFE } from "../config";
 import ApplicationContractAbiConfig from "../constants/ApplicationContractAbiConfig";
 import { SwapV2FactoryABI, SwapV2RouterABI } from "../constants/SafeswapAbiConfig";
 import { BatchLockContract, BatchLockLevel } from "../constants/BatchLockContract";
 import { MiniChefV2ABI } from "../constants/MiniChefV2AbiConfig";
+import { DAppManagerABI } from "../constants/SystemContractAbiConfig";
 
 
 export function useContract(address: string | undefined, ABI: any, withSignerIfPossible = true): Contract | null {
@@ -117,4 +118,11 @@ export function useMiniChefV2(): Contract | null | undefined {
   return undefined;
 }
 
+export function useDAppManagerContract(): Contract | null {
+  const { chainId } = useWeb3React();
+  const address = chainId && chainId in Safe4NetworkChainId
+    ? DAppManager[chainId as Safe4NetworkChainId]
+    : undefined;
+  return useContract(address, DAppManagerABI, undefined);
+}
 

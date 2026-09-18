@@ -122,12 +122,12 @@ const configuration: webpack.Configuration = {
     ...(skipDLLs
       ? []
       : [
-          new webpack.DllReferencePlugin({
-            context: webpackPaths.dllPath,
-            manifest: require(manifest),
-            sourceType: 'var',
-          }),
-        ]),
+        new webpack.DllReferencePlugin({
+          context: webpackPaths.dllPath,
+          manifest: require(manifest),
+          sourceType: 'var',
+        }),
+      ]),
 
     new webpack.NoEmitOnErrorsPlugin(),
 
@@ -193,6 +193,20 @@ const configuration: webpack.Configuration = {
         .on('close', (code: number) => process.exit(code!))
         .on('error', (spawnError) => console.error(spawnError));
 
+
+      console.log('Starting dapp preload.js builder...');
+      const dappPreloadProcess = spawn(
+        'npm',
+        ['run', 'start:preload-dapp'],
+        {
+          shell: true,
+          stdio: 'inherit',
+        }
+      )
+        .on('close', (code: number) => process.exit(code!))
+        .on('error', (spawnError) => console.error(spawnError));
+
+
       console.log('Starting Main Process...');
       let args = ['run', 'start:main'];
       if (process.env.MAIN_ARGS) {
@@ -206,6 +220,7 @@ const configuration: webpack.Configuration = {
       })
         .on('close', (code: number) => {
           preloadProcess.kill();
+          dappPreloadProcess.kill();
           process.exit(code!);
         })
         .on('error', (spawnError) => console.error(spawnError));

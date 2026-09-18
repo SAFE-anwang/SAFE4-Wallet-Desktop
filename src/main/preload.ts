@@ -7,8 +7,11 @@ import { TransactionRequest, Web3Provider } from '@ethersproject/providers';
 import { EtherStructuredError } from './WalletIpc';
 import { Wallet } from '../renderer/state/wallets/reducer';
 import { SupportChildWalletType } from './WalletNodeGenerator';
+import { Channels } from './ApplicationIpcManager';
+import { DAppRequest, Wallet_InitalizeData } from './DappRequestIpc';
+import { WalletState } from './preload-dapp';
 
-export type Channels = 'ipc-example';
+// export type Channels = 'ipc-example';
 
 const electronHandler = {
   shell: {
@@ -25,7 +28,7 @@ const electronHandler = {
      * @param channel
      * @param args [ "{signal}" , params : any[] ]
      */
-    sendMessage(channel: Channels, ...args: unknown[]) {
+    sendMessage(channel: Channels | string, ...args: unknown[]) {
       ipcRenderer.send(channel, ...args);
     },
     on(channel: Channels, func: (...args: unknown[]) => void) {
@@ -67,10 +70,10 @@ const electronHandler = {
   },
 
   sshs: {
-    connect(host: string, port: number, username: string, password: string , nodeAddress ?: string) {
-      return ipcRenderer.invoke('sshs-connect-ssh', { host, username, password , nodeAddress });
+    connect(host: string, port: number, username: string, password: string, nodeAddress?: string) {
+      return ipcRenderer.invoke('sshs-connect-ssh', { host, username, password, nodeAddress });
     },
-    execute(host: string, command: string , lockIp ?: boolean ) {
+    execute(host: string, command: string, lockIp?: boolean) {
       return ipcRenderer.invoke('sshs-exec-command', { host, command, lockIp })
     },
     shell(command: string) {
@@ -149,11 +152,77 @@ const electronHandler = {
     signTypedData(activeAccount: string, domain: TypedDataDomain, types: any, message: any): Promise<string> {
       return ipcRenderer.invoke("wallet-sign-typedData", [activeAccount, domain, types, message]);
     },
+    signMessage(activeAccount: string, message: string): Promise<string> {
+      return ipcRenderer.invoke("wallet-sign-message", [activeAccount, message]);
+    },
     drivePkByPath(activeAccount: string, path: string): Promise<string | boolean> {
       return ipcRenderer.invoke("wallet-drive-pkbypath", [activeAccount, path]);
     }
-  }
+  },
 
+  dapp: {
+    openView(url: string) {
+      return ipcRenderer.invoke("dapp-view-open", [url]);
+    },
+    closeView() {
+      return ipcRenderer.invoke("dapp-view-close", []);
+    },
+    setOpenDrawer(open: boolean) {
+      return ipcRenderer.invoke("dapp-view-setOpenDrawer", [open]);
+    },
+    goBack: () => ipcRenderer.invoke("dapp-view-goback"),
+    goForward: () => ipcRenderer.invoke("dapp-view-forward"),
+    reload: () => ipcRenderer.invoke("dapp-view-reload"),
+
+    onNavigationState: (callback: (data: any) => void) => {
+      const handler = (event: any, data: any) => {
+        callback(data);
+      };
+      ipcRenderer.on("dapp-view-navigation", handler);
+      return () => {
+        ipcRenderer.removeAllListeners("dapp-view-navigation");
+      };
+    },
+    // 钱包页面反馈Dapp请求
+    response(requestId: string, approved: boolean, data?: any, error?: { code: number, message: string }) {
+      ipcRenderer.send("dapp-request-response", {
+        requestId,
+        approved,
+        data,
+        error
+      })
+    },
+    // Dapp页面钱包初始化
+    onWalletStateInitialize: (fn: (data: Wallet_InitalizeData) => void): () => void => {
+      ipcRenderer.on("dapp-wallet-initialize", (event, data) => {
+        fn(data);
+      });
+      // 返回频道监听移除函数;
+      return () => {
+        ipcRenderer.removeAllListeners("dapp-wallet-initialize");
+      }
+    },
+    // Dapp页面钱包状态同步
+    onWalletStateSync: (fn: (data: { origin: string, dAppWalletState: WalletState }) => void): () => void => {
+      ipcRenderer.on("dapp-wallet-sync", (event, data) => {
+        fn(data);
+      });
+      // 返回频道监听移除函数;
+      return () => {
+        ipcRenderer.removeAllListeners("dapp-wallet-sync");
+      }
+    },
+    // Dapp页面通过 ethereum 对象发送请求
+    onDappRequest: (fn: (dappRequest: DAppRequest) => void) => {
+      ipcRenderer.on("dapp-request-handle", (event, dappRequest) => {
+        console.log("preload.ts.ipcRenderer.on(dapp-request-handle):", dappRequest)
+        fn(dappRequest);
+      });
+      return () => {
+        ipcRenderer.removeAllListeners("dapp-request-handle");
+      }
+    },
+  }
 
 };
 

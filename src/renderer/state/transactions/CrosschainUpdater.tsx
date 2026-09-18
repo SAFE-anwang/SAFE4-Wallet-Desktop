@@ -100,11 +100,15 @@ export default () => {
       console.log(`Fetch CrosschainDatas for ${activeAccount} by BlockNumber[${safe4BlockNumber}] // ${API_Crosschain}`)
       fetchCrossChainByAddress(API_Crosschain, { address: activeAccount })
         .then(data => {
-          console.log("Fetch crosschain data ==" , data)
-          dispatch(updateCrosschains(data));
-          window.electron.ipcRenderer.sendMessage(
-            IPC_CHANNEL, [CrosschainSignal, Crosschain_Methods.saveOrUpdate, [data , chainId]]
-          )
+          console.log("Fetch crosschain data === ", data);
+          if (data instanceof Array && data.length > 0) {
+            dispatch(updateCrosschains(data));
+            window.electron.ipcRenderer.sendMessage(
+              IPC_CHANNEL, [CrosschainSignal, Crosschain_Methods.saveOrUpdate, [data, chainId]]
+            )
+          } else {
+            console.log("No crosschain data found for the address.");
+          }
         });
     }
   }, [activeAccount, latestBlockNumber, chainId]);

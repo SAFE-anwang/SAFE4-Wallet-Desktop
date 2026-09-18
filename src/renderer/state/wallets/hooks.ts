@@ -566,8 +566,8 @@ export function useActiveAccountChildWallets(type: SupportChildWalletType, initS
               notExistCount += exist ? 0 : 1;
             });
             // 判断是否需要继续加载子钱包并验证 loading;
-            const loading = (notExistCount + _notExistCount) < size ;
-            console.log(`Need loading :: ${(notExistCount + _notExistCount)} <  ${size} ? =` , loading)
+            const loading = (notExistCount + _notExistCount) < size;
+            console.log(`Need loading :: ${(notExistCount + _notExistCount)} <  ${size} ? =`, loading)
             dispatch(walletsUpdateWalletChildWallets({
               address: activeWallet.address,
               type,

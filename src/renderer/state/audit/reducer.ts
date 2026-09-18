@@ -1,5 +1,5 @@
 import { createReducer } from "@reduxjs/toolkit"
-import { updateAuditTokens, updateTokenPrices } from "./actions"
+import { updateAuditTokens, updateTokenPrices , updateTokenPriceQuote } from "./actions"
 import { Safe4NetworkChainId, USDT, WSAFE } from "../../config"
 import { ethers } from "ethers"
 
@@ -15,17 +15,31 @@ export interface IAuditState {
       logoURI?: string,
     }[]
   },
+
   prices: {
     [chainId: number]: {
       address: string,
-      name : string,
-      symbol : string,
+      name: string,
+      symbol: string,
       decimals: number,
       logoURI: string,
-      usdtReserves: string,
       change: string,
       price: string
     }[]
+  },
+
+  quotePrices: {
+    [chainId: number]: {
+      [quote: string]: {
+        address: string,
+        name: string,
+        symbol: string,
+        decimals: number,
+        logoURI: string,
+        change: string,
+        price: string
+      }[]
+    }
   }
 }
 
@@ -43,6 +57,10 @@ const initialState: IAuditState = {
   prices: {
     [Safe4NetworkChainId.Testnet]: [],
     [Safe4NetworkChainId.Mainnet]: []
+  },
+  quotePrices: {
+    [Safe4NetworkChainId.Testnet]: {},
+    [Safe4NetworkChainId.Mainnet]: {}
   }
 }
 
@@ -56,5 +74,10 @@ export default createReducer(initialState, (builder) => {
       const { chainId, tokens } = payload;
       tokens.forEach(token => token.address = ethers.utils.getAddress(token.address));
       state.prices[chainId] = tokens;
+    })
+      .addCase(updateTokenPriceQuote, (state, { payload }) => {
+      const { chainId, quote, tokens } = payload;
+      tokens.forEach(token => token.address = ethers.utils.getAddress(token.address));
+      state.quotePrices[chainId][quote] = tokens;
     })
 })

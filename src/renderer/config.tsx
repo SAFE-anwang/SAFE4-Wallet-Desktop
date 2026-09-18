@@ -1,5 +1,5 @@
-import { ChainId, Token } from "@uniswap/sdk";
-import { Channels } from "../main/preload";
+import { Token } from "@uniswap/sdk";
+import { Channels } from "../main/ApplicationIpcManager";
 export const IPC_CHANNEL: Channels = "ipc-example";
 
 // Safe4 测试网|主网 网络ID
@@ -48,6 +48,12 @@ export const MiniChefV2: { [chainId in Safe4NetworkChainId]: string } = {
   [Safe4NetworkChainId.Mainnet]: "",
 }
 
+export const DAppManager: { [chainId in Safe4NetworkChainId]: string } = {
+  [Safe4NetworkChainId.Testnet]: "0x4C85a0888Fa40a959Ee31DFEc916475eB64931F7",
+  [Safe4NetworkChainId.Mainnet]: "0x7A3cec37f4975CD2f3cccBfd25e85D568a716Ce7",
+}
+
+
 export const SafeswapV2FactoryAddreess = "0xB3c827077312163c53E3822defE32cAffE574B42";
 export const SafeswapV2RouterAddress = "0x6476008C612dF9F8Db166844fFE39D24aEa12271";
 export const SafeswapV2InitCodeHash = "0xad0e51aa7a058efb9eb40fd6385473f0175ee7419e8d4f91a4e0294ec12b2d13";
@@ -55,9 +61,6 @@ export const SafeswapV2InitCodeHash = "0xad0e51aa7a058efb9eb40fd6385473f0175ee74
 export const Safe4_Network_Config = {
   Testnet: {
     chainId: 6666666,
-    // endpoint: "http://47.107.47.210:8545",
-    // Safescan_URL: "http://47.107.47.210",
-    // Safescan_Api: "http://47.107.47.210:5005"
     endpoint: "https://safe4testnet.anwang.com/rpc",
     Safescan_URL: "https://safe4testnet.anwang.com",
     Safescan_Api: "https://safe4testnet.anwang.com/5005",
@@ -70,7 +73,9 @@ export const Safe4_Network_Config = {
     Safescan_Api: "https://safe4.anwang.com/5005",
     claimFrom: "0x5DB242e60517a60B65140613D29e86334F2b5739"
   }
+
 }
+
 
 export const Safe4_Business_Config = {
   Masternode: {
@@ -99,7 +104,7 @@ const Config = {
     Default_Web3_Endpoint: Safe4_Network_Config.Testnet.endpoint,
     Default_Web3_ChainId: Safe4_Network_Config.Testnet.chainId,
     Safescan_URL: "http://127.0.0.1:3000",
-    Safescan_Api: "http://127.0.0.1:5005",
+    Safescan_Api: "http://127.0.0.1:9003",
   },
   "test": {
     // Default_Web3_Endpoint: "http://47.119.151.64:8545",
@@ -116,4 +121,10 @@ const Config = {
   }
 }
 
+
 export default Config["test"]
+
+
+
+
+

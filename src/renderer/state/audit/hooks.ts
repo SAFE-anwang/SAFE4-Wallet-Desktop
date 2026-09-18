@@ -12,14 +12,18 @@ export function useAuditTokenList(): {
   });
 }
 
-export function useMarketTokenPrices(): {
+export function useMarketTokenPrices(quoteAddress ?: string | undefined): {
   address: string, name: string, symbol: string, decimals: number, logoURI: string,
-  usdtReserves: string, change: string, price: string
+  change: string, price: string
 }[] | undefined {
   const { chainId } = useWeb3React();
   return useSelector((state: AppState) => {
     if (!state.audit.prices || !chainId) return undefined;
-    return state.audit.prices[chainId];
+    if (!quoteAddress) {
+      return state.audit.prices[chainId];
+    } else {
+      return state.audit.quotePrices[chainId][quoteAddress];
+    }
   });
 }
 
