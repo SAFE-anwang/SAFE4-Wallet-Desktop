@@ -13,6 +13,7 @@ import useSupernodeAddresses from "../../../../../hooks/useSupernodeAddresses";
 import Checkbox, { CheckboxGroupProps } from "antd/es/checkbox";
 import BatchWithdrawModal from "../../Withdraw/BatchWithdrawModal";
 import { ZERO } from "../../../../../utils/CurrentAmountUtils";
+import { AppstoreFilled, HolderOutlined } from "@ant-design/icons";
 
 const { Text } = Typography;
 
@@ -28,19 +29,19 @@ export enum FilterType {
 
 export default () => {
 
+  const AccountRecords_Page_Size = 40;
+
   const { t } = useTranslation();
   const activeAccount = useWalletsActiveAccount();
   const safe4balance = useSafe4Balance([activeAccount])[activeAccount];
   const blockNumber = useBlockNumber();
   const supernodeAddresses = useSupernodeAddresses();
   const timestamp = useTimestamp();
-
   const _accountManagerContract = useAccountManagerContract();
   const batchLockContract_tencents = useBatchLockTenCentsContract();
   const batchLockContract_onecent = useBatchLockOneCentContract();
   const [lockType, setLockType] = useState<LockContractType>(LockContractType.Normal);
   const [filterType, setFilterType] = useState<FilterType>(FilterType.All);
-  const AccountRecords_Page_Size = 20;
   const [accountRecords, setAccountRecords] = useState<AccountRecord[]>([]);
   const multicallContract = useMulticallContract();
   const [loading, setLoading] = useState<boolean>(false);
@@ -51,7 +52,7 @@ export default () => {
     onChange?: (page: number, pageSize: number) => void,
     pageSizeOptions: number[],
   }>();
-
+  const [accountRecordRenderType, setAccountRecordRenderType] = useState<AccountRecordRenderType>(AccountRecordRenderType.Simple);
 
   const accountManagerContract = useMemo(() => {
     if (!(_accountManagerContract && batchLockContract_tencents && batchLockContract_onecent)) return undefined;
@@ -85,7 +86,7 @@ export default () => {
             pageSize: pagination?.pageSize ?? AccountRecords_Page_Size,
             position: "bottom",
             current: 1,
-            pageSizeOptions: [20, 60, 100],
+            pageSizeOptions: [40, 80, 120],
             onChange: (page: number, pageSize: number) => {
               _pagination.current = page;
               _pagination.pageSize = pageSize;
@@ -104,7 +105,7 @@ export default () => {
         setPagination({
           total: 1,
           pageSize: AccountRecords_Page_Size,
-          pageSizeOptions: [20, 60, 100],
+          pageSizeOptions: [40, 80, 120],
           current: 1,
         })
       }
@@ -215,7 +216,7 @@ export default () => {
     return <List.Item>
       {
         AccountRecordRender({
-          accountRecord, renderType: AccountRecordRenderType.Simple, blockNumber, timestamp, t, supernodeAddresses,
+          accountRecord, renderType: accountRecordRenderType, blockNumber, timestamp, t, supernodeAddresses,
           checkedAccountRecordIds: FilterType.Available == filterType ? checkedAccountRecordIds : undefined,
           actions: {
             addLockDay: (accountRecord) => {
@@ -238,7 +239,7 @@ export default () => {
         })
       }
     </List.Item>
-  }, [blockNumber, timestamp, lockType, filterType, checkedAccountRecordIds, supernodeAddresses]);
+  }, [blockNumber, timestamp, lockType, filterType, checkedAccountRecordIds, supernodeAddresses, accountRecordRenderType]);
 
   const options: CheckboxGroupProps<string>['options'] = [
     { label: '全部', value: FilterType.All },
@@ -320,7 +321,16 @@ export default () => {
           }}
         />
       </Space>
-
+      <Space style={{ float: "right" }}>
+        <Button type={accountRecordRenderType == AccountRecordRenderType.Simple ? "primary" : "dashed"}
+          icon={<AppstoreFilled />} style={{ float: "right" }}
+          onClick={() => setAccountRecordRenderType(AccountRecordRenderType.Simple)}
+        />
+        <Button type={accountRecordRenderType == AccountRecordRenderType.Small ? "primary" : "dashed"}
+          icon={<HolderOutlined />} style={{ float: "right" }}
+          onClick={() => setAccountRecordRenderType(AccountRecordRenderType.Small)}
+        />
+      </Space>
     </>} style={{ marginTop: "40px" }}>
       <Row>
         <Col span={filterType == FilterType.Available ? 12 : 24}>
@@ -390,7 +400,8 @@ export default () => {
         renderItem={RenderAccountRecord}
         pagination={pagination}
         loading={loading}
-        grid={lockType == LockContractType.Normal ? { gutter: 16, column: 4 } : { gutter: 16, column: 4 }}
+        style={{marginTop:"10px"}}
+        grid={accountRecordRenderType == AccountRecordRenderType.Small ? { gutter: 6, column: 8 } : { gutter: 6, column: 4 }}
       />
     </Card >
 

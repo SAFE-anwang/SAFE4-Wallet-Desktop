@@ -1,7 +1,6 @@
 import { SendOutlined } from "@ant-design/icons";
 import { Alert, Button, Col, Divider, Input, Row, Typography, message } from "antd";
 import { useState } from "react";
-import { isAddress } from "@ethersproject/address";
 import { useDAppManagerContract, useMulticallContract } from "../../../hooks/useContracts";
 import { ethers } from "ethers";
 import EstimateTx from "../../../utils/EstimateTx";
@@ -91,7 +90,7 @@ const VALIDATORS: Record<keyof FormState, (v: string) => string> = {
   },
   contract_addr: (v) => {
     if (!v) return "请输入合约地址";
-    if (!isAddress(v)) return "请输入合法的合约地址";
+    if (!ethers.utils.isAddress(v)) return "请输入合法的合约地址";
     return "";
   },
 };
@@ -129,17 +128,17 @@ export default function DAppEdit({
 
   const handleChange =
     (field: keyof FormState) =>
-    (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-      const value = event.target.value;
-      setForm((prev) => ({ ...prev, [field]: value }));
-      const err = VALIDATORS[field](value);
-      setErrors((prev) => {
-        const next = { ...prev };
-        if (err) next[field] = err;
-        else delete next[field];
-        return next;
-      });
-    };
+      (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+        const value = event.target.value;
+        setForm((prev) => ({ ...prev, [field]: value }));
+        const err = VALIDATORS[field](value);
+        setErrors((prev) => {
+          const next = { ...prev };
+          if (err) next[field] = err;
+          else delete next[field];
+          return next;
+        });
+      };
 
   const validateAll = () => {
     const nextErrors: Partial<Record<keyof FormState, string>> = {};

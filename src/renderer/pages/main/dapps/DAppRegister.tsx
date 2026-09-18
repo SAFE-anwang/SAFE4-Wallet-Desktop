@@ -5,7 +5,6 @@ import { useWalletsActiveAccount } from "../../../state/wallets/hooks";
 import { useTranslation } from "react-i18next";
 import { useWeb3React } from "@web3-react/core";
 import { useState } from "react";
-import { isAddress } from "@ethersproject/address";
 import { useDAppManagerContract, useMulticallContract } from "../../../hooks/useContracts";
 import { ethers } from "ethers";
 import EstimateTx from "../../../utils/EstimateTx";
@@ -76,7 +75,7 @@ const VALIDATORS = {
 
   contract_addr: (v: string) => {
     if (!v) return "请输入合约地址";
-    if (!isAddress(v)) return "请输入合法的合约地址";
+    if (!ethers.utils.isAddress(v)) return "请输入合法的合约地址";
     return "";
   },
 };

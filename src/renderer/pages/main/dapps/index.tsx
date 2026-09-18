@@ -1,5 +1,5 @@
 import { ArrowLeftOutlined, ArrowRightOutlined, HomeOutlined, LeftOutlined, ReloadOutlined, RightOutlined, SearchOutlined } from "@ant-design/icons";
-import { Button, Col, Divider, Drawer, Form, Input, Row, Typography } from "antd"
+import { Button, Col, Divider, Drawer, Form, Input, message, Row, Typography } from "antd"
 import { useEffect, useRef, useState } from "react";
 import DAppRequestDrawer from "./DAppRequestDrawer";
 import { useWalletsActiveAccount } from "../../../state/wallets/hooks";
@@ -91,9 +91,14 @@ export default () => {
 
   const openDAppURL = () => {
     if (dAppURL) {
-      setDAppViewOpened(true);
-      window.electron.dapp.openView(dAppURL);
-      setDAppWalletState(undefined);
+      if (dAppURL.startsWith("https://")) {
+        setDAppViewOpened(true);
+        window.electron.dapp.openView(dAppURL);
+        setDAppWalletState(undefined);
+      } else {
+        message.error("不支持访问非 Https 协议的应用地址");
+        return;
+      }
     }
   }
 

@@ -277,7 +277,7 @@ export default ({
             {
               locked && <LockOutlined />
             }
-            <Text strong>{amount.toSignificant(4)} SAFE</Text>
+            <Text strong>{amount.toFixed(2)} SAFE</Text>
             <Space style={{ float: "right" }}>
               {
                 frozenAddr != EmptyContract.EMPTY && supernodeAddresses &&
@@ -304,8 +304,44 @@ export default ({
                   <ContainerOutlined />
                 </Tooltip>
               }
+
             </Space>
           </Col>
+          {
+            actions && (actions.withdraw || actions.addLockDay) && <>
+              <Divider style={{ margin: "4px 0" }} />
+              <Col span={24}>
+                {
+                  actions && actions.withdraw &&
+                  <>
+                    {
+                      couldWithdraw && <Button style={{ float: "right", marginLeft: "5px" }} disabled={!couldWithdraw} size="small" type="primary" onClick={() => {
+                        actions.withdraw && actions.withdraw(accountRecord);
+                      }}>{t("wallet_withdraw")}</Button>
+                    }
+                    {
+                      !couldWithdraw &&
+                      <Tooltip title={unlockDateTime}>
+                        <Button style={{ float: "right", marginLeft: "5px" }} disabled={!couldWithdraw} size="small" type="primary" onClick={() => {
+                          actions.withdraw && actions.withdraw(accountRecord);
+                        }}>{t("wallet_withdraw")}</Button>
+                      </Tooltip>
+                    }
+                  </>
+                }
+                {
+                  id != 0 && accountRecord?.contractAddress == SystemContract.AccountManager && <>
+                    {
+                      actions?.addLockDay && <Button style={{ float: "right" }} size="small" icon={<ClockCircleOutlined />} title="追加锁仓" onClick={() => {
+                        actions.addLockDay && actions.addLockDay(accountRecord);
+                      }}>
+                      </Button>
+                    }
+                  </>
+                }
+              </Col>
+            </>
+          }
         </Row>
       </Card>
     }

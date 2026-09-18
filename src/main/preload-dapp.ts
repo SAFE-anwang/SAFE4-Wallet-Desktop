@@ -4,7 +4,16 @@ console.log("====== preload-dapp.ts prepare loading ======");
 // 开发模式开关
 //  true  → 所有未处理的方法都交给 Render（方便调试）
 //  false → 只有 DApp_Support_INTERACTIVE_Methods 中的方法交给 Render，其余抛 4200
-const DEV = true;
+const DEV = false;
+
+export const DApp_Support_INTERACTIVE_Methods = new Set([
+  "wallet_switchEthereumChain",
+  "wallet_addEthereumChain",
+  "eth_sendTransaction",
+  "personal_sign",
+  "eth_signTypedData_v4",
+  // "eth_sign",
+]);
 
 export const DApp_Support_READONLY_Methods = new Set([
   // 链信息（web3_clientVersion 走 RPC）
@@ -29,15 +38,7 @@ export const DApp_Support_READONLY_Methods = new Set([
   "eth_getBlockByHash",
 ]);
 
-export const DApp_Support_INTERACTIVE_Methods = new Set([
-  "wallet_switchEthereumChain",
-  "wallet_addEthereumChain",
-  "eth_sendTransaction",
-  "personal_sign",
-  // "eth_signTypedData_v4",
-  // "eth_sign",
-]);
-
+// 明确的不支持的方法
 export const DApp_Unsupport_Methods = new Set([
   "wallet_watchAsset",
   "wallet_getCapabilities",

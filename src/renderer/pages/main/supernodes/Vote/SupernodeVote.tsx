@@ -14,6 +14,7 @@ import AccountRecordsVote from './AccountRecordsVote';
 import InputAmountVote from './InputAmountVote';
 import useSafeScan from '../../../../hooks/useSafeScan';
 import { useTranslation } from 'react-i18next';
+import useSupernodeAddresses from '../../../../hooks/useSupernodeAddresses';
 
 const { Text, Title } = Typography;
 
@@ -21,11 +22,13 @@ export default () => {
 
   const { t } = useTranslation();
   const supernodeAddr = useSelector<AppState, string | undefined>(state => state.application.control.vote);
-  const [supernodeAddresses, setSupernodeAddresses] = useState<string[]>([]);
   const supernodeStorageContract = useSupernodeStorageContract();
   const navigate = useNavigate();
   const [supernodeInfo, setSupernodeInfo] = useState<SupernodeInfo>();
   const { URL, API } = useSafeScan();
+  const supernodeAddresses = useSupernodeAddresses();
+
+
   const items: TabsProps['items'] = [
     {
       key: 'inputAmount',
@@ -49,10 +52,6 @@ export default () => {
         })
     }
   }, [supernodeAddr]);
-  useEffect(() => {
-    fetchSuperNodeAddresses(API)
-      .then(setSupernodeAddresses)
-  }, []);
 
 
   return <>
