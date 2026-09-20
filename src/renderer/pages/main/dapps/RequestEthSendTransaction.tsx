@@ -50,14 +50,16 @@ export default ({
     value
   } = params[0];
 
-  const isActiveAccountWallet = activeAccount == dAppWalletState.accounts[0];
+  const isActiveAccountWallet =
+    (activeAccount == dAppWalletState.accounts[0]) && (from && ethers.utils.isAddress(from) && ethers.utils.getAddress(from) == activeAccount);
+
   const dAppProvider = useMemo(() => {
     return chainId === Number(dAppChainId) && provider ? provider
       : new ethers.providers.JsonRpcProvider(dAppBlockchainRpcProps[Number(dAppChainId)]?.rpcUrls[0]);;
   }, [dAppChainId, chainId, provider]);
 
   const approve = async () => {
-    if (dAppProvider && dAppChainId) {
+    if (dAppProvider && dAppChainId && isActiveAccountWallet) {
       setSending(true);
       try {
         console.log("[RequestEthSendTransaction] build Txn @ Provider:", dAppProvider.connection.url);
@@ -69,7 +71,7 @@ export default ({
         }
         tx = await EstimateTx(from, Number(dAppChainId), tx, dAppProvider);
         const { signedTx, error } = await window.electron.wallet.signTransaction(
-          from,
+          ethers.utils.getAddress(from),
           tx
         );
         if (signedTx) {
