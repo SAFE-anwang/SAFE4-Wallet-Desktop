@@ -247,7 +247,7 @@ export default ({
       const message = typedData.message ?? {};
 
       const signResult = await window.electron.wallet.signTypedData(
-        signWallet,
+        ethers.utils.getAddress(signWallet),
         domain,
         cleanTypes,
         message

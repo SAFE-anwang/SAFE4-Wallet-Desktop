@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useDAppManagerContract, useMulticallContract } from "../../../hooks/useContracts"
 import { DAppInfo, formatDAppInfo } from "../../../structs/DApp";
-import { Avatar, Button, Col, Divider, List, Modal, Row, Space, Table, Tooltip, Typography } from "antd";
+import { Avatar, Badge, Button, Col, Divider, List, Modal, Row, Space, Table, Tooltip, Typography } from "antd";
 import { useWalletsActiveAccount } from "../../../state/wallets/hooks";
 import DAppEdit from "./DAppEdit";
 import DAppSetLogo from "./DAppSetLogo";
@@ -10,6 +10,7 @@ import DAppRemove from "./DAppRemove";
 import { useDAppList } from "../../../state/dApp/hooks";
 import { DAppInfoWithLogo } from "../../../state/dApp/reducer";
 import { useBlockNumber } from "../../../state/application/hooks";
+import { QuestionCircleOutlined } from "@ant-design/icons";
 
 const { Text, Link } = Typography;
 
@@ -76,17 +77,28 @@ export default ({
         return <>
           <List.Item>
             <List.Item.Meta
-              avatar={<Avatar src={dAppInfoWithLogo.logo} style={{ marginTop: "5px" }} />}
+              avatar={
+                <>
+                  <Avatar size="large" src={dAppInfoWithLogo.logo} style={{ marginTop: "4px" }} />
+                </>
+              }
               title={<>
                 <Row>
                   <Col span={24}>
-                    <Tooltip title={dAppInfo.runUrl}>
-                      <Link onClick={() => {
-                        window.electron.dapp.openView(dAppInfo.runUrl);
-                      }}>{dAppInfo.name}</Link>
-                    </Tooltip>
-                    <Divider type="vertical" />
-                    <Text type="secondary">{dAppInfo.keyword}</Text>
+                    {
+                      !dAppInfo.isFrozen &&
+                      <Tooltip title={dAppInfo.runUrl}>
+                        <Link onClick={() => {
+                          window.electron.dapp.openView(dAppInfo.runUrl);
+                        }}>{dAppInfo.name}</Link>
+                      </Tooltip>
+                    }
+                    {
+                      dAppInfo.isFrozen &&
+                      <Tooltip title={"暂停访问"}>
+                        <Link type="secondary">{dAppInfo.name}</Link>
+                      </Tooltip>
+                    }
                   </Col>
                 </Row>
               </>}

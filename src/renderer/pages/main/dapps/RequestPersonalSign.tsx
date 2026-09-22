@@ -21,16 +21,20 @@ export default ({
   const { method, params } = dAppRequestParams;
   const messageHex = params[0];
   const signWallet = params[1];
-  const dAppWallet = dAppWalletState.accounts[0];
   const message = ethers.utils.isHexString(messageHex) && (ethers.utils.toUtf8String(messageHex));
-  const signable = ethers.utils.isHexString(messageHex) && signWallet === dAppWallet && activeAccount === signWallet && activeAccount === activeAccount;
+
+  const isActiveAccountWallet =
+    (activeAccount == dAppWalletState.accounts[0]) && (signWallet && ethers.utils.isAddress(signWallet) && ethers.utils.getAddress(signWallet) == activeAccount);
+  const signable = ethers.utils.isHexString(messageHex) && isActiveAccountWallet;
+
+
   const signRef = useRef<string | undefined>(undefined);
   const [signing, setSigning] = useState<boolean>(false);
 
   const sign = async () => {
     if (signable) {
       setSigning(true);
-      const signResult = await window.electron.wallet.signMessage(signWallet, messageHex);
+      const signResult = await window.electron.wallet.signMessage(ethers.utils.getAddress(signWallet), messageHex);
       signRef.current = signResult;
       window.electron.dapp.response(requestId, true, signResult);
       setSigning(false);

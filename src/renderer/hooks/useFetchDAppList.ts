@@ -172,7 +172,7 @@ export default function useFetchDAppList(options: UseFetchDAppListOptions = {}) 
         // 过滤：onlyWithLogo 控制
         let toEmit: DAppInfoWithLogo[];
         if (onlyWithLogo) {
-          toEmit = batch.filter((item) => isValidLogo(item.logo));
+          toEmit = batch.filter((item) => isValidLogo(item.logo) && !item.dAppInfo.isFrozen);
         } else {
           toEmit = batch;
         }

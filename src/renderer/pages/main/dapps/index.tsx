@@ -12,9 +12,6 @@ import { useDAppBlockchainRpcProps } from "../../../state/dApp/hooks";
 
 export default () => {
 
-  // https://dapp-at.opensky.vip
-  // https://pancakeswap.finance/swap
-  // https://lmb-dapp.anwang.com
   const [dAppURL, setDAppURL] = useState<string | undefined>(undefined);
   const [dAppViewOpened, setDAppViewOpened] = useState(false);
   const activeAccount = useWalletsActiveAccount();
@@ -127,7 +124,7 @@ export default () => {
         <Button onClick={reload} disabled={dAppURL == undefined} style={{ float: "left", marginRight: "10px" }} shape="circle" icon={<ReloadOutlined />} />
         <div style={{ float: "left", width: "40%" }}>
           <Form>
-            <Input.Search onSearch={openDAppURL} value={dAppURL} placeholder="输入Dapp应用访问地址" onChange={(e) => {
+            <Input.Search onSearch={openDAppURL} value={dAppURL} placeholder="输入 dApp 访问地址" onChange={(e) => {
               setDAppURL(e.target.value);
             }} />
             <Button style={{ display: "none" }} htmlType='submit' onClick={openDAppURL}></Button>
