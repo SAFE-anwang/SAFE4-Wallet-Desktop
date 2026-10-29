@@ -1,3 +1,4 @@
+import { NftTokenVO } from './../../services/insight.d';
 import { useWeb3React } from "@web3-react/core";
 import { useSelector } from "react-redux";
 import { AppState } from "..";
@@ -12,7 +13,15 @@ export function useAuditTokenList(): {
   });
 }
 
-export function useMarketTokenPrices(quoteAddress ?: string | undefined): {
+export function useNftTokens(): NftTokenVO[] | undefined {
+  const { chainId } = useWeb3React();
+  return useSelector((state: AppState) => {
+    if (!state.audit.nftTokens || !chainId) return undefined;
+    return state.audit.nftTokens[chainId];
+  });
+}
+
+export function useMarketTokenPrices(quoteAddress?: string | undefined): {
   address: string, name: string, symbol: string, decimals: number, logoURI: string,
   change: string, price: string
 }[] | undefined {

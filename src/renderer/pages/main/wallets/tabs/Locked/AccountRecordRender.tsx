@@ -260,24 +260,8 @@ export default ({
         <Row>
           <Col span={24} style={{ color: "" }}>
             <Text strong type="secondary">
-              {t("wallet_locked_accountRecordLockId")}:
-              {id}
+              # {id}
             </Text>
-            {
-              checkedAccountRecordIds != undefined && <>
-                <Checkbox disabled={disabledAccountRecordIds && disabledAccountRecordIds.includes(accountRecord.id)}
-                  checked={checkedAccountRecordIds.includes(accountRecord.id)} style={{ float: "right" }} onChange={() => {
-                    if (actions?.checked) {
-                      actions.checked(accountRecord);
-                    }
-                  }} />
-              </>
-            }
-            <br />
-            {
-              locked && <LockOutlined />
-            }
-            <Text strong>{amount.toFixed(2)} SAFE</Text>
             <Space style={{ float: "right" }}>
               {
                 frozenAddr != EmptyContract.EMPTY && supernodeAddresses &&
@@ -304,8 +288,23 @@ export default ({
                   <ContainerOutlined />
                 </Tooltip>
               }
-
+              {
+                checkedAccountRecordIds != undefined && <>
+                  <Checkbox disabled={disabledAccountRecordIds && disabledAccountRecordIds.includes(accountRecord.id)}
+                    checked={checkedAccountRecordIds.includes(accountRecord.id)} style={{ float: "right" }} onChange={() => {
+                      if (actions?.checked) {
+                        actions.checked(accountRecord);
+                      }
+                    }} />
+                </>
+              }
             </Space>
+            <br />
+            {
+              locked && <LockOutlined />
+            }
+            <Text strong>{amount.toFixed(2)} SAFE</Text>
+
           </Col>
           {
             actions && (actions.withdraw || actions.addLockDay) && <>

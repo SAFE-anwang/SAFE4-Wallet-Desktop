@@ -27,6 +27,7 @@ import { ethers } from 'ethers';
 import { loadERC20Tokens } from '../../../state/transactions/actions';
 import { useTranslation } from 'react-i18next';
 import useSafeScan from '../../../hooks/useSafeScan';
+import INFTAssets from './tabs/INFT/INFTAssets';
 
 const { Title, Text, Paragraph, Link } = Typography;
 
@@ -41,6 +42,7 @@ export default () => {
   const latestBlockNumber = useBlockNumber();
   const timestamp = useTimestamp();
   const walletTab = useSelector<AppState, string | undefined>(state => state.application.control.walletTab);
+  // const walletTab = "nft";
   const { isActivating, isActive, chainId } = useWeb3React();
 
   const [openReceiveModal, setOpenReceiveModal] = useState<boolean>(false);
@@ -63,6 +65,11 @@ export default () => {
       key: 'erc20',
       label: t("wallet_tokens"),
       children: <IERC20Assets />,
+    },
+    {
+      key: 'nft',
+      label: "NFT",
+      children: <INFTAssets />,
     },
     {
       key: 'history',

@@ -2,10 +2,10 @@ import { Button, Space, Table, Typography } from "antd";
 import { useAuditTokenList } from "../../../state/audit/hooks"
 import AddressComponent from "../../components/AddressComponent";
 import EditAssetModal from "./EditAssetModal";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import PromotionModal from "./PromotionModal";
 import { isLocalWallet } from "../../../hooks/useWalletName";
-import { useWalletsActiveAccount } from "../../../state/wallets/hooks";
+import { useWalletsActiveAccount, useWalletsList } from "../../../state/wallets/hooks";
 import { useWeb3React } from "@web3-react/core";
 import ERC20TokenLogoComponent from "../../components/ERC20TokenLogoComponent";
 import { useContract, useMulticallContract } from "../../../hooks/useContracts";
@@ -22,6 +22,16 @@ export default () => {
 
   const { t } = useTranslation();
 
+  const walletList = useWalletsList();
+  const localWalletAddressSet = useMemo(() => {
+    if (!walletList) return new Set<string>();
+    return new Set(
+      walletList
+        .filter(w => w && w.address)
+        .map(w => w.address)
+    );
+  }, [walletList]);
+
   const [openEditAssetModal, setOpenEditAssetModal] = useState(false);
   const [openPromotionModal, setOpenPromotionModal] = useState(false);
   const [openMintAssetModal, setOpenMintAssetModal] = useState(false);
@@ -33,37 +43,43 @@ export default () => {
   const auditTokens = useAuditTokenList();
 
   const myAuditTokens = auditTokens && auditTokens.filter(
-    auditToken => auditToken.creator && isLocalWallet(auditToken.creator).isLocal);
-
+    auditToken => auditToken.creator &&  localWalletAddressSet.has(auditToken.creator) );
   const myAuditTokensAddresses = myAuditTokens && myAuditTokens.map(token => token.address);
+  const myAuditTokensAddressesStr = myAuditTokensAddresses?.join(",") || "";
+
   const multicallContract = useMulticallContract();
   const [src20TokenVersionMap, setSRC20TokenVersionMap] = useState<{
     [address: string]: string
   }>();
 
   useEffect(() => {
-    if (myAuditTokensAddresses && multicallContract) {
-      const calls: CallMulticallAggregateContractCall[] = [];
-      myAuditTokensAddresses.forEach(address => {
-        const src20Contract = new Contract(address, SRC20_Template.SRC20.abi, undefined);
-        const versionCall: CallMulticallAggregateContractCall = {
-          contract: src20Contract,
-          functionName: "version",
-          params: []
-        };
-        calls.push(versionCall);
-      });
-      if (calls.length > 0) {
-        CallMulticallAggregate(multicallContract, calls, () => {
-          const tokenVersionMap = calls.reduce((map, call) => {
-            map[call.contract.address] = call.result;
-            return map;
-          }, {} as { [address: string]: string });
-          setSRC20TokenVersionMap(tokenVersionMap);
-        })
-      }
+
+    if (!myAuditTokensAddressesStr || !multicallContract) {
+      return;
     }
-  }, [myAuditTokensAddresses, multicallContract]);
+    const addresses = myAuditTokensAddressesStr.split(",");
+    console.log("[Multicall] Query SRC20 Version", addresses);
+
+    const calls: CallMulticallAggregateContractCall[] = [];
+    addresses.forEach(address => {
+      const src20Contract = new Contract(address, SRC20_Template.SRC20.abi, undefined);
+      const versionCall: CallMulticallAggregateContractCall = {
+        contract: src20Contract,
+        functionName: "version",
+        params: []
+      };
+      calls.push(versionCall);
+    });
+    if (calls.length > 0) {
+      CallMulticallAggregate(multicallContract, calls, () => {
+        const tokenVersionMap = calls.reduce((map, call) => {
+          map[call.contract.address] = call.result;
+          return map;
+        }, {} as { [address: string]: string });
+        setSRC20TokenVersionMap(tokenVersionMap);
+      })
+    }
+  }, [myAuditTokensAddressesStr, multicallContract]);
 
   const clickEdit = (address: string) => {
     setSelectAddress(address);

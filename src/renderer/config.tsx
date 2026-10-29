@@ -64,6 +64,10 @@ export const Safe4_Network_Config = {
     endpoint: "https://safe4testnet.anwang.com/rpc",
     Safescan_URL: "https://safe4testnet.anwang.com",
     Safescan_Api: "https://safe4testnet.anwang.com/5005",
+    Safescan_InsightApi: "https://safe4testnet.anwang.com/insight/api",
+    // Safescan_URL: "http://127.0.0.1:3000",
+    // Safescan_Api: "http://127.0.0.1:9003",
+    // Safescan_InsightApi: "http://127.0.0.1:9003/insight/api",
     claimFrom: "0x0225302942D5f37dA1d18C1d2DE169C5b007aCAb",
   },
   Mainnet: {
@@ -71,6 +75,7 @@ export const Safe4_Network_Config = {
     endpoint: "https://safe4.anwang.com/rpc",
     Safescan_URL: "https://safe4.anwang.com",
     Safescan_Api: "https://safe4.anwang.com/5005",
+    Safescan_InsightApi: "https://safe4.anwang.com/insight/api",
     claimFrom: "0x5DB242e60517a60B65140613D29e86334F2b5739"
   }
 
@@ -100,29 +105,16 @@ export const Safe4_Business_Config = {
   }
 }
 const Config = {
-  "dev": {
+  "testnet": {
     Default_Web3_Endpoint: Safe4_Network_Config.Testnet.endpoint,
     Default_Web3_ChainId: Safe4_Network_Config.Testnet.chainId,
-    Safescan_URL: "http://127.0.0.1:3000",
-    Safescan_Api: "http://127.0.0.1:9003",
   },
-  "test": {
-    // Default_Web3_Endpoint: "http://47.119.151.64:8545",
-    Default_Web3_Endpoint: Safe4_Network_Config.Testnet.endpoint,
-    Default_Web3_ChainId: Safe4_Network_Config.Testnet.chainId,
-    Safescan_URL: Safe4_Network_Config.Testnet.Safescan_URL,
-    Safescan_Api: Safe4_Network_Config.Testnet.Safescan_Api,
-  },
-  "prod": {
+  "mainnet": {
     Default_Web3_Endpoint: Safe4_Network_Config.Mainnet.endpoint,
     Default_Web3_ChainId: Safe4_Network_Config.Mainnet.chainId,
-    Safescan_URL: Safe4_Network_Config.Mainnet.Safescan_URL,
-    Safescan_Api: Safe4_Network_Config.Mainnet.Safescan_Api,
   }
 }
-
-
-export default Config["prod"]
+export default Config["testnet"]
 
 
 

@@ -1,4 +1,5 @@
 import { createAction } from "@reduxjs/toolkit";
+import { NftTokenVO } from "../../services/insight";
 
 export const updateAuditTokens = createAction<{
   chainId: number, tokens: {
@@ -35,3 +36,8 @@ export const updateTokenPriceQuote = createAction<{
     price: string
   }[]
 }>("audit/updateTokenPriceQuote");
+
+export const updateNftTokens = createAction<{ chainId: number, tokens: NftTokenVO[] }>("audit/updateNftTokens")
+
+
+

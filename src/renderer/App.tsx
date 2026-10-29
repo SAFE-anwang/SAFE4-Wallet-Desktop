@@ -66,6 +66,8 @@ import { cleanAddressActiviesFetch } from './state/transactions/actions';
 import FarmPools from './pages/main/farm/FarmPools';
 import Dapps from './pages/main/dapps';
 import DAppRegister from './pages/main/dapps/DAppRegister';
+import SelectAssetIssue from './pages/main/issue/SelectAssetIssue';
+import IssueNFTAsset from './pages/main/issue/nft/IssueNFTAsset';
 
 const { Text } = Typography;
 
@@ -346,7 +348,9 @@ export default function App() {
                     <Route path="/main/contracts/edit" element={<ContractEdit />} />
                     <Route path="/main/crosschain" element={<Crosschain />} />
                     <Route path="/main/swap" element={<SafeswapV2 />} />
-                    <Route path="/main/issue" element={<IssueIndex />} />
+                    <Route path="/main/issue" element={<SelectAssetIssue />} />
+                    <Route path="/main/issue/src20" element={<IssueIndex />} />
+                    <Route path="/main/issue/nft" element={<IssueNFTAsset />} />
                     <Route path="/main/farm" element={<FarmPools />} />
                     <Route path="/main/dapps" element={<Dapps />} />
                     <Route path="/main/dapps/register" element={<DAppRegister />} />

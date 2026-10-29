@@ -110,9 +110,23 @@ export interface TokenTransfer {
     symbol: string,
     decimals: number
   },
-  value: string ,
-  input ?: string ,
-  contract ?: string
+  value: string,
+  input?: string,
+  contract?: string
+}
+
+export interface NftTransfer {
+  from: string,
+  to: string,
+  token: {
+    address: string,
+    name: string,
+    symbol: string,
+    type: string
+  },
+  value: string,
+  input?: string,
+  contract?: string
 }
 
 export interface AddressActivityFetch {

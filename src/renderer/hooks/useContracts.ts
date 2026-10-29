@@ -3,7 +3,7 @@ import { Contract } from '@ethersproject/contracts'
 import { useWalletsActiveWallet } from "../state/wallets/hooks";
 import { SysContractABI, SystemContract } from "../constants/SystemContracts";
 import { useWeb3React } from "@web3-react/core";
-import { IERC20_Interface } from "../abis";
+import { IERC20_Interface, INFT_1155_Interface, INFT_721_Interface } from "../abis";
 import { Application_Crosschain, DAppManager, MiniChefV2, Safe4NetworkChainId, SafeswapV2FactoryAddreess, SafeswapV2RouterAddress, WSAFE } from "../config";
 import ApplicationContractAbiConfig from "../constants/ApplicationContractAbiConfig";
 import { SwapV2FactoryABI, SwapV2RouterABI } from "../constants/SafeswapAbiConfig";
@@ -37,6 +37,16 @@ export function useMulticallContract(): Contract | null | undefined {
 export function useIERC20Contract(address: string, withSignerIfPossible?: boolean): Contract | null | undefined {
   return useContract(address, IERC20_Interface, withSignerIfPossible);
 }
+
+export function useINFT721Contract(address: string, withSignerIfPossible?: boolean): Contract | null | undefined {
+  return useContract(address, INFT_721_Interface, withSignerIfPossible);
+}
+
+export function useINFT1155Contract(address: string, withSignerIfPossible?: boolean): Contract | null | undefined {
+  return useContract(address, INFT_1155_Interface, withSignerIfPossible);
+}
+
+
 
 export function useAccountManagerContract(withSignerIfPossible?: boolean): Contract | null | undefined {
   return useContract(SystemContract.AccountManager, SysContractABI[SystemContract.AccountManager], withSignerIfPossible);

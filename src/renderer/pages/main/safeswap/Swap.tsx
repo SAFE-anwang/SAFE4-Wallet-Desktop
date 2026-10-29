@@ -1,5 +1,5 @@
 import { ArrowDownOutlined, DownOutlined, LeftOutlined, RightOutlined, SwapOutlined, SyncOutlined, UserOutlined } from "@ant-design/icons";
-import { Alert, Avatar, Button, Card, Col, Divider, Dropdown, Input, MenuProps, message, Row, Select, Space, Spin, Typography } from "antd";
+import { Alert, Avatar, Button, Card, Checkbox, Col, Divider, Dropdown, Input, MenuProps, message, Row, Select, Space, Spin, Typography } from "antd";
 import { useTranslation } from "react-i18next";
 import { useWeb3React } from "@web3-react/core";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -104,6 +104,7 @@ export default ({
   const [tokenInAmount, setTokenInAmount] = useState<string>();
   const [tokenOutAmount, setTokenOutAmount] = useState<string>();
   const [openSwapConfirmModal, setOpenSwapConfirmModal] = useState<boolean>(false);
+  const [openSwapRoute, setOpenSwapRoute] = useState<boolean>(true);
 
   const [trade, setTrade] = useState<Trade>();
   const liquidityNotFound = (!loading && pair == undefined && trade == undefined && isValidPair);
@@ -129,13 +130,14 @@ export default ({
     if (chainId && pairsMap) {
       const _tokenA = tokenA ? tokenA : WSAFE[chainId as Safe4NetworkChainId];
       const _tokenB = tokenB ? tokenB : WSAFE[chainId as Safe4NetworkChainId];
+      const maxHops = openSwapRoute ? 3 : 1;
       const pairs = Object.values(pairsMap);
       if (tokenInAmount) {
         const _tokenInAmount = new TokenAmount(
           _tokenA, ethers.utils.parseUnits(tokenInAmount, _tokenA.decimals).toBigInt()
         );
         const [trade] = Trade.bestTradeExactIn(pairs, _tokenInAmount, _tokenB, {
-          maxHops: 3, maxNumResults: 1
+          maxHops, maxNumResults: 1
         });
         setTrade(trade);
         if (trade) {
@@ -149,7 +151,7 @@ export default ({
           _tokenB, ethers.utils.parseUnits(tokenOutAmount, _tokenB.decimals).toBigInt()
         )
         const [trade] = Trade.bestTradeExactOut(pairs, _tokenA, _tokenOutAmount, {
-          maxHops: 3, maxNumResults: 1
+          maxHops, maxNumResults: 1
         });
         setTrade(trade);
         if (trade) {
@@ -161,7 +163,7 @@ export default ({
       }
     }
     return undefined;
-  }, [chainId, tokenA, tokenB, pairsMap]);
+  }, [chainId, tokenA, tokenB, pairsMap, openSwapRoute]);
 
   const handleTokenInAmountInput = (_tokenInAmount: string) => {
     const decimalExceeded = isDecimalPrecisionExceeded(_tokenInAmount, tokenA);
@@ -229,33 +231,41 @@ export default ({
 
   const RenderRoutePath = () => {
     return <>
-      {
-        trade?.route.path && trade.route.path.length > 2 &&
-        <Row>
-          <Col span={24}>
-            <Text type="secondary">{t("wallet_safeswap_route")}</Text>
-          </Col>
-          <Col span={24}>
-            <Card style={{ marginTop: "10px" }}>
-              <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
-                {
-                  trade.route.path.map(token => {
-                    const tokenIndex = trade.route.path.indexOf(token);
-                    const isLastToken = tokenIndex == trade.route.path.length - 1;
-                    return <Space style={{ flex: "1 1" }} key={token.address}>
-                      <ERC20TokenLogoComponent style={{ width: "20px", height: "20px", padding: "1px" }} address={token.address} chainId={token.chainId} />
-                      <Text ellipsis strong style={{ fontSize: "14px" }}>{TokenSymbol(token)}</Text>
-                      {
-                        !isLastToken && <RightOutlined />
-                      }
-                    </Space>
-                  })
-                }
-              </div>
-            </Card>
-          </Col>
-        </Row>
-      }
+      <Row>
+        {
+          trade?.route.path && trade.route.path.length > 2 &&
+          <>
+            <Col span={24}>
+              <Checkbox checked={openSwapRoute} onChange={(e) => {
+                setOpenSwapRoute(e.target.value);
+                setTokenInAmount(undefined);
+                setTokenOutAmount(undefined);
+                setTrade(undefined);
+              }} />
+              <Text style={{ marginLeft: "10px" }} type="secondary">{t("wallet_safeswap_route")}</Text>
+            </Col>
+            <Col span={24}>
+              <Card style={{ marginTop: "10px" }}>
+                <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+                  {
+                    trade.route.path.map(token => {
+                      const tokenIndex = trade.route.path.indexOf(token);
+                      const isLastToken = tokenIndex == trade.route.path.length - 1;
+                      return <Space style={{ flex: "1 1" }} key={token.address}>
+                        <ERC20TokenLogoComponent style={{ width: "20px", height: "20px", padding: "1px" }} address={token.address} chainId={token.chainId} />
+                        <Text ellipsis strong style={{ fontSize: "14px" }}>{TokenSymbol(token)}</Text>
+                        {
+                          !isLastToken && <RightOutlined />
+                        }
+                      </Space>
+                    })
+                  }
+                </div>
+              </Card>
+            </Col>
+          </>
+        }
+      </Row>
     </>
   }
 

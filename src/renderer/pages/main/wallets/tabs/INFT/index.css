@@ -1,0 +1,15 @@
+.nft-card-wrapper {
+  cursor: pointer;
+  /* 鼠标变成手指 */
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  /* 平滑过渡动画 */
+  border-radius: 8px;
+  /* 可选：让圆角更自然 */
+}
+
+.nft-card-wrapper:hover {
+  transform: translateY(-5px);
+  /* 向上浮动 5 像素 */
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.12);
+  /* 产生上浮的阴影效果 */
+}

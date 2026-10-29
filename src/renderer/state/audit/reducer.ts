@@ -1,7 +1,9 @@
 import { createReducer } from "@reduxjs/toolkit"
-import { updateAuditTokens, updateTokenPrices , updateTokenPriceQuote } from "./actions"
+import { updateAuditTokens, updateTokenPrices, updateTokenPriceQuote, updateNftTokens } from "./actions"
 import { Safe4NetworkChainId, USDT, WSAFE } from "../../config"
 import { ethers } from "ethers"
+import { NftTokenVO } from "../../services/insight"
+
 
 export interface IAuditState {
   tokens: {
@@ -15,6 +17,9 @@ export interface IAuditState {
       logoURI?: string,
     }[]
   },
+  nftTokens: {
+    [chainId: number]: NftTokenVO[]
+  }
 
   prices: {
     [chainId: number]: {
@@ -54,6 +59,10 @@ const initialState: IAuditState = {
       { ...USDT[Safe4NetworkChainId.Mainnet] }
     ]
   },
+  nftTokens: {
+    [Safe4NetworkChainId.Testnet]: [],
+    [Safe4NetworkChainId.Mainnet]: []
+  },
   prices: {
     [Safe4NetworkChainId.Testnet]: [],
     [Safe4NetworkChainId.Mainnet]: []
@@ -75,9 +84,14 @@ export default createReducer(initialState, (builder) => {
       tokens.forEach(token => token.address = ethers.utils.getAddress(token.address));
       state.prices[chainId] = tokens;
     })
-      .addCase(updateTokenPriceQuote, (state, { payload }) => {
+    .addCase(updateTokenPriceQuote, (state, { payload }) => {
       const { chainId, quote, tokens } = payload;
       tokens.forEach(token => token.address = ethers.utils.getAddress(token.address));
       state.quotePrices[chainId][quote] = tokens;
+    })
+    .addCase(updateNftTokens, (state, { payload }) => {
+      const { chainId, tokens } = payload;
+      tokens.forEach(token => token.address = ethers.utils.getAddress(token.address));
+      state.nftTokens[chainId] = tokens;
     })
 })
