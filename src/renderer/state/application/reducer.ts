@@ -166,8 +166,8 @@ const initialState: IApplicationState = {
   SlippageTolerance: "0.005",
   platform: "",
   WalletUpdate: {
-    currentVersion: "2.0.7",
-    currentVersionCode: 104,
+    currentVersion: "2.0.8",
+    currentVersionCode: 105,
     ignore: false
   },
   sshConfigMap: {}
