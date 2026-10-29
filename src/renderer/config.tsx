@@ -114,7 +114,7 @@ const Config = {
     Default_Web3_ChainId: Safe4_Network_Config.Mainnet.chainId,
   }
 }
-export default Config["testnet"]
+export default Config["mainnet"]
 
 
 
