@@ -24,13 +24,13 @@ export default ({
   const dispatch = useDispatch();
   const updates = useMemo(() => {
     if (walletUpdate.latestWallet) {
-      const _updates = JSON.parse(walletUpdate.latestWallet.updates);
       try {
         const arr = JSON.parse(walletUpdate.latestWallet.updates);
         if (typeof arr == 'object') {
           return arr;
         }
       } catch (err) {
+        console.log("[VersionModal.tsx] parse wallet.updates error", err);
         return [];
       }
       return [];
